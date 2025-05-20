@@ -83,22 +83,24 @@ const AdminSetup = () => {
               </AlertDescription>
             </Alert>
           ) : success ? (
-            <Alert>
-              <Check className="h-4 w-4" />
-              <AlertTitle>Success!</AlertTitle>
-              <AlertDescription>
-                Your account has been upgraded to administrator. You can now access all admin features.
-              </AlertDescription>
-            </Alert>
-            <div className="mt-4">
-              <Button 
-                onClick={() => setLocation("/users")} 
-                className="w-full"
-                variant="default"
-              >
-                Go to User Management
-              </Button>
-            </div>
+            <>
+              <Alert>
+                <Check className="h-4 w-4" />
+                <AlertTitle>Success!</AlertTitle>
+                <AlertDescription>
+                  Your account has been upgraded to administrator. You can now access all admin features.
+                </AlertDescription>
+              </Alert>
+              <div className="mt-4">
+                <Button 
+                  onClick={() => setLocation("/users")} 
+                  className="w-full"
+                  variant="default"
+                >
+                  Go to User Management
+                </Button>
+              </div>
+            </>
           ) : (
             <>
               <p className="text-center text-sm">
