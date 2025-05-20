@@ -148,6 +148,16 @@ export interface IStorage {
   createContentShare(shareData: any): Promise<any>;
   getContentShareByCode(shareCode: string): Promise<any>;
   updateContentShareAccess(shareId: number): Promise<any>;
+  
+  // Interactive coding exercises
+  createCodingExercise(exerciseData: Omit<CodingExercise, "id" | "createdAt" | "updatedAt">): Promise<CodingExercise>;
+  getCodingExercise(exerciseId: number): Promise<CodingExercise | undefined>;
+  getCodingExercises(options?: { moduleId?: number, lessonId?: number }): Promise<CodingExercise[]>;
+  updateCodingExercise(exerciseId: number, updateData: Partial<CodingExercise>): Promise<CodingExercise>;
+  
+  // Exercise progress tracking
+  getExerciseProgress(exerciseId: number, userId: string): Promise<ExerciseProgress | undefined>;
+  updateExerciseProgress(exerciseId: number, userId: string, progressData: Partial<ExerciseProgress>): Promise<ExerciseProgress>;
 }
 
 export class DatabaseStorage implements IStorage {

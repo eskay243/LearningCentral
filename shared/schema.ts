@@ -369,6 +369,40 @@ export const contentShares = pgTable("content_shares", {
   accessCount: integer("access_count").notNull().default(0),
 });
 
+// Interactive Coding Exercises table
+export const codingExercises = pgTable("coding_exercises", {
+  id: serial("id").primaryKey(),
+  lessonId: integer("lesson_id").references(() => lessons.id),
+  moduleId: integer("module_id").references(() => modules.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  instructions: text("instructions").notNull(),
+  initialCode: text("initial_code").notNull(),
+  solution: text("solution").notNull(),
+  language: text("language").notNull().default("javascript"),
+  difficulty: text("difficulty").notNull().default("beginner"),
+  hints: jsonb("hints").notNull().default([]),
+  tests: jsonb("tests").notNull().default([]),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  tags: text("tags").array(),
+});
+
+// Exercise Progress table
+export const exerciseProgress = pgTable("exercise_progress", {
+  id: serial("id").primaryKey(),
+  exerciseId: integer("exercise_id").notNull().references(() => codingExercises.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  status: text("status").notNull().default("not_started"), // not_started, in_progress, completed
+  currentCode: text("current_code"),
+  lastAttemptAt: timestamp("last_attempt_at"),
+  completedAt: timestamp("completed_at"),
+  attemptCount: integer("attempt_count").notNull().default(0),
+  hintsUsed: integer("hints_used").notNull().default(0),
+  timeSpent: integer("time_spent"), // in seconds
+});
+
 // Create Zod schemas for insert operations
 export const insertUserSchema = createInsertSchema(users);
 export const insertCourseSchema = createInsertSchema(courses);
@@ -381,6 +415,8 @@ export const insertLiveSessionSchema = createInsertSchema(liveSessions);
 export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments);
 export const insertMentorCourseSchema = createInsertSchema(mentorCourses);
 export const insertAffiliateCommissionSchema = createInsertSchema(affiliateCommissions);
+export const insertCodingExerciseSchema = createInsertSchema(codingExercises);
+export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress);
 
 // Type definitions for the schema
 export type UpsertUser = typeof users.$inferInsert;
@@ -409,3 +445,5 @@ export type CourseDiscussion = typeof courseDiscussions.$inferSelect;
 export type DiscussionReply = typeof discussionReplies.$inferSelect;
 export type NotificationSetting = typeof notificationSettings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type CodingExercise = typeof codingExercises.$inferSelect;
+export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
