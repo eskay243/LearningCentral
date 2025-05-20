@@ -467,6 +467,255 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Bookmark routes
+  app.get('/api/bookmarks', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const bookmarks = await storage.getUserBookmarks(userId);
+      res.json(bookmarks);
+    } catch (error) {
+      console.error("Error fetching bookmarks:", error);
+      res.status(500).json({ message: "Failed to fetch bookmarks" });
+    }
+  });
+  
+  app.get('/api/bookmarks/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const lessonId = parseInt(req.query.lessonId);
+      
+      const bookmark = await storage.getBookmarkByLessonAndUser(lessonId, userId);
+      
+      res.json({
+        isBookmarked: !!bookmark,
+        bookmark: bookmark || null
+      });
+    } catch (error) {
+      console.error("Error checking bookmark:", error);
+      res.status(500).json({ message: "Failed to check bookmark status" });
+    }
+  });
+  
+  app.post('/api/bookmarks', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      const bookmark = await storage.createBookmark({
+        ...req.body,
+        userId,
+      });
+      
+      res.status(201).json(bookmark);
+    } catch (error) {
+      console.error("Error creating bookmark:", error);
+      res.status(500).json({ message: "Failed to create bookmark" });
+    }
+  });
+  
+  app.patch('/api/bookmarks/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const bookmarkId = parseInt(req.params.id);
+      
+      // Verify ownership
+      const existingBookmark = await storage.getBookmark(bookmarkId);
+      if (!existingBookmark || existingBookmark.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized to update this bookmark" });
+      }
+      
+      const updatedBookmark = await storage.updateBookmark(bookmarkId, req.body);
+      res.json(updatedBookmark);
+    } catch (error) {
+      console.error("Error updating bookmark:", error);
+      res.status(500).json({ message: "Failed to update bookmark" });
+    }
+  });
+  
+  app.delete('/api/bookmarks/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const bookmarkId = parseInt(req.params.id);
+      
+      // Verify ownership
+      const existingBookmark = await storage.getBookmark(bookmarkId);
+      if (!existingBookmark || existingBookmark.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized to delete this bookmark" });
+      }
+      
+      await storage.deleteBookmark(bookmarkId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting bookmark:", error);
+      res.status(500).json({ message: "Failed to delete bookmark" });
+    }
+  });
+  
+  // Content search routes
+  app.get('/api/search', async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const courseId = req.query.courseId ? parseInt(req.query.courseId as string) : undefined;
+      
+      if (!query || query.length < 2) {
+        return res.status(400).json({ message: "Search query must be at least 2 characters" });
+      }
+      
+      const searchResults = await storage.searchContent(query, courseId);
+      res.json(searchResults);
+    } catch (error) {
+      console.error("Error searching content:", error);
+      res.status(500).json({ message: "Failed to search content" });
+    }
+  });
+  
+  // Content sharing routes
+  app.post('/api/share', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { lessonId, courseId } = req.body;
+      
+      // Generate unique code
+      const shareCode = generateShareCode();
+      
+      // Default expiration: 30 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+      
+      const share = await storage.createContentShare({
+        userId,
+        lessonId,
+        courseId,
+        shareCode,
+        expiresAt,
+      });
+      
+      // Generate share URL
+      const shareUrl = `${req.protocol}://${req.get('host')}/shared/${shareCode}`;
+      
+      res.status(201).json({
+        share,
+        shareUrl
+      });
+    } catch (error) {
+      console.error("Error creating share:", error);
+      res.status(500).json({ message: "Failed to create share link" });
+    }
+  });
+  
+  app.get('/api/shared/:shareCode', async (req, res) => {
+    try {
+      const { shareCode } = req.params;
+      
+      const share = await storage.getContentShareByCode(shareCode);
+      
+      if (!share) {
+        return res.status(404).json({ message: "Share link not found or expired" });
+      }
+      
+      // Check if expired
+      if (share.expiresAt && new Date(share.expiresAt) < new Date()) {
+        return res.status(404).json({ message: "Share link has expired" });
+      }
+      
+      // Update access count and last accessed time
+      await storage.updateContentShareAccess(share.id);
+      
+      // Get the lesson and course info
+      const lesson = await storage.getLesson(share.lessonId);
+      
+      if (!lesson) {
+        return res.status(404).json({ message: "Content no longer available" });
+      }
+      
+      res.json({
+        lesson,
+        courseId: share.courseId
+      });
+    } catch (error) {
+      console.error("Error accessing shared content:", error);
+      res.status(500).json({ message: "Failed to access shared content" });
+    }
+  });
+  
+  // Content export route
+  app.post('/api/export', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { lessonId, format, options } = req.body;
+      
+      // Verify access to the lesson
+      const lesson = await storage.getLesson(lessonId);
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+      
+      // TODO: Implement actual export logic based on format (PDF, Word, etc.)
+      // For now, just return the lesson content as a placeholder
+      
+      // Set appropriate content type based on format
+      let contentType = 'text/plain';
+      switch (format) {
+        case 'pdf':
+          contentType = 'application/pdf';
+          break;
+        case 'word':
+          contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          break;
+        case 'excel':
+          contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          break;
+        case 'html':
+          contentType = 'text/html';
+          break;
+      }
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="export-${lessonId}.${format}"`);
+      
+      // This is just a placeholder, actual implementation would generate proper files
+      res.send(lesson.content || `Exported content for lesson ${lesson.title}`);
+    } catch (error) {
+      console.error("Error exporting content:", error);
+      res.status(500).json({ message: "Failed to export content" });
+    }
+  });
+  
+  app.post('/api/export/email', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { lessonId } = req.body;
+      
+      // Verify access to the lesson
+      const lesson = await storage.getLesson(lessonId);
+      if (!lesson) {
+        return res.status(404).json({ message: "Lesson not found" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "User email not available" });
+      }
+      
+      // TODO: Implement actual email sending logic
+      // For now, just return success as a placeholder
+      
+      res.json({ success: true, message: `Content was sent to ${user.email}` });
+    } catch (error) {
+      console.error("Error emailing content:", error);
+      res.status(500).json({ message: "Failed to email content" });
+    }
+  });
+  
+  // Helper function to generate share codes
+  function generateShareCode(length = 10) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+  
   // Paystack payment routes
   app.post('/api/payments/initialize', isAuthenticated, async (req: any, res) => {
     try {

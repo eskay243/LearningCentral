@@ -132,6 +132,22 @@ export interface IStorage {
   // Certificate operations
   generateCertificate(userId: string, courseId: number, template: string): Promise<Certificate>;
   getUserCertificates(userId: string): Promise<Certificate[]>;
+  
+  // Bookmark operations
+  createBookmark(bookmarkData: any): Promise<any>;
+  getBookmark(bookmarkId: number): Promise<any>;
+  getBookmarkByLessonAndUser(lessonId: number, userId: string): Promise<any>;
+  getUserBookmarks(userId: string): Promise<any[]>;
+  updateBookmark(bookmarkId: number, data: any): Promise<any>;
+  deleteBookmark(bookmarkId: number): Promise<void>;
+  
+  // Content search
+  searchContent(query: string, courseId?: number): Promise<any[]>;
+  
+  // Content sharing
+  createContentShare(shareData: any): Promise<any>;
+  getContentShareByCode(shareCode: string): Promise<any>;
+  updateContentShareAccess(shareId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {

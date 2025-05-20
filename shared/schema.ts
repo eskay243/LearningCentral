@@ -342,6 +342,33 @@ export const notifications = pgTable("notifications", {
   linkUrl: text("link_url"),
 });
 
+// Bookmarks table
+export const bookmarks = pgTable("bookmarks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  lessonId: integer("lesson_id").notNull().references(() => lessons.id),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  title: text("title").notNull(),
+  note: text("note"),
+  timestamp: integer("timestamp"), // For video content, timestamp in seconds
+  contentSelection: text("content_selection"), // Selected text for text content
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Content shares table
+export const contentShares = pgTable("content_shares", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  lessonId: integer("lesson_id").notNull().references(() => lessons.id),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  shareCode: varchar("share_code").notNull().unique(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  accessCount: integer("access_count").notNull().default(0),
+});
+
 // Create Zod schemas for insert operations
 export const insertUserSchema = createInsertSchema(users);
 export const insertCourseSchema = createInsertSchema(courses);
