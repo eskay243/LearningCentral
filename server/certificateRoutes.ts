@@ -3,6 +3,9 @@ import { storage } from './storage';
 import { isAuthenticated, hasRole } from './replitAuth';
 import { UserRole } from '@shared/schema';
 import { randomBytes } from 'crypto';
+import { eq, sql } from 'drizzle-orm';
+import { db } from './db';
+import { certificates } from '@shared/schema';
 
 const router = Router();
 

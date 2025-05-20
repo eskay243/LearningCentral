@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { TrendingUp } from "lucide-react";
 
 import {
   Card,
@@ -276,10 +277,22 @@ export default function CertificateAdmin() {
     <div className="container mx-auto py-10">
       <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Certificate Management</h1>
-          <p className="text-muted-foreground mt-2">
-            Issue, view, and manage certificates for students.
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Certificate Management</h1>
+              <p className="text-muted-foreground mt-2">
+                Issue, view, and manage certificates for students.
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation("/certificate/analytics")}
+              className="flex items-center gap-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+              View Analytics
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="issue" className="w-full">

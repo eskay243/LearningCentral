@@ -29,6 +29,7 @@ import InteractiveLearning from "@/pages/InteractiveLearning";
 import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
+import CertificateAnalytics from "@/pages/CertificateAnalytics";
 
 function Router() {
   return (
@@ -60,6 +61,7 @@ function Router() {
         <Route path="/certificate/verify/:id" component={CertificateVerification} />
         <Route path="/certificate/verify" component={CertificateVerification} />
         <Route path="/certificate/admin" component={CertificateAdmin} />
+        <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
