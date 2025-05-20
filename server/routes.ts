@@ -1455,6 +1455,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create HTTP server
   const httpServer = createServer(app);
+  
+  // Initialize WebSocket server for real-time messaging
+  const messageWSServer = new MessageWebSocketServer(httpServer);
+  
+  // Store WebSocket server in app.locals for access in other routes
+  (app as any).locals.messageWSServer = messageWSServer;
 
   return httpServer;
 }
