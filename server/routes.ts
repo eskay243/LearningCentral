@@ -10,7 +10,7 @@ import { setUserAsAdmin } from "./admin-setup";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
-import { MessageWebSocketServer } from "./websocketServer";
+import { setupWebSocketServer } from "./websocketServer";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -1457,10 +1457,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time messaging
-  const messageWSServer = new MessageWebSocketServer(httpServer);
+  setupWebSocketServer(httpServer);
   
-  // Store WebSocket server in app.locals for access in other routes
-  (app as any).locals.messageWSServer = messageWSServer;
+  // WebSocket server is now handled by setupWebSocketServer
 
   return httpServer;
 }
