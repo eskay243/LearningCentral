@@ -69,6 +69,7 @@ import {
   UserRole,
 } from "@shared/schema";
 import { db } from "./db";
+import { randomBytes } from 'crypto';
 import { eq, and, or, like, desc, asc, isNull, count, sql, not, inArray, lt, gt, gte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -193,11 +194,12 @@ export interface IStorage {
   deleteCourseAnnouncement(announcementId: number): Promise<void>;
   
   // Certificates
-  issueCertificate(certificateData: Omit<Certificate, "id" | "issuedAt">): Promise<Certificate>;
+  // Certificate Management
+  issueCertificate(certificate: any): Promise<Certificate>;
+  getCertificate(certificateId: number): Promise<Certificate | undefined>;
   getUserCertificates(userId: string): Promise<Certificate[]>;
-  getCertificate(certificateId: string): Promise<Certificate | undefined>;
-  verifyCertificate(certificateId: string): Promise<{valid: boolean; certificate?: Certificate}>;
-  generateCertificateNumber(): Promise<string>;
+  verifyCertificate(certificateId: number): Promise<{valid: boolean; certificate?: Certificate}>;
+  generateVerificationCode(): Promise<string>;
   
   // Coupons and ratings
   createCoupon(couponData: Omit<Coupon, "id" | "createdAt">): Promise<Coupon>;
