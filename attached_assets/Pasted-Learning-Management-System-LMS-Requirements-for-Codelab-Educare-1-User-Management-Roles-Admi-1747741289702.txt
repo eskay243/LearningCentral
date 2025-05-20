@@ -1,0 +1,92 @@
+Learning Management System (LMS) Requirements for Codelab Educare
+
+1. User Management
+Roles: Admin, Mentor (Instructor), Student, Affiliate/Rep.
+Account Creation: Email/password, Google sign-in.
+User Profiles: Include bio, photo, enrolled courses, and progress.
+Dashboard Views:
+Students: See upcoming live classes, enrolled courses, progress.
+Mentors: View course performance, live class schedule, student stats
+Admin: Manage platform-wide settings, users, and analytics.
+
+2. Course Delivery Modes
+A. Pre-recorded Classes
+Video Library: Each course includes recorded videos by topic.
+Download Protection: Prevent unauthorized downloads (DRM or streaming).
+Structured Content:
+●	Lesson videos.
+●	Downloadable resources (locked PDFs, slides).
+●	Notes.
+●	Quizzes/Projects.
+●	Self-paced Learning: Students can learn on their own schedule.
+
+B. Live Classes:
+●	 Integrated Live Session Tool:Google Meet, or Zoho
+●	Class Scheduling: Mentors can schedule sessions; students get notified.
+●	Live Attendance Tracking.
+●	Live Chat & Q&A During Class.
+●	Recording & Replay: All live sessions are saved for later viewing by students.
+●	Calendar Sync: Allow students to add class times to their calendars.
+
+3. Course Management
+Course Builder: Create courses by combining:
+●	Pre-recorded video lessons.
+●	Live session modules.
+●	Notes, assignments, and quizzes.
+●	Draft & Publish: Save course work in progress or publish instantly.
+●	Course Categories & Tags: For easier discovery.
+●	Mentor Collaboration: Multiple mentors can manage a single course.
+
+4. Assessment Tools
+●	Quizzes: Auto-graded quizzes with multiple question types.
+●	Projects/Assignments: File upload for mentor review.
+●	Grading Rubrics: For consistent assessment.
+●	Instant Feedback: On quizzes and reviewed assignments.
+
+5. Progress & Certification
+Progress Tracker: Visual indicators of course/module completion.
+Requirements for Completion:
+●	Watch all lessons.
+●	Attend live sessions or view replays.
+●	Complete quizzes/projects.
+Certificates: Automatically generated upon completion, personalized and downloadable.
+
+6. Communication & Community
+●	In-app Messaging: Between students and mentors.
+●	Course Discussion Forums: Threaded by topic.
+●	Announcements: Admins and mentors can send course-wide or platform-wide updates.
+●	Live Session Chat: Public and private chat during live classes.
+
+
+7. Enrollment & Payment
+Course Enrollment Options:
+●	Free.
+●	One-time payment.
+●	Installment plans (optional).
+
+Payment Gateways:
+●	 Osoft pay and bank transfer options.
+●	Affiliate/Campus Rep System: Unique referral codes or links.
+
+Commission:
+●	37% Mentors commission tracked automatically 
+●	4% Affiliate/ Campus Rep commission tracked automatically.
+●	Coupons & Promotions: Time-limited discounts and codes.
+
+8. Content Security
+●	Video Protection: Streaming with anti-piracy tools (DRM, watermarking).
+●	Notes & PDFs: Watermarked, copy-protected formats.
+●	Access Restrictions: Only enrolled students can access lessons.
+
+9. Analytics & Reporting
+Student Insights: Completion rate (75% - 90%), quiz scores, time spent.
+Mentor Performance: Ratings, engagement, student feedback.
+Revenue & Sales: Total earnings, coupon usage, affiliate tracking.
+Live Class Attendance Reports.
+
+10. Notifications & Reminders
+Email & SMS: For class reminders, deadlines, and announcements.
+In-App Notifications: Alerts for new lessons, quiz results, etc.
+Calendar Reminders: Option to sync class schedules to Google Calendar.
+   
+
