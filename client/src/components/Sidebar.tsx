@@ -14,6 +14,7 @@ import {
   Settings,
   User,
   UsersRound,
+  Award,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -161,6 +162,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               </a>
             </Link>
           )}
+          
+          <Link href="/certificates">
+            <a className={menuItemClass("/certificates")}>
+              <Award className="mr-3 h-5 w-5" />
+              Certificates
+            </a>
+          </Link>
           
           <Link href="/profile">
             <a className={menuItemClass("/profile")}>
