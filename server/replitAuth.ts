@@ -33,7 +33,7 @@ export function getSession() {
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || "codelab_educare_development_session_secret",
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
