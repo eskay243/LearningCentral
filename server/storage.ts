@@ -1477,6 +1477,7 @@ export class DatabaseStorage implements IStorage {
       console.error("Error fetching user exercise progress:", error);
       return [];
     }
+  }
   
   async getCodingExercisesCount(): Promise<number> {
     try {
