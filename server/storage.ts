@@ -1016,6 +1016,116 @@ export class DatabaseStorage implements IStorage {
     return share;
   }
 
+  // Interactive coding exercises
+  async createCodingExercise(exerciseData: Omit<CodingExercise, "id" | "createdAt" | "updatedAt">): Promise<CodingExercise> {
+    const [exercise] = await db
+      .insert(codingExercises)
+      .values(exerciseData)
+      .returning();
+    
+    return exercise;
+  }
+
+  async getCodingExercise(exerciseId: number): Promise<CodingExercise | undefined> {
+    const [exercise] = await db
+      .select()
+      .from(codingExercises)
+      .where(eq(codingExercises.id, exerciseId));
+    
+    return exercise;
+  }
+
+  async getCodingExercises(options?: { moduleId?: number, lessonId?: number }): Promise<CodingExercise[]> {
+    let query = db.select().from(codingExercises);
+    
+    if (options?.moduleId) {
+      query = query.where(eq(codingExercises.moduleId, options.moduleId));
+    }
+    
+    if (options?.lessonId) {
+      query = query.where(eq(codingExercises.lessonId, options.lessonId));
+    }
+    
+    const exercises = await query.orderBy(codingExercises.orderIndex);
+    return exercises;
+  }
+
+  async updateCodingExercise(exerciseId: number, updateData: Partial<CodingExercise>): Promise<CodingExercise> {
+    const [exercise] = await db
+      .update(codingExercises)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(codingExercises.id, exerciseId))
+      .returning();
+    
+    return exercise;
+  }
+
+  // Exercise progress tracking
+  async getExerciseProgress(exerciseId: number, userId: string): Promise<ExerciseProgress | undefined> {
+    const [progress] = await db
+      .select()
+      .from(exerciseProgress)
+      .where(
+        and(
+          eq(exerciseProgress.exerciseId, exerciseId),
+          eq(exerciseProgress.userId, userId)
+        )
+      );
+    
+    return progress;
+  }
+
+  async updateExerciseProgress(exerciseId: number, userId: string, progressData: Partial<ExerciseProgress>): Promise<ExerciseProgress> {
+    // Check if progress exists
+    const existingProgress = await this.getExerciseProgress(exerciseId, userId);
+    
+    let progress;
+    
+    if (existingProgress) {
+      // Update existing progress
+      const [updatedProgress] = await db
+        .update(exerciseProgress)
+        .set({
+          ...progressData,
+          lastAttemptAt: new Date(),
+          attemptCount: progressData.attemptCount !== undefined ? 
+            progressData.attemptCount : 
+            existingProgress.attemptCount + 1
+        })
+        .where(
+          and(
+            eq(exerciseProgress.exerciseId, exerciseId),
+            eq(exerciseProgress.userId, userId)
+          )
+        )
+        .returning();
+      
+      progress = updatedProgress;
+    } else {
+      // Create new progress
+      const [newProgress] = await db
+        .insert(exerciseProgress)
+        .values({
+          exerciseId,
+          userId,
+          status: progressData.status || "in_progress",
+          currentCode: progressData.currentCode,
+          lastAttemptAt: new Date(),
+          attemptCount: 1,
+          hintsUsed: progressData.hintsUsed || 0,
+          timeSpent: progressData.timeSpent || 0,
+        })
+        .returning();
+      
+      progress = newProgress;
+    }
+    
+    return progress;
+  }
+
   // Lesson operations for content features
   async getLesson(lessonId: number): Promise<Lesson | undefined> {
     const [lesson] = await db
