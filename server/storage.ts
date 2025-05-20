@@ -2375,6 +2375,141 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // Certificate methods
+  async generateCertificateNumber(): Promise<string> {
+    // Generate a unique certificate ID with format: COD-YYYY-XXXXXXXX
+    const year = new Date().getFullYear();
+    const randomPart = Math.random().toString(36).substring(2, 10).toUpperCase();
+    return `COD-${year}-${randomPart}`;
+  }
+
+  async issueCertificate(certificateData: Omit<Certificate, "id" | "issuedAt">): Promise<Certificate> {
+    try {
+      const certificateId = await this.generateCertificateNumber();
+      
+      // Check if the user has completed the course
+      const [enrollment] = await db
+        .select()
+        .from(courseEnrollments)
+        .where(and(
+          eq(courseEnrollments.userId, certificateData.userId),
+          eq(courseEnrollments.courseId, certificateData.courseId)
+        ));
+      
+      if (!enrollment) {
+        throw new Error("User is not enrolled in this course");
+      }
+      
+      if (enrollment.progress < 100) {
+        throw new Error("User has not completed this course yet");
+      }
+      
+      // Create certificate
+      const [certificate] = await db
+        .insert(certificates)
+        .values({
+          id: certificateId,
+          userId: certificateData.userId,
+          courseId: certificateData.courseId,
+          template: certificateData.template
+        })
+        .returning();
+      
+      // Update the enrollment record with the certificate ID
+      await db
+        .update(courseEnrollments)
+        .set({ certificateId })
+        .where(eq(courseEnrollments.id, enrollment.id));
+      
+      return certificate;
+    } catch (error) {
+      console.error("Error issuing certificate:", error);
+      throw error;
+    }
+  }
+
+  async getUserCertificates(userId: string): Promise<any[]> {
+    try {
+      const userCertificates = await db
+        .select({
+          certificate: certificates,
+          course: {
+            id: courses.id,
+            title: courses.title,
+            description: courses.description,
+            thumbnail: courses.thumbnail
+          }
+        })
+        .from(certificates)
+        .leftJoin(courses, eq(certificates.courseId, courses.id))
+        .where(eq(certificates.userId, userId))
+        .orderBy(desc(certificates.issuedAt));
+      
+      return userCertificates.map(item => ({
+        ...item.certificate,
+        course: item.course
+      }));
+    } catch (error) {
+      console.error("Error getting user certificates:", error);
+      return [];
+    }
+  }
+
+  async getCertificate(certificateId: string): Promise<Certificate | undefined> {
+    try {
+      const [result] = await db
+        .select({
+          certificate: certificates,
+          course: {
+            id: courses.id,
+            title: courses.title,
+            description: courses.description
+          },
+          user: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            email: users.email
+          }
+        })
+        .from(certificates)
+        .leftJoin(courses, eq(certificates.courseId, courses.id))
+        .leftJoin(users, eq(certificates.userId, users.id))
+        .where(eq(certificates.id, certificateId));
+      
+      if (!result) {
+        return undefined;
+      }
+      
+      return {
+        ...result.certificate,
+        course: result.course,
+        user: result.user
+      } as any;
+    } catch (error) {
+      console.error("Error getting certificate:", error);
+      return undefined;
+    }
+  }
+
+  async verifyCertificate(certificateId: string): Promise<{valid: boolean; certificate?: Certificate}> {
+    try {
+      const certificate = await this.getCertificate(certificateId);
+      
+      if (!certificate) {
+        return { valid: false };
+      }
+      
+      return {
+        valid: true,
+        certificate
+      };
+    } catch (error) {
+      console.error("Error verifying certificate:", error);
+      return { valid: false };
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
