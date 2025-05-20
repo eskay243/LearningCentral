@@ -11,6 +11,8 @@ import {
   assignmentSubmissions,
   liveSessions,
   liveSessionAttendance,
+  liveSessionRollCalls,
+  liveSessionRollCallResponses,
   certificates,
   coupons,
   courseRatings,
