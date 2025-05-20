@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
 import { z } from "zod";
 import { UserRole } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
+import { setUserAsAdmin } from "./admin-setup";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
@@ -19,6 +20,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Setup admin user - this endpoint will make the currently logged in user an admin
+  app.post('/api/setup-admin', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const updatedUser = await setUserAsAdmin(userId);
+      
+      if (!updatedUser) {
+        return res.status(400).json({ message: "Failed to set user as admin" });
+      }
+      
+      res.json({ 
+        message: "You have been successfully set as an admin", 
+        user: updatedUser 
+      });
+    } catch (error) {
+      console.error("Error setting up admin:", error);
+      res.status(500).json({ message: "An error occurred while setting up admin" });
     }
   });
   
