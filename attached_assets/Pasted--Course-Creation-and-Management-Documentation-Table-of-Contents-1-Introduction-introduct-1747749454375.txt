@@ -1,0 +1,309 @@
+# Course Creation and Management Documentation
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [User Roles and Permissions](#user-roles-and-permissions)
+3. [Course Creation Process](#course-creation-process)
+4. [Course Organization](#course-organization)
+5. [Managing Course Content](#managing-course-content)
+6. [Publishing and Scheduling Courses](#publishing-and-scheduling-courses)
+7. [Managing Enrollments](#managing-enrollments)
+8. [Course Analytics and Reporting](#course-analytics-and-reporting)
+9. [Mentor Compensation](#mentor-compensation)
+10. [Troubleshooting](#troubleshooting)
+
+## Introduction
+
+This documentation provides detailed guidelines for mentors and administrators on how to create and manage courses within the learning management system. It outlines the step-by-step processes, best practices, and organizational strategies to ensure effective course management.
+
+## User Roles and Permissions
+
+### Administrator Roles
+Administrators have full access to all course creation and management features, including:
+- Creating, editing, and deleting any course
+- Managing all user accounts and permissions
+- Accessing system-wide analytics and reports
+- Configuring system settings and integrations
+
+### Mentor Roles
+Mentors have access to specific course management features, including:
+- Creating and managing their assigned courses
+- Adding and organizing content within their courses
+- Managing enrollments for their courses
+- Accessing analytics for their specific courses
+- Viewing and tracking compensation for their courses
+
+## Course Creation Process
+
+### For Administrators
+
+1. **Access the Admin Dashboard**
+   - Log in to the system using administrator credentials
+   - Navigate to the "Courses" section in the admin dashboard
+
+2. **Initiate Course Creation**
+   - Click on the "Create New Course" button
+   - Fill in the required course details:
+     - Course title
+     - Course code/ID
+     - Department/category
+     - Course description
+     - Learning objectives
+     - Credit hours/points (if applicable)
+   - Assign course mentors/instructors
+   - Save the initial course setup
+
+3. **Advanced Configuration**
+   - Set course visibility settings (public, private, or restricted)
+   - Configure enrollment requirements
+   - Set up prerequisites if applicable
+   - Define completion criteria
+
+### For Mentors
+
+1. **Access the Mentor Dashboard**
+   - Log in to the system using mentor credentials
+   - Navigate to the "My Courses" section
+
+2. **Initiate Course Creation**
+   - Click on the "Create New Course" button (if permitted)
+   - Fill in the required course details as outlined above
+   - Submit for admin approval (if required by system settings)
+
+3. **Working with Assigned Courses**
+   - Access courses assigned to you
+   - View and edit course details
+   - Proceed to content creation and organization
+
+## Course Organization
+
+### Structure and Hierarchy
+
+Courses are organized using the following hierarchy:
+- **Course**: The top-level container
+  - **Modules/Units**: Major sections within a course
+    - **Lessons/Topics**: Individual learning segments
+      - **Activities/Resources**: Specific content items
+
+### Creating Modules
+
+1. Within the course builder, select "Add Module"
+2. Provide a title and description for the module
+3. Set the module order using drag-and-drop or sequence numbers
+4. Configure module settings:
+   - Release conditions
+   - Visibility
+   - Completion requirements
+
+### Creating Lessons
+
+1. Within a module, select "Add Lesson"
+2. Provide a title and description for the lesson
+3. Set the lesson order within the module
+4. Add learning objectives specific to the lesson
+
+## Managing Course Content
+
+### Content Types
+
+The system supports various content types:
+- Text/HTML content
+- Video presentations
+- Documents (PDF, Word, etc.)
+- Interactive elements
+- Quizzes and assessments
+- Discussion forums
+- Assignments
+- External resources (links)
+
+### Adding Content
+
+1. Navigate to the appropriate module and lesson
+2. Select "Add Content" and choose the content type
+3. Upload files or create content directly in the system
+4. Configure content settings:
+   - Visibility
+   - Access restrictions
+   - Time limitations (if applicable)
+   - Tracking settings
+
+### Content Organization
+
+1. Use drag-and-drop functionality to reorder content
+2. Group related content items
+3. Set dependencies between content items if needed
+4. Use tags and metadata for better content management
+
+## Publishing and Scheduling Courses
+
+### Pre-Publication Checklist
+
+Before publishing a course, ensure:
+- All required content is uploaded and organized
+- Links and media function correctly
+- Assessments are properly configured
+- Course settings are finalized
+
+### Publication Process
+
+1. Navigate to the course settings
+2. Review the entire course using the preview function
+3. Make any necessary adjustments
+4. Set the publication status:
+   - Draft: Still in development, not visible to students
+   - Published: Live and available according to schedule
+   - Archived: No longer active but preserved for reference
+
+### Scheduling Options
+
+Configure when your course becomes available:
+- Immediate availability upon publication
+- Scheduled start date and time
+- Sequential content release (drip-feeding)
+- Conditional release based on learner progress
+
+## Managing Enrollments
+
+### Enrollment Methods
+
+The system supports various enrollment methods:
+- Self-enrollment
+- Admin-managed enrollment
+- Batch enrollment
+- Integration with external systems
+- Enrollment codes
+
+### For Administrators
+
+1. Access the course enrollment management page
+2. View current enrollments
+3. Add or remove users individually or in bulk
+4. Generate and manage enrollment codes
+5. Configure enrollment limitations:
+   - Maximum number of participants
+   - Enrollment deadline
+   - Approval requirements
+
+### For Mentors
+
+1. Access the enrollment section for your course
+2. View current participant list
+3. Request enrollment changes through the system
+4. Monitor enrollment status and capacity
+
+## Course Analytics and Reporting
+
+### Available Analytics
+
+The system provides various analytics:
+- Enrollment statistics
+- Completion rates
+- Content engagement metrics
+- Assessment performance
+- User activity patterns
+- Time spent on content
+- Revenue metrics (for authorized users)
+
+### Generating Reports
+
+1. Navigate to the Analytics dashboard
+2. Select the desired course
+3. Choose report type and parameters
+4. Set date ranges if applicable
+5. Generate and export reports in various formats (CSV, PDF, etc.)
+
+### Using Analytics for Course Improvement
+
+- Identify content that may need revision based on engagement metrics
+- Review assessment results to address knowledge gaps
+- Monitor completion patterns to identify potential barriers
+- Track learner progress to provide timely interventions
+- Analyze revenue patterns to optimize course pricing and promotions
+
+## Mentor Compensation
+
+### Compensation Overview
+
+Mentors receive compensation for their courses based on the following structure:
+- Mentors earn 37% of all student payments for their courses
+- Payments are processed according to the system's payment schedule
+- All taxes and applicable fees are handled according to local regulations
+
+### Accessing Compensation Information
+
+1. **View Current Earnings**
+   - Navigate to the "Mentor Dashboard"
+   - Select the "Compensation" or "Earnings" tab
+   - View a breakdown of earnings by course and time period
+   - See detailed transaction history for each payment
+
+2. **Payment Schedule**
+   - Access upcoming payment information
+   - View payment processing dates
+   - Track payment status (pending, processed, paid)
+   - Download payment receipts and statements
+
+3. **Earnings Analysis**
+   - View earnings trends over time
+   - Compare performance across different courses
+   - Analyze revenue by student demographics
+   - Identify peak enrollment and revenue periods
+
+### Payment Settings
+
+1. **Configure Payment Methods**
+   - Add or update preferred payment methods
+   - Set default payment method
+   - Configure automatic deposit thresholds
+
+2. **Tax Information**
+   - Update tax forms and information
+   - Access annual tax statements
+   - Configure tax withholding preferences where applicable
+
+### Revenue Optimization
+
+1. **Course Pricing Tools**
+   - Access pricing recommendations based on market analysis
+   - View pricing impact simulations
+   - Implement promotional pricing for specific periods
+
+2. **Enrollment Analytics**
+   - Track conversion rates from course views to enrollments
+   - Analyze price sensitivity among target audience
+   - Identify enrollment patterns to optimize marketing efforts
+
+3. **Student Retention Impact**
+   - View relationship between course engagement and retention
+   - Identify content that drives higher completion rates
+   - Analyze correlation between student success and course renewals/referrals
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+#### Content Not Displaying Correctly
+- Verify file formats are supported
+- Check file sizes against system limitations
+- Ensure media is properly embedded
+- Review browser compatibility
+
+#### Enrollment Problems
+- Verify user accounts are active
+- Check enrollment configurations
+- Confirm prerequisite completion if applicable
+- Review system logs for error messages
+
+#### Publishing Issues
+- Ensure all required fields are completed
+- Check for unresolved validation errors
+- Verify publishing permissions
+- Review server status if system-wide issues are suspected
+
+### Getting Support
+
+For technical assistance:
+- Access the built-in help documentation
+- Contact system support through the help desk
+- Submit support tickets with detailed issue information
+- Participate in the administrator/mentor community forums
