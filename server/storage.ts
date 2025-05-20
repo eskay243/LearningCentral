@@ -1304,6 +1304,125 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
+  
+  // Interactive coding exercise methods
+  async createCodingExercise(exerciseData: Omit<typeof codingExercises.$inferInsert, "id" | "createdAt" | "updatedAt">): Promise<typeof codingExercises.$inferSelect> {
+    const [exercise] = await db
+      .insert(codingExercises)
+      .values({
+        ...exerciseData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    
+    return exercise;
+  }
+  
+  async getCodingExercise(exerciseId: number): Promise<typeof codingExercises.$inferSelect | undefined> {
+    const [exercise] = await db
+      .select()
+      .from(codingExercises)
+      .where(eq(codingExercises.id, exerciseId));
+    
+    return exercise;
+  }
+  
+  async getCodingExercises(options?: { moduleId?: number, lessonId?: number }): Promise<typeof codingExercises.$inferSelect[]> {
+    let query = db.select().from(codingExercises);
+    
+    if (options?.moduleId) {
+      query = query.where(eq(codingExercises.moduleId, options.moduleId));
+    }
+    
+    if (options?.lessonId) {
+      query = query.where(eq(codingExercises.lessonId, options.lessonId));
+    }
+    
+    return await query;
+  }
+  
+  async updateCodingExercise(exerciseId: number, updateData: Partial<typeof codingExercises.$inferInsert>): Promise<typeof codingExercises.$inferSelect> {
+    const [updatedExercise] = await db
+      .update(codingExercises)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(codingExercises.id, exerciseId))
+      .returning();
+    
+    return updatedExercise;
+  }
+  
+  // Exercise progress tracking methods
+  async getExerciseProgress(exerciseId: number, userId: string): Promise<typeof exerciseProgress.$inferSelect | undefined> {
+    const [progress] = await db
+      .select()
+      .from(exerciseProgress)
+      .where(
+        and(
+          eq(exerciseProgress.exerciseId, exerciseId), 
+          eq(exerciseProgress.userId, userId)
+        )
+      );
+    
+    return progress;
+  }
+  
+  async updateExerciseProgress(exerciseId: number, userId: string, progressData: Partial<typeof exerciseProgress.$inferInsert>): Promise<typeof exerciseProgress.$inferSelect> {
+    // Check if progress exists
+    const existingProgress = await this.getExerciseProgress(exerciseId, userId);
+    
+    let progress;
+    
+    if (existingProgress) {
+      // Update existing progress
+      const [updatedProgress] = await db
+        .update(exerciseProgress)
+        .set({
+          ...progressData,
+          lastAttemptAt: new Date(),
+        })
+        .where(
+          and(
+            eq(exerciseProgress.exerciseId, exerciseId),
+            eq(exerciseProgress.userId, userId)
+          )
+        )
+        .returning();
+      
+      progress = updatedProgress;
+    } else {
+      // Create new progress
+      const [newProgress] = await db
+        .insert(exerciseProgress)
+        .values({
+          exerciseId,
+          userId,
+          ...progressData,
+          lastAttemptAt: new Date(),
+        })
+        .returning();
+      
+      progress = newProgress;
+    }
+    
+    return progress;
+  }
+  
+  async getUserExerciseProgress(userId: string): Promise<any[]> {
+    try {
+      // Get all exercise progress for this user with joined exercise details
+      const progress = await db.select({
+        id: exerciseProgress.id,
+        exerciseId: exerciseProgress.exerciseId,
+        userId: exerciseProgress.userId,
+        status: exerciseProgress.status,
+        currentCode: exerciseProgress.currentCode,
+        lastAttemptAt: exerciseProgress.lastAttemptAt,
+        completedAt: exerciseProgress.completedAt,
+        attemptCount: exerciseProgress.attemptCount,
         hintsUsed: exerciseProgress.hintsUsed,
         timeSpent: exerciseProgress.timeSpent,
         exercise: {
@@ -1317,6 +1436,14 @@ export class DatabaseStorage implements IStorage {
       })
       .from(exerciseProgress)
       .leftJoin(codingExercises, eq(exerciseProgress.exerciseId, codingExercises.id))
+      .where(eq(exerciseProgress.userId, userId));
+      
+      return progress;
+    } catch (error) {
+      console.error("Error fetching user exercise progress:", error);
+      return [];
+    }
+  }
       .where(eq(exerciseProgress.userId, userId));
       
       return progress;
