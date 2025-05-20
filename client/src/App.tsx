@@ -18,6 +18,7 @@ import Earnings from "@/pages/Earnings";
 import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
+import PaymentCallback from "@/pages/PaymentCallback";
 
 function Router() {
   return (
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/login" component={Login} />
+        <Route path="/payment-callback" component={PaymentCallback} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

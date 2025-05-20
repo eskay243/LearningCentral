@@ -531,16 +531,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userId,
             paymentReference: reference,
             paymentAmount: paymentData.amount / 100, // Convert from kobo to naira
-            paymentStatus: 'completed'
+            paymentStatus: 'completed',
+            paymentMethod: 'paystack',
+            paymentProvider: 'paystack',
+            progress: 0,
+            completedAt: null,
+            certificateId: null
           });
           
           // Create notification for user
           await storage.createNotification({
-            userId,
+            userId: userId,
             title: 'Enrollment Successful',
             message: `You have successfully enrolled in the course: ${paymentData.metadata?.courseName || 'Course'}`,
             type: 'success',
-            read: false
+            read: false,
+            linkUrl: `/courses/${courseId}`
           });
           
           return res.json({
