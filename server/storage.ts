@@ -195,6 +195,9 @@ export interface IStorage {
   // Certificates
   issueCertificate(certificateData: Omit<Certificate, "id" | "issuedAt">): Promise<Certificate>;
   getUserCertificates(userId: string): Promise<Certificate[]>;
+  getCertificate(certificateId: string): Promise<Certificate | undefined>;
+  verifyCertificate(certificateId: string): Promise<{valid: boolean; certificate?: Certificate}>;
+  generateCertificateNumber(): Promise<string>;
   
   // Coupons and ratings
   createCoupon(couponData: Omit<Coupon, "id" | "createdAt">): Promise<Coupon>;
