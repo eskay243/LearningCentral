@@ -17,15 +17,17 @@ const Courses = () => {
   const [sortBy, setSortBy] = useState("newest");
 
   // Fetch courses for the current user
-  const { data: userCourses, isLoading } = useQuery({
-    queryKey: [isMentor ? `/api/courses?mentor=${user?.id}` : `/api/user/enrollments`],
-    enabled: !!user
+  const { data: userCourses, isLoading: userCoursesLoading } = useQuery<Course[]>({
+    queryKey: [isMentor ? "/api/courses" : "/api/courses/enrolled"],
+    enabled: !!user && (isMentor || isAdmin)
   });
 
   // Fetch all published courses (for discovery)
-  const { data: publishedCourses, isLoading: isPublishedLoading } = useQuery({
+  const { data: publishedCourses, isLoading: publishedCoursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/courses?published=true"],
   });
+  
+  const isLoading = userCoursesLoading || publishedCoursesLoading;
 
   const filterCourses = (courses: any[]) => {
     if (!courses) return [];
