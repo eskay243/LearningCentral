@@ -90,6 +90,15 @@ const AdminSetup = () => {
                 Your account has been upgraded to administrator. You can now access all admin features.
               </AlertDescription>
             </Alert>
+            <div className="mt-4">
+              <Button 
+                onClick={() => setLocation("/users")} 
+                className="w-full"
+                variant="default"
+              >
+                Go to User Management
+              </Button>
+            </div>
           ) : (
             <>
               <p className="text-center text-sm">
