@@ -13,6 +13,7 @@ import {
   DollarSign, 
   Settings,
   User,
+  UsersRound,
 } from "lucide-react";
 
 interface SidebarProps {

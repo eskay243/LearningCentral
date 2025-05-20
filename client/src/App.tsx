@@ -18,6 +18,7 @@ import Analytics from "@/pages/Analytics";
 import Earnings from "@/pages/Earnings";
 import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
+import UserManagement from "@/pages/UserManagement";
 import Login from "@/pages/Login";
 import PaymentCallback from "@/pages/PaymentCallback";
 import ContentDemo from "@/pages/ContentDemo";
@@ -41,6 +42,7 @@ function Router() {
         <Route path="/earnings" component={Earnings} />
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
+        <Route path="/users" component={UserManagement} />
         <Route path="/login" component={Login} />
         <Route path="/payment-callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
