@@ -285,10 +285,17 @@ export const lessonProgress = pgTable("lesson_progress", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id").notNull().references(() => lessons.id),
   userId: varchar("user_id").notNull().references(() => users.id),
-  status: text("status").notNull().default("not_started"),
-  progress: real("progress").notNull().default(0),
+  status: text("status").notNull().default("not_started"), // not_started, in_progress, completed
+  progress: real("progress").notNull().default(0), // percentage
   lastAccessedAt: timestamp("last_accessed_at"),
   completedAt: timestamp("completed_at"),
+  timeSpent: integer("time_spent"), // in seconds
+  playbackPosition: integer("playback_position").default(0), // video position in seconds
+  notes: text("notes"), // user's personal notes
+  bookmarks: jsonb("bookmarks"), // user bookmarks for content
+  interactions: jsonb("interactions"), // click/engagement tracking
+  deviceInfo: jsonb("device_info"), // device used for learning
+  ipAddress: text("ip_address"), // for geographic tracking
 });
 
 // CourseDiscussions table
