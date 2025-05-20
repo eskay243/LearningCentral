@@ -123,18 +123,28 @@ export function registerAnalyticsRoutes(app: Express) {
           }
         }
         
-        // Get all students enrolled in the course
-        // For this we would fetch all enrollments and join with users
-        // For now, we'll just fetch all enrollments for the course
-        // TODO: Join with user data to get complete information
-        const courseEnrollments = await storage.getCourseEnrollmentsByCourse(courseId);
-        enrollments = courseEnrollments;
+        try {
+          // Get all students enrolled in the course
+          // For this we would fetch all enrollments and join with users
+          // For now, we'll just fetch all enrollments for the course
+          // TODO: Join with user data to get complete information
+          const courseEnrollments = await storage.getCourseEnrollmentsByCourse(courseId);
+          enrollments = courseEnrollments;
+        } catch (error) {
+          console.error("Error fetching course enrollments:", error);
+          // Continue with empty enrollments array
+        }
       } else if (req.user.claims.role === UserRole.MENTOR) {
         // For mentors, get enrollments for all courses they teach
         const mentorCourses = await storage.getCoursesByMentor(req.user.claims.sub);
         for (const course of mentorCourses) {
-          const courseEnrollments = await storage.getCourseEnrollmentsByCourse(course.id);
-          enrollments.push(...courseEnrollments);
+          try {
+            const courseEnrollments = await storage.getCourseEnrollmentsByCourse(course.id);
+            enrollments.push(...courseEnrollments);
+          } catch (error) {
+            console.error(`Error fetching enrollments for course ${course.id}:`, error);
+            // Continue to next course
+          }
         }
       } else {
         // For admins, get all enrollments across all courses if no specific course
@@ -142,8 +152,13 @@ export function registerAnalyticsRoutes(app: Express) {
         // or limit this somehow
         const allCourses = await storage.getCourses();
         for (const course of allCourses) {
-          const courseEnrollments = await storage.getCourseEnrollmentsByCourse(course.id);
-          enrollments.push(...courseEnrollments);
+          try {
+            const courseEnrollments = await storage.getCourseEnrollmentsByCourse(course.id);
+            enrollments.push(...courseEnrollments);
+          } catch (error) {
+            console.error(`Error fetching enrollments for course ${course.id}:`, error);
+            // Continue to next course
+          }
         }
       }
       
