@@ -32,6 +32,7 @@ const UserManagement = () => {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editForm, setEditForm] = useState({
     firstName: "",
@@ -40,6 +41,17 @@ const UserManagement = () => {
     role: "",
     bio: "",
     profileImageUrl: "",
+  });
+  
+  const [createForm, setCreateForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "student",
+    bio: "",
+    profileImageUrl: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const itemsPerPage = 10;
@@ -108,6 +120,95 @@ const UserManagement = () => {
       ...prev,
       role: value
     }));
+  };
+  
+  const handleCreateRoleChange = (value: string) => {
+    setCreateForm(prev => ({
+      ...prev,
+      role: value
+    }));
+  };
+  
+  const resetCreateForm = () => {
+    setCreateForm({
+      firstName: "",
+      lastName: "",
+      email: "",
+      role: "student",
+      bio: "",
+      profileImageUrl: "",
+      password: "",
+      confirmPassword: "",
+    });
+  };
+  
+  const handleCreateInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setCreateForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!createForm.email || !createForm.password) {
+      toast({
+        title: "Missing Required Fields",
+        description: "Email and password are required.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (createForm.password !== createForm.confirmPassword) {
+      toast({
+        title: "Passwords Don't Match",
+        description: "Please make sure your passwords match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const response = await apiRequest(
+        "POST", 
+        "/api/admin/users", 
+        {
+          firstName: createForm.firstName,
+          lastName: createForm.lastName,
+          email: createForm.email,
+          role: createForm.role,
+          bio: createForm.bio,
+          profileImageUrl: createForm.profileImageUrl,
+          password: createForm.password
+        }
+      );
+      
+      if (response.ok) {
+        toast({
+          title: "User Created",
+          description: `User ${createForm.firstName} ${createForm.lastName} has been created successfully.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+        setIsCreateDialogOpen(false);
+        resetCreateForm();
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create user");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Creation Failed",
+        description: error.message || "There was an error creating the user. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -232,6 +333,14 @@ const UserManagement = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Button onClick={() => {
+                resetCreateForm();
+                setIsCreateDialogOpen(true);
+              }}>
+                Create User
+              </Button>
+            </div>
           </div>
 
           {filteredUsers.length === 0 ? (
@@ -319,6 +428,7 @@ const UserManagement = () => {
         </CardContent>
       </Card>
 
+      {/* Edit User Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
@@ -414,6 +524,131 @@ const UserManagement = () => {
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Create User Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Add a new user to the system.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateUser}>
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center gap-4 mb-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={createForm.profileImageUrl} alt={createForm.firstName || "New User"} />
+                  <AvatarFallback>
+                    {createForm.firstName?.[0] || ''}{createForm.lastName?.[0] || ''}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <Label htmlFor="createProfileImageUrl">Profile Image URL</Label>
+                  <Input
+                    id="createProfileImageUrl"
+                    name="profileImageUrl"
+                    value={createForm.profileImageUrl}
+                    onChange={handleCreateInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="createFirstName">First Name</Label>
+                  <Input
+                    id="createFirstName"
+                    name="firstName"
+                    value={createForm.firstName}
+                    onChange={handleCreateInputChange}
+                  />
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="createLastName">Last Name</Label>
+                  <Input
+                    id="createLastName"
+                    name="lastName"
+                    value={createForm.lastName}
+                    onChange={handleCreateInputChange}
+                  />
+                </div>
+              </div>
+
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="createEmail">Email <span className="text-red-500">*</span></Label>
+                <Input
+                  id="createEmail"
+                  name="email"
+                  type="email"
+                  value={createForm.email}
+                  onChange={handleCreateInputChange}
+                  required
+                />
+              </div>
+
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="createPassword">Password <span className="text-red-500">*</span></Label>
+                <Input
+                  id="createPassword"
+                  name="password"
+                  type="password"
+                  value={createForm.password}
+                  onChange={handleCreateInputChange}
+                  required
+                />
+              </div>
+
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="createConfirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+                <Input
+                  id="createConfirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  value={createForm.confirmPassword}
+                  onChange={handleCreateInputChange}
+                  required
+                />
+              </div>
+
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="createRole">Role</Label>
+                <Select value={createForm.role} onValueChange={handleCreateRoleChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(USER_ROLES).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid w-full items-center gap-1.5">
+                <Label htmlFor="createBio">Bio</Label>
+                <Textarea
+                  id="createBio"
+                  name="bio"
+                  value={createForm.bio}
+                  onChange={handleCreateInputChange}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create User"}
               </Button>
             </DialogFooter>
           </form>
