@@ -1158,6 +1158,19 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+  
+  async getCourseEnrollmentsByCourse(courseId: number): Promise<CourseEnrollment[]> {
+    try {
+      return await db
+        .select()
+        .from(courseEnrollments)
+        .where(eq(courseEnrollments.courseId, courseId))
+        .orderBy(desc(courseEnrollments.enrolledAt));
+    } catch (error) {
+      console.error("Error fetching course enrollments:", error);
+      return [];
+    }
+  }
 
   // Lesson Management
   async createLesson(lessonData: Omit<Lesson, "id">): Promise<Lesson> {

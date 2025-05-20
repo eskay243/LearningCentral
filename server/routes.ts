@@ -8,6 +8,7 @@ import { UserRole } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
+import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -1440,6 +1441,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch certificates" });
     }
   });
+
+  // Register analytics routes
+  registerAnalyticsRoutes(app);
 
   // Create HTTP server
   const httpServer = createServer(app);
