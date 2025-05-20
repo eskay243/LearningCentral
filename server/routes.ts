@@ -1,4 +1,5 @@
-import type { Express, Request } from "express";
+import { type Express, type Request } from "express";
+import * as expressModule from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
@@ -36,7 +37,8 @@ const upload = multer({
   fileFilter: function(req, file, cb) {
     // Accept images only
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('Only image files are allowed!'), false);
+      cb(null, false);
+      return;
     }
     cb(null, true);
   }
@@ -45,6 +47,9 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   await setupAuth(app);
+  
+  // Serve uploads directory as static files
+  app.use('/uploads', expressModule.default.static(uploadsDir));
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
