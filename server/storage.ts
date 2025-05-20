@@ -97,15 +97,31 @@ export interface IStorage {
   
   // Quiz operations
   createQuiz(quizData: Omit<Quiz, "id">): Promise<Quiz>;
+  getQuiz(quizId: number): Promise<Quiz | undefined>;
+  updateQuiz(quizId: number, quizData: Partial<Quiz>): Promise<Quiz>;
+  getQuizzes(options?: { courseId?: number, moduleId?: number, lessonId?: number }): Promise<Quiz[]>;
+  getQuizzesByMentor(mentorId: string): Promise<Quiz[]>;
   getQuizzesByLesson(lessonId: number): Promise<Quiz[]>;
   addQuizQuestion(questionData: Omit<QuizQuestion, "id">): Promise<QuizQuestion>;
+  updateQuizQuestion(questionId: number, questionData: Partial<QuizQuestion>): Promise<QuizQuestion>;
+  deleteQuizQuestion(questionId: number): Promise<void>;
   getQuizQuestions(quizId: number): Promise<QuizQuestion[]>;
-  saveQuizAttempt(attemptData: Omit<QuizAttempt, "id" | "createdAt">): Promise<QuizAttempt>;
+  submitQuizAttempt(attemptData: Omit<QuizAttempt, "id" | "startedAt" | "completedAt">): Promise<QuizAttempt>;
+  getQuizAttempts(quizId: number): Promise<QuizAttempt[]>;
+  getUserQuizAttempts(userId: string, quizId?: number): Promise<QuizAttempt[]>;
   
   // Assignment operations
   createAssignment(assignmentData: Omit<Assignment, "id">): Promise<Assignment>;
+  getAssignment(assignmentId: number): Promise<Assignment | undefined>;
+  updateAssignment(assignmentId: number, assignmentData: Partial<Assignment>): Promise<Assignment>;
+  getAssignments(options?: { courseId?: number, moduleId?: number, lessonId?: number }): Promise<Assignment[]>;
+  getAssignmentsByMentor(mentorId: string): Promise<Assignment[]>;
   getAssignmentsByLesson(lessonId: number): Promise<Assignment[]>;
   submitAssignment(submissionData: Omit<AssignmentSubmission, "id" | "submittedAt">): Promise<AssignmentSubmission>;
+  getAssignmentSubmission(submissionId: number): Promise<AssignmentSubmission | undefined>;
+  getAssignmentSubmissions(assignmentId: number): Promise<AssignmentSubmission[]>;
+  getUserAssignmentSubmissions(userId: string, assignmentId?: number): Promise<AssignmentSubmission[]>;
+  gradeAssignment(submissionId: number, grade: number, feedback: string, gradedBy: string): Promise<AssignmentSubmission>;
   
   // Live session operations
   createLiveSession(sessionData: Omit<LiveSession, "id" | "createdAt">): Promise<LiveSession>;
@@ -586,6 +602,445 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error fetching lesson:", error);
       return undefined;
+    }
+  }
+
+  // Quiz operations
+  async createQuiz(quizData: Omit<Quiz, "id">): Promise<Quiz> {
+    try {
+      const [quiz] = await db
+        .insert(quizzes)
+        .values(quizData)
+        .returning();
+      return quiz;
+    } catch (error) {
+      console.error("Error creating quiz:", error);
+      throw new Error("Failed to create quiz");
+    }
+  }
+
+  async getQuiz(quizId: number): Promise<Quiz | undefined> {
+    try {
+      const [quiz] = await db
+        .select()
+        .from(quizzes)
+        .where(eq(quizzes.id, quizId));
+      return quiz;
+    } catch (error) {
+      console.error("Error fetching quiz:", error);
+      return undefined;
+    }
+  }
+
+  async updateQuiz(quizId: number, quizData: Partial<Quiz>): Promise<Quiz> {
+    try {
+      const [updatedQuiz] = await db
+        .update(quizzes)
+        .set(quizData)
+        .where(eq(quizzes.id, quizId))
+        .returning();
+      return updatedQuiz;
+    } catch (error) {
+      console.error("Error updating quiz:", error);
+      throw new Error("Failed to update quiz");
+    }
+  }
+
+  async getQuizzes(options?: { courseId?: number, moduleId?: number, lessonId?: number }): Promise<Quiz[]> {
+    try {
+      let query = db.select().from(quizzes);
+      
+      if (options?.lessonId) {
+        query = query.where(eq(quizzes.lessonId, options.lessonId));
+      } else if (options?.moduleId) {
+        // Get all lessons in the module, then filter quizzes by those lesson IDs
+        const moduleLesson = await db
+          .select({ id: lessons.id })
+          .from(lessons)
+          .where(eq(lessons.moduleId, options.moduleId));
+        
+        const lessonIds = moduleLesson.map(l => l.id);
+        
+        if (lessonIds.length > 0) {
+          query = query.where(inArray(quizzes.lessonId, lessonIds));
+        }
+      } else if (options?.courseId) {
+        // Get all modules in the course
+        const courseModules = await db
+          .select({ id: modules.id })
+          .from(modules)
+          .where(eq(modules.courseId, options.courseId));
+        
+        const moduleIds = courseModules.map(m => m.id);
+        
+        if (moduleIds.length > 0) {
+          // Get all lessons in those modules
+          const moduleLessons = await db
+            .select({ id: lessons.id })
+            .from(lessons)
+            .where(inArray(lessons.moduleId, moduleIds));
+          
+          const lessonIds = moduleLessons.map(l => l.id);
+          
+          if (lessonIds.length > 0) {
+            query = query.where(inArray(quizzes.lessonId, lessonIds));
+          }
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+      return [];
+    }
+  }
+
+  async getQuizzesByMentor(mentorId: string): Promise<Quiz[]> {
+    try {
+      // Get courses taught by this mentor
+      const mentorCourseList = await db
+        .select({ courseId: mentorCourses.courseId })
+        .from(mentorCourses)
+        .where(eq(mentorCourses.mentorId, mentorId));
+      
+      const courseIds = mentorCourseList.map(mc => mc.courseId);
+      
+      if (courseIds.length === 0) {
+        return [];
+      }
+      
+      // Get all quizzes from these courses
+      const allQuizzes = [];
+      for (const courseId of courseIds) {
+        const quizzes = await this.getQuizzes({ courseId });
+        allQuizzes.push(...quizzes);
+      }
+      
+      return allQuizzes;
+    } catch (error) {
+      console.error("Error fetching mentor quizzes:", error);
+      return [];
+    }
+  }
+
+  async getQuizzesByLesson(lessonId: number): Promise<Quiz[]> {
+    try {
+      return await db
+        .select()
+        .from(quizzes)
+        .where(eq(quizzes.lessonId, lessonId));
+    } catch (error) {
+      console.error("Error fetching lesson quizzes:", error);
+      return [];
+    }
+  }
+
+  async addQuizQuestion(questionData: Omit<QuizQuestion, "id">): Promise<QuizQuestion> {
+    try {
+      const [question] = await db
+        .insert(quizQuestions)
+        .values(questionData)
+        .returning();
+      return question;
+    } catch (error) {
+      console.error("Error adding quiz question:", error);
+      throw new Error("Failed to add quiz question");
+    }
+  }
+
+  async updateQuizQuestion(questionId: number, questionData: Partial<QuizQuestion>): Promise<QuizQuestion> {
+    try {
+      const [updatedQuestion] = await db
+        .update(quizQuestions)
+        .set(questionData)
+        .where(eq(quizQuestions.id, questionId))
+        .returning();
+      return updatedQuestion;
+    } catch (error) {
+      console.error("Error updating quiz question:", error);
+      throw new Error("Failed to update quiz question");
+    }
+  }
+
+  async deleteQuizQuestion(questionId: number): Promise<void> {
+    try {
+      await db
+        .delete(quizQuestions)
+        .where(eq(quizQuestions.id, questionId));
+    } catch (error) {
+      console.error("Error deleting quiz question:", error);
+      throw new Error("Failed to delete quiz question");
+    }
+  }
+
+  async getQuizQuestions(quizId: number): Promise<QuizQuestion[]> {
+    try {
+      return await db
+        .select()
+        .from(quizQuestions)
+        .where(eq(quizQuestions.quizId, quizId))
+        .orderBy(quizQuestions.orderIndex);
+    } catch (error) {
+      console.error("Error fetching quiz questions:", error);
+      return [];
+    }
+  }
+
+  async submitQuizAttempt(attemptData: Omit<QuizAttempt, "id" | "startedAt" | "completedAt">): Promise<QuizAttempt> {
+    try {
+      const now = new Date();
+      const [attempt] = await db
+        .insert(quizAttempts)
+        .values({
+          ...attemptData,
+          startedAt: now,
+          completedAt: now
+        })
+        .returning();
+      return attempt;
+    } catch (error) {
+      console.error("Error submitting quiz attempt:", error);
+      throw new Error("Failed to submit quiz attempt");
+    }
+  }
+
+  async getQuizAttempts(quizId: number): Promise<QuizAttempt[]> {
+    try {
+      return await db
+        .select()
+        .from(quizAttempts)
+        .where(eq(quizAttempts.quizId, quizId))
+        .orderBy(desc(quizAttempts.completedAt));
+    } catch (error) {
+      console.error("Error fetching quiz attempts:", error);
+      return [];
+    }
+  }
+
+  async getUserQuizAttempts(userId: string, quizId?: number): Promise<QuizAttempt[]> {
+    try {
+      let query = db
+        .select()
+        .from(quizAttempts)
+        .where(eq(quizAttempts.userId, userId));
+      
+      if (quizId) {
+        query = query.where(eq(quizAttempts.quizId, quizId));
+      }
+      
+      return await query.orderBy(desc(quizAttempts.completedAt));
+    } catch (error) {
+      console.error("Error fetching user quiz attempts:", error);
+      return [];
+    }
+  }
+
+  // Assignment operations
+  async createAssignment(assignmentData: Omit<Assignment, "id">): Promise<Assignment> {
+    try {
+      const [assignment] = await db
+        .insert(assignments)
+        .values(assignmentData)
+        .returning();
+      return assignment;
+    } catch (error) {
+      console.error("Error creating assignment:", error);
+      throw new Error("Failed to create assignment");
+    }
+  }
+
+  async getAssignment(assignmentId: number): Promise<Assignment | undefined> {
+    try {
+      const [assignment] = await db
+        .select()
+        .from(assignments)
+        .where(eq(assignments.id, assignmentId));
+      return assignment;
+    } catch (error) {
+      console.error("Error fetching assignment:", error);
+      return undefined;
+    }
+  }
+
+  async updateAssignment(assignmentId: number, assignmentData: Partial<Assignment>): Promise<Assignment> {
+    try {
+      const [updatedAssignment] = await db
+        .update(assignments)
+        .set(assignmentData)
+        .where(eq(assignments.id, assignmentId))
+        .returning();
+      return updatedAssignment;
+    } catch (error) {
+      console.error("Error updating assignment:", error);
+      throw new Error("Failed to update assignment");
+    }
+  }
+
+  async getAssignments(options?: { courseId?: number, moduleId?: number, lessonId?: number }): Promise<Assignment[]> {
+    try {
+      let query = db.select().from(assignments);
+      
+      if (options?.lessonId) {
+        query = query.where(eq(assignments.lessonId, options.lessonId));
+      } else if (options?.moduleId) {
+        // Get all lessons in the module, then filter assignments by those lesson IDs
+        const moduleLesson = await db
+          .select({ id: lessons.id })
+          .from(lessons)
+          .where(eq(lessons.moduleId, options.moduleId));
+        
+        const lessonIds = moduleLesson.map(l => l.id);
+        
+        if (lessonIds.length > 0) {
+          query = query.where(inArray(assignments.lessonId, lessonIds));
+        }
+      } else if (options?.courseId) {
+        // Get all modules in the course
+        const courseModules = await db
+          .select({ id: modules.id })
+          .from(modules)
+          .where(eq(modules.courseId, options.courseId));
+        
+        const moduleIds = courseModules.map(m => m.id);
+        
+        if (moduleIds.length > 0) {
+          // Get all lessons in those modules
+          const moduleLessons = await db
+            .select({ id: lessons.id })
+            .from(lessons)
+            .where(inArray(lessons.moduleId, moduleIds));
+          
+          const lessonIds = moduleLessons.map(l => l.id);
+          
+          if (lessonIds.length > 0) {
+            query = query.where(inArray(assignments.lessonId, lessonIds));
+          }
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+      return [];
+    }
+  }
+
+  async getAssignmentsByMentor(mentorId: string): Promise<Assignment[]> {
+    try {
+      // Get courses taught by this mentor
+      const mentorCourseList = await db
+        .select({ courseId: mentorCourses.courseId })
+        .from(mentorCourses)
+        .where(eq(mentorCourses.mentorId, mentorId));
+      
+      const courseIds = mentorCourseList.map(mc => mc.courseId);
+      
+      if (courseIds.length === 0) {
+        return [];
+      }
+      
+      // Get all assignments from these courses
+      const allAssignments = [];
+      for (const courseId of courseIds) {
+        const assignments = await this.getAssignments({ courseId });
+        allAssignments.push(...assignments);
+      }
+      
+      return allAssignments;
+    } catch (error) {
+      console.error("Error fetching mentor assignments:", error);
+      return [];
+    }
+  }
+
+  async getAssignmentsByLesson(lessonId: number): Promise<Assignment[]> {
+    try {
+      return await db
+        .select()
+        .from(assignments)
+        .where(eq(assignments.lessonId, lessonId));
+    } catch (error) {
+      console.error("Error fetching lesson assignments:", error);
+      return [];
+    }
+  }
+
+  async submitAssignment(submissionData: Omit<AssignmentSubmission, "id" | "submittedAt">): Promise<AssignmentSubmission> {
+    try {
+      const [submission] = await db
+        .insert(assignmentSubmissions)
+        .values({
+          ...submissionData,
+          submittedAt: new Date()
+        })
+        .returning();
+      return submission;
+    } catch (error) {
+      console.error("Error submitting assignment:", error);
+      throw new Error("Failed to submit assignment");
+    }
+  }
+
+  async getAssignmentSubmission(submissionId: number): Promise<AssignmentSubmission | undefined> {
+    try {
+      const [submission] = await db
+        .select()
+        .from(assignmentSubmissions)
+        .where(eq(assignmentSubmissions.id, submissionId));
+      return submission;
+    } catch (error) {
+      console.error("Error fetching assignment submission:", error);
+      return undefined;
+    }
+  }
+
+  async getAssignmentSubmissions(assignmentId: number): Promise<AssignmentSubmission[]> {
+    try {
+      return await db
+        .select()
+        .from(assignmentSubmissions)
+        .where(eq(assignmentSubmissions.assignmentId, assignmentId))
+        .orderBy(desc(assignmentSubmissions.submittedAt));
+    } catch (error) {
+      console.error("Error fetching assignment submissions:", error);
+      return [];
+    }
+  }
+
+  async getUserAssignmentSubmissions(userId: string, assignmentId?: number): Promise<AssignmentSubmission[]> {
+    try {
+      let query = db
+        .select()
+        .from(assignmentSubmissions)
+        .where(eq(assignmentSubmissions.userId, userId));
+      
+      if (assignmentId) {
+        query = query.where(eq(assignmentSubmissions.assignmentId, assignmentId));
+      }
+      
+      return await query.orderBy(desc(assignmentSubmissions.submittedAt));
+    } catch (error) {
+      console.error("Error fetching user assignment submissions:", error);
+      return [];
+    }
+  }
+
+  async gradeAssignment(submissionId: number, grade: number, feedback: string, gradedBy: string): Promise<AssignmentSubmission> {
+    try {
+      const [gradedSubmission] = await db
+        .update(assignmentSubmissions)
+        .set({
+          grade,
+          feedback,
+          gradedBy,
+          gradedAt: new Date()
+        })
+        .where(eq(assignmentSubmissions.id, submissionId))
+        .returning();
+      return gradedSubmission;
+    } catch (error) {
+      console.error("Error grading assignment:", error);
+      throw new Error("Failed to grade assignment");
     }
   }
   

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { UserRole } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
+import { registerAssessmentRoutes } from "./assessmentRoutes";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
