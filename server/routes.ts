@@ -877,6 +877,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Interactive Exercise API endpoints
+  app.get('/api/users/:userId/exercise-progress', isAuthenticated, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const requestingUserId = req.user.claims.sub;
+      const user = await storage.getUser(requestingUserId);
+      
+      // Security check: Users can only access their own progress unless they're a mentor/admin
+      if (userId !== requestingUserId && user?.role !== UserRole.ADMIN && user?.role !== UserRole.MENTOR) {
+        return res.status(403).json({ message: "Unauthorized to view this user's exercise progress" });
+      }
+      
+      // Get all exercise progress for this user
+      const progress = await storage.getUserExerciseProgress(userId);
+      
+      // Format the data for the frontend
+      const totalExercises = await storage.getCodingExercisesCount();
+      const completedExercises = progress.filter(p => p.completionStatus === "completed").length;
+      const inProgressExercises = progress.filter(p => p.completionStatus === "in-progress").length;
+      
+      // Get progress by difficulty
+      const exercisesByDifficulty = await storage.getCodingExercisesByDifficulty();
+      const completedByDifficulty = {
+        beginner: progress.filter(p => p.exercise?.difficulty === "beginner" && p.completionStatus === "completed").length,
+        intermediate: progress.filter(p => p.exercise?.difficulty === "intermediate" && p.completionStatus === "completed").length,
+        advanced: progress.filter(p => p.exercise?.difficulty === "advanced" && p.completionStatus === "completed").length,
+      };
+      
+      // Get recent exercises (limited to 5)
+      const recentExercises = progress
+        .sort((a, b) => new Date(b.lastAttemptedAt).getTime() - new Date(a.lastAttemptedAt).getTime())
+        .slice(0, 5)
+        .map(p => ({
+          id: p.exerciseId,
+          title: p.exercise?.title || "Untitled Exercise",
+          difficulty: p.exercise?.difficulty || "beginner",
+          language: p.exercise?.language || "javascript",
+          progress: p.progress,
+          courseId: p.exercise?.courseId,
+          moduleId: p.exercise?.moduleId,
+          lessonId: p.exercise?.lessonId,
+          lastAttempted: p.lastAttemptedAt,
+        }));
+      
+      res.json({
+        total: totalExercises,
+        completed: completedExercises,
+        inProgress: inProgressExercises,
+        totalByDifficulty: {
+          beginner: exercisesByDifficulty.beginner || 0,
+          intermediate: exercisesByDifficulty.intermediate || 0,
+          advanced: exercisesByDifficulty.advanced || 0,
+        },
+        completedByDifficulty,
+        recentExercises,
+      });
+    } catch (error: any) {
+      console.error("Error fetching exercise progress:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/courses/:courseId/exercise-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const { courseId } = req.params;
+      const requestorId = req.user.claims.sub;
+      const user = await storage.getUser(requestorId);
+      
+      // Only mentors and admins can access exercise stats
+      if (user?.role !== UserRole.ADMIN && user?.role !== UserRole.MENTOR) {
+        return res.status(403).json({ message: "Unauthorized to access exercise statistics" });
+      }
+      
+      const stats = await storage.getExerciseStatsByCourse(parseInt(courseId));
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Error fetching exercise stats:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+  app.get('/api/exercises/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const requestorId = req.user.claims.sub;
+      const user = await storage.getUser(requestorId);
+      
+      // Only mentors and admins can access exercise stats
+      if (user?.role !== UserRole.ADMIN && user?.role !== UserRole.MENTOR) {
+        return res.status(403).json({ message: "Unauthorized to access exercise statistics" });
+      }
+      
+      const mentorId = req.user.claims.sub;
+      const stats = await storage.getExerciseStatsByMentor(mentorId);
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Error fetching exercise stats:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Certificate routes
   app.post('/api/certificates', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
