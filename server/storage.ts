@@ -1610,32 +1610,15 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-
-        .values({
-          exerciseId,
-          userId,
-          ...progressData,
-          lastAttemptedAt: new Date(),
-        })
-        .returning();
       
-      progress = newProgress;
-    }
-    
-    return progress;
+  // Lesson operations for content features
+  async getLesson(lessonId: number): Promise<Lesson | undefined> {
+    const [lesson] = await db
+      .select()
+      .from(lessons)
+      .where(eq(lessons.id, lessonId));
+    return lesson;
   }
-  
-  async getUserExerciseProgress(userId: string): Promise<ExerciseProgress[]> {
-    try {
-      // Get all exercise progress for this user
-      const progress = await db.select({
-        id: exerciseProgress.id,
-        exerciseId: exerciseProgress.exerciseId,
-        userId: exerciseProgress.userId,
-        completionStatus: exerciseProgress.completionStatus,
-        progress: exerciseProgress.progress,
-        lastAttemptedAt: exerciseProgress.lastAttemptedAt,
-        submittedCode: exerciseProgress.submittedCode,
         exercise: {
           id: codingExercises.id,
           title: codingExercises.title,
