@@ -288,11 +288,24 @@ export const announcements = pgTable("announcements", {
 
 // Certificates table
 export const certificates = pgTable("certificates", {
-  id: varchar("id").primaryKey(),
+  id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   courseId: integer("course_id").notNull().references(() => courses.id),
   issuedAt: timestamp("issued_at").notNull().defaultNow(),
   template: text("template").notNull(),
+  certificateUrl: text("certificate_url"),
+  verificationCode: varchar("verification_code").notNull().unique(),
+  status: varchar("status", { enum: ["issued", "revoked"] }).default("issued"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type Certificate = typeof certificates.$inferSelect;
+export type InsertCertificate = typeof certificates.$inferInsert;
+export const insertCertificateSchema = createInsertSchema(certificates).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Coupons table

@@ -1679,6 +1679,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupWebSocketServer(httpServer);
   
   // WebSocket server is now handled by setupWebSocketServer
+  
+  // Register certificate routes for certificate management
+  app.use('/api/certificates', certificateRoutes);
 
   return httpServer;
 }
