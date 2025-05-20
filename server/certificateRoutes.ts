@@ -245,4 +245,121 @@ router.get('/:id/download', async (req, res) => {
   }
 });
 
+// Get monthly certificate issuance statistics (admin/mentor only)
+router.get('/analytics/monthly', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  try {
+    const result = await db.select({
+      month: sql`to_char(${certificates.issuedAt}, 'YYYY-MM')`,
+      count: sql`count(*)`,
+    })
+    .from(certificates)
+    .groupBy(sql`to_char(${certificates.issuedAt}, 'YYYY-MM')`)
+    .orderBy(sql`to_char(${certificates.issuedAt}, 'YYYY-MM')`);
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching monthly certificate analytics:", error);
+    res.status(500).json({ message: "Failed to fetch certificate analytics" });
+  }
+});
+
+// Get certificate analytics by course (admin/mentor only)
+router.get('/analytics/by-course', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  try {
+    // Get all certificates with course information
+    const certificatesWithCourses = await storage.getAllCertificatesWithCourseDetails();
+    
+    // Group them by course and count
+    const courseStats = {};
+    certificatesWithCourses.forEach(cert => {
+      const courseTitle = cert.courseTitle || 'Unknown Course';
+      courseStats[courseTitle] = (courseStats[courseTitle] || 0) + 1;
+    });
+    
+    // Convert to array format for frontend charts
+    const result = Object.entries(courseStats).map(([name, value]) => ({ name, value }));
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching certificate analytics by course:", error);
+    res.status(500).json({ message: "Failed to fetch certificate analytics" });
+  }
+});
+
+// Get certificate status distribution (admin/mentor only)
+router.get('/analytics/status', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  try {
+    const result = await db.select({
+      status: certificates.status,
+      count: sql`count(*)`,
+    })
+    .from(certificates)
+    .groupBy(certificates.status);
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching certificate status analytics:", error);
+    res.status(500).json({ message: "Failed to fetch certificate analytics" });
+  }
+});
+
+// Get top certificate issuers (admin/mentor only)
+router.get('/analytics/issuers', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  try {
+    const users = await storage.getUsers();
+    const allCertificates = await storage.getAllCertificates();
+    
+    // Group certificates by issuer
+    const issuerStats = {};
+    allCertificates.forEach(cert => {
+      if (cert.issuedBy) {
+        issuerStats[cert.issuedBy] = (issuerStats[cert.issuedBy] || 0) + 1;
+      }
+    });
+    
+    // Convert to array and map to include issuer names
+    const result = Object.entries(issuerStats)
+      .map(([issuerId, count]) => {
+        const issuer = users.find(user => user.id === issuerId);
+        return {
+          id: issuerId,
+          name: issuer ? `${issuer.firstName || ''} ${issuer.lastName || ''}`.trim() || issuer.email : issuerId,
+          count: count
+        };
+      })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Get top 10
+    
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching certificate issuers analytics:", error);
+    res.status(500).json({ message: "Failed to fetch certificate analytics" });
+  }
+});
+
+// Get student certification statistics (admin/mentor only)
+router.get('/analytics/students', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  try {
+    const users = await storage.getUsers();
+    const students = users.filter(user => user.role === UserRole.STUDENT);
+    const allCertificates = await storage.getAllCertificates();
+    
+    // Get unique student IDs who have certificates
+    const certifiedStudentIds = new Set(allCertificates.map(cert => cert.userId));
+    
+    // Calculate stats
+    const totalStudents = students.length;
+    const certifiedStudents = Array.from(certifiedStudentIds).length;
+    
+    res.json({
+      totalStudents,
+      certifiedStudents,
+      certificationRate: totalStudents > 0 ? Math.round((certifiedStudents / totalStudents) * 100) : 0
+    });
+  } catch (error) {
+    console.error("Error fetching student certification analytics:", error);
+    res.status(500).json({ message: "Failed to fetch certificate analytics" });
+  }
+});
+
 export default router;

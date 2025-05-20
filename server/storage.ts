@@ -2387,7 +2387,10 @@ export class DatabaseStorage implements IStorage {
       courseId: certificateData.courseId,
       template: certificateData.template,
       verificationCode,
-      status: "issued"
+      status: "issued",
+      templateStyle: certificateData.templateStyle,
+      additionalNote: certificateData.additionalNote,
+      issuedBy: certificateData.issuedBy
     }).returning();
     
     return certificate;
@@ -2396,6 +2399,72 @@ export class DatabaseStorage implements IStorage {
   async getCertificate(certificateId: number): Promise<Certificate | undefined> {
     const [certificate] = await db.select().from(certificates).where(eq(certificates.id, certificateId));
     return certificate;
+  }
+  
+  async getAllCertificates(): Promise<Certificate[]> {
+    try {
+      const allCertificates = await db.select().from(certificates);
+      return allCertificates;
+    } catch (error) {
+      console.error("Error fetching all certificates:", error);
+      return [];
+    }
+  }
+  
+  async getAllCertificatesWithCourseDetails(): Promise<any[]> {
+    try {
+      const certificatesData = await db
+        .select({
+          certificate: certificates,
+          course: {
+            id: courses.id,
+            title: courses.title,
+            description: courses.description,
+            level: courses.level,
+            category: courses.category
+          },
+          student: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            email: users.email
+          }
+        })
+        .from(certificates)
+        .leftJoin(courses, eq(certificates.courseId, courses.id))
+        .leftJoin(users, eq(certificates.userId, users.id))
+        .orderBy(desc(certificates.issuedAt));
+      
+      return certificatesData.map(data => ({
+        ...data.certificate,
+        courseTitle: data.course?.title || 'Unknown Course',
+        courseDescription: data.course?.description || '',
+        courseLevel: data.course?.level || '',
+        courseCategory: data.course?.category || '',
+        studentName: data.student ? 
+          `${data.student.firstName || ''} ${data.student.lastName || ''}`.trim() : 
+          'Unknown Student',
+        studentEmail: data.student?.email || ''
+      }));
+    } catch (error) {
+      console.error("Error fetching certificates with course details:", error);
+      return [];
+    }
+  }
+  
+  async updateCertificateStatus(certificateId: number, status: string): Promise<Certificate | undefined> {
+    try {
+      const [updatedCertificate] = await db
+        .update(certificates)
+        .set({ status })
+        .where(eq(certificates.id, certificateId))
+        .returning();
+      
+      return updatedCertificate;
+    } catch (error) {
+      console.error("Error updating certificate status:", error);
+      return undefined;
+    }
   }
   
   async getUserCertificates(userId: string): Promise<Certificate[]> {
