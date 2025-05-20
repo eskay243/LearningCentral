@@ -158,6 +158,11 @@ export interface IStorage {
   // Exercise progress tracking
   getExerciseProgress(exerciseId: number, userId: string): Promise<ExerciseProgress | undefined>;
   updateExerciseProgress(exerciseId: number, userId: string, progressData: Partial<ExerciseProgress>): Promise<ExerciseProgress>;
+  getUserExerciseProgress(userId: string): Promise<ExerciseProgress[]>;
+  getCodingExercisesCount(): Promise<number>;
+  getCodingExercisesByDifficulty(): Promise<Record<string, number>>;
+  getExerciseStatsByCourse(courseId: number): Promise<any[]>;
+  getExerciseStatsByMentor(mentorId: string): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1083,6 +1088,254 @@ export class DatabaseStorage implements IStorage {
     const existingProgress = await this.getExerciseProgress(exerciseId, userId);
     
     let progress;
+    
+    if (existingProgress) {
+      // Update existing progress
+      const [updatedProgress] = await db
+        .update(exerciseProgress)
+        .set(progressData)
+        .where(
+          and(
+            eq(exerciseProgress.exerciseId, exerciseId),
+            eq(exerciseProgress.userId, userId)
+          )
+        )
+        .returning();
+      
+      progress = updatedProgress;
+    } else {
+      // Create new progress
+      const [newProgress] = await db
+        .insert(exerciseProgress)
+        .values({
+          exerciseId,
+          userId,
+          ...progressData,
+          lastAttemptedAt: new Date(),
+        })
+        .returning();
+      
+      progress = newProgress;
+    }
+    
+    return progress;
+  }
+  
+  async getUserExerciseProgress(userId: string): Promise<ExerciseProgress[]> {
+    try {
+      // Get all exercise progress for this user
+      const progress = await db.select({
+        id: exerciseProgress.id,
+        exerciseId: exerciseProgress.exerciseId,
+        userId: exerciseProgress.userId,
+        completionStatus: exerciseProgress.completionStatus,
+        progress: exerciseProgress.progress,
+        lastAttemptedAt: exerciseProgress.lastAttemptedAt,
+        submittedCode: exerciseProgress.submittedCode,
+        attempts: exerciseProgress.attempts,
+        exercise: {
+          id: codingExercises.id,
+          title: codingExercises.title,
+          difficulty: codingExercises.difficulty,
+          language: codingExercises.language,
+          moduleId: codingExercises.moduleId,
+          lessonId: codingExercises.lessonId
+        }
+      })
+      .from(exerciseProgress)
+      .leftJoin(codingExercises, eq(exerciseProgress.exerciseId, codingExercises.id))
+      .where(eq(exerciseProgress.userId, userId));
+      
+      return progress;
+    } catch (error) {
+      console.error("Error fetching user exercise progress:", error);
+      return [];
+    }
+        .where(eq(exerciseProgress.exerciseId, exerciseId), eq(exerciseProgress.userId, userId))
+        .returning();
+      
+      progress = updatedProgress;
+    } else {
+      // Create new progress
+      const [newProgress] = await db
+        .insert(exerciseProgress)
+        .values({
+          exerciseId,
+          userId,
+          ...progressData,
+          lastAttemptedAt: new Date(),
+        })
+        .returning();
+      
+      progress = newProgress;
+    }
+    
+    return progress;
+  }
+  
+  async getUserExerciseProgress(userId: string): Promise<ExerciseProgress[]> {
+    try {
+      // Get all exercise progress for this user
+      const progress = await db.select({
+        id: exerciseProgress.id,
+        exerciseId: exerciseProgress.exerciseId,
+        userId: exerciseProgress.userId,
+        completionStatus: exerciseProgress.completionStatus,
+        progress: exerciseProgress.progress,
+        lastAttemptedAt: exerciseProgress.lastAttemptedAt,
+        submittedCode: exerciseProgress.submittedCode,
+        exercise: {
+          id: codingExercises.id,
+          title: codingExercises.title,
+          difficulty: codingExercises.difficulty,
+          language: codingExercises.language,
+          courseId: codingExercises.moduleId,
+          moduleId: codingExercises.moduleId,
+          lessonId: codingExercises.lessonId,
+        }
+      })
+      .from(exerciseProgress)
+      .leftJoin(codingExercises, eq(exerciseProgress.exerciseId, codingExercises.id))
+      .where(eq(exerciseProgress.userId, userId));
+      
+      return progress;
+    } catch (error) {
+      console.error("Error fetching user exercise progress:", error);
+      return [];
+    }
+  }
+  
+  async getCodingExercisesCount(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql`count(*)` }).from(codingExercises);
+      return parseInt(result[0].count.toString()) || 0;
+    } catch (error) {
+      console.error("Error counting coding exercises:", error);
+      return 0;
+    }
+  }
+  
+  async getCodingExercisesByDifficulty(): Promise<Record<string, number>> {
+    try {
+      const result = await db
+        .select({
+          difficulty: codingExercises.difficulty,
+          count: sql`count(*)`
+        })
+        .from(codingExercises)
+        .groupBy(codingExercises.difficulty);
+      
+      const countByDifficulty: Record<string, number> = {
+        beginner: 0,
+        intermediate: 0,
+        advanced: 0
+      };
+      
+      for (const row of result) {
+        countByDifficulty[row.difficulty as string] = parseInt(row.count.toString());
+      }
+      
+      return countByDifficulty;
+    } catch (error) {
+      console.error("Error counting exercises by difficulty:", error);
+      return {
+        beginner: 0,
+        intermediate: 0,
+        advanced: 0
+      };
+    }
+  }
+  
+  async getExerciseStatsByCourse(courseId: number): Promise<any[]> {
+    try {
+      const modules = await this.getModulesByCourse(courseId);
+      const moduleIds = modules.map(m => m.id);
+      
+      if (moduleIds.length === 0) {
+        return [];
+      }
+      
+      // Get exercises for this course
+      const exercises = await db
+        .select()
+        .from(codingExercises)
+        .where(inArray(codingExercises.moduleId, moduleIds));
+      
+      if (exercises.length === 0) {
+        return [];
+      }
+      
+      // For each exercise, get stats
+      const stats = [];
+      for (const exercise of exercises) {
+        const exerciseId = exercise.id;
+        
+        // Get all progress records for this exercise
+        const progressRecords = await db
+          .select()
+          .from(exerciseProgress)
+          .where(eq(exerciseProgress.exerciseId, exerciseId));
+        
+        // Calculate stats
+        const attempts = progressRecords.length;
+        const completions = progressRecords.filter(p => p.completionStatus === "completed").length;
+        const averageAttempts = attempts > 0 
+          ? progressRecords.reduce((sum, record) => sum + (record.attempts || 0), 0) / attempts 
+          : 0;
+        const completionRate = attempts > 0 
+          ? Math.round((completions / attempts) * 100) 
+          : 0;
+        
+        // Find the module name
+        const module = modules.find(m => m.id === exercise.moduleId);
+        
+        stats.push({
+          id: exerciseId,
+          title: exercise.title,
+          module: module?.title || "Unknown Module",
+          language: exercise.language,
+          difficulty: exercise.difficulty,
+          attempts,
+          completions,
+          averageAttempts,
+          completionRate,
+        });
+      }
+      
+      return stats;
+    } catch (error) {
+      console.error("Error fetching exercise stats by course:", error);
+      return [];
+    }
+  }
+  
+  async getExerciseStatsByMentor(mentorId: string): Promise<any[]> {
+    try {
+      // Get all courses this mentor teaches
+      const mentorCourseRecords = await db
+        .select()
+        .from(mentorCourses)
+        .where(eq(mentorCourses.mentorId, mentorId));
+      
+      const courseIds = mentorCourseRecords.map(mc => mc.courseId);
+      
+      if (courseIds.length === 0) {
+        return [];
+      }
+      
+      // Combine stats from all courses
+      const allStats = [];
+      for (const courseId of courseIds) {
+        const courseStats = await this.getExerciseStatsByCourse(courseId);
+        allStats.push(...courseStats);
+      }
+      
+      return allStats;
+    } catch (error) {
+      console.error("Error fetching exercise stats by mentor:", error);
+      return [];
+    }
+  }
     
     if (existingProgress) {
       // Update existing progress
