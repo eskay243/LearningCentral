@@ -372,6 +372,7 @@ export const contentShares = pgTable("content_shares", {
 // Interactive Coding Exercises table
 export const codingExercises = pgTable("coding_exercises", {
   id: serial("id").primaryKey(),
+  courseId: integer("course_id").references(() => courses.id),
   lessonId: integer("lesson_id").references(() => lessons.id),
   moduleId: integer("module_id").references(() => modules.id),
   title: text("title").notNull(),
