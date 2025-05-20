@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
 import { z } from "zod";
 import { UserRole } from "@shared/schema";
+import { initializePayment, verifyPayment } from "./paystack";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
@@ -463,6 +464,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+  
+  // Paystack payment routes
+  app.post('/api/payments/initialize', isAuthenticated, async (req: any, res) => {
+    try {
+      const { courseId, amount } = req.body;
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "User email required for payment" });
+      }
+      
+      // Check if already enrolled
+      const existingEnrollment = await storage.getCourseEnrollment(courseId, userId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+      
+      // Get course details for metadata
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Initialize payment with Paystack
+      const paymentData = await initializePayment({
+        email: user.email,
+        amount,
+        metadata: {
+          courseId,
+          userId,
+          courseName: course.title
+        },
+        callbackUrl: `${req.protocol}://${req.get('host')}/payment-callback`
+      });
+      
+      res.json({
+        authorizationUrl: paymentData.authorization_url,
+        reference: paymentData.reference,
+      });
+    } catch (error: any) {
+      console.error("Error initializing payment:", error);
+      res.status(500).json({ message: `Payment initialization failed: ${error.message}` });
+    }
+  });
+  
+  app.get('/api/payments/verify/:reference', isAuthenticated, async (req: any, res) => {
+    try {
+      const { reference } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Verify payment with Paystack
+      const paymentData = await verifyPayment(reference);
+      
+      if (paymentData.status === 'success') {
+        // Extract course ID from metadata
+        const courseId = paymentData.metadata?.courseId;
+        
+        if (courseId) {
+          // Enroll the user in the course
+          const enrollment = await storage.enrollUserInCourse({
+            courseId,
+            userId,
+            paymentReference: reference,
+            paymentAmount: paymentData.amount / 100, // Convert from kobo to naira
+            paymentStatus: 'completed'
+          });
+          
+          // Create notification for user
+          await storage.createNotification({
+            userId,
+            title: 'Enrollment Successful',
+            message: `You have successfully enrolled in the course: ${paymentData.metadata?.courseName || 'Course'}`,
+            type: 'success',
+            read: false
+          });
+          
+          return res.json({
+            success: true,
+            enrollment
+          });
+        }
+      }
+      
+      res.json({
+        success: false,
+        status: paymentData.status,
+        message: 'Payment verification completed but enrollment failed'
+      });
+    } catch (error: any) {
+      console.error("Error verifying payment:", error);
+      res.status(500).json({ message: `Payment verification failed: ${error.message}` });
     }
   });
 

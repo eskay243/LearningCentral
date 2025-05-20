@@ -1,3 +1,4 @@
+// @ts-ignore
 import Paystack from "paystack-node";
 
 if (!process.env.PAYSTACK_SECRET_KEY) {
