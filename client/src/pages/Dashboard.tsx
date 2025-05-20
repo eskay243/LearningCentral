@@ -280,20 +280,20 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-3 sm:p-4 md:p-6">
       {/* Welcome Section */}
-      <div className="mb-6 md:flex md:items-center md:justify-between">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-dark-800">
+          <h1 className="text-xl sm:text-2xl font-bold text-dark-800 dark:text-gray-100">
             Welcome, {getFullName(user) || "Student"}!
           </h1>
-          <p className="mt-1 text-gray-500">{formatDate(new Date(), false)}</p>
+          <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400">{formatDate(new Date(), false)}</p>
         </div>
         
-        <div className="mt-4 md:mt-0 flex gap-2">
+        <div className="mt-3 sm:mt-0 flex gap-2">
           {(isMentor || isAdmin) && (
-            <Button>
-              <i className="ri-add-line mr-2"></i>
+            <Button size="sm" className="w-full sm:w-auto">
+              <i className="ri-add-line mr-1 sm:mr-2"></i>
               Create Class
             </Button>
           )}
@@ -301,17 +301,17 @@ const Dashboard = () => {
       </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
         {statsCards.map((item) => (
           <StatsCard key={item.id} item={item} />
         ))}
       </div>
       
       {/* Upcoming Live Classes */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-dark-800">Upcoming Live Classes</h2>
-          <a href="/schedule" className="text-sm font-medium text-primary-600 hover:text-primary-700">View All</a>
+      <div className="mb-5 sm:mb-8">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-dark-800 dark:text-gray-100">Upcoming Live Classes</h2>
+          <a href="/schedule" className="text-xs sm:text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-500 dark:hover:text-primary-400">View All</a>
         </div>
         
         <UpcomingClasses 
@@ -321,14 +321,14 @@ const Dashboard = () => {
       </div>
       
       {/* Two Column Layout for Activities and Progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-5 sm:mb-8">
         {/* Student Progress for mentors/admins */}
         {(isMentor || isAdmin) && (
           <div className="lg:col-span-2">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-dark-800">Student Progress</h2>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3 sm:mb-4 gap-2 sm:gap-0">
+              <h2 className="text-base sm:text-lg font-semibold text-dark-800 dark:text-gray-100">Student Progress</h2>
               <Select defaultValue="all">
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="All Courses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -356,8 +356,8 @@ const Dashboard = () => {
         
         {/* Recent Activity */}
         <div className={`${(isMentor || isAdmin) ? 'lg:col-span-1' : 'lg:col-span-1'}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-dark-800">Recent Activity</h2>
+          <div className="flex justify-between items-center mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-semibold text-dark-800 dark:text-gray-100">Recent Activity</h2>
           </div>
           
           <RecentActivity 
@@ -369,11 +369,11 @@ const Dashboard = () => {
       
       {/* Exercise Analytics for Mentors */}
       {(isMentor || isAdmin) && (
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-dark-800">Exercise Analytics</h2>
+        <div className="mb-5 sm:mb-8">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3 sm:mb-4 gap-2 sm:gap-0">
+            <h2 className="text-base sm:text-lg font-semibold text-dark-800 dark:text-gray-100">Exercise Analytics</h2>
             <Select defaultValue="all">
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="All Courses" />
               </SelectTrigger>
               <SelectContent>
@@ -389,12 +389,12 @@ const Dashboard = () => {
       )}
       
       {/* My Courses Section */}
-      <div className="mt-8 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-dark-800">My Courses</h2>
-          <div className="flex items-center space-x-2">
+      <div className="mt-5 sm:mt-8 mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3 sm:mb-4 gap-2 sm:gap-0">
+          <h2 className="text-base sm:text-lg font-semibold text-dark-800 dark:text-gray-100">My Courses</h2>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2 w-full sm:w-auto">
             <Select defaultValue="active">
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-full sm:w-[150px]">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -405,15 +405,15 @@ const Dashboard = () => {
               </SelectContent>
             </Select>
             {(isMentor || isAdmin) && (
-              <Button variant="outline">
-                <i className="ri-add-line mr-2"></i>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <i className="ri-add-line mr-1 sm:mr-2"></i>
                 New Course
               </Button>
             )}
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {courses.map((course) => (
             <CourseCard key={course.id} course={course} />
           ))}
