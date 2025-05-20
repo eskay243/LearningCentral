@@ -299,26 +299,26 @@ const CourseDetail = () => {
     return lessons.map((lesson) => (
       <div 
         key={lesson.id} 
-        className="flex items-center justify-between py-3 border-b last:border-0"
+        className="flex items-center justify-between py-2 sm:py-3 border-b last:border-0 dark:border-gray-700"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {lesson.contentType === "video" ? (
-            <PlayIcon className="h-5 w-5 text-blue-500" />
+            <PlayIcon className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
           ) : lesson.contentType === "quiz" ? (
-            <CheckIcon className="h-5 w-5 text-green-500" />
+            <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
           ) : (
-            <FileIcon className="h-5 w-5 text-gray-500" />
+            <FileIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 dark:text-gray-400" />
           )}
           <div>
-            <div className="font-medium">
+            <div className="font-medium text-sm sm:text-base dark:text-gray-200">
               {lesson.title}
               {lesson.isPreview && (
-                <Badge variant="outline" className="ml-2 text-xs">
+                <Badge variant="outline" className="ml-1 sm:ml-2 text-[10px] sm:text-xs">
                   Preview
                 </Badge>
               )}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
               {lesson.contentType === "video" 
                 ? `${Math.floor(lesson.duration / 60)}:${String(lesson.duration % 60).padStart(2, '0')}`
                 : lesson.contentType === "quiz"
@@ -331,20 +331,20 @@ const CourseDetail = () => {
         <div className="flex gap-2">
           {(user?.role === UserRole.ADMIN || user?.role === UserRole.MENTOR) && (
             <>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <EditIcon className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
+                <EditIcon className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
               {lesson.isPreview ? (
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <UnlockIcon className="h-4 w-4 text-green-500" />
+                <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
+                  <UnlockIcon className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                 </Button>
               ) : (
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <LockIcon className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0">
+                  <LockIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               )}
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500">
-                <TrashIcon className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-red-500">
+                <TrashIcon className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </>
           )}
@@ -598,13 +598,13 @@ const CourseDetail = () => {
               ) : modules && modules.length > 0 ? (
                 <div className="space-y-6">
                   {modules.map((module: any) => (
-                    <Card key={module.id}>
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
+                    <Card key={module.id} className="dark:bg-gray-800">
+                      <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-4">
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-2 sm:gap-0">
                           <div>
-                            <CardTitle>{module.title}</CardTitle>
+                            <CardTitle className="text-base sm:text-lg dark:text-white">{module.title}</CardTitle>
                             {module.description && (
-                              <CardDescription>{module.description}</CardDescription>
+                              <CardDescription className="text-xs sm:text-sm dark:text-gray-300">{module.description}</CardDescription>
                             )}
                           </div>
                           {canEdit && (
