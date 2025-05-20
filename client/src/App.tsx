@@ -8,6 +8,7 @@ import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Courses from "@/pages/Courses";
 import CourseView from "@/pages/CourseView";
+import CourseExercises from "@/pages/CourseExercises";
 import CreateCourse from "@/pages/CreateCourse";
 import Schedule from "@/pages/Schedule";
 import Students from "@/pages/Students";
@@ -30,6 +31,7 @@ function Router() {
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/courses" component={Courses} />
         <Route path="/courses/:id" component={CourseView} />
+        <Route path="/courses/:id/exercises" component={CourseExercises} />
         <Route path="/create-course" component={CreateCourse} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/students" component={Students} />
