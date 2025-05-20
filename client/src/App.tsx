@@ -20,6 +20,7 @@ import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import PaymentCallback from "@/pages/PaymentCallback";
 import ContentDemo from "@/pages/ContentDemo";
+import InteractiveLearning from "@/pages/InteractiveLearning";
 
 function Router() {
   return (
@@ -41,6 +42,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/payment-callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
+        <Route path="/interactive-learning" component={InteractiveLearning} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
