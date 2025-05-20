@@ -10,6 +10,7 @@ import { setUserAsAdmin } from "./admin-setup";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
+import { MessageWebSocketServer } from "./websocketServer";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
