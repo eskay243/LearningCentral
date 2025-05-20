@@ -1682,6 +1682,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register certificate routes for certificate management
   app.use('/api/certificates', certificateRoutes);
+  
+  // Basic course data for analytics
+  app.get('/api/courses/basic', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const courses = await storage.getCourses();
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching basic course data:", error);
+      res.status(500).json({ message: "Failed to fetch course data" });
+    }
+  });
+  
+  // Get student users for analytics
+  app.get('/api/users/students', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const students = await storage.getUsersByRole(UserRole.STUDENT);
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+      res.status(500).json({ message: "User not found" });
+    }
+  });
 
   return httpServer;
 }
