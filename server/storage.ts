@@ -289,21 +289,11 @@ export class DatabaseStorage implements IStorage {
   async getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]> {
     const now = new Date();
     
-    // Build the basic query without courseId filtering first
-    let query = db
-      .select()
-      .from(liveSessions)
-      .where(and(
-        gt(liveSessions.startTime, now),
-        eq(liveSessions.status, "scheduled")
-      ))
-      .orderBy(asc(liveSessions.startTime));
-    
-    // Apply courseId filter if provided
+    // If we have a courseId filter, we need to get the lessons for that course first
     if (options?.courseId) {
-      // First, get modules for the course
+      // Get modules for the course
       const courseModules = await db
-        .select({ id: modules.id })
+        .select()
         .from(modules)
         .where(eq(modules.courseId, options.courseId));
       
@@ -313,9 +303,9 @@ export class DatabaseStorage implements IStorage {
       
       const moduleIds = courseModules.map(module => module.id);
       
-      // Next, get lessons for these modules
+      // Get lessons for these modules
       const moduleLessons = await db
-        .select({ id: lessons.id })
+        .select()
         .from(lessons)
         .where(inArray(lessons.moduleId, moduleIds));
       
@@ -323,28 +313,37 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      // Extract the lesson IDs
       const lessonIds = moduleLessons.map(lesson => lesson.id);
       
-      // Execute a new query with the lessonId filter
-      query = db
+      // Get upcoming live sessions for these lessons
+      // Execute the sessions query with proper filters
+      const sessions = await db
         .select()
         .from(liveSessions)
         .where(and(
-          gt(liveSessions.startTime, now),
+          gte(liveSessions.startTime, now),
           eq(liveSessions.status, "scheduled"),
           inArray(liveSessions.lessonId, lessonIds)
         ))
-        .orderBy(asc(liveSessions.startTime));
+        .orderBy(asc(liveSessions.startTime))
+        .limit(options.limit || 100);
+      
+      return sessions;
     }
     
-    // Apply limit if provided
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
+    // If no courseId filter, get all upcoming sessions
+    // Get all upcoming sessions
+    const sessions = await db
+      .select()
+      .from(liveSessions)
+      .where(and(
+        gte(liveSessions.startTime, now),
+        eq(liveSessions.status, "scheduled")
+      ))
+      .orderBy(asc(liveSessions.startTime))
+      .limit(options?.limit || 100);
     
-    // Execute the query and return results
-    return await query;
+    return sessions;
   }
   
   async updateLiveSession(id: number, updates: Partial<LiveSession>): Promise<LiveSession> {
