@@ -29,7 +29,10 @@ import {
   Send,
   User,
   UsersRound,
-  Loader2
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Menu
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useLocation, Link } from 'wouter';
@@ -524,11 +527,11 @@ export default function MessagesEnhanced() {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium truncate">
+                        <h3 className="text-sm sm:text-base font-medium truncate dark:text-gray-200">
                           {getConversationDisplayName(conversation)}
                         </h3>
                         {conversation.lastMessage?.sentAt && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-[10px] sm:text-xs text-muted-foreground dark:text-gray-400">
                             {new Date(conversation.lastMessage.sentAt).toLocaleTimeString([], { 
                               hour: '2-digit', 
                               minute: '2-digit' 
@@ -621,11 +624,23 @@ export default function MessagesEnhanced() {
               </div>
             </div>
             
+            {/* Mobile Menu Button */}
+            <div className="md:hidden absolute top-3 left-3 z-30">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={toggleMobileSidebar}
+                className="h-8 w-8 bg-background/80 backdrop-blur-sm"
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            </div>
+            
             {/* Messages list */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
               {isLoadingMessages ? (
-                <div className="flex justify-center p-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex justify-center p-4 sm:p-8">
+                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
                 </div>
               ) : messages?.length > 0 ? (
                 <div>
@@ -649,9 +664,9 @@ export default function MessagesEnhanced() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full">
-                  <div className="max-w-md text-center">
-                    <h3 className="font-medium mb-2">No messages yet</h3>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="max-w-md text-center px-4">
+                    <h3 className="text-sm sm:text-base font-medium mb-2 dark:text-gray-100">No messages yet</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground dark:text-gray-400">
                       Send a message to start the conversation
                     </p>
                   </div>
@@ -661,13 +676,13 @@ export default function MessagesEnhanced() {
             
             {/* Reply indicator */}
             {replyToMessage && (
-              <div className="px-4 py-2 bg-muted border-t flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="border-l-2 border-primary pl-2">
-                    <div className="text-xs font-medium">
+              <div className="px-3 sm:px-4 py-2 bg-muted dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="flex items-center overflow-hidden">
+                  <div className="border-l-2 border-primary pl-2 max-w-full">
+                    <div className="text-xs font-medium dark:text-gray-200 truncate">
                       Replying to {replyToMessage.senderId === user.id ? 'yourself' : (replyToMessage.senderName || 'Unknown')}
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
+                    <div className="text-xs text-muted-foreground dark:text-gray-400 truncate">
                       {replyToMessage.content}
                     </div>
                   </div>
@@ -675,7 +690,7 @@ export default function MessagesEnhanced() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-6 w-6" 
+                  className="h-6 w-6 flex-shrink-0" 
                   onClick={() => setReplyToMessage(null)}
                 >
                   <Plus className="h-4 w-4 rotate-45" />
@@ -684,7 +699,7 @@ export default function MessagesEnhanced() {
             )}
             
             {/* Message input */}
-            <div className="p-4 border-t">
+            <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700">
               <RichTextEditor
                 value={newMessage}
                 onChange={(value) => {
@@ -700,9 +715,10 @@ export default function MessagesEnhanced() {
                 attachment={attachment}
                 onAttachment={handleFileAttached}
                 placeholder="Type a message..."
+                className="text-sm"
               />
               
-              <div className="flex justify-between items-center mt-2">
+              <div className="flex flex-wrap gap-2 justify-between items-center mt-2">
                 <div className="text-xs text-muted-foreground">
                   {conversations?.find(c => c.id === activeConversationId)?.typingUsers?.length > 0 && (
                     <span className="italic">Someone is typing...</span>

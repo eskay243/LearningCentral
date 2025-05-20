@@ -380,27 +380,29 @@ const CourseDetail = () => {
 
   return (
     <div className="container py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Course Information Column */}
         <div className="lg:col-span-2">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start mb-4 gap-3 sm:gap-0">
             <div>
-              <h1 className="text-3xl font-bold">{course.title}</h1>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant={course.isPublished ? "success" : "secondary"}>
+              <h1 className="text-2xl sm:text-3xl font-bold dark:text-white">{course.title}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <Badge variant={course.isPublished ? "success" : "secondary"} className="text-xs sm:text-sm">
                   {course.isPublished ? "Published" : "Draft"}
                 </Badge>
-                {course.category && <Badge variant="outline">{course.category}</Badge>}
+                {course.category && <Badge variant="outline" className="text-xs sm:text-sm">{course.category}</Badge>}
               </div>
             </div>
             {canEdit && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                 {isEditMode ? (
                   <>
-                    <Button variant="outline" onClick={() => setIsEditMode(false)}>
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => setIsEditMode(false)}>
                       Cancel
                     </Button>
                     <Button 
+                      size="sm"
+                      className="text-xs sm:text-sm"
                       onClick={handleUpdateCourse}
                       disabled={updateCourseMutation.isPending}
                     >
@@ -408,8 +410,8 @@ const CourseDetail = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button onClick={() => setIsEditMode(true)}>
-                    <EditIcon className="h-4 w-4 mr-2" />
+                  <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm" onClick={() => setIsEditMode(true)}>
+                    <EditIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Edit Course
                   </Button>
                 )}
