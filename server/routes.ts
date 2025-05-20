@@ -9,6 +9,7 @@ import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
+import communicationRoutes from "./communicationRoutes";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -55,6 +56,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register assessment routes
   registerAssessmentRoutes(app);
+  
+  // Register analytics routes
+  registerAnalyticsRoutes(app);
+  
+  // Register communication routes
+  app.use('/api', communicationRoutes);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
