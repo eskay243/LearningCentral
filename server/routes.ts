@@ -198,6 +198,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Course Module Routes
+  app.get('/api/courses/:id/modules', async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      const modules = await storage.getModulesByCourse(courseId);
+      
+      // For each module, fetch its lessons
+      const modulesWithLessons = await Promise.all(
+        modules.map(async (module) => {
+          const lessons = await storage.getLessonsByModule(module.id);
+          return {
+            ...module,
+            lessons
+          };
+        })
+      );
+      
+      res.json(modulesWithLessons);
+    } catch (error) {
+      console.error("Error fetching course modules:", error);
+      res.status(500).json({ message: "Failed to fetch course modules" });
+    }
+  });
+  
+  app.post('/api/modules', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const moduleData = {
+        courseId: req.body.courseId,
+        title: req.body.title,
+        description: req.body.description,
+        orderIndex: req.body.orderIndex || 0
+      };
+      
+      const module = await storage.createModule(moduleData);
+      res.status(201).json(module);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+  
+  // Lesson Routes
+  app.get('/api/modules/:moduleId/lessons', async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.moduleId);
+      if (isNaN(moduleId)) {
+        return res.status(400).json({ message: "Invalid module ID" });
+      }
+      
+      const lessons = await storage.getLessonsByModule(moduleId);
+      res.json(lessons);
+    } catch (error) {
+      console.error("Error fetching lessons:", error);
+      res.status(500).json({ message: "Failed to fetch lessons" });
+    }
+  });
+  
+  app.post('/api/lessons', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const lessonData = {
+        moduleId: req.body.moduleId,
+        title: req.body.title,
+        description: req.body.description,
+        content: req.body.content,
+        contentType: req.body.contentType || "text",
+        isPreview: req.body.isPreview || false,
+        orderIndex: req.body.orderIndex || 0,
+        published: true
+      };
+      
+      const lesson = await storage.createLesson(lessonData);
+      res.status(201).json(lesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+  
+  // Course Enrollment Routes
+  app.get('/api/courses/:id/enrollment', isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      const enrollment = await storage.getCourseEnrollment(courseId, userId);
+      res.json(enrollment || null);
+    } catch (error) {
+      console.error("Error fetching enrollment:", error);
+      res.status(500).json({ message: "Failed to fetch enrollment" });
+    }
+  });
+  
+  app.post('/api/courses/:id/enroll', isAuthenticated, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Check if user is already enrolled
+      const existingEnrollment = await storage.getCourseEnrollment(courseId, userId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "You are already enrolled in this course" });
+      }
+      
+      // Get course details to check price
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      let enrollmentData: any = {
+        courseId,
+        userId,
+        progress: 0
+      };
+      
+      // Handle free courses immediately
+      if (course.price <= 0) {
+        enrollmentData.paymentStatus = "completed";
+        const enrollment = await storage.enrollUserInCourse(enrollmentData);
+        return res.status(201).json(enrollment);
+      }
+      
+      // For paid courses, handle payment or create pending enrollment
+      // For now we'll create a pending enrollment that will be updated after payment
+      enrollmentData.paymentStatus = "pending";
+      enrollmentData.paymentAmount = course.price;
+      
+      const enrollment = await storage.enrollUserInCourse(enrollmentData);
+      
+      res.status(201).json({
+        enrollment,
+        requiresPayment: true,
+        amount: course.price
+      });
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+      res.status(500).json({ message: "Failed to enroll in course" });
+    }
+  });
+  
   // Handle file uploads for user creation
   app.post('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), upload.single('profileImage'), async (req, res) => {
     try {

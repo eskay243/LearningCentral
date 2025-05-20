@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Courses from "@/pages/Courses";
+import CourseDetail from "@/pages/CourseDetail";
 import CourseView from "@/pages/CourseView";
 import CourseExercises from "@/pages/CourseExercises";
 import CreateCourse from "@/pages/CreateCourse";
@@ -32,8 +33,9 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/courses" component={Courses} />
-        <Route path="/courses/:id" component={CourseView} />
+        <Route path="/courses/:id" component={CourseDetail} />
         <Route path="/courses/:id/exercises" component={CourseExercises} />
+        <Route path="/courses/:id/view" component={CourseView} />
         <Route path="/create-course" component={CreateCourse} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/students" component={Students} />

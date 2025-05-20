@@ -1,96 +1,97 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation } from "wouter";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import useAuth from "@/hooks/useAuth";
 
-// Course creation schema with validations
-const courseSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }).max(100),
-  description: z.string().min(10, { message: "Description must be at least 10 characters" }),
-  thumbnail: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal("")),
-  price: z.coerce.number().min(0, { message: "Price cannot be negative" }),
-  category: z.string().min(1, { message: "Please select a category" }),
-  tags: z.string().optional(), // Will be split into array
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Define the form schema
+const formSchema = z.object({
+  title: z.string().min(5, { message: "Title must be at least 5 characters" }),
+  description: z.string().min(20, { message: "Description must be at least 20 characters" }),
+  thumbnail: z.string().optional(),
+  price: z.string().transform((val) => (val === "" ? "0" : val)),
   isPublished: z.boolean().default(false),
+  category: z.string().optional(),
+  tags: z.string().optional().transform((val) => val ? val.split(',').map(tag => tag.trim()) : []),
 });
 
-type CourseFormValues = z.infer<typeof courseSchema>;
+type FormValues = z.infer<typeof formSchema>;
 
 const CreateCourse = () => {
   const [, navigate] = useLocation();
-  const { isAdmin, isMentor } = useAuth();
-  const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
+  const { user, isLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState("basic");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize the form
-  const form = useForm<CourseFormValues>({
-    resolver: zodResolver(courseSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       description: "",
       thumbnail: "",
-      price: 0,
+      price: "0",
+      isPublished: false,
       category: "",
       tags: "",
-      isPublished: false,
     },
   });
 
-  // Set up course creation mutation
-  const createCourseMutation = useMutation({
-    mutationFn: (data: CourseFormValues) => {
-      // Transform tags from string to array
-      const tagsArray = data.tags ? data.tags.split(",").map(tag => tag.trim()) : [];
+  const onSubmit = async (values: FormValues) => {
+    try {
+      setIsSubmitting(true);
+      const response = await apiRequest("POST", "/api/courses", values);
       
-      return apiRequest("POST", "/api/courses", {
-        ...data,
-        tags: tagsArray,
-      });
-    },
-    onSuccess: async (response) => {
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create course");
+      }
+      
       const courseData = await response.json();
+      
       toast({
-        title: "Course created successfully",
-        description: "You can now add content to your course.",
+        title: "Course created successfully!",
+        description: "You can now add modules and lessons to your course.",
       });
+      
+      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      
+      // Navigate to the course edit page
       navigate(`/courses/${courseData.id}`);
-    },
-    onError: (error) => {
+    } catch (error: any) {
       toast({
         title: "Failed to create course",
-        description: error.message || "An unexpected error occurred. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
-    },
-  });
-
-  // Handle form submission
-  const onSubmit = (data: CourseFormValues) => {
-    if (!isAdmin && !isMentor) {
-      toast({
-        title: "Permission denied",
-        description: "You need to be a mentor or admin to create courses.",
-        variant: "destructive",
-      });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    createCourseMutation.mutate(data);
   };
 
   const categories = [
@@ -100,73 +101,82 @@ const CreateCourse = () => {
     { value: "web", label: "Web Development" },
     { value: "data", label: "Data Science" },
     { value: "mobile", label: "Mobile Development" },
+    { value: "design", label: "Design" },
+    { value: "marketing", label: "Marketing" },
+    { value: "business", label: "Business" },
     { value: "other", label: "Other" },
   ];
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark-800">Create New Course</h1>
-        <p className="mt-1 text-gray-500">Set up your course details to get started</p>
+    <div className="container py-6 max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Create a New Course</h1>
+          <p className="text-gray-500">Fill in the details to create your course</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/courses")}>Cancel</Button>
       </div>
-      
-      <Card className="max-w-3xl mx-auto">
+
+      <Card>
         <CardHeader>
-          <CardTitle>Course Information</CardTitle>
-          <CardDescription>
-            Fill in the basic information about your course
-          </CardDescription>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-3 w-full max-w-md">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course Title*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Advanced JavaScript Programming" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Choose a clear, specific title that describes what students will learn
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Course Description*</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe your course in detail..." 
-                        className="min-h-32"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Explain what students will learn, requirements, and target audience
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TabsContent value="basic" className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Course Title*</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Complete JavaScript Course 2025" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        A clear, specific title performs better
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Course Description*</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="What your students will learn in this course..."
+                          className="min-h-32"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Detailed descriptions help with discoverability
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category*</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <FormLabel>Category</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -183,7 +193,7 @@ const CreateCourse = () => {
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Choose the most relevant category
+                        Categorizing your course helps with discoverability
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -197,95 +207,138 @@ const CreateCourse = () => {
                     <FormItem>
                       <FormLabel>Tags</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="javascript, web, programming" 
-                          {...field} 
+                        <Input
+                          placeholder="web,javascript,beginners"
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        Comma-separated tags to help with discoverability
+                        Comma-separated tags (e.g. web,javascript,beginners)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="thumbnail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Thumbnail URL</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="https://example.com/your-image.jpg" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Provide a URL for your course thumbnail image (recommended ratio 16:9)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        step="0.01" 
-                        placeholder="0.00" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Set to 0 for a free course
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="isPublished"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Publish Course
-                      </FormLabel>
+                
+                <FormField
+                  control={form.control}
+                  name="thumbnail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Thumbnail URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/image.jpg"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormDescription>
-                        When published, your course will be visible to students
+                        URL to your course thumbnail image
                       </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
               
-              <div className="flex justify-between pt-4">
-                <Button type="button" variant="outline" onClick={() => navigate("/courses")}>
+              <TabsContent value="pricing" className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price (₦)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Set to 0 for a free course
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="pt-4">
+                  <h3 className="text-lg font-medium mb-2">Pricing Strategy</h3>
+                  <p className="text-gray-500 mb-4">
+                    Consider your pricing carefully. Premium pricing signals quality,
+                    but lower prices may attract more students.
+                  </p>
+                  
+                  <div className="bg-blue-50 p-4 rounded-md">
+                    <h4 className="text-blue-700 font-medium">Pricing Tips</h4>
+                    <ul className="text-blue-600 text-sm space-y-1 mt-1">
+                      <li>• Research competitor pricing for similar courses</li>
+                      <li>• Consider your target audience's purchasing power</li>
+                      <li>• You can adjust pricing later as needed</li>
+                      <li>• Free courses can help build your audience</li>
+                    </ul>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="settings" className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="isPublished"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Publish Course
+                        </FormLabel>
+                        <FormDescription>
+                          When published, your course will be visible to students
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                
+                <Separator />
+                
+                <div className="bg-yellow-50 p-4 rounded-md">
+                  <h4 className="text-yellow-700 font-medium">Course Creation Tips</h4>
+                  <ul className="text-yellow-600 text-sm space-y-1 mt-1">
+                    <li>• You can save as draft and publish later</li>
+                    <li>• After creating, you'll be able to add modules and lessons</li>
+                    <li>• Organize your content logically for better learning outcomes</li>
+                    <li>• Include a mix of content types (videos, text, quizzes, etc.)</li>
+                  </ul>
+                </div>
+              </TabsContent>
+              
+              <div className="pt-4 flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/courses")}
+                >
                   Cancel
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={createCourseMutation.isPending}
+                  disabled={isSubmitting}
                 >
-                  {createCourseMutation.isPending ? "Creating..." : "Create Course"}
+                  {isSubmitting ? (
+                    <>
+                      <span className="animate-spin mr-2">⟳</span> 
+                      Creating...
+                    </>
+                  ) : "Create Course"}
                 </Button>
               </div>
             </form>
