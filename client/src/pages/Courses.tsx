@@ -29,13 +29,13 @@ const Courses = () => {
   
   const isLoading = userCoursesLoading || publishedCoursesLoading;
 
-  const filterCourses = (courses: any[]) => {
-    if (!courses) return [];
+  const filterCourses = (courses: Course[] | undefined) => {
+    if (!courses || courses.length === 0) return [];
     
     return courses
       .filter(course => 
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.description.toLowerCase().includes(searchTerm.toLowerCase())
+        (course.description && course.description.toLowerCase().includes(searchTerm.toLowerCase()))
       )
       .filter(course => 
         categoryFilter === "all" || course.category === categoryFilter
@@ -77,16 +77,10 @@ const Courses = () => {
     { value: "price-desc", label: "Price (High to Low)" },
   ];
 
-  const getCourseStatusClass = (status: string) => {
-    const classes = {
-      "draft": "bg-gray-100 text-gray-800",
-      "published": "bg-green-100 text-green-800",
-      "archived": "bg-red-100 text-red-800",
-    };
-    return classes[status as keyof typeof classes] || classes.draft;
-  };
+
   
-  const filteredCourses = filterCourses(isMentor || isAdmin ? userCourses : publishedCourses);
+  const coursesToShow = isMentor || isAdmin ? userCourses : publishedCourses;
+  const filteredCourses = filterCourses(coursesToShow);
   
   return (
     <div className="p-4 md:p-6">
@@ -192,7 +186,7 @@ const Courses = () => {
               </div>
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <Badge variant={course.isPublished ? "success" : "secondary"}>
+                  <Badge variant={course.isPublished ? "default" : "secondary"} className={course.isPublished ? "bg-green-100 text-green-800" : ""}>
                     {course.isPublished ? "Published" : "Draft"}
                   </Badge>
                   {course.price > 0 ? (

@@ -281,6 +281,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Course Enrollment Routes
+  // Get all enrolled courses for the current user
+  app.get('/api/courses/enrolled', isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Get all enrollments for this user
+      const enrollments = await storage.getEnrolledCourses(userId);
+      
+      if (!enrollments || enrollments.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get course details for each enrollment
+      const enrolledCourses = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const course = await storage.getCourse(enrollment.courseId);
+          if (!course) return null;
+          
+          return {
+            ...course,
+            progress: enrollment.progress,
+            enrollmentId: enrollment.id,
+            enrolledAt: enrollment.enrolledAt,
+            paymentStatus: enrollment.paymentStatus
+          };
+        })
+      );
+      
+      // Filter out null values (courses that may have been deleted)
+      const validCourses = enrolledCourses.filter(course => course !== null);
+      
+      res.json(validCourses);
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error);
+      res.status(500).json({ message: "Failed to fetch enrolled courses" });
+    }
+  });
+  
+  // Get enrollment for a specific course
   app.get('/api/courses/:id/enrollment', isAuthenticated, async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
