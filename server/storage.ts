@@ -149,9 +149,13 @@ export interface IStorage {
   gradeAssignment(submissionId: number, grade: number, feedback: string, gradedBy: string): Promise<AssignmentSubmission>;
   
   // Live session operations
-  createLiveSession(sessionData: Omit<LiveSession, "id" | "createdAt">): Promise<LiveSession>;
+  createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession>;
   getLiveSessionsByCourse(courseId: number): Promise<LiveSession[]>;
+  getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]>;
+  updateLiveSession(id: number, updates: Partial<LiveSession>): Promise<LiveSession>;
   recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance>;
+  getLiveSessionAttendance(sessionId: number): Promise<LiveSessionAttendance[]>;
+  getLiveSessionAttendanceByUser(userId: string): Promise<LiveSessionAttendance[]>;
   
   // Communication - Conversations
   createConversation(conversationData: InsertConversation): Promise<Conversation>;
@@ -233,9 +237,130 @@ export interface IStorage {
   
   // Additional methods for lessons
   getLesson(lessonId: number): Promise<Lesson | undefined>;
+
+  // Live session implementation
+  getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]>;
+  getLiveSession(id: number): Promise<LiveSession | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // Live Session Operations
+  async createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession> {
+    const [session] = await db
+      .insert(liveSessions)
+      .values(sessionData)
+      .returning();
+    return session;
+  }
+
+  async getLiveSessionsByCourse(courseId: number): Promise<LiveSession[]> {
+    const sessions = await db
+      .select()
+      .from(liveSessions)
+      .innerJoin(lessons, eq(liveSessions.lessonId, lessons.id))
+      .innerJoin(modules, eq(lessons.moduleId, modules.id))
+      .where(eq(modules.courseId, courseId))
+      .orderBy(asc(liveSessions.startTime));
+    
+    return sessions.map(session => ({
+      id: session.liveSessions.id,
+      lessonId: session.liveSessions.lessonId,
+      startTime: session.liveSessions.startTime,
+      endTime: session.liveSessions.endTime,
+      meetingUrl: session.liveSessions.meetingUrl,
+      recordingUrl: session.liveSessions.recordingUrl,
+      status: session.liveSessions.status
+    }));
+  }
+  
+  async getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]> {
+    const now = new Date();
+    
+    let query = db
+      .select()
+      .from(liveSessions)
+      .where(and(
+        gte(liveSessions.startTime, now),
+        eq(liveSessions.status, "scheduled")
+      ))
+      .orderBy(asc(liveSessions.startTime));
+    
+    if (options?.courseId) {
+      const courseModules = await db
+        .select({ 
+          moduleId: modules.id 
+        })
+        .from(modules)
+        .where(eq(modules.courseId, options.courseId));
+      
+      if (courseModules.length === 0) {
+        return [];
+      }
+      
+      const moduleIds = courseModules.map(module => module.moduleId);
+      
+      const moduleLessons = await db
+        .select({ 
+          lessonId: lessons.id 
+        })
+        .from(lessons)
+        .where(inArray(lessons.moduleId, moduleIds));
+      
+      if (moduleLessons.length === 0) {
+        return [];
+      }
+      
+      const lessonIds = moduleLessons.map(lesson => lesson.lessonId);
+      
+      query = query.where(inArray(liveSessions.lessonId, lessonIds));
+    }
+    
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    return await query;
+  }
+  
+  async updateLiveSession(id: number, updates: Partial<LiveSession>): Promise<LiveSession> {
+    const [session] = await db
+      .update(liveSessions)
+      .set(updates)
+      .where(eq(liveSessions.id, id))
+      .returning();
+    return session;
+  }
+  
+  async getLiveSession(id: number): Promise<LiveSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(liveSessions)
+      .where(eq(liveSessions.id, id));
+    return session;
+  }
+  
+  async recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance> {
+    const [attendance] = await db
+      .insert(liveSessionAttendance)
+      .values(attendanceData)
+      .returning();
+    return attendance;
+  }
+  
+  async getLiveSessionAttendance(sessionId: number): Promise<LiveSessionAttendance[]> {
+    return db
+      .select()
+      .from(liveSessionAttendance)
+      .where(eq(liveSessionAttendance.sessionId, sessionId));
+  }
+  
+  async getLiveSessionAttendanceByUser(userId: string): Promise<LiveSessionAttendance[]> {
+    return db
+      .select()
+      .from(liveSessionAttendance)
+      .where(eq(liveSessionAttendance.userId, userId))
+      .orderBy(desc(liveSessionAttendance.joinedAt));
+  }
   // Communication - Conversations
   async createConversation(conversationData: InsertConversation): Promise<Conversation> {
     const [conversation] = await db.insert(conversations).values(conversationData).returning();
