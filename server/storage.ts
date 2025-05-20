@@ -2379,6 +2379,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Certificate methods
+  async issueCertificate(certificateData: any): Promise<Certificate> {
+    const verificationCode = await this.generateVerificationCode();
+    
+    const [certificate] = await db.insert(certificates).values({
+      userId: certificateData.userId,
+      courseId: certificateData.courseId,
+      template: certificateData.template,
+      verificationCode,
+      status: "issued"
+    }).returning();
+    
+    return certificate;
+  }
+  
+  async getCertificate(certificateId: number): Promise<Certificate | undefined> {
+    const [certificate] = await db.select().from(certificates).where(eq(certificates.id, certificateId));
+    return certificate;
+  }
+  
+  async getUserCertificates(userId: string): Promise<Certificate[]> {
+    return await db.select().from(certificates).where(eq(certificates.userId, userId));
+  }
+  
+  async verifyCertificate(certificateId: number): Promise<{valid: boolean; certificate?: Certificate}> {
+    const certificate = await this.getCertificate(certificateId);
+    
+    if (!certificate) {
+      return { valid: false };
+    }
+    
+    if (certificate.status === "revoked") {
+      return { valid: false, certificate };
+    }
+    
+    return { valid: true, certificate };
+  }
+  
+  async generateVerificationCode(): Promise<string> {
+    // Generate a unique 8 character verification code
+    const code = randomBytes(4).toString('hex').toUpperCase();
+    // Check if code already exists
+    const [existingCert] = await db.select()
+      .from(certificates)
+      .where(eq(certificates.verificationCode, code));
+      
+    if (existingCert) {
+      // If code already exists, generate a new one recursively
+      return this.generateVerificationCode();
+    }
+    
+    return code;
+  }
+  
   async generateCertificateNumber(): Promise<string> {
     // Generate a unique certificate ID with format: COD-YYYY-XXXXXXXX
     const year = new Date().getFullYear();

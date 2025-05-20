@@ -87,10 +87,7 @@ router.post('/courses/:id/complete', isAuthenticated, async (req: any, res) => {
     }
     
     // Update enrollment as completed with 100% progress
-    await storage.updateCourseEnrollment(enrollment.id, {
-      completedAt: new Date(),
-      progress: 100
-    });
+    await storage.updateCourseProgress(enrollment.id, 100);
     
     // Check if the user already has a certificate for this course
     const userCertificates = await storage.getUserCertificates(userId);
@@ -102,6 +99,10 @@ router.post('/courses/:id/complete', isAuthenticated, async (req: any, res) => {
     
     // Auto-generate certificate
     const course = await storage.getCourse(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+    
     const defaultTemplate = `<div class="certificate">
       <h1>Certificate of Completion</h1>
       <p>This is to certify that the student has successfully completed</p>
