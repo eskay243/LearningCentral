@@ -24,6 +24,8 @@ import {
   discussionReplies,
   notificationSettings,
   notifications,
+  codingExercises,
+  exerciseProgress,
   type User,
   type UpsertUser,
   type Course,
@@ -46,6 +48,8 @@ import {
   type CourseEnrollment,
   type MentorCourse,
   type AffiliateCommission,
+  type CodingExercise,
+  type ExerciseProgress,
   UserRole,
 } from "@shared/schema";
 import { db } from "./db";
@@ -1306,109 +1310,139 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Interactive coding exercise methods
-  async createCodingExercise(exerciseData: Omit<typeof codingExercises.$inferInsert, "id" | "createdAt" | "updatedAt">): Promise<typeof codingExercises.$inferSelect> {
-    const [exercise] = await db
-      .insert(codingExercises)
-      .values({
-        ...exerciseData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .returning();
-    
-    return exercise;
-  }
-  
-  async getCodingExercise(exerciseId: number): Promise<typeof codingExercises.$inferSelect | undefined> {
-    const [exercise] = await db
-      .select()
-      .from(codingExercises)
-      .where(eq(codingExercises.id, exerciseId));
-    
-    return exercise;
-  }
-  
-  async getCodingExercises(options?: { moduleId?: number, lessonId?: number }): Promise<typeof codingExercises.$inferSelect[]> {
-    let query = db.select().from(codingExercises);
-    
-    if (options?.moduleId) {
-      query = query.where(eq(codingExercises.moduleId, options.moduleId));
+  async createCodingExercise(exerciseData: Omit<CodingExercise, "id" | "createdAt" | "updatedAt">): Promise<CodingExercise> {
+    try {
+      const [exercise] = await db
+        .insert(codingExercises)
+        .values({
+          ...exerciseData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      
+      return exercise;
+    } catch (error) {
+      console.error("Error creating coding exercise:", error);
+      throw error;
     }
-    
-    if (options?.lessonId) {
-      query = query.where(eq(codingExercises.lessonId, options.lessonId));
-    }
-    
-    return await query;
   }
   
-  async updateCodingExercise(exerciseId: number, updateData: Partial<typeof codingExercises.$inferInsert>): Promise<typeof codingExercises.$inferSelect> {
-    const [updatedExercise] = await db
-      .update(codingExercises)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(codingExercises.id, exerciseId))
-      .returning();
-    
-    return updatedExercise;
+  async getCodingExercise(exerciseId: number): Promise<CodingExercise | undefined> {
+    try {
+      const [exercise] = await db
+        .select()
+        .from(codingExercises)
+        .where(eq(codingExercises.id, exerciseId));
+      
+      return exercise;
+    } catch (error) {
+      console.error("Error fetching coding exercise:", error);
+      return undefined;
+    }
+  }
+  
+  async getCodingExercises(options?: { moduleId?: number, lessonId?: number }): Promise<CodingExercise[]> {
+    try {
+      let query = db.select().from(codingExercises);
+      
+      if (options?.moduleId) {
+        query = query.where(eq(codingExercises.moduleId, options.moduleId));
+      }
+      
+      if (options?.lessonId) {
+        query = query.where(eq(codingExercises.lessonId, options.lessonId));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error fetching coding exercises:", error);
+      return [];
+    }
+  }
+  
+  async updateCodingExercise(exerciseId: number, updateData: Partial<CodingExercise>): Promise<CodingExercise> {
+    try {
+      const [updatedExercise] = await db
+        .update(codingExercises)
+        .set({
+          ...updateData,
+          updatedAt: new Date(),
+        })
+        .where(eq(codingExercises.id, exerciseId))
+        .returning();
+      
+      return updatedExercise;
+    } catch (error) {
+      console.error("Error updating coding exercise:", error);
+      throw error;
+    }
   }
   
   // Exercise progress tracking methods
-  async getExerciseProgress(exerciseId: number, userId: string): Promise<typeof exerciseProgress.$inferSelect | undefined> {
-    const [progress] = await db
-      .select()
-      .from(exerciseProgress)
-      .where(
-        and(
-          eq(exerciseProgress.exerciseId, exerciseId), 
-          eq(exerciseProgress.userId, userId)
-        )
-      );
-    
-    return progress;
-  }
-  
-  async updateExerciseProgress(exerciseId: number, userId: string, progressData: Partial<typeof exerciseProgress.$inferInsert>): Promise<typeof exerciseProgress.$inferSelect> {
-    // Check if progress exists
-    const existingProgress = await this.getExerciseProgress(exerciseId, userId);
-    
-    let progress;
-    
-    if (existingProgress) {
-      // Update existing progress
-      const [updatedProgress] = await db
-        .update(exerciseProgress)
-        .set({
-          ...progressData,
-          lastAttemptAt: new Date(),
-        })
+  async getExerciseProgress(exerciseId: number, userId: string): Promise<ExerciseProgress | undefined> {
+    try {
+      const [progress] = await db
+        .select()
+        .from(exerciseProgress)
         .where(
           and(
             eq(exerciseProgress.exerciseId, exerciseId),
             eq(exerciseProgress.userId, userId)
           )
-        )
-        .returning();
+        );
       
-      progress = updatedProgress;
-    } else {
-      // Create new progress
-      const [newProgress] = await db
-        .insert(exerciseProgress)
-        .values({
-          exerciseId,
-          userId,
-          ...progressData,
-          lastAttemptAt: new Date(),
-        })
-        .returning();
-      
-      progress = newProgress;
+      return progress;
+    } catch (error) {
+      console.error("Error fetching exercise progress:", error);
+      return undefined;
     }
-    
-    return progress;
+  }
+  
+  async updateExerciseProgress(exerciseId: number, userId: string, progressData: Partial<ExerciseProgress>): Promise<ExerciseProgress> {
+    try {
+      // Check if progress exists
+      const existingProgress = await this.getExerciseProgress(exerciseId, userId);
+      
+      let progress;
+      
+      if (existingProgress) {
+        // Update existing progress
+        const [updatedProgress] = await db
+          .update(exerciseProgress)
+          .set({
+            ...progressData,
+            lastAttemptAt: new Date(),
+          })
+          .where(
+            and(
+              eq(exerciseProgress.exerciseId, exerciseId),
+              eq(exerciseProgress.userId, userId)
+            )
+          )
+          .returning();
+        
+        progress = updatedProgress;
+      } else {
+        // Create new progress
+        const [newProgress] = await db
+          .insert(exerciseProgress)
+          .values({
+            exerciseId,
+            userId,
+            ...progressData,
+            lastAttemptAt: new Date(),
+          })
+          .returning();
+        
+        progress = newProgress;
+      }
+      
+      return progress;
+    } catch (error) {
+      console.error("Error updating exercise progress:", error);
+      throw error;
+    }
   }
   
   async getUserExerciseProgress(userId: string): Promise<any[]> {
@@ -1443,20 +1477,11 @@ export class DatabaseStorage implements IStorage {
       console.error("Error fetching user exercise progress:", error);
       return [];
     }
-  }
-      .where(eq(exerciseProgress.userId, userId));
-      
-      return progress;
-    } catch (error) {
-      console.error("Error fetching user exercise progress:", error);
-      return [];
-    }
-  }
   
   async getCodingExercisesCount(): Promise<number> {
     try {
       const result = await db.select({ count: sql`count(*)` }).from(codingExercises);
-      return parseInt(result[0].count.toString()) || 0;
+      return Number(result[0].count) || 0;
     } catch (error) {
       console.error("Error counting coding exercises:", error);
       return 0;
