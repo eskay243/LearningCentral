@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Loader2, MessageSquare, Calendar } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ChatMessage } from '@shared/schema';
-import { Loader2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface MessageSearchProps {
   onMessageSelect: (message: ChatMessage) => void;
@@ -12,74 +12,110 @@ interface MessageSearchProps {
 
 export function MessageSearch({ onMessageSelect }: MessageSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ChatMessage[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const debouncedSearchTerm = useDebounce(searchQuery, 500);
 
-  const { data: searchResults, isLoading, refetch } = useQuery({
-    queryKey: ['/api/messages/search', searchQuery],
-    queryFn: async () => {
-      if (!searchQuery.trim()) return [];
+  useEffect(() => {
+    const searchMessages = async () => {
+      if (debouncedSearchTerm.trim().length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
       setIsSearching(true);
-      const results = await fetch(`/api/messages/search?query=${encodeURIComponent(searchQuery)}`)
-        .then(res => res.json());
-      setIsSearching(false);
-      return results;
-    },
-    enabled: false,
-  });
+      try {
+        const response = await fetch(`/api/messages/search?query=${encodeURIComponent(debouncedSearchTerm)}`);
+        if (!response.ok) throw new Error('Failed to search messages');
+        
+        const data = await response.json();
+        setSearchResults(data.messages);
+      } catch (error) {
+        console.error('Error searching messages:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      refetch();
+    searchMessages();
+  }, [debouncedSearchTerm]);
+
+  // Format date
+  const formatMessageDate = (date: Date | null | undefined) => {
+    if (!date) return '';
+    return formatDistanceToNow(new Date(date), { addSuffix: true });
+  };
+
+  // Highlight matching text
+  const highlightMatches = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    try {
+      const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<mark>$1</mark>');
+    } catch (e) {
+      return text;
     }
   };
 
   return (
-    <div className="w-full space-y-4">
-      <form onSubmit={handleSearch} className="flex items-center space-x-2">
+    <div className="flex flex-col space-y-4">
+      <div className="relative">
         <Input
+          placeholder="Search messages..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search messages..."
-          className="flex-1"
+          className="pr-10"
         />
-        <Button type="submit" size="icon" disabled={isLoading}>
-          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-        </Button>
-      </form>
+        {isSearching && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+      </div>
 
-      {isSearching && (
-        <div className="flex justify-center p-4">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      {searchQuery.trim().length > 0 && !isSearching && (
+        <div className="text-sm text-muted-foreground">
+          {searchResults.length > 0 
+            ? `Found ${searchResults.length} results`
+            : searchQuery.trim().length >= 2 
+              ? 'No messages found' 
+              : 'Type at least 2 characters to search'}
         </div>
       )}
 
-      {searchResults && searchResults.length > 0 && (
-        <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-2">
-          <h3 className="text-sm font-medium mb-2">Search Results</h3>
-          {searchResults.map((message: ChatMessage) => (
-            <div
+      {searchResults.length > 0 && (
+        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {searchResults.map((message) => (
+            <Button
               key={message.id}
-              className="p-2 hover:bg-muted rounded-md cursor-pointer text-sm"
+              variant="outline"
+              className="w-full justify-start px-3 py-2 h-auto"
               onClick={() => onMessageSelect(message)}
             >
-              <div className="font-medium">
-                {message.senderName || 'Unknown User'}
+              <div className="flex items-start space-x-2 w-full text-left">
+                <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline">
+                    <p className="font-medium text-sm truncate">
+                      {message.conversationTitle || 'Conversation'}
+                    </p>
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      {formatMessageDate(message.sentAt)}
+                    </div>
+                  </div>
+                  <p 
+                    className="text-xs text-muted-foreground mt-1 line-clamp-2"
+                    dangerouslySetInnerHTML={{ 
+                      __html: highlightMatches(message.content, debouncedSearchTerm)
+                    }}
+                  ></p>
+                </div>
               </div>
-              <div className="text-muted-foreground truncate">
-                {message.content}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {new Date(message.sentAt || Date.now()).toLocaleString()}
-              </div>
-            </div>
+            </Button>
           ))}
-        </div>
-      )}
-
-      {searchResults && searchResults.length === 0 && isSearching === false && searchQuery.trim() !== '' && (
-        <div className="text-center p-4 text-muted-foreground">
-          No messages found matching your search.
         </div>
       )}
     </div>

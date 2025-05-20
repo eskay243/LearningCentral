@@ -2,200 +2,124 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
-type WebSocketMessage = {
-  type: string;
-  payload: any;
-};
-
-export interface UseWebSocketOptions {
-  onMessage?: (messageType: string, payload: any) => void;
-  onConnect?: () => void;
-  onDisconnect?: () => void;
-  onError?: (error: Event) => void;
-  autoReconnect?: boolean;
-  reconnectInterval?: number;
-  maxReconnectAttempts?: number;
+interface WebSocketHookProps {
+  onMessage: (type: string, payload: any) => void;
 }
 
-export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const { 
-    onMessage,
-    onConnect,
-    onDisconnect,
-    onError,
-    autoReconnect = true,
-    reconnectInterval = 3000,
-    maxReconnectAttempts = 5
-  } = options;
-  
+interface WebSocketMessage {
+  type: string;
+  payload: any;
+}
+
+export function useWebSocket({ onMessage }: WebSocketHookProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Clean up previous reconnect attempt if exists
-  const clearReconnectTimeout = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-  }, []);
-  
-  // Initialize connection to WebSocket server
-  const connect = useCallback(() => {
-    if (!user?.id) return;
-    
-    // Clean up any existing socket
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
-    }
-    
-    setIsConnecting(true);
-    
-    // Determine WebSocket URL (using secure connection if on HTTPS)
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws?userId=${user.id}`;
-    
-    // Create WebSocket connection
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
-    
-    // Connection opened
-    socket.addEventListener('open', () => {
-      setIsConnected(true);
-      setIsConnecting(false);
-      reconnectAttemptsRef.current = 0;
+  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttempts = useRef(0);
+  const MAX_RECONNECT_ATTEMPTS = 5;
+  const RECONNECT_TIMEOUT = 3000; // 3 seconds
+
+  // Initialize WebSocket connection
+  const initializeSocket = useCallback(() => {
+    if (!user) return;
+
+    try {
+      // Create WebSocket URL using the current protocol and host
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
       
-      // Set up ping interval (every 30 seconds) to prevent connection timeouts
-      const pingInterval = setInterval(() => {
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({ type: 'ping', payload: {} }));
-        } else {
-          clearInterval(pingInterval);
-        }
-      }, 30000);
-      
-      if (onConnect) onConnect();
-    });
-    
-    // Connection closed
-    socket.addEventListener('close', (event) => {
-      setIsConnected(false);
-      setIsConnecting(false);
-      
-      if (onDisconnect) onDisconnect();
-      
-      // Attempt to reconnect if enabled
-      if (autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
-        clearReconnectTimeout();
-        reconnectAttemptsRef.current += 1;
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
-        }, reconnectInterval);
-        
-        toast({
-          title: "Connection lost",
-          description: `Attempting to reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})...`,
-          variant: "destructive"
-        });
-      } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-        toast({
-          title: "Connection failed",
-          description: "Unable to connect to messaging server. Please refresh the page.",
-          variant: "destructive"
-        });
-      }
-    });
-    
-    // Connection error
-    socket.addEventListener('error', (error) => {
-      if (onError) onError(error);
-      
-      toast({
-        title: "Connection error",
-        description: "Error connecting to messaging server.",
-        variant: "destructive"
-      });
-    });
-    
-    // Listen for messages
-    socket.addEventListener('message', (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        
-        // Handle specific message types internally
-        switch (message.type) {
-          case 'pong':
-            // Heartbeat response, no action needed
-            break;
-            
-          case 'connection_established':
-            toast({
-              title: "Connected",
-              description: "Real-time messaging is now active.",
-              variant: "default"
-            });
-            break;
-            
-          case 'error':
-            toast({
-              title: "Error",
-              description: message.payload.message || "An error occurred",
-              variant: "destructive"
-            });
-            break;
-            
-          default:
-            // Pass all other messages to the callback
-            if (onMessage) {
-              onMessage(message.type, message.payload);
-            }
-        }
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    });
-    
-    return () => {
-      socket.close();
-    };
-  }, [user?.id, onConnect, onDisconnect, onError, onMessage, autoReconnect, reconnectInterval, maxReconnectAttempts, toast, clearReconnectTimeout]);
-  
-  useEffect(() => {
-    if (user?.id) {
-      connect();
-    }
-    
-    return () => {
-      // Clean up on unmount
+      // Close any existing socket before creating a new one
       if (socketRef.current) {
         socketRef.current.close();
       }
-      clearReconnectTimeout();
-    };
-  }, [user?.id, connect, clearReconnectTimeout]);
-  
-  // Send a message through the WebSocket
+
+      // Create new WebSocket connection
+      const socket = new WebSocket(wsUrl);
+      socketRef.current = socket;
+
+      // Setup event handlers
+      socket.onopen = () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        reconnectAttempts.current = 0;
+        
+        // Send authentication message once connected
+        sendMessage('authenticate', { userId: user.id });
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data: WebSocketMessage = JSON.parse(event.data);
+          
+          // Call the provided callback with message type and payload
+          if (data && data.type) {
+            onMessage(data.type, data.payload);
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        toast({
+          title: 'Connection Error',
+          description: 'There was an error with the messaging connection',
+          variant: 'destructive'
+        });
+      };
+
+      socket.onclose = () => {
+        console.log('WebSocket disconnected');
+        setIsConnected(false);
+        
+        // Attempt to reconnect unless the maximum attempts is reached
+        if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+          reconnectTimerRef.current = setTimeout(() => {
+            reconnectAttempts.current += 1;
+            console.log(`Attempting to reconnect (${reconnectAttempts.current}/${MAX_RECONNECT_ATTEMPTS})...`);
+            initializeSocket();
+          }, RECONNECT_TIMEOUT);
+        } else {
+          toast({
+            title: 'Connection Lost',
+            description: 'Unable to reconnect to the messaging service',
+            variant: 'destructive'
+          });
+        }
+      };
+    } catch (error) {
+      console.error('Failed to initialize WebSocket:', error);
+    }
+  }, [user, onMessage, toast]);
+
+  // Helper function to send messages through the WebSocket
   const sendMessage = useCallback((type: string, payload: any) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type, payload }));
+      const message: WebSocketMessage = { type, payload };
+      socketRef.current.send(JSON.stringify(message));
       return true;
     }
     return false;
   }, []);
-  
-  // Join a conversation to get history and real-time updates
+
+  // Join a conversation
   const joinConversation = useCallback((conversationId: number) => {
     return sendMessage('join_conversation', { conversationId });
   }, [sendMessage]);
-  
-  // Send a chat message to a conversation
-  const sendChatMessage = useCallback((conversationId: number, content: string, options?: { contentType?: string, attachmentUrl?: string, replyToId?: number }) => {
+
+  // Send a chat message
+  const sendChatMessage = useCallback((
+    conversationId: number, 
+    content: string, 
+    options?: {
+      contentType?: string;
+      attachmentUrl?: string;
+      replyToId?: number;
+    }
+  ) => {
     return sendMessage('send_message', {
       conversationId,
       content,
@@ -204,31 +128,47 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       replyToId: options?.replyToId
     });
   }, [sendMessage]);
-  
-  // Mark messages as read
+
+  // Mark message as read
   const markMessageRead = useCallback((conversationId: number, messageId: number) => {
-    return sendMessage('message_read', { conversationId, messageId });
+    return sendMessage('mark_read', { conversationId, messageId });
   }, [sendMessage]);
-  
+
   // Send typing indicator
   const sendTypingIndicator = useCallback((conversationId: number, isTyping: boolean) => {
-    return sendMessage('typing', { conversationId, isTyping });
+    return sendMessage('typing_indicator', { conversationId, isTyping });
   }, [sendMessage]);
-  
-  // Add a reaction to a message
-  const addReaction = useCallback((messageId: number, reaction: string) => {
-    return sendMessage('add_reaction', { messageId, reaction });
+
+  // Add reaction to message
+  const addReaction = useCallback((messageId: number, emoji: string) => {
+    return sendMessage('add_reaction', { messageId, emoji });
   }, [sendMessage]);
-  
-  // Remove a reaction from a message
-  const removeReaction = useCallback((messageId: number, reaction: string) => {
-    return sendMessage('remove_reaction', { messageId, reaction });
+
+  // Remove reaction from message
+  const removeReaction = useCallback((messageId: number, emoji: string) => {
+    return sendMessage('remove_reaction', { messageId, emoji });
   }, [sendMessage]);
-  
+
+  // Initialize WebSocket when component mounts or user changes
+  useEffect(() => {
+    if (user) {
+      initializeSocket();
+    }
+    
+    // Cleanup function
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
+      
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
+    };
+  }, [user, initializeSocket]);
+
   return {
     isConnected,
-    isConnecting,
-    connect,
     joinConversation,
     sendChatMessage,
     markMessageRead,

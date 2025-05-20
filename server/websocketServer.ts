@@ -1,371 +1,343 @@
-import { WebSocketServer, type WebSocket } from 'ws';
-import { type Server } from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
+import { Server } from 'http';
 import { storage } from './storage';
+import { db } from './db';
 
-// Connected clients map
-type ConnectedClient = {
-  userId: string;
-  socket: WebSocket;
-  heartbeat: number; // Timestamp of last heartbeat
-};
-
-type WebSocketMessage = {
+interface WebSocketMessage {
   type: string;
   payload: any;
-};
+}
 
-export class MessageWebSocketServer {
-  private wss: WebSocketServer;
-  private clients: Map<string, ConnectedClient> = new Map();
-  private heartbeatInterval: NodeJS.Timeout;
+interface AuthenticatedClient extends WebSocket {
+  userId?: string;
+  conversationIds?: Set<number>;
+}
 
-  constructor(server: Server) {
-    this.wss = new WebSocketServer({ server, path: '/ws' });
-    this.setupWebSocketServer();
-    
-    // Set up heartbeat interval (ping clients every 30 seconds)
-    this.heartbeatInterval = setInterval(() => {
-      this.checkHeartbeats();
-    }, 30000);
-  }
+interface MessageReaction {
+  messageId: number;
+  emoji: string;
+  userId: string;
+}
 
-  private setupWebSocketServer() {
-    this.wss.on('connection', (socket, req) => {
-      console.log('WebSocket client connected');
-      
-      // Extract user ID from query params
-      const url = new URL(req.url || '', `http://${req.headers.host}`);
-      const userId = url.searchParams.get('userId');
-      
-      if (!userId) {
-        console.error('Client connected without userId, closing connection');
-        socket.close(1008, 'User ID is required');
-        return;
-      }
-      
-      // Register client
-      const client: ConnectedClient = {
-        userId,
-        socket,
-        heartbeat: Date.now()
-      };
-      this.clients.set(userId, client);
-      
-      // Handle messages
-      socket.on('message', async (data) => {
-        try {
-          const message = JSON.parse(data.toString()) as WebSocketMessage;
-          await this.handleMessage(userId, message);
+export function setupWebSocketServer(server: Server) {
+  // Create WebSocket server on a distinct path
+  const wss = new WebSocketServer({ server, path: '/ws' });
+  
+  // Track connected clients
+  const clients = new Map<string, AuthenticatedClient>();
+  
+  // Track conversations and their participants
+  const conversations = new Map<number, Set<string>>();
+  
+  console.log('WebSocket server initialized');
+
+  wss.on('connection', (ws: AuthenticatedClient) => {
+    console.log('New WebSocket connection');
+    ws.conversationIds = new Set();
+
+    // Handle messages
+    ws.on('message', async (data: WebSocket.Data) => {
+      try {
+        const message: WebSocketMessage = JSON.parse(data.toString());
+        console.log(`Received message: ${message.type}`);
+
+        // Process message based on type
+        switch (message.type) {
+          case 'authenticate':
+            handleAuthentication(ws, message.payload);
+            break;
           
-          // Update heartbeat
-          const client = this.clients.get(userId);
-          if (client) {
-            client.heartbeat = Date.now();
-          }
-        } catch (error) {
-          console.error('Error processing message:', error);
-          this.sendToClient(userId, {
-            type: 'error',
-            payload: { message: 'Error processing message' }
+          case 'join_conversation':
+            handleJoinConversation(ws, message.payload);
+            break;
+          
+          case 'send_message':
+            await handleSendMessage(ws, message.payload);
+            break;
+          
+          case 'mark_read':
+            await handleMarkRead(ws, message.payload);
+            break;
+          
+          case 'typing_indicator':
+            handleTypingIndicator(ws, message.payload);
+            break;
+          
+          case 'add_reaction':
+            await handleAddReaction(ws, message.payload);
+            break;
+          
+          case 'remove_reaction':
+            await handleRemoveReaction(ws, message.payload);
+            break;
+            
+          default:
+            console.warn(`Unknown message type: ${message.type}`);
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+
+    // Handle disconnection
+    ws.on('close', () => {
+      if (ws.userId) {
+        clients.delete(ws.userId);
+        console.log(`User disconnected: ${ws.userId}`);
+        
+        // Remove user from all conversations
+        if (ws.conversationIds) {
+          ws.conversationIds.forEach(conversationId => {
+            const participants = conversations.get(conversationId);
+            if (participants) {
+              participants.delete(ws.userId!);
+              if (participants.size === 0) {
+                conversations.delete(conversationId);
+              }
+            }
           });
         }
-      });
-      
-      // Handle disconnection
-      socket.on('close', () => {
-        console.log(`WebSocket client disconnected: ${userId}`);
-        this.clients.delete(userId);
-      });
-      
-      // Send initial connection successful message
-      this.sendToClient(userId, {
-        type: 'connection_established',
-        payload: { userId }
-      });
+      }
     });
-  }
-  
-  private async handleMessage(userId: string, message: WebSocketMessage) {
-    const { type, payload } = message;
+  });
+
+  // Authentication handler
+  function handleAuthentication(ws: AuthenticatedClient, payload: { userId: string }) {
+    const { userId } = payload;
     
-    switch (type) {
-      case 'ping':
-        this.sendToClient(userId, { type: 'pong', payload: {} });
-        break;
-        
-      case 'send_message':
-        await this.handleSendMessage(userId, payload);
-        break;
-        
-      case 'message_read':
-        await this.handleMessageRead(userId, payload);
-        break;
-        
-      case 'join_conversation':
-        await this.handleJoinConversation(userId, payload);
-        break;
-        
-      case 'typing':
-        await this.handleTypingIndicator(userId, payload);
-        break;
-        
-      case 'add_reaction':
-        await this.handleAddReaction(userId, payload);
-        break;
-        
-      case 'remove_reaction':
-        await this.handleRemoveReaction(userId, payload);
-        break;
-        
-      default:
-        console.warn(`Unknown message type: ${type}`);
-        this.sendToClient(userId, {
-          type: 'error',
-          payload: { message: `Unknown message type: ${type}` }
-        });
+    if (!userId) {
+      return;
     }
+    
+    ws.userId = userId;
+    clients.set(userId, ws);
+    console.log(`User authenticated: ${userId}`);
+    
+    // Send confirmation
+    sendToClient(ws, 'authentication_success', { userId });
   }
-  
-  private async handleSendMessage(userId: string, payload: any) {
+
+  // Join conversation handler
+  function handleJoinConversation(ws: AuthenticatedClient, payload: { conversationId: number }) {
+    const { conversationId } = payload;
+    
+    if (!ws.userId || !conversationId) {
+      return;
+    }
+    
+    // Add user to conversation
+    if (!conversations.has(conversationId)) {
+      conversations.set(conversationId, new Set());
+    }
+    
+    const participants = conversations.get(conversationId)!;
+    participants.add(ws.userId);
+    
+    // Add conversation to user's subscribed conversations
+    ws.conversationIds!.add(conversationId);
+    
+    console.log(`User ${ws.userId} joined conversation ${conversationId}`);
+    
+    // Send confirmation
+    sendToClient(ws, 'joined_conversation', { conversationId });
+  }
+
+  // Send message handler
+  async function handleSendMessage(ws: AuthenticatedClient, payload: {
+    conversationId: number;
+    content: string;
+    contentType?: string;
+    attachmentUrl?: string;
+    replyToId?: number;
+  }) {
+    if (!ws.userId) {
+      return;
+    }
+    
     const { conversationId, content, contentType, attachmentUrl, replyToId } = payload;
     
     try {
-      // Check if user is part of the conversation
-      const isParticipant = await storage.isConversationParticipant(userId, conversationId);
-      if (!isParticipant) {
-        this.sendToClient(userId, {
-          type: 'error',
-          payload: { message: 'You are not authorized to send messages to this conversation' }
-        });
-        return;
-      }
-      
-      // Send message through storage
-      const message = await storage.sendMessage({
+      // Store message in database
+      const message = await storage.createMessage({
         conversationId,
-        senderId: userId,
+        senderId: ws.userId,
         content,
         contentType: contentType || 'text',
         attachmentUrl: attachmentUrl || null,
-        replyToId: replyToId || null
+        replyToId: replyToId || null,
+        sentAt: new Date(),
+        isEdited: false
       });
       
-      // Get participants of the conversation to broadcast the message
-      const participants = await storage.getConversationParticipants(conversationId);
+      // Get sender info
+      const sender = await storage.getUser(ws.userId);
       
-      // Broadcast message to all participants
-      participants.forEach(participant => {
-        this.sendToClient(participant.userId, {
-          type: 'new_message',
-          payload: message
-        });
+      // Broadcast message to all participants in the conversation
+      broadcastToConversation(conversationId, 'new_message', {
+        ...message,
+        sender: {
+          firstName: sender?.firstName,
+          lastName: sender?.lastName,
+          profileImageUrl: sender?.profileImageUrl
+        }
       });
       
-      // Send confirmation to sender
-      this.sendToClient(userId, {
-        type: 'message_sent',
-        payload: { messageId: message.id }
-      });
+      console.log(`Message sent in conversation ${conversationId} by user ${ws.userId}`);
     } catch (error) {
-      console.error('Error sending message:', error);
-      this.sendToClient(userId, {
-        type: 'error',
-        payload: { message: 'Failed to send message' }
-      });
+      console.error('Error saving message:', error);
+      sendToClient(ws, 'error', { message: 'Failed to send message' });
     }
   }
-  
-  private async handleMessageRead(userId: string, payload: any) {
+
+  // Mark message as read handler
+  async function handleMarkRead(ws: AuthenticatedClient, payload: {
+    conversationId: number;
+    messageId: number;
+  }) {
+    if (!ws.userId) {
+      return;
+    }
+    
     const { conversationId, messageId } = payload;
     
     try {
-      // Update last read message
-      await storage.updateLastReadMessage(conversationId, userId, messageId);
+      // Update message read status in database
+      await storage.markMessageRead(conversationId, ws.userId, messageId);
       
-      // Get other participants to notify them
-      const participants = await storage.getConversationParticipants(conversationId);
+      // Broadcast read status to conversation participants
+      broadcastToConversation(conversationId, 'message_read', {
+        conversationId,
+        messageId,
+        userId: ws.userId
+      });
       
-      // Notify other participants about read status
-      participants
-        .filter(p => p.userId !== userId)
-        .forEach(participant => {
-          this.sendToClient(participant.userId, {
-            type: 'message_read',
-            payload: { conversationId, userId, messageId }
-          });
-        });
+      console.log(`Message ${messageId} marked as read by user ${ws.userId}`);
     } catch (error) {
       console.error('Error marking message as read:', error);
     }
   }
-  
-  private async handleJoinConversation(userId: string, payload: any) {
-    const { conversationId } = payload;
-    
-    try {
-      // Check if user is part of the conversation
-      const isParticipant = await storage.isConversationParticipant(userId, conversationId);
-      if (!isParticipant) {
-        this.sendToClient(userId, {
-          type: 'error',
-          payload: { message: 'You are not authorized to join this conversation' }
-        });
-        return;
-      }
-      
-      // Get recent messages
-      const messages = await storage.getConversationMessages(conversationId);
-      
-      // Send recent messages to the user
-      this.sendToClient(userId, {
-        type: 'conversation_history',
-        payload: { conversationId, messages }
-      });
-    } catch (error) {
-      console.error('Error joining conversation:', error);
-      this.sendToClient(userId, {
-        type: 'error',
-        payload: { message: 'Failed to join conversation' }
-      });
+
+  // Typing indicator handler
+  function handleTypingIndicator(ws: AuthenticatedClient, payload: {
+    conversationId: number;
+    isTyping: boolean;
+  }) {
+    if (!ws.userId) {
+      return;
     }
-  }
-  
-  private async handleTypingIndicator(userId: string, payload: any) {
+    
     const { conversationId, isTyping } = payload;
     
-    try {
-      // Get participants to notify them
-      const participants = await storage.getConversationParticipants(conversationId);
-      
-      // Broadcast typing status to other participants
-      participants
-        .filter(p => p.userId !== userId)
-        .forEach(participant => {
-          this.sendToClient(participant.userId, {
-            type: 'typing_indicator',
-            payload: { conversationId, userId, isTyping }
-          });
-        });
-    } catch (error) {
-      console.error('Error broadcasting typing indicator:', error);
-    }
+    // Broadcast typing status to conversation participants (except sender)
+    broadcastToConversation(
+      conversationId, 
+      'typing_indicator', 
+      { conversationId, userId: ws.userId, isTyping },
+      ws.userId
+    );
+    
+    console.log(`User ${ws.userId} ${isTyping ? 'is typing' : 'stopped typing'} in conversation ${conversationId}`);
   }
-  
-  private async handleAddReaction(userId: string, payload: any) {
-    const { messageId, reaction } = payload;
+
+  // Add reaction handler
+  async function handleAddReaction(ws: AuthenticatedClient, payload: {
+    messageId: number;
+    emoji: string;
+  }) {
+    if (!ws.userId) {
+      return;
+    }
+    
+    const { messageId, emoji } = payload;
     
     try {
-      // Add reaction
-      await storage.addMessageReaction(messageId, userId, reaction);
-      
-      // Get message details to find conversation
-      const message = await storage.getMessage(messageId);
-      if (!message) {
-        this.sendToClient(userId, {
-          type: 'error',
-          payload: { message: 'Message not found' }
-        });
-        return;
-      }
-      
-      // Get participants to notify them
-      const participants = await storage.getConversationParticipants(message.conversationId);
-      
-      // Broadcast reaction to all participants
-      participants.forEach(participant => {
-        this.sendToClient(participant.userId, {
-          type: 'message_reaction_added',
-          payload: { messageId, userId, reaction }
-        });
+      // Save reaction in database
+      const reaction = await storage.addMessageReaction({
+        messageId,
+        emoji,
+        userId: ws.userId
       });
+      
+      // Get the conversation ID for the message
+      const message = await storage.getMessage(messageId);
+      
+      if (message) {
+        // Broadcast reaction to conversation participants
+        broadcastToConversation(message.conversationId, 'message_reaction_added', {
+          messageId,
+          reaction: emoji,
+          userId: ws.userId
+        });
+        
+        console.log(`User ${ws.userId} added reaction ${emoji} to message ${messageId}`);
+      }
     } catch (error) {
       console.error('Error adding reaction:', error);
-      this.sendToClient(userId, {
-        type: 'error',
-        payload: { message: 'Failed to add reaction' }
-      });
+      sendToClient(ws, 'error', { message: 'Failed to add reaction' });
     }
   }
-  
-  private async handleRemoveReaction(userId: string, payload: any) {
-    const { messageId, reaction } = payload;
+
+  // Remove reaction handler
+  async function handleRemoveReaction(ws: AuthenticatedClient, payload: {
+    messageId: number;
+    emoji: string;
+  }) {
+    if (!ws.userId) {
+      return;
+    }
+    
+    const { messageId, emoji } = payload;
     
     try {
-      // Remove reaction
-      await storage.removeMessageReaction(messageId, userId, reaction);
+      // Remove reaction from database
+      await storage.removeMessageReaction(messageId, ws.userId, emoji);
       
-      // Get message details to find conversation
+      // Get the conversation ID for the message
       const message = await storage.getMessage(messageId);
-      if (!message) {
-        this.sendToClient(userId, {
-          type: 'error',
-          payload: { message: 'Message not found' }
+      
+      if (message) {
+        // Broadcast reaction removal to conversation participants
+        broadcastToConversation(message.conversationId, 'message_reaction_removed', {
+          messageId,
+          reaction: emoji,
+          userId: ws.userId
         });
-        return;
+        
+        console.log(`User ${ws.userId} removed reaction ${emoji} from message ${messageId}`);
       }
-      
-      // Get participants to notify them
-      const participants = await storage.getConversationParticipants(message.conversationId);
-      
-      // Broadcast reaction removal to all participants
-      participants.forEach(participant => {
-        this.sendToClient(participant.userId, {
-          type: 'message_reaction_removed',
-          payload: { messageId, userId, reaction }
-        });
-      });
     } catch (error) {
       console.error('Error removing reaction:', error);
-      this.sendToClient(userId, {
-        type: 'error',
-        payload: { message: 'Failed to remove reaction' }
-      });
+      sendToClient(ws, 'error', { message: 'Failed to remove reaction' });
     }
   }
-  
-  private sendToClient(userId: string, message: WebSocketMessage) {
-    const client = this.clients.get(userId);
-    if (client && client.socket.readyState === WebSocket.OPEN) {
-      client.socket.send(JSON.stringify(message));
+
+  // Helper to send message to a specific client
+  function sendToClient(client: WebSocket, type: string, payload: any) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify({ type, payload }));
     }
   }
-  
-  private checkHeartbeats() {
-    const now = Date.now();
-    const timeout = 60000; // 1 minute timeout
+
+  // Helper to broadcast message to all participants in a conversation
+  function broadcastToConversation(
+    conversationId: number, 
+    type: string, 
+    payload: any,
+    excludeUserId?: string
+  ) {
+    const participants = conversations.get(conversationId) || new Set();
     
-    this.clients.forEach((client, userId) => {
-      if (now - client.heartbeat > timeout) {
-        console.log(`Client ${userId} timed out (no heartbeat)`);
-        client.socket.close(1001, 'Connection timeout');
-        this.clients.delete(userId);
+    participants.forEach(userId => {
+      if (excludeUserId && userId === excludeUserId) {
+        return; // Skip excluded user
+      }
+      
+      const client = clients.get(userId);
+      if (client && client.readyState === WebSocket.OPEN) {
+        sendToClient(client, type, payload);
       }
     });
   }
-  
-  // Public method to broadcast system messages (e.g., announcements)
-  public broadcastSystemMessage(message: string, targetUserIds?: string[]) {
-    const payload = {
-      type: 'system_message',
-      payload: { message, timestamp: new Date().toISOString() }
-    };
-    
-    if (targetUserIds) {
-      // Send to specific users
-      targetUserIds.forEach(userId => {
-        this.sendToClient(userId, payload);
-      });
-    } else {
-      // Broadcast to all connected clients
-      this.clients.forEach((client) => {
-        this.sendToClient(client.userId, payload);
-      });
-    }
-  }
-  
-  // Clean up resources
-  public close() {
-    clearInterval(this.heartbeatInterval);
-    this.wss.close();
-  }
+
+  return wss;
 }
