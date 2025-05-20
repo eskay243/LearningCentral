@@ -73,6 +73,8 @@ export const courseEnrollments = pgTable("course_enrollments", {
   paymentStatus: text("payment_status").notNull().default("unpaid"),
   paymentAmount: real("payment_amount"),
   paymentMethod: text("payment_method"),
+  paymentReference: varchar("payment_reference"),
+  paymentProvider: varchar("payment_provider").default("paystack"),
   certificateId: varchar("certificate_id"),
 });
 
@@ -308,9 +310,9 @@ export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
-  content: text("content").notNull(),
+  message: text("message").notNull(),
   type: text("type").notNull(),
-  isRead: boolean("is_read").notNull().default(false),
+  read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   linkUrl: text("link_url"),
 });
