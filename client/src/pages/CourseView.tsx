@@ -309,8 +309,9 @@ const CourseView = () => {
       
       {/* Course Content Tabs */}
       <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
           <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="exercises">Exercises</TabsTrigger>
           <TabsTrigger value="discussions">Discussions</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
@@ -457,6 +458,61 @@ const CourseView = () => {
               <div className="text-center p-8">
                 <p className="text-gray-500">No announcements yet</p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="exercises">
+          <Card>
+            <CardHeader>
+              <CardTitle>Interactive Coding Exercises</CardTitle>
+              <CardDescription>
+                Practice your skills with hands-on coding exercises
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isModulesLoading ? (
+                <div className="animate-pulse space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Exercises list */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {modules && modules.length > 0 ? (
+                      <div className="space-y-4 col-span-2">
+                        {modules.map((module) => (
+                          <div key={module.id} className="border rounded-lg p-4">
+                            <h3 className="font-medium text-lg mb-2">{module.title}</h3>
+                            <div className="space-y-2">
+                              <Link href={`/courses/${courseId}/exercises?moduleId=${module.id}`}>
+                                <Button variant="outline" className="w-full justify-between">
+                                  View Module Exercises
+                                  <i className="ri-arrow-right-line"></i>
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="col-span-2 text-center p-8">
+                        <p className="text-gray-500 mb-4">No exercises available for this course yet.</p>
+                        {(isMentor || isAdmin) && (
+                          <Link href={`/courses/${courseId}/exercises`}>
+                            <Button>Create Exercises</Button>
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
