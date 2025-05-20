@@ -113,12 +113,22 @@ export const lessons = pgTable("lessons", {
   moduleId: integer("module_id").notNull().references(() => modules.id),
   title: text("title").notNull(),
   description: text("description"),
+  content: text("content"),
+  contentType: text("content_type").notNull().default("text"), // text, video, audio, interactive
   videoUrl: text("video_url"),
+  videoPoster: text("video_poster"), // thumbnail image for video
+  videoProvider: text("video_provider").default("native"), // native, youtube, vimeo, etc.
   duration: integer("duration"), // in seconds
   isLive: boolean("is_live").notNull().default(false),
   scheduledAt: timestamp("scheduled_at"),
   orderIndex: integer("order_index").notNull().default(0),
   notes: text("notes"),
+  isPreview: boolean("is_preview").default(false), // free preview or premium content
+  requiresAuth: boolean("requires_auth").default(true), // if content requires authentication
+  drm: text("drm"), // DRM protection type if applicable
+  published: boolean("published").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Resources table (downloadable materials)
@@ -126,8 +136,16 @@ export const resources = pgTable("resources", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id").notNull().references(() => lessons.id),
   title: text("title").notNull(),
-  type: text("type").notNull(),
+  description: text("description"),
+  type: text("type").notNull(), // pdf, doc, image, code, link, etc.
   url: text("url").notNull(),
+  fileSize: integer("file_size"), // size in bytes
+  thumbnailUrl: text("thumbnail_url"),
+  isDownloadable: boolean("is_downloadable").default(true),
+  requiresAuth: boolean("requires_auth").default(true),
+  isPreview: boolean("is_preview").default(false), // available in course preview
+  orderIndex: integer("order_index").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
   isLocked: boolean("is_locked").notNull().default(true),
 });
 
