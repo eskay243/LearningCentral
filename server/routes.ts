@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
@@ -6,6 +6,41 @@ import { z } from "zod";
 import { UserRole } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Set up storage for uploaded files
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for handling file uploads
+const storage_config = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ 
+  storage: storage_config,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB file size limit
+  },
+  fileFilter: function(req, file, cb) {
+    // Accept images only
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
@@ -54,9 +89,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+  // Handle file uploads for user creation
+  app.post('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), upload.single('profileImage'), async (req, res) => {
     try {
-      const { email, password, firstName, lastName, role, bio, profileImageUrl } = req.body;
+      const { email, password, firstName, lastName, role, bio } = req.body;
       
       // Validate required fields
       if (!email || !password) {
@@ -69,6 +105,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "A user with this email already exists" });
       }
       
+      // Generate the profile image URL if an image was uploaded
+      let profileImageUrl = "";
+      if (req.file) {
+        // Create a URL relative to the server
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        profileImageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+      }
+      
       // Create a new user
       const newUser = await storage.createUser({
         id: String(Date.now()), // Generate a temporary ID
@@ -77,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: lastName || "",
         role: role || "student",
         bio: bio || "",
-        profileImageUrl: profileImageUrl || "",
+        profileImageUrl: profileImageUrl,
         password // This will be hashed by the storage layer
       });
       

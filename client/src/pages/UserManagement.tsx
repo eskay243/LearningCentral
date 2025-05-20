@@ -53,6 +53,9 @@ const UserManagement = () => {
     password: "",
     confirmPassword: "",
   });
+  
+  const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
 
   const itemsPerPage = 10;
 
@@ -140,6 +143,23 @@ const UserManagement = () => {
       password: "",
       confirmPassword: "",
     });
+    setProfileImage(null);
+    setImagePreview("");
+  };
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Preview the image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    
+    // Store the file for upload
+    setProfileImage(file);
   };
   
   const handleCreateInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -174,19 +194,26 @@ const UserManagement = () => {
     
     setIsSubmitting(true);
     try {
-      const response = await apiRequest(
-        "POST", 
-        "/api/admin/users", 
-        {
-          firstName: createForm.firstName,
-          lastName: createForm.lastName,
-          email: createForm.email,
-          role: createForm.role,
-          bio: createForm.bio,
-          profileImageUrl: createForm.profileImageUrl,
-          password: createForm.password
-        }
-      );
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('firstName', createForm.firstName);
+      formData.append('lastName', createForm.lastName);
+      formData.append('email', createForm.email);
+      formData.append('role', createForm.role);
+      formData.append('bio', createForm.bio);
+      formData.append('password', createForm.password);
+      
+      // Add the profile image if one was selected
+      if (profileImage) {
+        formData.append('profileImage', profileImage);
+      }
+      
+      // Make the API request with FormData
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
       
       if (response.ok) {
         toast({
@@ -542,20 +569,23 @@ const UserManagement = () => {
           <form onSubmit={handleCreateUser}>
             <div className="grid gap-4 py-4">
               <div className="flex items-center gap-4 mb-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={createForm.profileImageUrl} alt={createForm.firstName || "New User"} />
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src={imagePreview || createForm.profileImageUrl} alt={createForm.firstName || "New User"} />
                   <AvatarFallback>
                     {createForm.firstName?.[0] || ''}{createForm.lastName?.[0] || ''}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <Label htmlFor="createProfileImageUrl">Profile Image URL</Label>
+                  <Label htmlFor="profileImage">Profile Image</Label>
                   <Input
-                    id="createProfileImageUrl"
-                    name="profileImageUrl"
-                    value={createForm.profileImageUrl}
-                    onChange={handleCreateInputChange}
+                    id="profileImage"
+                    name="profileImage"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="cursor-pointer"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Upload a profile picture (JPEG, PNG, or GIF)</p>
                 </div>
               </div>
 
