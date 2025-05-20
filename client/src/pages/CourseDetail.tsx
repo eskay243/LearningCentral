@@ -420,7 +420,7 @@ const CourseDetail = () => {
           </div>
 
           {/* Course Image */}
-          <div className="mb-6 relative rounded-lg overflow-hidden h-64 bg-gray-100">
+          <div className="mb-4 sm:mb-6 relative rounded-lg overflow-hidden h-48 sm:h-64 bg-gray-100 dark:bg-gray-800">
             {course.thumbnail ? (
               <img
                 src={course.thumbnail}
@@ -428,22 +428,23 @@ const CourseDetail = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
+              <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
                 <div className="text-center">
-                  <div className="text-5xl mb-2">🖼️</div>
-                  <div>No thumbnail image</div>
+                  <div className="text-4xl sm:text-5xl mb-2">🖼️</div>
+                  <div className="text-sm sm:text-base">No thumbnail image</div>
                 </div>
               </div>
             )}
             {isEditMode && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-3">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="thumbnail" className="text-white">Thumbnail URL:</Label>
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-2 sm:p-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
+                  <Label htmlFor="thumbnail" className="text-white text-xs sm:text-sm whitespace-nowrap">Thumbnail URL:</Label>
                   <Input 
                     id="thumbnail"
                     value={courseData.thumbnail}
                     onChange={(e) => setCourseData({...courseData, thumbnail: e.target.value})}
-                    className="bg-transparent text-white"
+                    className="bg-transparent text-white text-xs sm:text-sm h-8"
+                    size={20}
                   />
                 </div>
               </div>
@@ -529,11 +530,11 @@ const CourseDetail = () => {
 
           {/* Course Content Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 w-full max-w-md">
-              <TabsTrigger value="content">Content</TabsTrigger>
-              <TabsTrigger value="discussions">Discussions</TabsTrigger>
-              <TabsTrigger value="announcements">Announcements</TabsTrigger>
-              <TabsTrigger value="mentors">Mentors</TabsTrigger>
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full max-w-full sm:max-w-md gap-1 p-1">
+              <TabsTrigger value="content" className="text-xs sm:text-sm py-1.5">Content</TabsTrigger>
+              <TabsTrigger value="discussions" className="text-xs sm:text-sm py-1.5">Discussions</TabsTrigger>
+              <TabsTrigger value="announcements" className="text-xs sm:text-sm py-1.5">Announcements</TabsTrigger>
+              <TabsTrigger value="mentors" className="text-xs sm:text-sm py-1.5">Mentors</TabsTrigger>
             </TabsList>
 
             <TabsContent value="content" className="space-y-4 mt-6">
