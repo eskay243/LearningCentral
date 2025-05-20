@@ -11,8 +11,6 @@ import {
   assignmentSubmissions,
   liveSessions,
   liveSessionAttendance,
-  messages,
-  announcements,
   certificates,
   coupons,
   courseRatings,
@@ -26,6 +24,13 @@ import {
   notifications,
   codingExercises,
   exerciseProgress,
+  // Communication related schema
+  conversations,
+  conversationParticipants,
+  chatMessages,
+  messageReactions,
+  courseAnnouncements,
+  // Regular types
   type User,
   type UpsertUser,
   type Course,
@@ -39,8 +44,6 @@ import {
   type AssignmentSubmission,
   type LiveSession,
   type LiveSessionAttendance,
-  type Message,
-  type Announcement,
   type Certificate,
   type Coupon,
   type CourseRating,
@@ -50,6 +53,17 @@ import {
   type AffiliateCommission,
   type CodingExercise,
   type ExerciseProgress,
+  // Communication related types
+  type Conversation,
+  type ConversationParticipant,
+  type ChatMessage,
+  type MessageReaction,
+  type CourseAnnouncement,
+  type InsertConversation,
+  type InsertConversationParticipant,
+  type InsertChatMessage,
+  type InsertMessageReaction,
+  type InsertCourseAnnouncement,
   UserRole,
 } from "@shared/schema";
 import { db } from "./db";
@@ -128,14 +142,38 @@ export interface IStorage {
   getLiveSessionsByCourse(courseId: number): Promise<LiveSession[]>;
   recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance>;
   
-  // Message operations
-  createMessage(messageData: Omit<Message, "id" | "createdAt">): Promise<Message>;
-  getMessagesByUser(userId: string): Promise<Message[]>;
-  getMessagesByConversation(conversationId: string): Promise<Message[]>;
+  // Communication - Conversations
+  createConversation(conversationData: InsertConversation): Promise<Conversation>;
+  getConversation(conversationId: number): Promise<Conversation | undefined>;
+  getUserConversations(userId: string): Promise<Conversation[]>;
+  getCourseConversations(courseId: number): Promise<Conversation[]>;
+  updateConversation(conversationId: number, updateData: Partial<Conversation>): Promise<Conversation>;
+  deleteConversation(conversationId: number): Promise<void>;
+  
+  // Communication - Participants
+  addParticipantToConversation(participantData: InsertConversationParticipant): Promise<ConversationParticipant>;
+  removeParticipantFromConversation(conversationId: number, userId: string): Promise<void>;
+  getConversationParticipants(conversationId: number): Promise<ConversationParticipant[]>;
+  updateLastReadMessage(conversationId: number, userId: string, messageId: number): Promise<void>;
+  
+  // Communication - Messages
+  createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage>;
+  getChatMessages(conversationId: number, options?: { limit?: number, before?: number }): Promise<ChatMessage[]>;
+  updateChatMessage(messageId: number, content: string): Promise<ChatMessage>;
+  deleteChatMessage(messageId: number): Promise<void>;
+  
+  // Communication - Reactions
+  addMessageReaction(reactionData: InsertMessageReaction): Promise<MessageReaction>;
+  removeMessageReaction(messageId: number, userId: string, reaction: string): Promise<void>;
+  getMessageReactions(messageId: number): Promise<MessageReaction[]>;
   
   // Announcements
-  createAnnouncement(announcementData: Omit<Announcement, "id" | "createdAt">): Promise<Announcement>;
-  getAnnouncementsByCourse(courseId: number): Promise<Announcement[]>;
+  createCourseAnnouncement(announcementData: InsertCourseAnnouncement): Promise<CourseAnnouncement>;
+  getCourseAnnouncement(announcementId: number): Promise<CourseAnnouncement | undefined>;
+  updateCourseAnnouncement(announcementId: number, updateData: Partial<CourseAnnouncement>): Promise<CourseAnnouncement>;
+  getCourseAnnouncementsByCourse(courseId: number): Promise<CourseAnnouncement[]>;
+  getCourseAnnouncementsByUser(userId: string): Promise<CourseAnnouncement[]>;
+  deleteCourseAnnouncement(announcementId: number): Promise<void>;
   
   // Certificates
   issueCertificate(certificateData: Omit<Certificate, "id" | "issuedAt">): Promise<Certificate>;
@@ -187,6 +225,283 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Communication - Conversations
+  async createConversation(conversationData: InsertConversation): Promise<Conversation> {
+    const [conversation] = await db.insert(conversations).values(conversationData).returning();
+    return conversation;
+  }
+
+  async getConversation(conversationId: number): Promise<Conversation | undefined> {
+    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId));
+    return conversation;
+  }
+
+  async getUserConversations(userId: string): Promise<Conversation[]> {
+    // Get all conversations where the user is a participant
+    const userConversations = await db
+      .select({
+        conversationId: conversationParticipants.conversationId
+      })
+      .from(conversationParticipants)
+      .where(eq(conversationParticipants.userId, userId));
+
+    if (userConversations.length === 0) {
+      return [];
+    }
+
+    const conversationIds = userConversations.map(c => c.conversationId);
+    
+    return await db
+      .select()
+      .from(conversations)
+      .where(inArray(conversations.id, conversationIds));
+  }
+
+  async getCourseConversations(courseId: number): Promise<Conversation[]> {
+    return db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.courseId, courseId));
+  }
+
+  async updateConversation(conversationId: number, updateData: Partial<Conversation>): Promise<Conversation> {
+    const [conversation] = await db
+      .update(conversations)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(eq(conversations.id, conversationId))
+      .returning();
+    
+    return conversation;
+  }
+
+  async deleteConversation(conversationId: number): Promise<void> {
+    // First delete all participants
+    await db
+      .delete(conversationParticipants)
+      .where(eq(conversationParticipants.conversationId, conversationId));
+    
+    // Then delete all messages
+    await db
+      .delete(chatMessages)
+      .where(eq(chatMessages.conversationId, conversationId));
+    
+    // Finally delete the conversation
+    await db
+      .delete(conversations)
+      .where(eq(conversations.id, conversationId));
+  }
+
+  // Communication - Participants
+  async addParticipantToConversation(participantData: InsertConversationParticipant): Promise<ConversationParticipant> {
+    // Check if participant already exists
+    const [existingParticipant] = await db
+      .select()
+      .from(conversationParticipants)
+      .where(
+        and(
+          eq(conversationParticipants.conversationId, participantData.conversationId),
+          eq(conversationParticipants.userId, participantData.userId)
+        )
+      );
+    
+    if (existingParticipant) {
+      return existingParticipant;
+    }
+    
+    const [participant] = await db
+      .insert(conversationParticipants)
+      .values(participantData)
+      .returning();
+    
+    return participant;
+  }
+
+  async removeParticipantFromConversation(conversationId: number, userId: string): Promise<void> {
+    await db
+      .delete(conversationParticipants)
+      .where(
+        and(
+          eq(conversationParticipants.conversationId, conversationId),
+          eq(conversationParticipants.userId, userId)
+        )
+      );
+  }
+
+  async getConversationParticipants(conversationId: number): Promise<ConversationParticipant[]> {
+    return db
+      .select()
+      .from(conversationParticipants)
+      .where(eq(conversationParticipants.conversationId, conversationId));
+  }
+
+  async updateLastReadMessage(conversationId: number, userId: string, messageId: number): Promise<void> {
+    await db
+      .update(conversationParticipants)
+      .set({ lastReadMessageId: messageId })
+      .where(
+        and(
+          eq(conversationParticipants.conversationId, conversationId),
+          eq(conversationParticipants.userId, userId)
+        )
+      );
+  }
+
+  // Communication - Messages
+  async createChatMessage(messageData: InsertChatMessage): Promise<ChatMessage> {
+    const [message] = await db
+      .insert(chatMessages)
+      .values(messageData)
+      .returning();
+    
+    return message;
+  }
+
+  async getChatMessages(conversationId: number, options?: { limit?: number, before?: number }): Promise<ChatMessage[]> {
+    let query = db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.conversationId, conversationId))
+      .orderBy(desc(chatMessages.sentAt));
+    
+    if (options?.before) {
+      query = query.where(chatMessages.id < options.before);
+    }
+    
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    return await query;
+  }
+
+  async updateChatMessage(messageId: number, content: string): Promise<ChatMessage> {
+    const [message] = await db
+      .update(chatMessages)
+      .set({
+        content,
+        isEdited: true,
+        editedAt: new Date()
+      })
+      .where(eq(chatMessages.id, messageId))
+      .returning();
+    
+    return message;
+  }
+
+  async deleteChatMessage(messageId: number): Promise<void> {
+    // First delete all reactions
+    await db
+      .delete(messageReactions)
+      .where(eq(messageReactions.messageId, messageId));
+    
+    // Then delete the message
+    await db
+      .delete(chatMessages)
+      .where(eq(chatMessages.id, messageId));
+  }
+
+  // Communication - Reactions
+  async addMessageReaction(reactionData: InsertMessageReaction): Promise<MessageReaction> {
+    // Check if reaction already exists
+    const [existingReaction] = await db
+      .select()
+      .from(messageReactions)
+      .where(
+        and(
+          eq(messageReactions.messageId, reactionData.messageId),
+          eq(messageReactions.userId, reactionData.userId),
+          eq(messageReactions.reaction, reactionData.reaction)
+        )
+      );
+    
+    if (existingReaction) {
+      return existingReaction;
+    }
+    
+    const [reaction] = await db
+      .insert(messageReactions)
+      .values(reactionData)
+      .returning();
+    
+    return reaction;
+  }
+
+  async removeMessageReaction(messageId: number, userId: string, reaction: string): Promise<void> {
+    await db
+      .delete(messageReactions)
+      .where(
+        and(
+          eq(messageReactions.messageId, messageId),
+          eq(messageReactions.userId, userId),
+          eq(messageReactions.reaction, reaction)
+        )
+      );
+  }
+
+  async getMessageReactions(messageId: number): Promise<MessageReaction[]> {
+    return db
+      .select()
+      .from(messageReactions)
+      .where(eq(messageReactions.messageId, messageId));
+  }
+
+  // Announcements
+  async createCourseAnnouncement(announcementData: InsertCourseAnnouncement): Promise<CourseAnnouncement> {
+    const [announcement] = await db
+      .insert(courseAnnouncements)
+      .values(announcementData)
+      .returning();
+    
+    return announcement;
+  }
+
+  async getCourseAnnouncement(announcementId: number): Promise<CourseAnnouncement | undefined> {
+    const [announcement] = await db
+      .select()
+      .from(courseAnnouncements)
+      .where(eq(courseAnnouncements.id, announcementId));
+    
+    return announcement;
+  }
+
+  async updateCourseAnnouncement(announcementId: number, updateData: Partial<CourseAnnouncement>): Promise<CourseAnnouncement> {
+    const [announcement] = await db
+      .update(courseAnnouncements)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(eq(courseAnnouncements.id, announcementId))
+      .returning();
+    
+    return announcement;
+  }
+
+  async getCourseAnnouncementsByCourse(courseId: number): Promise<CourseAnnouncement[]> {
+    return db
+      .select()
+      .from(courseAnnouncements)
+      .where(eq(courseAnnouncements.courseId, courseId))
+      .orderBy(desc(courseAnnouncements.publishedAt));
+  }
+
+  async getCourseAnnouncementsByUser(userId: string): Promise<CourseAnnouncement[]> {
+    return db
+      .select()
+      .from(courseAnnouncements)
+      .where(eq(courseAnnouncements.authorId, userId))
+      .orderBy(desc(courseAnnouncements.publishedAt));
+  }
+
+  async deleteCourseAnnouncement(announcementId: number): Promise<void> {
+    await db
+      .delete(courseAnnouncements)
+      .where(eq(courseAnnouncements.id, announcementId));
+  }
+  
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     try {

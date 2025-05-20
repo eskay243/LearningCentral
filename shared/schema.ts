@@ -448,3 +448,76 @@ export type NotificationSetting = typeof notificationSettings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CodingExercise = typeof codingExercises.$inferSelect;
 export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
+
+// Messaging and communication
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }),
+  type: varchar("type", { length: 50 }).notNull().default("direct"), // direct, group, course
+  courseId: integer("course_id").references(() => courses.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const conversationParticipants = pgTable("conversation_participants", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  isAdmin: boolean("is_admin").default(false),
+  lastReadMessageId: integer("last_read_message_id"),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull().references(() => conversations.id),
+  senderId: varchar("sender_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  contentType: varchar("content_type", { length: 50 }).default("text"), // text, image, file, etc.
+  attachmentUrl: varchar("attachment_url", { length: 255 }),
+  sentAt: timestamp("sent_at").defaultNow(),
+  isEdited: boolean("is_edited").default(false),
+  editedAt: timestamp("edited_at"),
+  replyToId: integer("reply_to_id").references(() => chatMessages.id),
+});
+
+export const messageReactions = pgTable("message_reactions", {
+  id: serial("id").primaryKey(),
+  messageId: integer("message_id").notNull().references(() => chatMessages.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  reaction: varchar("reaction", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const courseAnnouncements = pgTable("course_announcements", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  content: text("content").notNull(),
+  courseId: integer("course_id").references(() => courses.id),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  publishedAt: timestamp("published_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  isPinned: boolean("is_pinned").default(false),
+  attachmentUrl: varchar("attachment_url", { length: 255 }),
+});
+
+// Export types for messaging system
+export type Conversation = typeof conversations.$inferSelect;
+export type ConversationParticipant = typeof conversationParticipants.$inferSelect;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type MessageReaction = typeof messageReactions.$inferSelect;
+export type CourseAnnouncement = typeof courseAnnouncements.$inferSelect;
+
+// Create insert schemas
+export const insertConversationSchema = createInsertSchema(conversations);
+export const insertConversationParticipantSchema = createInsertSchema(conversationParticipants);
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
+export const insertMessageReactionSchema = createInsertSchema(messageReactions);
+export const insertCourseAnnouncementSchema = createInsertSchema(courseAnnouncements);
+
+// Create insert types
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type InsertConversationParticipant = z.infer<typeof insertConversationParticipantSchema>;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
+export type InsertCourseAnnouncement = z.infer<typeof insertCourseAnnouncementSchema>;
