@@ -790,6 +790,230 @@ export class DatabaseStorage implements IStorage {
       .where(eq(certificates.userId, userId))
       .orderBy(desc(certificates.issuedAt));
   }
+  
+  // Bookmark operations
+  async createBookmark(bookmarkData: any): Promise<any> {
+    const [bookmark] = await db
+      .insert(bookmarks)
+      .values(bookmarkData)
+      .returning();
+    return bookmark;
+  }
+
+  async getBookmark(bookmarkId: number): Promise<any> {
+    const [bookmark] = await db
+      .select()
+      .from(bookmarks)
+      .where(eq(bookmarks.id, bookmarkId));
+    return bookmark;
+  }
+
+  async getBookmarkByLessonAndUser(lessonId: number, userId: string): Promise<any> {
+    const [bookmark] = await db
+      .select()
+      .from(bookmarks)
+      .where(
+        and(
+          eq(bookmarks.lessonId, lessonId),
+          eq(bookmarks.userId, userId)
+        )
+      );
+    return bookmark;
+  }
+
+  async getUserBookmarks(userId: string): Promise<any[]> {
+    // Join with courses and lessons to get additional context
+    return await db
+      .select({
+        id: bookmarks.id,
+        userId: bookmarks.userId,
+        lessonId: bookmarks.lessonId,
+        courseId: bookmarks.courseId,
+        title: bookmarks.title,
+        note: bookmarks.note,
+        timestamp: bookmarks.timestamp,
+        contentSelection: bookmarks.contentSelection,
+        createdAt: bookmarks.createdAt,
+        updatedAt: bookmarks.updatedAt,
+        courseName: courses.title,
+        lessonName: lessons.title,
+        contentType: lessons.contentType,
+      })
+      .from(bookmarks)
+      .innerJoin(courses, eq(bookmarks.courseId, courses.id))
+      .innerJoin(lessons, eq(bookmarks.lessonId, lessons.id))
+      .where(eq(bookmarks.userId, userId))
+      .orderBy(desc(bookmarks.createdAt));
+  }
+
+  async updateBookmark(bookmarkId: number, data: any): Promise<any> {
+    // Remove any fields that shouldn't be updated directly
+    const { id, userId, lessonId, courseId, createdAt, ...updateData } = data;
+    
+    // Set updatedAt to current time
+    const updatedData = {
+      ...updateData,
+      updatedAt: new Date(),
+    };
+    
+    const [bookmark] = await db
+      .update(bookmarks)
+      .set(updatedData)
+      .where(eq(bookmarks.id, bookmarkId))
+      .returning();
+    
+    return bookmark;
+  }
+
+  async deleteBookmark(bookmarkId: number): Promise<void> {
+    await db
+      .delete(bookmarks)
+      .where(eq(bookmarks.id, bookmarkId));
+  }
+
+  // Content search
+  async searchContent(query: string, courseId?: number): Promise<any[]> {
+    // Base query for lessons
+    const lessonQuery = db
+      .select({
+        id: lessons.id,
+        title: lessons.title,
+        type: sql<string>`'lesson'`,
+        contentType: lessons.contentType,
+        courseId: modules.courseId,
+        lessonId: lessons.id,
+        courseName: courses.title,
+        moduleName: modules.title,
+        snippet: sql<string>`SUBSTRING(${lessons.content}, 1, 150)`,
+      })
+      .from(lessons)
+      .innerJoin(modules, eq(lessons.moduleId, modules.id))
+      .innerJoin(courses, eq(modules.courseId, courses.id))
+      .where(
+        and(
+          or(
+            ilike(lessons.title, `%${query}%`),
+            ilike(lessons.content || '', `%${query}%`),
+            ilike(lessons.description || '', `%${query}%`)
+          ),
+          courseId ? eq(courses.id, courseId) : undefined
+        )
+      );
+
+    // Query for resources
+    const resourceQuery = db
+      .select({
+        id: resources.id,
+        title: resources.title,
+        type: sql<string>`'resource'`,
+        contentType: resources.type,
+        courseId: modules.courseId,
+        lessonId: resources.lessonId,
+        courseName: courses.title,
+        moduleName: modules.title,
+        snippet: resources.description,
+      })
+      .from(resources)
+      .innerJoin(lessons, eq(resources.lessonId, lessons.id))
+      .innerJoin(modules, eq(lessons.moduleId, modules.id))
+      .innerJoin(courses, eq(modules.courseId, courses.id))
+      .where(
+        and(
+          or(
+            ilike(resources.title, `%${query}%`),
+            ilike(resources.description || '', `%${query}%`)
+          ),
+          courseId ? eq(courses.id, courseId) : undefined
+        )
+      );
+
+    // Query for modules
+    const moduleQuery = db
+      .select({
+        id: modules.id,
+        title: modules.title,
+        type: sql<string>`'module'`,
+        contentType: sql<string>`'module'`,
+        courseId: modules.courseId,
+        courseName: courses.title,
+        snippet: modules.description,
+      })
+      .from(modules)
+      .innerJoin(courses, eq(modules.courseId, courses.id))
+      .where(
+        and(
+          or(
+            ilike(modules.title, `%${query}%`),
+            ilike(modules.description || '', `%${query}%`)
+          ),
+          courseId ? eq(courses.id, courseId) : undefined
+        )
+      );
+
+    // Combine all results
+    const lessonResults = await lessonQuery;
+    const resourceResults = await resourceQuery;
+    const moduleResults = await moduleQuery;
+
+    // Combine and sort by relevance (simple implementation)
+    const allResults = [...lessonResults, ...resourceResults, ...moduleResults];
+    
+    // Sort by exact title match first, then by title containing query
+    return allResults.sort((a, b) => {
+      // Exact title match gets highest priority
+      if (a.title.toLowerCase() === query.toLowerCase()) return -1;
+      if (b.title.toLowerCase() === query.toLowerCase()) return 1;
+      
+      // Title containing query gets next priority
+      const aTitleContains = a.title.toLowerCase().includes(query.toLowerCase());
+      const bTitleContains = b.title.toLowerCase().includes(query.toLowerCase());
+      
+      if (aTitleContains && !bTitleContains) return -1;
+      if (!aTitleContains && bTitleContains) return 1;
+      
+      // Otherwise, sort by title alphabetically
+      return a.title.localeCompare(b.title);
+    });
+  }
+
+  // Content sharing
+  async createContentShare(shareData: any): Promise<any> {
+    const [share] = await db
+      .insert(contentShares)
+      .values(shareData)
+      .returning();
+    return share;
+  }
+
+  async getContentShareByCode(shareCode: string): Promise<any> {
+    const [share] = await db
+      .select()
+      .from(contentShares)
+      .where(eq(contentShares.shareCode, shareCode));
+    return share;
+  }
+
+  async updateContentShareAccess(shareId: number): Promise<any> {
+    const [share] = await db
+      .update(contentShares)
+      .set({
+        lastAccessedAt: new Date(),
+        accessCount: sql`${contentShares.accessCount} + 1`,
+      })
+      .where(eq(contentShares.id, shareId))
+      .returning();
+    
+    return share;
+  }
+
+  // Lesson operations for content features
+  async getLesson(lessonId: number): Promise<Lesson | undefined> {
+    const [lesson] = await db
+      .select()
+      .from(lessons)
+      .where(eq(lessons.id, lessonId));
+    return lesson;
+  }
 }
 
 export const storage = new DatabaseStorage();

@@ -24,13 +24,13 @@ import {
   Printer,
   FileDown,
   FileText,
-  FilePdf,
+  File,
   FileSpreadsheet,
   ChevronDown,
   Loader2,
   Settings,
   Mail,
-  Share,
+  Share2,
   Copy,
   Check
 } from 'lucide-react';
@@ -400,7 +400,6 @@ const ContentExport: React.FC<ContentExportProps> = ({
       };
 
       const response = await apiRequest('POST', '/api/export/email', exportOptions);
-      const data = await response.json();
       
       toast({
         title: 'Email Sent',
@@ -422,7 +421,7 @@ const ContentExport: React.FC<ContentExportProps> = ({
   const getFormatIcon = (format: ExportFormat) => {
     switch (format) {
       case 'pdf':
-        return <FilePdf className="h-4 w-4 mr-2" />;
+        return <File className="h-4 w-4 mr-2" />;
       case 'word':
         return <FileText className="h-4 w-4 mr-2" />;
       case 'excel':
@@ -461,7 +460,7 @@ const ContentExport: React.FC<ContentExportProps> = ({
                   className={exportFormat === 'pdf' ? 'ring-2 ring-primary' : ''}
                   onClick={() => setExportFormat('pdf')}
                 >
-                  <FilePdf className="h-5 w-5 mr-2" />
+                  <File className="h-5 w-5 mr-2" />
                   PDF
                 </Button>
                 
@@ -605,7 +604,7 @@ const ContentExport: React.FC<ContentExportProps> = ({
                   className={exportFormat === 'pdf' ? 'ring-2 ring-primary' : ''}
                   onClick={() => setExportFormat('pdf')}
                 >
-                  <FilePdf className="h-5 w-5 mr-2" />
+                  <File className="h-5 w-5 mr-2" />
                   PDF
                 </Button>
                 
@@ -720,7 +719,7 @@ const ContentExport: React.FC<ContentExportProps> = ({
                   className={exportFormat === 'pdf' ? 'ring-2 ring-primary' : ''}
                   onClick={() => setExportFormat('pdf')}
                 >
-                  <FilePdf className="h-5 w-5 mr-2" />
+                  <File className="h-5 w-5 mr-2" />
                   PDF
                 </Button>
                 
@@ -845,7 +844,7 @@ const ContentExport: React.FC<ContentExportProps> = ({
           <DropdownMenuSeparator />
           
           <DropdownMenuItem onClick={handleShare}>
-            <Share className="mr-2 h-4 w-4" />
+            <Share2 className="mr-2 h-4 w-4" />
             Share
           </DropdownMenuItem>
           
@@ -880,7 +879,7 @@ const ContentExport: React.FC<ContentExportProps> = ({
                 className={exportFormat === 'pdf' ? 'ring-2 ring-primary' : ''}
                 onClick={() => setExportFormat('pdf')}
               >
-                <FilePdf className="h-5 w-5 mr-2" />
+                <File className="h-5 w-5 mr-2" />
                 PDF
               </Button>
               
