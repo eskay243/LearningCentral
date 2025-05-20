@@ -123,40 +123,50 @@ const InteractiveLearning = () => {
   
   const currentExercise = SAMPLE_EXERCISES[currentExerciseIndex];
   
-  // Load exercises from API (currently using sample data)
+  // Load exercises from API
   const { data: exercises, error, isLoading: isLoadingExercises } = useQuery({
     queryKey: ['/api/coding-exercises'],
-    queryFn: async () => {
-      // In a real implementation, this would fetch from the API
-      // For now, return sample data
-      return SAMPLE_EXERCISES;
-    },
     enabled: !!isAuthenticated,
   });
   
-  // Load user progress (simulation for now)
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      // In a real implementation, this would fetch from the API
-      // For now, simulate with local data
-      const savedProgress = localStorage.getItem(`exercise_progress_${user.id}`);
-      if (savedProgress) {
-        try {
-          const parsed = JSON.parse(savedProgress);
-          setExerciseProgress(parsed);
-          
-          // Set completed exercises based on saved progress
-          const completed = Object.entries(parsed)
-            .filter(([_, value]: [string, any]) => value.status === 'completed')
-            .map(([key]) => parseInt(key));
-          
-          setCompletedExercises(completed);
-        } catch (e) {
-          console.error('Error parsing saved progress:', e);
-        }
+  // Load user progress from API
+  const { data: progressData, isLoading: isLoadingProgress } = useQuery({
+    queryKey: ['/api/users', user?.id, 'exercise-progress'],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const response = await fetch(`/api/users/${user.id}/exercise-progress`);
+      if (!response.ok) {
+        throw new Error('Failed to load progress data');
       }
+      return response.json();
+    },
+    enabled: !!isAuthenticated && !!user?.id,
+  });
+  
+  // Update exercise progress state when data is loaded
+  useEffect(() => {
+    if (progressData?.recentExercises) {
+      // Convert progress data to the format expected by our component
+      const progress: { [key: number]: { status: string; currentCode?: string } } = {};
+      
+      // First set up all completed exercises
+      const completed: number[] = [];
+      
+      progressData.recentExercises.forEach((exercise: any) => {
+        progress[exercise.id] = {
+          status: exercise.status || 'in_progress',
+          currentCode: exercise.currentCode
+        };
+        
+        if (exercise.status === 'completed') {
+          completed.push(exercise.id);
+        }
+      });
+      
+      setExerciseProgress(progress);
+      setCompletedExercises(completed);
     }
-  }, [isAuthenticated, user]);
+  }, [progressData]);
   
   // Handle exercise completion
   const handleExerciseComplete = (exerciseId: number) => {
@@ -175,9 +185,30 @@ const InteractiveLearning = () => {
       };
       setExerciseProgress(newProgress);
       
-      // Save progress (in a real app, this would be an API call)
+      // Save progress to the API
       if (user) {
-        localStorage.setItem(`exercise_progress_${user.id}`, JSON.stringify(newProgress));
+        const progressData = {
+          status: 'completed',
+          currentCode: exerciseProgress[exerciseId]?.currentCode || '',
+          timeSpent: 0, // Would track actual time in a real implementation
+          attemptCount: 1, // Would track actual attempts in a real implementation
+          hintsUsed: 0 // Would track actual hints used in a real implementation
+        };
+        
+        fetch(`/api/coding-exercises/${exerciseId}/progress`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(progressData)
+        }).catch(error => {
+          console.error('Error saving exercise completion:', error);
+          toast({
+            title: "Error saving progress",
+            description: "Your progress was not saved. Please try again.",
+            variant: "destructive"
+          });
+        });
       }
       
       toast({
@@ -202,8 +233,30 @@ const InteractiveLearning = () => {
     };
     setExerciseProgress(newProgress);
     
-    // Save progress every few seconds (debounced in a real app)
-    localStorage.setItem(`exercise_progress_${user.id}`, JSON.stringify(newProgress));
+    // We would use a debounced save here in a real implementation
+    // to avoid too many API calls while typing
+    const saveToApi = () => {
+      const progressData = {
+        status: 'in_progress',
+        currentCode: code,
+        timeSpent: 0, // Would track actual time in a real implementation
+        attemptCount: 1, // Would track actual attempts in a real implementation
+        hintsUsed: 0 // Would track actual hints used in a real implementation
+      };
+      
+      fetch(`/api/coding-exercises/${currentExercise.id}/progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(progressData)
+      }).catch(error => {
+        console.error('Error saving code progress:', error);
+      });
+    };
+    
+    // For demo, save immediately - in production we would add debouncing
+    saveToApi();
   };
   
   // Navigate to next exercise
