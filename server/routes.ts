@@ -11,6 +11,7 @@ import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 import { setupWebSocketServer } from "./websocketServer";
+import certificateRoutes from "./certificateRoutes";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
