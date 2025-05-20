@@ -668,6 +668,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create live session" });
     }
   });
+  
+  // Get single live session by ID
+  app.get('/api/live-sessions/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const session = await storage.getLiveSession(sessionId);
+      
+      if (!session) {
+        return res.status(404).json({ message: "Live session not found" });
+      }
+      
+      // Get the lesson information for this session
+      const lesson = await storage.getLesson(session.lessonId);
+      
+      // Get attendance for this session
+      const attendees = await storage.getLiveSessionAttendees(sessionId);
+      
+      // Return enhanced session with lesson details and attendance
+      res.json({
+        ...session,
+        lessonTitle: lesson?.title || "Untitled Lesson",
+        lessonDescription: lesson?.description || "",
+        attendees
+      });
+    } catch (error) {
+      console.error("Error fetching live session:", error);
+      res.status(500).json({ message: "Failed to fetch live session" });
+    }
+  });
+  
+  // Record attendance for a live session
+  app.post('/api/live-sessions/:id/attendance', isAuthenticated, async (req: any, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      // Check if the session exists
+      const session = await storage.getLiveSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Live session not found" });
+      }
+      
+      // Record attendance
+      const attendance = await storage.recordLiveSessionAttendance({
+        sessionId,
+        userId,
+        joinTime: new Date(),
+        status: "present"
+      });
+      
+      res.status(201).json(attendance);
+    } catch (error) {
+      console.error("Error recording attendance:", error);
+      res.status(500).json({ message: "Failed to record attendance" });
+    }
+  });
 
   // Enrollment routes
   app.post('/api/enrollments', isAuthenticated, async (req: any, res) => {

@@ -67,7 +67,7 @@ import {
   UserRole,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, like, desc, asc, isNull, count, sql, not, inArray, lt } from "drizzle-orm";
+import { eq, and, or, like, desc, asc, isNull, count, sql, not, inArray, lt, gt, gte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // Interface for storage operations
@@ -321,7 +321,6 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(liveSessions)
         .where(and(
-          gte(liveSessions.startTime, now),
           eq(liveSessions.status, "scheduled"),
           inArray(liveSessions.lessonId, lessonIds)
         ))
@@ -336,10 +335,9 @@ export class DatabaseStorage implements IStorage {
     const sessions = await db
       .select()
       .from(liveSessions)
-      .where(and(
-        gte(liveSessions.startTime, now),
+      .where(
         eq(liveSessions.status, "scheduled")
-      ))
+      )
       .orderBy(asc(liveSessions.startTime))
       .limit(options?.limit || 100);
     
@@ -361,6 +359,55 @@ export class DatabaseStorage implements IStorage {
       .from(liveSessions)
       .where(eq(liveSessions.id, id));
     return session;
+  }
+  
+  async getLiveSessionAttendees(sessionId: number): Promise<LiveSessionAttendance[]> {
+    const attendees = await db
+      .select()
+      .from(liveSessionAttendance)
+      .where(eq(liveSessionAttendance.sessionId, sessionId))
+      .orderBy(asc(liveSessionAttendance.joinTime));
+    
+    return attendees;
+  }
+  
+  async recordLiveSessionAttendance(data: { sessionId: number, userId: string, joinTime: Date, status: string }): Promise<LiveSessionAttendance> {
+    // Check if the user already has attendance record for this session
+    const [existingRecord] = await db
+      .select()
+      .from(liveSessionAttendance)
+      .where(and(
+        eq(liveSessionAttendance.sessionId, data.sessionId),
+        eq(liveSessionAttendance.userId, data.userId)
+      ));
+    
+    if (existingRecord) {
+      // Update existing record
+      const [updated] = await db
+        .update(liveSessionAttendance)
+        .set({ 
+          status: data.status,
+          lastActivity: new Date()
+        })
+        .where(eq(liveSessionAttendance.id, existingRecord.id))
+        .returning();
+      
+      return updated;
+    }
+    
+    // Create new attendance record
+    const [attendance] = await db
+      .insert(liveSessionAttendance)
+      .values({
+        sessionId: data.sessionId,
+        userId: data.userId,
+        joinTime: data.joinTime,
+        status: data.status,
+        lastActivity: data.joinTime
+      })
+      .returning();
+    
+    return attendance;
   }
   
   async recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance> {
