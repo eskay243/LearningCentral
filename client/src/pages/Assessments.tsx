@@ -129,20 +129,20 @@ const Assessments = () => {
   ];
 
   // Filter quizzes based on search and course filter
-  const filteredQuizzes = (quizzes || mockQuizzes)
+  const filteredQuizzes = ((quizzes || mockQuizzes) || [])
     .filter((quiz) => 
       quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quiz.course.title.toLowerCase().includes(searchTerm.toLowerCase())
+      (quiz.course && quiz.course.title && quiz.course.title.toLowerCase().includes(searchTerm.toLowerCase()))
     )
-    .filter((quiz) => filterCourse === "all" || quiz.course.id.toString() === filterCourse);
+    .filter((quiz) => filterCourse === "all" || (quiz.course && quiz.course.id && quiz.course.id.toString() === filterCourse));
 
   // Filter assignments based on search and course filter
-  const filteredAssignments = (assignments || mockAssignments)
+  const filteredAssignments = ((assignments || mockAssignments) || [])
     .filter((assignment) => 
       assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assignment.course.title.toLowerCase().includes(searchTerm.toLowerCase())
+      (assignment.course && assignment.course.title && assignment.course.title.toLowerCase().includes(searchTerm.toLowerCase()))
     )
-    .filter((assignment) => filterCourse === "all" || assignment.course.id.toString() === filterCourse);
+    .filter((assignment) => filterCourse === "all" || (assignment.course && assignment.course.id && assignment.course.id.toString() === filterCourse));
 
   return (
     <div className="p-4 md:p-6">
