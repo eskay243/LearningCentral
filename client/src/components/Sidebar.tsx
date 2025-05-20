@@ -129,6 +129,15 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                   Analytics
                 </a>
               </Link>
+              
+              {isAdmin && (
+                <Link href="/users">
+                  <a className={menuItemClass("/users")}>
+                    <UsersRound className="mr-3 h-5 w-5" />
+                    User Management
+                  </a>
+                </Link>
+              )}
             </>
           )}
           
