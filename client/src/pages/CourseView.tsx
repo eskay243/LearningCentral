@@ -336,9 +336,16 @@ const CourseView = () => {
               <div className="p-6 text-center">
                 <p className="text-gray-500">No content available for this course yet.</p>
                 {(isMentor || isAdmin) && (
-                  <Button className="mt-4">
-                    Add Content
-                  </Button>
+                  <div className="flex flex-col gap-2 mt-4">
+                    <Button>
+                      Add Content
+                    </Button>
+                    <Link href={`/courses/${courseId}/exercises`}>
+                      <Button variant="outline" className="w-full">
+                        Manage Interactive Exercises
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </div>
             ) : (
