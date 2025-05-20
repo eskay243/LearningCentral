@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import useAuth from "@/hooks/useAuth";
+import { PlusCircle, Edit, Eye, FileText, Check, Clock, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { formatDate } from "@/lib/utils";
+import QuizCreator from "@/components/quiz/QuizCreator";
+import QuizTaker from "@/components/quiz/QuizTaker";
+import AssignmentSubmission from "@/components/assessment/AssignmentSubmission";
+import AssignmentGrading from "@/components/assessment/AssignmentGrading";
 
 const Assessments = () => {
   const { user, isMentor, isAdmin } = useAuth();
