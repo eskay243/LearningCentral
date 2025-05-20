@@ -67,7 +67,7 @@ import {
   UserRole,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, like, desc, asc, isNull, count, sql, not, inArray } from "drizzle-orm";
+import { eq, and, or, like, desc, asc, isNull, count, sql, not, inArray, lt } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 // Interface for storage operations
@@ -359,6 +359,15 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
+  async getChatMessage(messageId: number): Promise<ChatMessage | undefined> {
+    const [message] = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.id, messageId));
+    
+    return message;
+  }
+
   async getChatMessages(conversationId: number, options?: { limit?: number, before?: number }): Promise<ChatMessage[]> {
     let query = db
       .select()
@@ -367,7 +376,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(chatMessages.sentAt));
     
     if (options?.before) {
-      query = query.where(chatMessages.id < options.before);
+      query = query.where(lt(chatMessages.id, options.before));
     }
     
     if (options?.limit) {
