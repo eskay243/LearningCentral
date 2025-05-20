@@ -37,7 +37,7 @@ const ResourceItem: React.FC<ResourceItemProps> = ({
   const { toast } = useToast();
   
   // Format file size for display
-  const formatFileSize = (bytes?: number): string => {
+  const formatFileSize = (bytes: number): string => {
     if (!bytes) return '';
     
     const units = ['B', 'KB', 'MB', 'GB'];
@@ -153,7 +153,7 @@ const ResourceItem: React.FC<ResourceItemProps> = ({
             {description && (
               <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{description}</p>
             )}
-            {fileSize > 0 && (
+            {fileSize && fileSize > 0 && (
               <span className="text-xs text-muted-foreground mt-1 block">
                 {formatFileSize(fileSize)}
               </span>
