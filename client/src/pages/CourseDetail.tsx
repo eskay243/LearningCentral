@@ -798,10 +798,10 @@ const CourseDetail = () => {
 
         {/* Enrollment Column */}
         <div>
-          <Card className="sticky top-6">
-            <CardContent className="pt-6">
-              <div className="text-center mb-6">
-                <div className="text-3xl font-bold mb-2">
+          <Card className="sticky top-6 dark:bg-gray-800">
+            <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="text-2xl sm:text-3xl font-bold mb-2 dark:text-white">
                   {course.price > 0 ? formatCurrency(course.price) : "Free"}
                 </div>
                 {isEnrolled ? (
@@ -827,7 +827,7 @@ const CourseDetail = () => {
                   </div>
                 ) : (
                   <Button 
-                    className="w-full" 
+                    className="w-full text-sm sm:text-base py-1.5 sm:py-2" 
                     onClick={handleEnroll}
                     disabled={enrollCourseMutation.isPending}
                   >
@@ -836,17 +836,17 @@ const CourseDetail = () => {
                 )}
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <h3 className="font-medium mb-2">This course includes:</h3>
-                  <ul className="space-y-2">
-                    <li className="flex gap-2 items-center text-sm">
-                      <FileIcon className="h-4 w-4 text-gray-500" />
-                      <span>{modules?.length || 0} modules</span>
+                  <h3 className="font-medium text-sm sm:text-base mb-2 dark:text-white">This course includes:</h3>
+                  <ul className="space-y-1.5 sm:space-y-2">
+                    <li className="flex gap-2 items-center text-xs sm:text-sm">
+                      <FileIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
+                      <span className="dark:text-gray-300">{modules?.length || 0} modules</span>
                     </li>
-                    <li className="flex gap-2 items-center text-sm">
-                      <CheckIcon className="h-4 w-4 text-gray-500" />
-                      <span>Quizzes and assignments</span>
+                    <li className="flex gap-2 items-center text-xs sm:text-sm">
+                      <CheckIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-500 dark:text-gray-400" />
+                      <span className="dark:text-gray-300">Quizzes and assignments</span>
                     </li>
                     <li className="flex gap-2 items-center text-sm">
                       <UsersIcon className="h-4 w-4 text-gray-500" />
