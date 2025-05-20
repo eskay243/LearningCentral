@@ -221,10 +221,12 @@ export const liveSessionAttendance = pgTable("live_session_attendance", {
   id: serial("id").primaryKey(),
   sessionId: integer("session_id").notNull().references(() => liveSessions.id),
   userId: varchar("user_id").notNull().references(() => users.id),
-  joinedAt: timestamp("joined_at"),
-  leftAt: timestamp("left_at"),
+  joinTime: timestamp("join_time").notNull().defaultNow(), // Time user joined the session
+  leftTime: timestamp("left_time"), // Time user left the session
+  status: text("status").notNull().default("present"), // Status: present, absent, late, excused
   watchedRecording: boolean("watched_recording").notNull().default(false),
   watchedRecordingAt: timestamp("watched_recording_at"),
+  lastActivity: timestamp("last_activity").defaultNow(), // Last activity timestamp
 });
 
 // Messages table

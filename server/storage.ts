@@ -410,12 +410,15 @@ export class DatabaseStorage implements IStorage {
     return attendance;
   }
   
+  // This is replaced by the more detailed recordLiveSessionAttendance method
+  // We're keeping this method for backward compatibility
   async recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance> {
-    const [attendance] = await db
-      .insert(liveSessionAttendance)
-      .values(attendanceData)
-      .returning();
-    return attendance;
+    return this.recordLiveSessionAttendance({
+      sessionId: attendanceData.sessionId,
+      userId: attendanceData.userId,
+      joinTime: attendanceData.joinTime || new Date(),
+      status: attendanceData.status || "present"
+    });
   }
   
   async getLiveSessionAttendance(sessionId: number): Promise<LiveSessionAttendance[]> {
