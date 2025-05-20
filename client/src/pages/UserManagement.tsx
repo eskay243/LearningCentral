@@ -64,7 +64,7 @@ const UserManagement = () => {
 
   // Filter users based on search term and selected role
   const filteredUsers = React.useMemo(() => {
-    return allUsers.filter((user: any) => {
+    return (allUsers as any[]).filter((user: any) => {
       const matchesSearch = 
         searchTerm === "" || 
         user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||

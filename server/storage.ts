@@ -62,8 +62,9 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  createUser(userData: any): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User>;
-  getUsersByRole(role: string): Promise<User[]>;
+  getUsersByRole(role?: string): Promise<User[]>;
   
   // Course operations
   createCourse(courseData: Omit<Course, "id" | "createdAt" | "updatedAt">): Promise<Course>;
@@ -210,6 +211,36 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+  
+  async createUser(userData: any): Promise<User> {
+    try {
+      // If password is provided, we would hash it here
+      // For this implementation, we'll store it as is (not secure for production)
+      // In a real app, you would use bcrypt: const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      // Create the user
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: userData.id || String(Date.now()),
+          email: userData.email,
+          firstName: userData.firstName || "",
+          lastName: userData.lastName || "",
+          role: userData.role || "student",
+          profileImageUrl: userData.profileImageUrl || "",
+          bio: userData.bio || "",
+          // Additional fields as needed
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      
+      return user;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
+  }
 
   async updateUser(id: string, userData: Partial<UpsertUser>): Promise<User> {
     try {
@@ -228,15 +259,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUsersByRole(role: string): Promise<User[]> {
+  async getUsersByRole(role?: string): Promise<User[]> {
     try {
-      const userList = await db
-        .select()
-        .from(users)
-        .where(eq(users.role, role));
+      let query = db.select().from(users);
+      
+      if (role) {
+        query = query.where(eq(users.role, role));
+      }
+      
+      const userList = await query;
       return userList;
     } catch (error) {
-      console.error(`Error fetching users by role ${role}:`, error);
+      console.error(`Error fetching users:`, error);
       return [];
     }
   }

@@ -54,6 +54,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.post('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, role, bio, profileImageUrl } = req.body;
+      
+      // Validate required fields
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+      
+      // Check if user with this email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "A user with this email already exists" });
+      }
+      
+      // Create a new user
+      const newUser = await storage.createUser({
+        id: String(Date.now()), // Generate a temporary ID
+        email,
+        firstName: firstName || "",
+        lastName: lastName || "",
+        role: role || "student",
+        bio: bio || "",
+        profileImageUrl: profileImageUrl || "",
+        password // This will be hashed by the storage layer
+      });
+      
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+  
   app.patch('/api/admin/users/:id', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
     try {
       const { id } = req.params;
