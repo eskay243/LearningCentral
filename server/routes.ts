@@ -624,15 +624,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
+      const { courseId, limit } = req.query;
       
-      // If mentor, only show their sessions
-      let mentorId;
-      if (user?.role === UserRole.MENTOR) {
-        mentorId = userId;
+      const options: { courseId?: number; limit?: number } = {};
+      
+      // Add query parameters if provided
+      if (courseId) {
+        options.courseId = parseInt(courseId as string);
       }
       
-      const sessions = await storage.getUpcomingLiveSessions(mentorId);
-      res.json(sessions);
+      if (limit) {
+        options.limit = parseInt(limit as string);
+      }
+      
+      // Get upcoming live sessions
+      const upcomingSessions = await storage.getUpcomingLiveSessions(options);
+      
+      // Add lesson information to each session
+      const sessionsWithDetails = await Promise.all(
+        upcomingSessions.map(async (session) => {
+          const lesson = await storage.getLesson(session.lessonId);
+          return {
+            ...session,
+            lessonTitle: lesson?.title || "Untitled Lesson",
+            lessonDescription: lesson?.description || "",
+          };
+        })
+      );
+      
+      res.json(sessionsWithDetails);
     } catch (error) {
       console.error("Error fetching live sessions:", error);
       res.status(500).json({ message: "Failed to fetch live sessions" });

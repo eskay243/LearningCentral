@@ -254,42 +254,56 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLiveSessionsByCourse(courseId: number): Promise<LiveSession[]> {
-    const sessions = await db
+    // First, get modules for the course
+    const courseModules = await db
+      .select({ id: modules.id })
+      .from(modules)
+      .where(eq(modules.courseId, courseId));
+    
+    if (courseModules.length === 0) {
+      return [];
+    }
+    
+    const moduleIds = courseModules.map(module => module.id);
+    
+    // Next, get lessons for these modules
+    const moduleLessons = await db
+      .select({ id: lessons.id })
+      .from(lessons)
+      .where(inArray(lessons.moduleId, moduleIds));
+    
+    if (moduleLessons.length === 0) {
+      return [];
+    }
+    
+    const lessonIds = moduleLessons.map(lesson => lesson.id);
+    
+    // Finally, get live sessions for these lessons
+    return db
       .select()
       .from(liveSessions)
-      .innerJoin(lessons, eq(liveSessions.lessonId, lessons.id))
-      .innerJoin(modules, eq(lessons.moduleId, modules.id))
-      .where(eq(modules.courseId, courseId))
+      .where(inArray(liveSessions.lessonId, lessonIds))
       .orderBy(asc(liveSessions.startTime));
-    
-    return sessions.map(session => ({
-      id: session.liveSessions.id,
-      lessonId: session.liveSessions.lessonId,
-      startTime: session.liveSessions.startTime,
-      endTime: session.liveSessions.endTime,
-      meetingUrl: session.liveSessions.meetingUrl,
-      recordingUrl: session.liveSessions.recordingUrl,
-      status: session.liveSessions.status
-    }));
   }
   
   async getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]> {
     const now = new Date();
     
+    // Build the basic query without courseId filtering first
     let query = db
       .select()
       .from(liveSessions)
       .where(and(
-        gte(liveSessions.startTime, now),
+        gt(liveSessions.startTime, now),
         eq(liveSessions.status, "scheduled")
       ))
       .orderBy(asc(liveSessions.startTime));
     
+    // Apply courseId filter if provided
     if (options?.courseId) {
+      // First, get modules for the course
       const courseModules = await db
-        .select({ 
-          moduleId: modules.id 
-        })
+        .select({ id: modules.id })
         .from(modules)
         .where(eq(modules.courseId, options.courseId));
       
@@ -297,12 +311,11 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      const moduleIds = courseModules.map(module => module.moduleId);
+      const moduleIds = courseModules.map(module => module.id);
       
+      // Next, get lessons for these modules
       const moduleLessons = await db
-        .select({ 
-          lessonId: lessons.id 
-        })
+        .select({ id: lessons.id })
         .from(lessons)
         .where(inArray(lessons.moduleId, moduleIds));
       
@@ -310,15 +323,27 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      const lessonIds = moduleLessons.map(lesson => lesson.lessonId);
+      // Extract the lesson IDs
+      const lessonIds = moduleLessons.map(lesson => lesson.id);
       
-      query = query.where(inArray(liveSessions.lessonId, lessonIds));
+      // Execute a new query with the lessonId filter
+      query = db
+        .select()
+        .from(liveSessions)
+        .where(and(
+          gt(liveSessions.startTime, now),
+          eq(liveSessions.status, "scheduled"),
+          inArray(liveSessions.lessonId, lessonIds)
+        ))
+        .orderBy(asc(liveSessions.startTime));
     }
     
+    // Apply limit if provided
     if (options?.limit) {
       query = query.limit(options.limit);
     }
     
+    // Execute the query and return results
     return await query;
   }
   
