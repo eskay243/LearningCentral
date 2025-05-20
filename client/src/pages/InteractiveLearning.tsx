@@ -342,7 +342,7 @@ const InteractiveLearning = () => {
           
           <TabsContent value="exercises" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {SAMPLE_EXERCISES.map((exercise, index) => (
+              {(exercises || SAMPLE_EXERCISES).map((exercise, index) => (
                 <Card key={exercise.id} className={completedExercises.includes(exercise.id) ? "border-green-300" : ""}>
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
@@ -362,6 +362,14 @@ const InteractiveLearning = () => {
                         {exercise.language}
                       </Badge>
                     </div>
+                    {exercise.courseId && (
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        <span>From course: </span>
+                        <a href={`/courses/${exercise.courseId}/view`} className="text-primary hover:underline">
+                          View Course
+                        </a>
+                      </div>
+                    )}
                   </CardContent>
                   <CardFooter>
                     <Button
