@@ -724,6 +724,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to record attendance" });
     }
   });
+  
+  // Roll call system routes
+  
+  // Initiate a roll call for a live session
+  app.post('/api/live-sessions/:id/roll-call', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const initiatedBy = req.user.claims.sub;
+      const expiresInMinutes = req.body.expiresInMinutes || 5;
+      
+      // Check if the session exists
+      const session = await storage.getLiveSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ message: "Live session not found" });
+      }
+      
+      // Initiate roll call
+      const result = await storage.initiateRollCall(sessionId, initiatedBy, expiresInMinutes);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+      
+      res.status(201).json(result.rollCall);
+    } catch (error) {
+      console.error("Error initiating roll call:", error);
+      res.status(500).json({ message: "Failed to initiate roll call" });
+    }
+  });
+  
+  // Respond to a roll call
+  app.post('/api/roll-calls/:id/respond', isAuthenticated, async (req: any, res) => {
+    try {
+      const rollCallId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const responseMethod = req.body.responseMethod || "app";
+      
+      // Record response
+      const result = await storage.respondToRollCall(rollCallId, userId, responseMethod);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.message });
+      }
+      
+      res.status(201).json(result.response);
+    } catch (error) {
+      console.error("Error responding to roll call:", error);
+      res.status(500).json({ message: "Failed to respond to roll call" });
+    }
+  });
+  
+  // Get roll call responses
+  app.get('/api/roll-calls/:id/responses', isAuthenticated, async (req: any, res) => {
+    try {
+      const rollCallId = parseInt(req.params.id);
+      
+      // Get responses
+      const responses = await storage.getRollCallResponses(rollCallId);
+      
+      res.json(responses);
+    } catch (error) {
+      console.error("Error getting roll call responses:", error);
+      res.status(500).json({ message: "Failed to get roll call responses" });
+    }
+  });
+  
+  // End a roll call
+  app.post('/api/roll-calls/:id/end', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+    try {
+      const rollCallId = parseInt(req.params.id);
+      
+      // End roll call
+      const rollCall = await storage.endRollCall(rollCallId);
+      
+      res.json(rollCall);
+    } catch (error) {
+      console.error("Error ending roll call:", error);
+      res.status(500).json({ message: "Failed to end roll call" });
+    }
+  });
+  
+  // Session notes routes
+  
+  // Update session notes
+  app.patch('/api/live-sessions/:id/notes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+    try {
+      const sessionId = parseInt(req.params.id);
+      const { notes } = req.body;
+      
+      if (!notes) {
+        return res.status(400).json({ message: "Notes are required" });
+      }
+      
+      // Update session notes
+      const session = await storage.updateSessionNotes(sessionId, notes);
+      
+      res.json(session);
+    } catch (error) {
+      console.error("Error updating session notes:", error);
+      res.status(500).json({ message: "Failed to update session notes" });
+    }
+  });
+  
+  // Update attendance notes (for a specific student)
+  app.patch('/api/attendance/:id/notes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+    try {
+      const attendanceId = parseInt(req.params.id);
+      const { notes, participationLevel } = req.body;
+      
+      if (!notes) {
+        return res.status(400).json({ message: "Notes are required" });
+      }
+      
+      // Update attendance notes
+      const attendance = await storage.updateAttendanceNotes(attendanceId, notes, participationLevel);
+      
+      res.json(attendance);
+    } catch (error) {
+      console.error("Error updating attendance notes:", error);
+      res.status(500).json({ message: "Failed to update attendance notes" });
+    }
+  });
+  
+  // Submit session feedback (from student)
+  app.post('/api/attendance/:id/feedback', isAuthenticated, async (req: any, res) => {
+    try {
+      const attendanceId = parseInt(req.params.id);
+      const { feedback } = req.body;
+      
+      if (!feedback) {
+        return res.status(400).json({ message: "Feedback is required" });
+      }
+      
+      // Submit feedback
+      const attendance = await storage.submitSessionFeedback(attendanceId, feedback);
+      
+      res.json(attendance);
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      res.status(500).json({ message: "Failed to submit feedback" });
+    }
+  });
 
   // Enrollment routes
   app.post('/api/enrollments', isAuthenticated, async (req: any, res) => {

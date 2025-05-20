@@ -410,6 +410,169 @@ export class DatabaseStorage implements IStorage {
     return attendance;
   }
   
+  // Roll call functionality methods
+  
+  async initiateRollCall(sessionId: number, initiatedBy: string, expiresInMinutes: number = 5): Promise<any> {
+    // First check if there's an active roll call for this session
+    const [activeRollCall] = await db
+      .select()
+      .from(liveSessionRollCalls)
+      .where(and(
+        eq(liveSessionRollCalls.sessionId, sessionId),
+        eq(liveSessionRollCalls.status, "active")
+      ));
+      
+    if (activeRollCall) {
+      return { success: false, message: "There is already an active roll call for this session", rollCall: activeRollCall };
+    }
+    
+    // Calculate expiration time
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + expiresInMinutes);
+    
+    // Create a new roll call
+    const [rollCall] = await db
+      .insert(liveSessionRollCalls)
+      .values({
+        sessionId,
+        initiatedBy,
+        initiatedAt: new Date(),
+        expiresAt,
+        status: "active"
+      })
+      .returning();
+    
+    return { success: true, rollCall };
+  }
+  
+  async respondToRollCall(rollCallId: number, userId: string, responseMethod: string = "app"): Promise<any> {
+    // Check if roll call exists and is active
+    const [rollCall] = await db
+      .select()
+      .from(liveSessionRollCalls)
+      .where(eq(liveSessionRollCalls.id, rollCallId));
+      
+    if (!rollCall) {
+      return { success: false, message: "Roll call not found" };
+    }
+    
+    if (rollCall.status !== "active") {
+      return { success: false, message: `This roll call is ${rollCall.status}` };
+    }
+    
+    // Check if already responded
+    const [existingResponse] = await db
+      .select()
+      .from(liveSessionRollCallResponses)
+      .where(and(
+        eq(liveSessionRollCallResponses.rollCallId, rollCallId),
+        eq(liveSessionRollCallResponses.userId, userId)
+      ));
+      
+    if (existingResponse) {
+      return { success: false, message: "You have already responded to this roll call", response: existingResponse };
+    }
+    
+    // Record response
+    const [response] = await db
+      .insert(liveSessionRollCallResponses)
+      .values({
+        rollCallId,
+        userId,
+        responseTime: new Date(),
+        responseMethod
+      })
+      .returning();
+    
+    // Update attendance record to mark as responded to roll call
+    await db
+      .update(liveSessionAttendance)
+      .set({ respondedToRollCall: true })
+      .where(and(
+        eq(liveSessionAttendance.sessionId, rollCall.sessionId),
+        eq(liveSessionAttendance.userId, userId)
+      ));
+    
+    return { success: true, response };
+  }
+  
+  async getRollCallResponses(rollCallId: number): Promise<any> {
+    const responses = await db
+      .select({
+        response: liveSessionRollCallResponses,
+        user: {
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          profileImageUrl: users.profileImageUrl
+        }
+      })
+      .from(liveSessionRollCallResponses)
+      .leftJoin(users, eq(liveSessionRollCallResponses.userId, users.id))
+      .where(eq(liveSessionRollCallResponses.rollCallId, rollCallId))
+      .orderBy(asc(liveSessionRollCallResponses.responseTime));
+      
+    return responses;
+  }
+  
+  async endRollCall(rollCallId: number): Promise<any> {
+    const [rollCall] = await db
+      .update(liveSessionRollCalls)
+      .set({ 
+        status: "expired",
+        updatedAt: new Date()
+      })
+      .where(eq(liveSessionRollCalls.id, rollCallId))
+      .returning();
+      
+    return rollCall;
+  }
+  
+  async updateSessionNotes(sessionId: number, notes: string): Promise<any> {
+    const [session] = await db
+      .update(liveSessions)
+      .set({ 
+        notes,
+        updatedAt: new Date()
+      })
+      .where(eq(liveSessions.id, sessionId))
+      .returning();
+      
+    return session;
+  }
+  
+  async updateAttendanceNotes(attendanceId: number, notes: string, participationLevel?: string): Promise<any> {
+    const updateData: any = { 
+      notes,
+      updatedAt: new Date()
+    };
+    
+    if (participationLevel) {
+      updateData.participationLevel = participationLevel;
+    }
+    
+    const [attendance] = await db
+      .update(liveSessionAttendance)
+      .set(updateData)
+      .where(eq(liveSessionAttendance.id, attendanceId))
+      .returning();
+      
+    return attendance;
+  }
+  
+  async submitSessionFeedback(attendanceId: number, feedback: string): Promise<any> {
+    const [attendance] = await db
+      .update(liveSessionAttendance)
+      .set({ 
+        feedback,
+        updatedAt: new Date()
+      })
+      .where(eq(liveSessionAttendance.id, attendanceId))
+      .returning();
+      
+    return attendance;
+  }
+  
   // This is replaced by the more detailed recordLiveSessionAttendance method
   // We're keeping this method for backward compatibility
   async recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance> {

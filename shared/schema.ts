@@ -209,11 +209,19 @@ export const assignmentSubmissions = pgTable("assignment_submissions", {
 export const liveSessions = pgTable("live_sessions", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id").notNull().references(() => lessons.id),
+  mentorId: varchar("mentor_id").references(() => users.id), // The mentor/teacher hosting the session
+  title: text("title").notNull(), // Session title
+  description: text("description"), // Detailed description
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
   meetingUrl: text("meeting_url"),
   recordingUrl: text("recording_url"),
-  status: text("status").notNull().default("scheduled"),
+  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
+  notes: text("notes"), // Notes from the session
+  materials: jsonb("materials"), // Links to study materials
+  capacity: integer("capacity"), // Max number of participants
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // LiveSessionAttendance table
@@ -224,9 +232,37 @@ export const liveSessionAttendance = pgTable("live_session_attendance", {
   joinTime: timestamp("join_time").notNull().defaultNow(), // Time user joined the session
   leftTime: timestamp("left_time"), // Time user left the session
   status: text("status").notNull().default("present"), // Status: present, absent, late, excused
+  respondedToRollCall: boolean("responded_to_roll_call").default(false), // Roll call response
+  participationLevel: text("participation_level"), // low, medium, high
+  feedback: text("feedback"), // Student's feedback on the session
+  notes: text("notes"), // Teacher notes about the student
   watchedRecording: boolean("watched_recording").notNull().default(false),
   watchedRecordingAt: timestamp("watched_recording_at"),
   lastActivity: timestamp("last_activity").defaultNow(), // Last activity timestamp
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// LiveSessionRollCalls - tracks roll call instances during a live session
+export const liveSessionRollCalls = pgTable("live_session_roll_calls", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => liveSessions.id),
+  initiatedBy: varchar("initiated_by").notNull().references(() => users.id),
+  initiatedAt: timestamp("initiated_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"), // When the roll call expires
+  status: text("status").notNull().default("active"), // active, expired, cancelled
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// LiveSessionRollCallResponses - tracks individual student responses to roll calls
+export const liveSessionRollCallResponses = pgTable("live_session_roll_call_responses", {
+  id: serial("id").primaryKey(),
+  rollCallId: integer("roll_call_id").notNull().references(() => liveSessionRollCalls.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  responseTime: timestamp("response_time").notNull().defaultNow(),
+  responseMethod: text("response_method").notNull().default("app"), // app, mobile, voice
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Messages table
