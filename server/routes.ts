@@ -51,6 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve uploads directory as static files
   app.use('/uploads', expressModule.default.static(uploadsDir));
+  
+  // Register assessment routes
+  registerAssessmentRoutes(app);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
