@@ -20,6 +20,7 @@ import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import UserManagement from "@/pages/UserManagement";
 import Login from "@/pages/Login";
+import AdminSetup from "@/pages/AdminSetup";
 import PaymentCallback from "@/pages/PaymentCallback";
 import ContentDemo from "@/pages/ContentDemo";
 import InteractiveLearning from "@/pages/InteractiveLearning";
@@ -44,6 +45,7 @@ function Router() {
         <Route path="/profile" component={Profile} />
         <Route path="/users" component={UserManagement} />
         <Route path="/login" component={Login} />
+        <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/payment-callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
         <Route path="/interactive-learning" component={InteractiveLearning} />
