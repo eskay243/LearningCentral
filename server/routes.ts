@@ -282,8 +282,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Course Enrollment Routes
   // Get all enrolled courses for the current user
-  app.get('/api/courses/enrolled', isAuthenticated, async (req, res) => {
+  app.get('/api/user/enrollments', isAuthenticated, async (req, res) => {
     try {
+      if (!req.user || !req.user.claims) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const userId = req.user.claims.sub;
       
       // Get all enrollments for this user

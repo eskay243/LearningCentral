@@ -18,8 +18,8 @@ const Courses = () => {
 
   // Fetch courses for the current user
   const { data: userCourses, isLoading: userCoursesLoading } = useQuery<Course[]>({
-    queryKey: [isMentor ? "/api/courses" : "/api/courses/enrolled"],
-    enabled: !!user && (isMentor || isAdmin)
+    queryKey: [isMentor ? "/api/courses" : "/api/user/enrollments"],
+    enabled: !!user
   });
 
   // Fetch all published courses (for discovery)
