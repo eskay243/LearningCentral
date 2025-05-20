@@ -7,6 +7,8 @@ import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
 import StudentProgress from "@/components/dashboard/StudentProgress";
 import RecentActivity from "@/components/dashboard/RecentActivity";
 import CourseCard from "@/components/dashboard/CourseCard";
+import ExerciseProgressTracker from "@/components/dashboard/ExerciseProgressTracker";
+import MentorExerciseStatsCard from "@/components/dashboard/MentorExerciseStatsCard";
 import { StatsCardItem, UpcomingClass, StudentProgressItem, RecentActivityItem, CourseCardItem } from "@/types";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDate, getFullName } from "@/lib/utils";
@@ -318,7 +320,7 @@ const Dashboard = () => {
         />
       </div>
       
-      {/* Two Column Layout for Recent Activity and Student Progress */}
+      {/* Two Column Layout for Activities and Progress */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Student Progress for mentors/admins */}
         {(isMentor || isAdmin) && (
@@ -345,8 +347,15 @@ const Dashboard = () => {
           </div>
         )}
         
+        {/* Student Exercise Progress */}
+        {!isMentor && !isAdmin && (
+          <div className="lg:col-span-2">
+            <ExerciseProgressTracker />
+          </div>
+        )}
+        
         {/* Recent Activity */}
-        <div className={`${(isMentor || isAdmin) ? 'lg:col-span-1' : 'lg:col-span-3'}`}>
+        <div className={`${(isMentor || isAdmin) ? 'lg:col-span-1' : 'lg:col-span-1'}`}>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold text-dark-800">Recent Activity</h2>
           </div>
@@ -357,6 +366,27 @@ const Dashboard = () => {
           />
         </div>
       </div>
+      
+      {/* Exercise Analytics for Mentors */}
+      {(isMentor || isAdmin) && (
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-dark-800">Exercise Analytics</h2>
+            <Select defaultValue="all">
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All Courses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                {courses.map((course) => (
+                  <SelectItem key={course.id} value={course.id.toString()}>{course.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <MentorExerciseStatsCard />
+        </div>
+      )}
       
       {/* My Courses Section */}
       <div className="mt-8 mb-6">
