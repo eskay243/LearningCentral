@@ -289,65 +289,66 @@ const CertificateAnalytics = () => {
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex flex-col gap-6">
+    <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 sm:gap-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Certificate Analytics</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Certificate Analytics</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             Comprehensive analytics and insights on certificate issuance and management.
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Certificates</p>
-                  <h3 className="text-3xl font-bold mt-2">{totalCertificates}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Total Certificates</p>
+                  <h3 className="text-xl sm:text-3xl font-bold mt-1 sm:mt-2">{totalCertificates}</h3>
                 </div>
-                <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Award className="h-5 w-5 text-primary" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Award className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
               </div>
-              <div className="mt-4 text-xs text-muted-foreground">
+              <div className="mt-2 sm:mt-4 text-xs text-muted-foreground">
                 <span className="text-green-500 font-medium">{activeCertificates} active</span> | {totalCertificates - activeCertificates} revoked
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Certified Courses</p>
-                  <h3 className="text-3xl font-bold mt-2">{totalCourses}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Certified Courses</p>
+                  <h3 className="text-xl sm:text-3xl font-bold mt-1 sm:mt-2">{totalCourses}</h3>
                 </div>
-                <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Book className="h-5 w-5 text-purple-500" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Book className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
                 </div>
               </div>
-              <div className="mt-4 text-xs text-muted-foreground">
-                <span className="text-purple-500 font-medium">Top: </span> {mostCertifiedCourse}
+              <div className="mt-2 sm:mt-4 text-xs text-muted-foreground truncate">
+                <span className="text-purple-500 font-medium">Top: </span> 
+                <span className="inline-block max-w-[120px] sm:max-w-full truncate">{mostCertifiedCourse}</span>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Certified Students</p>
-                  <h3 className="text-3xl font-bold mt-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Certified Students</p>
+                  <h3 className="text-xl sm:text-3xl font-bold mt-1 sm:mt-2">
                     {new Set(certificates.map((cert: any) => cert.userId)).size}
                   </h3>
                 </div>
-                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-500" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                 </div>
               </div>
-              <div className="mt-4 text-xs text-muted-foreground">
+              <div className="mt-2 sm:mt-4 text-xs text-muted-foreground">
                 <span className="text-blue-500 font-medium">
                   {Math.round((new Set(certificates.map((cert: any) => cert.userId)).size / (students.length || 1)) * 100)}%
                 </span> of total students
@@ -356,22 +357,22 @@ const CertificateAnalytics = () => {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Latest Issuance</p>
-                  <h3 className="text-3xl font-bold mt-2">
+                  <p className="text-xs sm:text-sm text-muted-foreground">Latest Issuance</p>
+                  <h3 className="text-xl sm:text-3xl font-bold mt-1 sm:mt-2">
                     {certificates.length > 0 ? 
                       new Date(Math.max(...certificates.map((cert: any) => new Date(cert.issuedAt).getTime())))
                         .toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 
                       'N/A'}
                   </h3>
                 </div>
-                <div className="h-10 w-10 bg-amber-100 rounded-full flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-amber-500" />
+                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-amber-100 rounded-full flex items-center justify-center">
+                  <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-amber-500" />
                 </div>
               </div>
-              <div className="mt-4 text-xs text-muted-foreground">
+              <div className="mt-2 sm:mt-4 text-xs text-muted-foreground">
                 {certificates.length > 0 && (
                   <span className="text-amber-500 font-medium">
                     {new Date(Math.max(...certificates.map((cert: any) => new Date(cert.issuedAt).getTime())))
@@ -384,9 +385,9 @@ const CertificateAnalytics = () => {
         </div>
 
         {/* Time Range Selector */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
           <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Select time range" />
             </SelectTrigger>
             <SelectContent>
@@ -399,7 +400,7 @@ const CertificateAnalytics = () => {
           
           <Button 
             variant="outline" 
-            className="flex items-center gap-2" 
+            className="flex items-center gap-2 w-full sm:w-auto justify-center" 
             onClick={handleExportData}
           >
             <Download className="h-4 w-4" />
