@@ -589,7 +589,300 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Implement other methods as needed...
+  // Course Management
+  async createCourse(courseData: Omit<Course, "id" | "createdAt" | "updatedAt">): Promise<Course> {
+    try {
+      const [course] = await db
+        .insert(courses)
+        .values(courseData)
+        .returning();
+      return course;
+    } catch (error) {
+      console.error("Error creating course:", error);
+      throw new Error("Failed to create course");
+    }
+  }
+
+  async getCourse(id: number): Promise<Course | undefined> {
+    try {
+      const [course] = await db.select().from(courses).where(eq(courses.id, id));
+      return course;
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      return undefined;
+    }
+  }
+
+  async updateCourse(id: number, courseData: Partial<Course>): Promise<Course> {
+    try {
+      const [updatedCourse] = await db
+        .update(courses)
+        .set({
+          ...courseData,
+          updatedAt: new Date()
+        })
+        .where(eq(courses.id, id))
+        .returning();
+      
+      return updatedCourse;
+    } catch (error) {
+      console.error("Error updating course:", error);
+      throw new Error("Failed to update course");
+    }
+  }
+
+  async getCourses(options?: { published?: boolean }): Promise<Course[]> {
+    try {
+      let query = db.select().from(courses);
+      
+      if (options?.published !== undefined) {
+        query = query.where(eq(courses.isPublished, options.published));
+      }
+      
+      return await query.orderBy(desc(courses.createdAt));
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      return [];
+    }
+  }
+
+  async getCoursesByMentor(mentorId: string): Promise<Course[]> {
+    try {
+      const coursesWithMentor = await db
+        .select({
+          course: courses
+        })
+        .from(mentorCourses)
+        .innerJoin(courses, eq(mentorCourses.courseId, courses.id))
+        .where(eq(mentorCourses.mentorId, mentorId));
+      
+      return coursesWithMentor.map(row => row.course);
+    } catch (error) {
+      console.error("Error fetching mentor courses:", error);
+      return [];
+    }
+  }
+
+  async getEnrolledCourses(userId: string): Promise<CourseEnrollment[]> {
+    try {
+      return await db
+        .select()
+        .from(courseEnrollments)
+        .where(eq(courseEnrollments.userId, userId))
+        .orderBy(desc(courseEnrollments.enrolledAt));
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error);
+      return [];
+    }
+  }
+
+  // Module Management
+  async createModule(moduleData: Omit<Module, "id">): Promise<Module> {
+    try {
+      const [module] = await db
+        .insert(modules)
+        .values(moduleData)
+        .returning();
+      
+      return module;
+    } catch (error) {
+      console.error("Error creating module:", error);
+      throw new Error("Failed to create module");
+    }
+  }
+
+  async getModulesByCourse(courseId: number): Promise<Module[]> {
+    try {
+      return await db
+        .select()
+        .from(modules)
+        .where(eq(modules.courseId, courseId))
+        .orderBy(modules.orderIndex);
+    } catch (error) {
+      console.error("Error fetching course modules:", error);
+      return [];
+    }
+  }
+
+  // Lesson Management
+  async createLesson(lessonData: Omit<Lesson, "id">): Promise<Lesson> {
+    try {
+      const [lesson] = await db
+        .insert(lessons)
+        .values(lessonData)
+        .returning();
+      
+      return lesson;
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      throw new Error("Failed to create lesson");
+    }
+  }
+
+  async getLessonsByModule(moduleId: number): Promise<Lesson[]> {
+    try {
+      return await db
+        .select()
+        .from(lessons)
+        .where(eq(lessons.moduleId, moduleId))
+        .orderBy(lessons.orderIndex);
+    } catch (error) {
+      console.error("Error fetching module lessons:", error);
+      return [];
+    }
+  }
+
+  async getLessonProgress(lessonId: number, userId: string): Promise<LessonProgress | undefined> {
+    try {
+      const [progress] = await db
+        .select()
+        .from(lessonProgress)
+        .where(
+          and(
+            eq(lessonProgress.lessonId, lessonId),
+            eq(lessonProgress.userId, userId)
+          )
+        );
+      
+      return progress;
+    } catch (error) {
+      console.error("Error fetching lesson progress:", error);
+      return undefined;
+    }
+  }
+
+  async updateLessonProgress(
+    lessonId: number, 
+    userId: string, 
+    progress: Partial<LessonProgress>
+  ): Promise<LessonProgress> {
+    try {
+      // Check if progress exists
+      const existingProgress = await this.getLessonProgress(lessonId, userId);
+      
+      if (existingProgress) {
+        // Update existing progress
+        const [updatedProgress] = await db
+          .update(lessonProgress)
+          .set({
+            ...progress,
+            updatedAt: new Date()
+          })
+          .where(
+            and(
+              eq(lessonProgress.lessonId, lessonId),
+              eq(lessonProgress.userId, userId)
+            )
+          )
+          .returning();
+        
+        return updatedProgress;
+      } else {
+        // Create new progress
+        const [newProgress] = await db
+          .insert(lessonProgress)
+          .values({
+            lessonId,
+            userId,
+            status: progress.status || "in_progress",
+            completionPercentage: progress.completionPercentage || 0,
+            lastAccessedAt: new Date(),
+            completedAt: progress.completedAt,
+            timeSpent: progress.timeSpent || 0,
+          })
+          .returning();
+        
+        return newProgress;
+      }
+    } catch (error) {
+      console.error("Error updating lesson progress:", error);
+      throw new Error("Failed to update lesson progress");
+    }
+  }
+
+  // Enrollment Management
+  async enrollUserInCourse(enrollment: Omit<CourseEnrollment, "id" | "enrolledAt">): Promise<CourseEnrollment> {
+    try {
+      const [newEnrollment] = await db
+        .insert(courseEnrollments)
+        .values(enrollment)
+        .returning();
+      
+      return newEnrollment;
+    } catch (error) {
+      console.error("Error enrolling user in course:", error);
+      throw new Error("Failed to enroll user in course");
+    }
+  }
+
+  async getCourseEnrollment(courseId: number, userId: string): Promise<CourseEnrollment | undefined> {
+    try {
+      const [enrollment] = await db
+        .select()
+        .from(courseEnrollments)
+        .where(
+          and(
+            eq(courseEnrollments.courseId, courseId),
+            eq(courseEnrollments.userId, userId)
+          )
+        );
+      
+      return enrollment;
+    } catch (error) {
+      console.error("Error fetching course enrollment:", error);
+      return undefined;
+    }
+  }
+
+  async updateCourseProgress(enrollmentId: number, progress: number): Promise<CourseEnrollment> {
+    try {
+      const [updatedEnrollment] = await db
+        .update(courseEnrollments)
+        .set({ 
+          progress,
+          completedAt: progress >= 100 ? new Date() : null
+        })
+        .where(eq(courseEnrollments.id, enrollmentId))
+        .returning();
+      
+      return updatedEnrollment;
+    } catch (error) {
+      console.error("Error updating course progress:", error);
+      throw new Error("Failed to update course progress");
+    }
+  }
+  
+  // Mentor operations
+  async assignMentorToCourse(mentorCourse: Omit<MentorCourse, "id" | "assignedAt">): Promise<MentorCourse> {
+    try {
+      const [assignment] = await db
+        .insert(mentorCourses)
+        .values(mentorCourse)
+        .returning();
+      
+      return assignment;
+    } catch (error) {
+      console.error("Error assigning mentor to course:", error);
+      throw new Error("Failed to assign mentor to course");
+    }
+  }
+  
+  async getMentorsByCourse(courseId: number): Promise<User[]> {
+    try {
+      const mentorsData = await db
+        .select({
+          user: users
+        })
+        .from(mentorCourses)
+        .innerJoin(users, eq(mentorCourses.mentorId, users.id))
+        .where(eq(mentorCourses.courseId, courseId));
+      
+      return mentorsData.map(row => row.user);
+    } catch (error) {
+      console.error("Error fetching course mentors:", error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

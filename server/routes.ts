@@ -94,6 +94,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Course Management Routes
+  app.get('/api/courses', async (req, res) => {
+    try {
+      const { published } = req.query;
+      const isPublished = published === 'true' ? true : 
+                        published === 'false' ? false : 
+                        undefined;
+      
+      const courses = await storage.getCourses({ published: isPublished });
+      res.json(courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+
+  app.get('/api/courses/:id', async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      res.json(course);
+    } catch (error) {
+      console.error("Error fetching course:", error);
+      res.status(500).json({ message: "Failed to fetch course" });
+    }
+  });
+
+  app.post('/api/courses', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const courseData = {
+        title: req.body.title,
+        description: req.body.description,
+        thumbnail: req.body.thumbnail,
+        price: parseFloat(req.body.price) || 0,
+        isPublished: req.body.isPublished || false,
+        category: req.body.category,
+        tags: req.body.tags || [],
+      };
+      
+      const course = await storage.createCourse(courseData);
+      
+      // Assign the creator as a mentor for this course if they're a mentor
+      if (req.user && req.user.claims && req.user.claims.role === UserRole.MENTOR) {
+        await storage.assignMentorToCourse({
+          courseId: course.id,
+          mentorId: req.user.claims.sub,
+          commission: 80  // Default commission for course creator
+        });
+      }
+      
+      res.status(201).json(course);
+    } catch (error) {
+      console.error("Error creating course:", error);
+      res.status(500).json({ message: "Failed to create course" });
+    }
+  });
+
+  app.put('/api/courses/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Check if user is a mentor for this course or an admin
+      const user = req.user.claims;
+      const isMentor = user.role === UserRole.MENTOR;
+      const isAdmin = user.role === UserRole.ADMIN;
+      
+      if (isMentor && !isAdmin) {
+        const mentors = await storage.getMentorsByCourse(courseId);
+        const isCourseMentor = mentors.some(mentor => mentor.id === user.sub);
+        
+        if (!isCourseMentor) {
+          return res.status(403).json({ message: "You do not have permission to update this course" });
+        }
+      }
+      
+      const courseData = {
+        title: req.body.title,
+        description: req.body.description,
+        thumbnail: req.body.thumbnail,
+        price: req.body.price !== undefined ? parseFloat(req.body.price) : undefined,
+        isPublished: req.body.isPublished,
+        category: req.body.category,
+        tags: req.body.tags,
+      };
+      
+      const updatedCourse = await storage.updateCourse(courseId, courseData);
+      res.json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course:", error);
+      res.status(500).json({ message: "Failed to update course" });
+    }
+  });
+  
   // Handle file uploads for user creation
   app.post('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), upload.single('profileImage'), async (req, res) => {
     try {
