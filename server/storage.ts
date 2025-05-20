@@ -78,6 +78,17 @@ export interface IStorage {
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(userData: any): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User>;
+  
+  // Communication operations
+  getUserConversations(userId: string): Promise<any[]>;
+  getConversationMessages(conversationId: number): Promise<any[]>;
+  isConversationParticipant(userId: string, conversationId: number): Promise<boolean>;
+  createConversation(data: Partial<InsertConversation>): Promise<Conversation>;
+  addConversationParticipants(conversationId: number, participantIds: string[]): Promise<void>;
+  sendMessage(data: Partial<InsertChatMessage>): Promise<ChatMessage>;
+  markMessagesAsRead(conversationId: number, userId: string): Promise<void>;
+  getAnnouncements(options: { limit: number, offset: number }): Promise<any[]>;
+  getCourseAnnouncements(courseId: number, options: { limit: number, offset: number }): Promise<any[]>;
   getUsersByRole(role?: string): Promise<User[]>;
   
   // Course operations
@@ -1672,6 +1683,328 @@ export class DatabaseStorage implements IStorage {
       return mentorsData.map(row => row.user);
     } catch (error) {
       console.error("Error fetching course mentors:", error);
+      return [];
+    }
+  }
+
+  // Communication operations
+  async getUserConversations(userId: string): Promise<any[]> {
+    try {
+      // Get all conversations where the user is a participant
+      const participantData = await db
+        .select({
+          conversationId: conversationParticipants.conversationId
+        })
+        .from(conversationParticipants)
+        .where(eq(conversationParticipants.userId, userId));
+      
+      const conversationIds = participantData.map(p => p.conversationId);
+      
+      if (conversationIds.length === 0) {
+        return [];
+      }
+      
+      // Get all conversations with their last message
+      const conversationsWithData = await db
+        .select({
+          conversation: conversations,
+          participants: conversationParticipants,
+          lastMessage: db
+            .select()
+            .from(chatMessages)
+            .where(eq(chatMessages.conversationId, conversations.id))
+            .orderBy(desc(chatMessages.sentAt))
+            .limit(1)
+            .as("lastMessage")
+        })
+        .from(conversations)
+        .leftJoin(
+          conversationParticipants,
+          eq(conversations.id, conversationParticipants.conversationId)
+        )
+        .where(inArray(conversations.id, conversationIds));
+      
+      // Group by conversation and format the result
+      const conversationMap = new Map();
+      
+      for (const row of conversationsWithData) {
+        const { conversation, participants, lastMessage } = row;
+        
+        if (!conversationMap.has(conversation.id)) {
+          conversationMap.set(conversation.id, {
+            ...conversation,
+            participants: [],
+            lastMessage: lastMessage ? lastMessage[0] : null,
+            unreadCount: 0
+          });
+        }
+        
+        const currentConv = conversationMap.get(conversation.id);
+        
+        if (participants && !currentConv.participants.some(p => p.userId === participants.userId)) {
+          currentConv.participants.push(participants);
+        }
+      }
+      
+      // Get unread count for each conversation
+      for (const conversationId of conversationIds) {
+        const unreadCount = await db
+          .select({ count: count() })
+          .from(chatMessages)
+          .where(
+            and(
+              eq(chatMessages.conversationId, conversationId),
+              not(eq(chatMessages.senderId, userId)),
+              eq(chatMessages.isRead, false)
+            )
+          );
+        
+        if (conversationMap.has(conversationId)) {
+          conversationMap.get(conversationId).unreadCount = unreadCount[0]?.count || 0;
+        }
+      }
+      
+      // Get user data for all participants
+      const allParticipantIds = [...new Set(
+        Array.from(conversationMap.values())
+          .flatMap(conv => conv.participants.map(p => p.userId))
+      )];
+      
+      const userData = await db
+        .select()
+        .from(users)
+        .where(inArray(users.id, allParticipantIds));
+      
+      const userMap = new Map(userData.map(user => [user.id, user]));
+      
+      // Format conversations for client use
+      const result = Array.from(conversationMap.values()).map(conv => {
+        // For one-on-one conversations, include other user info
+        let otherUser = null;
+        
+        if (!conv.isGroup) {
+          const otherParticipant = conv.participants.find(p => p.userId !== userId);
+          if (otherParticipant) {
+            otherUser = userMap.get(otherParticipant.userId) || null;
+          }
+        }
+        
+        return {
+          id: conv.id,
+          title: conv.title,
+          isGroup: conv.isGroup,
+          createdAt: conv.createdAt,
+          participants: conv.participants.map(p => ({
+            ...p,
+            user: userMap.get(p.userId) || null
+          })),
+          otherUser,
+          lastMessage: conv.lastMessage,
+          unreadCount: conv.unreadCount
+        };
+      });
+      
+      // Sort by last message date (most recent first)
+      result.sort((a, b) => {
+        const dateA = a.lastMessage ? new Date(a.lastMessage.sentAt).getTime() : 0;
+        const dateB = b.lastMessage ? new Date(b.lastMessage.sentAt).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      return result;
+    } catch (error) {
+      console.error("Error fetching user conversations:", error);
+      return [];
+    }
+  }
+  
+  async getConversationMessages(conversationId: number): Promise<any[]> {
+    try {
+      const messages = await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.conversationId, conversationId))
+        .orderBy(asc(chatMessages.sentAt));
+      
+      // Get all sender IDs
+      const senderIds = [...new Set(messages.map(m => m.senderId))];
+      
+      // Get user data for senders
+      const senders = await db
+        .select()
+        .from(users)
+        .where(inArray(users.id, senderIds));
+      
+      const senderMap = new Map(senders.map(user => [user.id, user]));
+      
+      // Add sender info to messages
+      return messages.map(message => ({
+        ...message,
+        sender: senderMap.get(message.senderId) || null
+      }));
+    } catch (error) {
+      console.error("Error fetching conversation messages:", error);
+      return [];
+    }
+  }
+  
+  async isConversationParticipant(userId: string, conversationId: number): Promise<boolean> {
+    try {
+      const participant = await db
+        .select()
+        .from(conversationParticipants)
+        .where(
+          and(
+            eq(conversationParticipants.userId, userId),
+            eq(conversationParticipants.conversationId, conversationId)
+          )
+        )
+        .limit(1);
+      
+      return participant.length > 0;
+    } catch (error) {
+      console.error("Error checking conversation participant:", error);
+      return false;
+    }
+  }
+  
+  async createConversation(data: Partial<InsertConversation>): Promise<Conversation> {
+    try {
+      const [conversation] = await db
+        .insert(conversations)
+        .values({
+          creatorId: data.creatorId,
+          title: data.title,
+          isGroup: data.isGroup || false,
+        })
+        .returning();
+      
+      return conversation;
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      throw new Error("Failed to create conversation");
+    }
+  }
+  
+  async addConversationParticipants(conversationId: number, participantIds: string[]): Promise<void> {
+    try {
+      const participants = participantIds.map(userId => ({
+        conversationId,
+        userId,
+      }));
+      
+      await db
+        .insert(conversationParticipants)
+        .values(participants)
+        .onConflictDoNothing();
+    } catch (error) {
+      console.error("Error adding conversation participants:", error);
+      throw new Error("Failed to add conversation participants");
+    }
+  }
+  
+  async sendMessage(data: Partial<InsertChatMessage>): Promise<ChatMessage> {
+    try {
+      const [message] = await db
+        .insert(chatMessages)
+        .values({
+          conversationId: data.conversationId,
+          senderId: data.senderId,
+          content: data.content,
+          isRead: false,
+        })
+        .returning();
+      
+      return message;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw new Error("Failed to send message");
+    }
+  }
+  
+  async markMessagesAsRead(conversationId: number, userId: string): Promise<void> {
+    try {
+      await db
+        .update(chatMessages)
+        .set({ isRead: true })
+        .where(
+          and(
+            eq(chatMessages.conversationId, conversationId),
+            not(eq(chatMessages.senderId, userId)),
+            eq(chatMessages.isRead, false)
+          )
+        );
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      throw new Error("Failed to mark messages as read");
+    }
+  }
+  
+  async getAnnouncements(options: { limit: number, offset: number }): Promise<any[]> {
+    try {
+      const { limit, offset } = options;
+      
+      const announcements = await db
+        .select({
+          announcement: courseAnnouncements,
+          course: courses,
+          creator: users
+        })
+        .from(courseAnnouncements)
+        .leftJoin(courses, eq(courseAnnouncements.courseId, courses.id))
+        .leftJoin(users, eq(courseAnnouncements.createdBy, users.id))
+        .orderBy(desc(courseAnnouncements.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return announcements.map(row => ({
+        ...row.announcement,
+        course: row.course,
+        creator: row.creator
+      }));
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+      return [];
+    }
+  }
+  
+  async getCourseAnnouncements(courseId: number, options: { limit: number, offset: number }): Promise<any[]> {
+    try {
+      const { limit, offset } = options;
+      
+      const announcements = await db
+        .select({
+          announcement: courseAnnouncements,
+          creator: users
+        })
+        .from(courseAnnouncements)
+        .leftJoin(users, eq(courseAnnouncements.createdBy, users.id))
+        .where(eq(courseAnnouncements.courseId, courseId))
+        .orderBy(desc(courseAnnouncements.createdAt))
+        .limit(limit)
+        .offset(offset);
+      
+      return announcements.map(row => ({
+        ...row.announcement,
+        creator: row.creator
+      }));
+    } catch (error) {
+      console.error("Error fetching course announcements:", error);
+      return [];
+    }
+  }
+  
+  async getUsersByRole(role?: string): Promise<User[]> {
+    try {
+      let query = db.select().from(users);
+      
+      if (role) {
+        query = query.where(eq(users.role, role));
+      }
+      
+      return await query.orderBy(asc(users.firstName));
+    } catch (error) {
+      console.error("Error fetching users by role:", error);
       return [];
     }
   }
