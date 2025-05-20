@@ -1610,14 +1610,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-        .where(eq(exerciseProgress.exerciseId, exerciseId), eq(exerciseProgress.userId, userId))
-        .returning();
-      
-      progress = updatedProgress;
-    } else {
-      // Create new progress
-      const [newProgress] = await db
-        .insert(exerciseProgress)
+
         .values({
           exerciseId,
           userId,
