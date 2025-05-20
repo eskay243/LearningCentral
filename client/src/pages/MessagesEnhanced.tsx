@@ -417,35 +417,76 @@ export default function MessagesEnhanced() {
     );
   }
 
+  // Mobile view controls
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
+  const isMobileView = () => window.innerWidth < 768;
+
+  // Function to toggle sidebar on mobile
+  const toggleMobileSidebar = () => {
+    if (isMobileView()) {
+      setMobileSidebarOpen(!mobileSidebarOpen);
+    }
+  };
+
+  // Effect to handle sidebar visibility on conversation selection for mobile
+  useEffect(() => {
+    if (activeConversationId && isMobileView()) {
+      setMobileSidebarOpen(false);
+    }
+  }, [activeConversationId]);
+
+  // Effect to handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (!isMobileView()) {
+        setMobileSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background dark:bg-gray-900">
       {/* Sidebar with conversations list */}
-      <div className="w-80 border-r flex flex-col">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold">Messages</h1>
-            <div className="flex space-x-2">
+      <div className={`${mobileSidebarOpen ? 'flex' : 'hidden'} md:flex md:w-80 w-full border-r border-gray-200 dark:border-gray-700 flex-col absolute md:relative z-20 bg-background dark:bg-gray-900`}>
+        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h1 className="text-lg sm:text-xl font-bold dark:text-gray-100">Messages</h1>
+            <div className="flex space-x-1 sm:space-x-2">
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => setSearchOpen(true)}
                 title="Search messages"
+                className="h-8 w-8 sm:h-9 sm:w-9"
               >
-                <Search className="h-5 w-5" />
+                <Search className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => setNewConversationOpen(true)}
                 title="New conversation"
+                className="h-8 w-8 sm:h-9 sm:w-9"
               >
-                <Edit className="h-5 w-5" />
+                <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={toggleMobileSidebar}
+                title="Toggle sidebar"
+                className="h-8 w-8 sm:h-9 sm:w-9 md:hidden"
+              >
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
           <Input 
             placeholder="Search conversations..." 
-            className="w-full"
+            className="w-full text-sm"
           />
         </div>
         
