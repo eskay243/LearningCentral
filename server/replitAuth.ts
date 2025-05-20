@@ -156,24 +156,41 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 };
 
-// Check if user has required role
-export const hasRole = (roles: string[]): RequestHandler => {
-  return async (req, res, next) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Unauthorized" });
+// Middleware to check if the user has a specific role
+export const hasRole = (role: string | string[]): RequestHandler => {
+  return async (req: any, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      
+      // Check if user has one of the required roles
+      if (Array.isArray(role)) {
+        if (!role.includes(user.role)) {
+          return res.status(403).json({
+            message: `Access denied. Required roles: ${role.join(', ')}, your role: ${user.role}`
+          });
+        }
+      } else {
+        // Single role check
+        if (user.role !== role) {
+          return res.status(403).json({ 
+            message: `Access denied. Required role: ${role}, your role: ${user.role}` 
+          });
+        }
+      }
+      
+      next();
+    } catch (error) {
+      console.error("Error in role check middleware:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-
-    const userId = (req.user as any).claims.sub;
-    const user = await storage.getUser(userId);
-
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    if (!roles.includes(user.role)) {
-      return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
-    }
-
-    next();
   };
 };

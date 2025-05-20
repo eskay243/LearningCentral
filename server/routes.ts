@@ -21,6 +21,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
+  
+  // Admin routes
+  app.get('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const users = await storage.getUsersByRole();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  app.patch('/api/admin/users/:id', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updatedUser = await storage.updateUser(id, req.body);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user as admin:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
 
   // User routes
   app.get('/api/users/:id', isAuthenticated, async (req, res) => {
@@ -46,7 +68,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized to update other users" });
       }
       
-      const updatedUser = await storage.updateUser(req.params.id, req.body);
+      // For regular users, only allow certain fields to be updated
+      let updateData = req.body;
+      if (userToUpdate?.role !== UserRole.ADMIN) {
+        // Regular users can only update these fields
+        const { firstName, lastName, bio, profileImageUrl } = req.body;
+        updateData = { firstName, lastName, bio, profileImageUrl };
+      }
+      
+      const updatedUser = await storage.updateUser(req.params.id, updateData);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user:", error);
