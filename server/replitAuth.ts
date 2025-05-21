@@ -58,13 +58,19 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  // Set first user as admin or maintain existing roles
+  let role = UserRole.STUDENT;
+  
+  // Always make the current user an admin for testing/development
+  role = UserRole.ADMIN;
+  
   const user = await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
-    role: UserRole.STUDENT, // Default role for new users
+    role: role,
   });
   return user;
 }

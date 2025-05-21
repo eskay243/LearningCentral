@@ -349,6 +349,8 @@ export const lessonProgress = pgTable("lesson_progress", {
   ipAddress: text("ip_address"), // for geographic tracking
 });
 
+
+
 // CourseDiscussions table
 export const courseDiscussions = pgTable("course_discussions", {
   id: serial("id").primaryKey(),
