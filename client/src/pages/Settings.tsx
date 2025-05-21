@@ -189,6 +189,27 @@ const Settings = () => {
       });
     },
   });
+  
+  // Currency settings mutation (admin only)
+  const currencyMutation = useMutation({
+    mutationFn: (values: z.infer<typeof currencyFormSchema>) => {
+      return apiRequest("PATCH", "/api/settings/currency", values);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Currency settings updated",
+        description: "The platform currency settings have been updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/currency"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to update currency settings",
+        description: error.message || "An error occurred while updating currency settings",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Form submission handlers
   const onProfileSubmit = (values: z.infer<typeof profileFormSchema>) => {
@@ -197,6 +218,10 @@ const Settings = () => {
 
   const onNotificationSubmit = (values: z.infer<typeof notificationFormSchema>) => {
     notificationMutation.mutate(values);
+  };
+  
+  const onCurrencySubmit = (values: z.infer<typeof currencyFormSchema>) => {
+    currencyMutation.mutate(values);
   };
 
   return (
@@ -212,7 +237,11 @@ const Settings = () => {
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="payment">Payment Methods</TabsTrigger>
+            {isAdmin ? (
+              <TabsTrigger value="system">System</TabsTrigger>
+            ) : (
+              <TabsTrigger value="payment">Payment Methods</TabsTrigger>
+            )}
           </TabsList>
 
           {/* Profile Settings */}
