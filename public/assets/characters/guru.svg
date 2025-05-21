@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Base circle for Guru -->
+  <circle cx="60" cy="60" r="50" fill="#9333EA" />
+  
+  <!-- Face -->
+  <circle cx="60" cy="55" r="35" fill="#F5F3FF" />
+  
+  <!-- Eyes -->
+  <circle cx="45" cy="50" r="6" fill="#3730A3" />
+  <circle cx="75" cy="50" r="6" fill="#3730A3" />
+  
+  <!-- Glasses -->
+  <circle cx="45" cy="50" r="10" fill="none" stroke="#6D28D9" stroke-width="2" />
+  <circle cx="75" cy="50" r="10" fill="none" stroke="#6D28D9" stroke-width="2" />
+  <line x1="55" y1="50" x2="65" y2="50" stroke="#6D28D9" stroke-width="2" />
+  
+  <!-- Friendly smile -->
+  <path d="M45,65 Q60,80 75,65" fill="none" stroke="#3730A3" stroke-width="3" stroke-linecap="round" />
+  
+  <!-- Guru's mustache -->
+  <path d="M50,60 Q60,67 70,60" fill="none" stroke="#3730A3" stroke-width="2" />
+  
+  <!-- Guru's wise beard -->
+  <path d="M40,75 Q60,90 80,75" fill="#3730A3" />
+  
+  <!-- Guru's turban -->
+  <path d="M25,35 Q60,10 95,35" fill="#8B5CF6" />
+  <path d="M30,35 Q60,15 90,35" fill="#A78BFA" />
+  <circle cx="60" cy="18" r="5" fill="#F59E0B" />
+</svg>
