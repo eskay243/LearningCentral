@@ -41,8 +41,12 @@ export default function DemoUsers() {
 
     setIsSwitching(true);
     try {
-      // Use the proper API request method
-      const { data } = await apiRequest("GET", `/api/switch-user-role/${role}`);
+      // Use the proper API request method with fetch since this endpoint requires special handling
+      const response = await fetch(`/api/switch-user-role/${role}`);
+      if (!response.ok) {
+        throw new Error(`Failed to switch role: ${response.statusText}`);
+      }
+      const data = await response.json();
       
       toast({
         title: "Role updated successfully",
