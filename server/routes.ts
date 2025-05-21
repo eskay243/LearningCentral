@@ -1886,6 +1886,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { defaultCurrency, exchangeRates } = req.body;
       
+      // Ensure user is authenticated
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       if (defaultCurrency) {
         if (!Object.values(Currency).includes(defaultCurrency)) {
           return res.status(400).json({ message: "Invalid currency" });
