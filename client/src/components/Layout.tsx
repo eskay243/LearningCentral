@@ -55,11 +55,10 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header toggleSidebar={toggleSidebar} />
       
-      {isAuthenticated && (
-        <Sidebar isOpen={sidebarOpen} closeSidebar={closeSidebar} />
-      )}
+      {/* Always render the Sidebar, regardless of authentication status */}
+      <Sidebar isOpen={sidebarOpen} closeSidebar={closeSidebar} />
       
-      <main className={`${isAuthenticated ? 'lg:ml-64' : ''} pt-16 px-3 sm:px-4 md:px-6 transition-all duration-300`}>
+      <main className="lg:ml-64 pt-16 px-3 sm:px-4 md:px-6 transition-all duration-300">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
