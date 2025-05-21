@@ -53,6 +53,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/dev-login", devLogin);
   app.get("/api/auth/switch-role/:role", isTestAuthenticated, updateUserRole);
   
+  // Get all courses (used by multiple components)
+  app.get("/api/courses", async (req, res) => {
+    try {
+      const published = req.query.published === 'true' ? true : 
+                        req.query.published === 'false' ? false : undefined;
+      const categoryFilter = req.query.category as string;
+      const searchTerm = req.query.search as string;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      
+      // Temporary fix - manually fetch courses from database since getAllCourses isn't implemented
+      let query = db.select().from(courses);
+      
+      // Apply filters if provided
+      const conditions = [];
+      
+      if (published !== undefined) {
+        conditions.push(eq(courses.isPublished, published));
+      }
+      
+      if (categoryFilter && categoryFilter !== "all") {
+        conditions.push(eq(courses.category, categoryFilter));
+      }
+      
+      if (searchTerm) {
+        conditions.push(
+          or(
+            like(courses.title, `%${searchTerm}%`),
+            like(courses.description, `%${searchTerm}%`)
+          )
+        );
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      if (limit) {
+        query = query.limit(limit);
+      }
+      
+      // Order by newest first
+      const result = await query.orderBy(desc(courses.createdAt));
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      res.status(500).json({ message: "Failed to fetch courses" });
+    }
+  });
+  
   // User profile routes
   app.get("/api/profile", isAuthenticated, async (req: any, res) => {
     try {
