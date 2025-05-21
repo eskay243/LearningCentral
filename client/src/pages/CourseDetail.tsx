@@ -165,7 +165,7 @@ const CourseDetail = () => {
         price: course.price || 0,
         isPublished: course.isPublished || false,
         category: course.category || "",
-        tags: course.tags || [],
+        tags: Array.isArray(course.tags) ? course.tags : [],
       });
     }
   }, [course]);
@@ -863,11 +863,11 @@ const CourseDetail = () => {
                       </a>
                     </Button>
                     <div className="text-sm text-gray-500">
-                      {enrollment.progress > 0 
+                      {enrollment && enrollment.progress > 0 
                         ? `You've completed ${enrollment.progress}% of this course`
                         : "You've enrolled but haven't started learning yet"}
                     </div>
-                    {enrollment.progress > 0 && (
+                    {enrollment && enrollment.progress > 0 && (
                       <div className="w-full h-2 bg-gray-200 rounded-full">
                         <div 
                           className="h-2 bg-green-500 rounded-full" 
