@@ -40,11 +40,9 @@ export default function PaymentPage() {
     }
   }, [isAuthenticated, navigate, toast]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-    }).format(amount);
+  // Using the consistent currency formatter from our utility
+  const formatPrice = (amount: number) => {
+    return formatCurrency(amount, 'NGN');
   };
 
   const handlePayment = async () => {
@@ -165,19 +163,19 @@ export default function PaymentPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center pb-4 border-b">
                   <span>Course Fee</span>
-                  <span className="font-medium">{formatCurrency(course.price || 0)}</span>
+                  <span className="font-medium">{formatPrice(course.price || 0)}</span>
                 </div>
                 
                 {course.discountAmount > 0 && (
                   <div className="flex justify-between items-center pb-4 border-b text-green-600">
                     <span>Discount</span>
-                    <span>-{formatCurrency(course.discountAmount)}</span>
+                    <span>-{formatPrice(course.discountAmount)}</span>
                   </div>
                 )}
                 
                 <div className="flex justify-between items-center pt-2 text-lg font-bold">
                   <span>Total</span>
-                  <span>{formatCurrency(course.price || 0)}</span>
+                  <span>{formatPrice(course.price || 0)}</span>
                 </div>
               </div>
             </CardContent>
