@@ -261,8 +261,10 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUsers(role?: string): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
+  updateUserRole(id: string, role: string): Promise<User>;
   upsertUser(userData: UpsertUser): Promise<User>;
   
   // System settings operations
@@ -321,6 +323,19 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // User management
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  
+  async updateUserRole(id: string, role: string): Promise<User> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ role })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
   // System Settings operations
   async getSystemSetting(key: string): Promise<SystemSettings | undefined> {
     const [setting] = await db

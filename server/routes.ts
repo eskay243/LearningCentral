@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Course routes
   app.get("/api/courses", async (_req, res) => {
     try {
-      const courses = await storage.getAllCourses();
+      const courses = await storage.getCourses();
       res.json(courses);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -184,6 +184,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Demo user and role management
+  app.get("/api/switch-user-role/:role", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const role = req.params.role;
+      
+      // Validate role
+      const availableRoles = Object.values(UserRole);
+      if (!availableRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      // Update user role in database
+      const updateResult = await db
+        .update(users)
+        .set({ role })
+        .where(eq(users.id, userId))
+        .returning();
+      
+      const updatedUser = updateResult[0];
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update session information
+      if (req.user) {
+        req.user.role = role;
+      }
+      
+      // Return updated user info
+      res.json({
+        message: `Role updated to ${role}`,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          profileImageUrl: updatedUser.profileImageUrl,
+          role: updatedUser.role,
+          affiliateCode: updatedUser.affiliateCode
+        }
+      });
+    } catch (error) {
+      console.error("Error switching user role:", error);
+      res.status(500).json({ message: "Failed to switch user role" });
+    }
+  });
+  
+  // Demo users list
+  app.get("/api/demo-users", async (_req, res) => {
+    try {
+      // Return a list of sample demo users with different roles
+      const demoUsers = [
+        {
+          role: UserRole.ADMIN,
+          title: "Administrator",
+          description: "Full system access with ability to manage users, courses, and settings",
+          capabilities: [
+            "Manage all users and their roles",
+            "Create, edit and delete any courses",
+            "Access to system settings and analytics",
+            "Financial reporting and payment management"
+          ]
+        },
+        {
+          role: UserRole.MENTOR,
+          title: "Mentor/Instructor",
+          description: "Create and manage courses, assignments, and student progress",
+          capabilities: [
+            "Create and edit own courses",
+            "Manage course content and materials",
+            "Grade assignments and provide feedback",
+            "Monitor student progress and participation"
+          ]
+        },
+        {
+          role: UserRole.STUDENT,
+          title: "Student",
+          description: "Enroll in courses, access learning materials, and track progress",
+          capabilities: [
+            "Browse and enroll in courses",
+            "Access course content and resources",
+            "Submit assignments and take assessments",
+            "Track personal learning progress"
+          ]
+        },
+        {
+          role: UserRole.AFFILIATE,
+          title: "Affiliate Partner",
+          description: "Promote courses and earn commission from referrals",
+          capabilities: [
+            "Generate unique referral links",
+            "Track referrals and commission earnings",
+            "Access marketing materials",
+            "View performance analytics"
+          ]
+        }
+      ];
+      
+      res.json(demoUsers);
+    } catch (error) {
+      console.error("Error fetching demo users:", error);
+      res.status(500).json({ message: "Failed to fetch demo users" });
+    }
+  });
+  
   // Course enrollment
   app.post("/api/courses/:id/enroll", isAuthenticated, async (req: any, res) => {
     try {
