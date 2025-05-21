@@ -1664,7 +1664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId,
           courseName: course.title
         },
-        callbackUrl: `${req.protocol}://${req.get('host')}/payment-callback`
+        callbackUrl: `${req.protocol}://${req.get('host')}/api/payment-callback?courseId=${courseId}`
       });
       
       res.json({
@@ -1677,6 +1677,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Paystack payment callback route - receives redirects from Paystack
+  app.get('/api/payment-callback', async (req, res) => {
+    try {
+      const { reference, courseId } = req.query;
+      
+      if (!reference) {
+        return res.redirect(`/payment-callback?status=error&courseId=${courseId}`);
+      }
+      
+      // Verify the payment with Paystack
+      const paymentData = await verifyPayment(reference as string);
+      
+      if (paymentData.status === 'success') {
+        // Extract data from metadata
+        const userId = paymentData.metadata?.userId;
+        const courseId = paymentData.metadata?.courseId;
+        
+        if (courseId && userId) {
+          try {
+            // Enroll the user in the course
+            await storage.enrollUserInCourse({
+              courseId: Number(courseId),
+              userId: userId,
+              paymentReference: reference as string,
+              paymentAmount: paymentData.amount / 100, // Convert from kobo to naira
+              paymentStatus: 'completed',
+              paymentMethod: 'paystack',
+              paymentProvider: 'paystack',
+              progress: 0,
+              completedAt: null,
+              certificateId: null
+            });
+            
+            // Create notification for user
+            await storage.createNotification({
+              userId: userId,
+              title: 'Enrollment Successful',
+              message: `You have successfully enrolled in the course: ${paymentData.metadata?.courseName || 'Course'}`,
+              type: 'success',
+              read: false,
+              linkUrl: `/courses/${courseId}`
+            });
+            
+            // Redirect to success page
+            return res.redirect(`/payment-callback?status=success&courseId=${courseId}`);
+          } catch (enrollError) {
+            console.error("Enrollment error:", enrollError);
+            return res.redirect(`/payment-callback?status=error&courseId=${courseId}`);
+          }
+        }
+      }
+      
+      // If not successful or missing data, redirect to error page
+      return res.redirect(`/payment-callback?status=error&courseId=${courseId}`);
+    } catch (error: any) {
+      console.error("Payment verification error:", error);
+      return res.redirect(`/payment-callback?status=error&courseId=${req.query.courseId}`);
+    }
+  });
+  
+  // API endpoint to verify payment status (for authenticated users)
   app.get('/api/payments/verify/:reference', isAuthenticated, async (req: any, res) => {
     try {
       const { reference } = req.params;

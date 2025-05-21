@@ -33,11 +33,57 @@ export default function PaymentCallback() {
         description: "There was a problem processing your payment",
         variant: "destructive",
       });
-    } else {
-      // If no status parameter, we need to check the payment status
+    } else if (referenceParam) {
+      // If we have a reference but no status, verify manually
       setStatus("loading");
       
-      // Automatically redirect to course page after 5 seconds if loading
+      // Display loading state while verifying
+      const verifyPayment = async () => {
+        try {
+          const response = await fetch(`/api/payments/verify/${referenceParam}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success) {
+              setStatus("success");
+              toast({
+                title: "Payment Successful",
+                description: "Your enrollment has been confirmed",
+              });
+            } else {
+              setStatus("error");
+              toast({
+                title: "Payment Failed",
+                description: data.message || "There was a problem verifying your payment",
+                variant: "destructive",
+              });
+            }
+          } else {
+            setStatus("error");
+            toast({
+              title: "Verification Error",
+              description: "Could not verify payment status",
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error("Payment verification error:", error);
+          setStatus("error");
+          toast({
+            title: "Verification Error",
+            description: "An error occurred while verifying payment",
+            variant: "destructive",
+          });
+        }
+      };
+      
+      verifyPayment();
+    } else {
+      // If no status parameter or reference, we have no way to verify
+      setStatus("loading");
+      
+      // Automatically redirect to course page after 5 seconds
       const timer = setTimeout(() => {
         if (courseIdParam) {
           navigate(`/courses/${courseIdParam}/view`);
