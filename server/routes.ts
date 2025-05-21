@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import { initializePayment, verifyPayment } from "./paystack";
 import { storage } from "./storage";
 import { isAuthenticated, hasRole } from "./replitAuth";
@@ -1105,35 +1105,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize the HTTP server for standalone API and WebSocket
   const httpServer = createServer(app);
   
+  // Define custom WebSocket interface with additional properties
+  type CustomWebSocket = WebSocket & {
+    roomId?: string;
+    userId?: string;
+    username?: string;
+  };
+  
   // Setup WebSocket server
   const wss = new WebSocketServer({ 
     server: httpServer,
     path: '/ws'
   });
   
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws: WebSocket) => {
     console.log('Client connected');
     
-    ws.on('message', async (message) => {
+    // Use type assertion for WebSocket with custom properties
+    const customWs = ws as CustomWebSocket;
+    
+    customWs.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
         console.log('Received message:', data);
         
         if (data.type === 'join-room') {
-          ws.roomId = data.roomId;
-          ws.userId = data.userId;
-          ws.username = data.username;
+          customWs.roomId = data.roomId;
+          customWs.userId = data.userId;
+          customWs.username = data.username;
           
           // Send welcome message
-          ws.send(JSON.stringify({
+          customWs.send(JSON.stringify({
             type: 'system-message',
             content: `Welcome to room ${data.roomId}!`
           }));
           
           // Notify others in same room
           wss.clients.forEach((client) => {
-            if (client !== ws && client.roomId === data.roomId && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({
+            const typedClient = client as CustomWebSocket;
+            if (typedClient !== customWs && 
+                typedClient.roomId === data.roomId && 
+                typedClient.readyState === WebSocket.OPEN) {
+              typedClient.send(JSON.stringify({
                 type: 'user-joined',
                 userId: data.userId,
                 username: data.username
@@ -1145,20 +1158,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (data.type === 'chat-message') {
           // Store message in database
           if (data.roomId && data.userId && data.content) {
-            // await storage.createChatMessage({
-            //   roomId: data.roomId,
-            //   userId: data.userId,
-            //   content: data.content,
-            //   type: 'text'
-            // });
+            // Save the message in the database
+            try {
+              await storage.sendMessage({
+                conversationId: parseInt(data.roomId),
+                senderId: data.userId,
+                content: data.content,
+                contentType: 'text'
+              });
+            } catch (error) {
+              console.error("Error storing message:", error);
+            }
             
             // Broadcast to all clients in the same room
             wss.clients.forEach((client) => {
-              if (client.roomId === data.roomId && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
+              const typedClient = client as CustomWebSocket;
+              if (typedClient.roomId === data.roomId && typedClient.readyState === WebSocket.OPEN) {
+                typedClient.send(JSON.stringify({
                   type: 'chat-message',
                   senderId: data.userId,
-                  senderName: ws.username,
+                  senderName: customWs.username,
                   content: data.content,
                   timestamp: new Date().toISOString()
                 }));
@@ -1170,11 +1189,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (data.type === 'typing') {
           // Broadcast typing status to other users in the room
           wss.clients.forEach((client) => {
-            if (client !== ws && client.roomId === data.roomId && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify({
+            const typedClient = client as CustomWebSocket;
+            if (typedClient !== customWs && 
+                typedClient.roomId === data.roomId && 
+                typedClient.readyState === WebSocket.OPEN) {
+              typedClient.send(JSON.stringify({
                 type: 'typing',
                 userId: data.userId,
-                username: ws.username,
+                username: customWs.username,
                 isTyping: data.isTyping
               }));
             }
@@ -1185,17 +1207,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
     
-    ws.on('close', () => {
+    customWs.on('close', () => {
       console.log('Client disconnected');
       
       // Notify others if user was in a room
-      if (ws.roomId && ws.userId) {
+      if (customWs.roomId && customWs.userId) {
         wss.clients.forEach((client) => {
-          if (client !== ws && client.roomId === ws.roomId && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
+          const typedClient = client as CustomWebSocket;
+          if (typedClient !== customWs && 
+              typedClient.roomId === customWs.roomId && 
+              typedClient.readyState === WebSocket.OPEN) {
+            typedClient.send(JSON.stringify({
               type: 'user-left',
-              userId: ws.userId,
-              username: ws.username
+              userId: customWs.userId,
+              username: customWs.username
             }));
           }
         });
@@ -1203,7 +1228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     // Send initial message
-    ws.send(JSON.stringify({
+    customWs.send(JSON.stringify({
       type: 'connection-established',
       message: 'Connected to Codelab Educare WebSocket server'
     }));
