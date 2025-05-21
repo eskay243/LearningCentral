@@ -9,12 +9,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated, user } = useAuth();
-  
-  // Log authentication state for debugging
-  useEffect(() => {
-    console.log('Layout auth state:', { isAuthenticated, userExists: !!user });
-  }, [isAuthenticated, user]);
+  const { isAuthenticated } = useAuth();
 
   // Close sidebar when screen resizes to desktop
   useEffect(() => {
@@ -55,10 +50,11 @@ const Layout = ({ children }: LayoutProps) => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header toggleSidebar={toggleSidebar} />
       
-      {/* Always render the Sidebar, regardless of authentication status */}
-      <Sidebar isOpen={sidebarOpen} closeSidebar={closeSidebar} />
+      {isAuthenticated && (
+        <Sidebar isOpen={sidebarOpen} closeSidebar={closeSidebar} />
+      )}
       
-      <main className="lg:ml-64 pt-16 px-3 sm:px-4 md:px-6 transition-all duration-300">
+      <main className={`${isAuthenticated ? 'lg:ml-64' : ''} pt-16 px-3 sm:px-4 md:px-6 transition-all duration-300`}>
         <div className="max-w-7xl mx-auto">
           {children}
         </div>

@@ -1,7 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -26,12 +25,7 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const [location] = useLocation();
-  const { user, isAdmin, isMentor, isAuthenticated } = useAuth();
-  
-  // Add debugging to help identify authentication issues
-  useEffect(() => {
-    console.log('Sidebar auth state:', { isAuthenticated, userExists: !!user, user });
-  }, [isAuthenticated, user]);
+  const { user, isAdmin, isMentor } = useAuth();
   
   const sidebarClass = cn(
     "sidebar fixed left-0 top-16 bottom-0 w-72 sm:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-lg rounded-tr-3xl rounded-br-3xl",
@@ -94,53 +88,26 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</h2>
           </div>
           
-          {/* Show different menu items based on authentication status */}
-          {isAuthenticated ? (
-            <>
-              <Link href="/dashboard" className={menuItemClass("/dashboard")}>
-                <LayoutDashboard className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Dashboard</span>
-              </Link>
-              
-              <Link href="/courses" className={menuItemClass("/courses")}>
-                <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">My Courses</span>
-              </Link>
-              
-              <Link href="/schedule" className={menuItemClass("/schedule")}>
-                <Calendar className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Schedule</span>
-              </Link>
-              
-              {(isAdmin || isMentor) && (
-                <Link href="/students" className={menuItemClass("/students")}>
-                  <Users className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">Students</span>
-                </Link>
-              )}
-            </>
-          ) : (
-            <>
-              <Link href="/courses" className={menuItemClass("/courses")}>
-                <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Browse Courses</span>
-              </Link>
-              
-              <Link href="/login" className={menuItemClass("/login")}>
-                <User className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Login</span>
-              </Link>
-              
-              <Link href="/test-login" className={menuItemClass("/test-login")}>
-                <User className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Test Login</span>
-              </Link>
-              
-              <Link href="/code-companion" className={menuItemClass("/code-companion")}>
-                <Code2 className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Code Companion</span>
-              </Link>
-            </>
+          <Link href="/dashboard" className={menuItemClass("/dashboard")}>
+            <LayoutDashboard className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Dashboard</span>
+          </Link>
+          
+          <Link href="/courses" className={menuItemClass("/courses")}>
+            <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">My Courses</span>
+          </Link>
+          
+          <Link href="/schedule" className={menuItemClass("/schedule")}>
+            <Calendar className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Schedule</span>
+          </Link>
+          
+          {(isAdmin || isMentor) && (
+            <Link href="/students" className={menuItemClass("/students")}>
+              <Users className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate">Students</span>
+            </Link>
           )}
           
           {(isAdmin || isMentor) && (

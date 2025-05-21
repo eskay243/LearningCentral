@@ -15,12 +15,6 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
   const { user, isAuthenticated } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  
-  // Add debugging to track menu button clicks
-  const handleMenuClick = () => {
-    console.log('Menu button clicked, auth state:', isAuthenticated);
-    toggleSidebar();
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -44,7 +38,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
       <div className="flex justify-between items-center px-4 sm:px-6 md:px-8 h-16">
         {/* Mobile Menu Button */}
         <button 
-          onClick={handleMenuClick} 
+          onClick={toggleSidebar} 
           className="lg:hidden flex items-center justify-center p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-primary/10 focus:outline-none"
           aria-label="Open menu"
         >

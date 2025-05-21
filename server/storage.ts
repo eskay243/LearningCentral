@@ -95,11 +95,6 @@ export interface IStorage {
   addConversationParticipants(conversationId: number, participantIds: string[]): Promise<void>;
   sendMessage(data: Partial<InsertChatMessage>): Promise<ChatMessage>;
   markMessagesAsRead(conversationId: number, userId: string): Promise<void>;
-  createMessage(messageData: any): Promise<any>; // Added for WebSocket functionality
-  getMessage(messageId: number): Promise<any>; // Added for WebSocket functionality
-  markMessageRead(conversationId: number, userId: string, messageId: number): Promise<void>; // Added for WebSocket functionality
-  addMessageReaction(reactionData: { messageId: number; emoji: string; userId: string }): Promise<any>; // Added for WebSocket functionality
-  removeMessageReaction(messageId: number, userId: string, emoji: string): Promise<void>; // Added for WebSocket functionality
   getUserMessages(userId: string): Promise<any[]>;
   getAnnouncements(options: { limit: number, offset: number }): Promise<any[]>;
   getCourseAnnouncements(courseId: number, options: { limit: number, offset: number }): Promise<any[]>;
@@ -266,10 +261,8 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUsers(role?: string): Promise<User[]>;
-  getAllUsers(): Promise<User[]>;
   createUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
-  updateUserRole(id: string, role: string): Promise<User>;
   upsertUser(userData: UpsertUser): Promise<User>;
   
   // System settings operations
@@ -328,19 +321,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User management
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
-  }
-  
-  async updateUserRole(id: string, role: string): Promise<User> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({ role })
-      .where(eq(users.id, id))
-      .returning();
-    return updatedUser;
-  }
   // System Settings operations
   async getSystemSetting(key: string): Promise<SystemSettings | undefined> {
     const [setting] = await db

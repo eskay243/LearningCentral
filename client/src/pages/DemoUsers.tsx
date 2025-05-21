@@ -41,12 +41,16 @@ export default function DemoUsers() {
 
     setIsSwitching(true);
     try {
-      // Use the proper API request method with fetch since this endpoint requires special handling
-      const response = await fetch(`/api/auth/switch-role/${role}`);
+      const response = await fetch(`/api/switch-user-role/${role}`);
       if (!response.ok) {
-        throw new Error(`Failed to switch role: ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to switch user role");
       }
-      const data = await response.json();
+      
+      const data: SwitchRoleResponse = await response.json();
+      
+      // Force refresh user data
+      window.location.reload();
       
       toast({
         title: "Role updated successfully",
@@ -54,16 +58,7 @@ export default function DemoUsers() {
       });
 
       setSelectedRole(role);
-      
-      // Invalidate query cache and refresh user data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      
-      // Wait a moment for the state to update, then refresh
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
     } catch (error) {
-      console.error("Role switch error:", error);
       toast({
         title: "Error switching role",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
@@ -130,11 +125,11 @@ export default function DemoUsers() {
                 You need to be logged in to test different user roles. Please log in to continue.
               </p>
               <Button 
-                onClick={() => window.location.href = "/test-login"}
+                onClick={() => window.location.href = "/api/login"}
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Test Login
+                Log In
               </Button>
             </div>
           </CardContent>

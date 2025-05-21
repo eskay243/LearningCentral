@@ -29,12 +29,7 @@ export default function BankTransferInstructions() {
   const [copied, setCopied] = useState<{ [key: string]: boolean }>({});
   
   // Get state from location
-  const state = location.state as { 
-    courseId: string; 
-    accountDetails: AccountDetails; 
-    amount: number;
-    reference: string;
-  } | undefined;
+  const state = location.state as { accountDetails: AccountDetails; amount: number } | undefined;
   
   useEffect(() => {
     // Redirect if no state (user might have navigated directly to this page)
@@ -161,9 +156,7 @@ export default function BankTransferInstructions() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Reference/Narration</p>
-                  <p className="font-medium text-primary">
-                    {state.reference || accountDetails.reference}
-                  </p>
+                  <p className="font-medium text-primary">{accountDetails.reference}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     It's important to include this reference when making your transfer
                   </p>
@@ -172,7 +165,7 @@ export default function BankTransferInstructions() {
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-2"
-                  onClick={() => handleCopy(state.reference || accountDetails.reference, "reference")}
+                  onClick={() => handleCopy(accountDetails.reference, "reference")}
                 >
                   {copied.reference ? <CheckCircle2 className="h-4 w-4" /> : <ClipboardCopy className="h-4 w-4" />}
                   {copied.reference ? "Copied" : "Copy"}

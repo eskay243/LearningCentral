@@ -2,56 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
-import passport from "passport";
-import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { pool } from "./db";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Set up session
-const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-const pgStore = connectPg(session);
-const sessionStore = new pgStore({
-  pool,
-  createTableIfMissing: true,
-  ttl: sessionTtl,
-  tableName: "sessions",
-  pruneSessionInterval: 60 // prune expired sessions every minute
-});
-
-// Configure session middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET || "dev-session-secret",
-  name: 'codelab.sid',
-  store: sessionStore,
-  resave: true,
-  saveUninitialized: true,
-  cookie: {
-    httpOnly: true,
-    secure: false, // Set to false for development to work without HTTPS
-    maxAge: sessionTtl,
-    sameSite: 'lax',
-    path: '/'
-  },
-}));
-
-// Initialize passport
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Enhanced passport serialization
-passport.serializeUser((user: any, cb) => {
-  console.log("[PASSPORT] Serializing user:", user.id);
-  cb(null, user);
-});
-
-passport.deserializeUser((user: any, cb) => {
-  console.log("[PASSPORT] Deserializing user:", user.id);
-  cb(null, user);
-});
 
 app.use((req, res, next) => {
   const start = Date.now();
