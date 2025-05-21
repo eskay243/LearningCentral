@@ -137,6 +137,7 @@ const Dashboard = () => {
           name: "Emma Johnson",
           course: "JavaScript Course",
           progress: 92,
+          lastActive: "2 hours ago",
           avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
         },
         {
@@ -144,6 +145,7 @@ const Dashboard = () => {
           name: "Alex Chen",
           course: "SQL Course",
           progress: 87,
+          lastActive: "1 day ago",
           avatar: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
         },
         {
@@ -151,6 +153,7 @@ const Dashboard = () => {
           name: "Sophia Martinez",
           course: "Python Course",
           progress: 78,
+          lastActive: "3 days ago",
           avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
         },
         {
@@ -158,6 +161,7 @@ const Dashboard = () => {
           name: "David Kim",
           course: "JavaScript Course",
           progress: 65,
+          lastActive: "1 week ago",
           avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
         }
       ]);

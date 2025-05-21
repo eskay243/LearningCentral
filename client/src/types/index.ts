@@ -36,6 +36,7 @@ export interface StudentProgressItem {
   course: string;
   progress: number;
   lastActive: string;
+  avatar?: string;
 }
 
 export interface RecentActivityItem {
@@ -49,6 +50,8 @@ export interface RecentActivityItem {
   target: string;
   timestamp: string;
   type: string;
+  title?: string;
+  description?: string;
 }
 
 export interface CourseCardItem {
@@ -62,6 +65,7 @@ export interface CourseCardItem {
   category?: string;
   enrollments?: number;
   lastUpdated?: string;
+  students?: number;
 }
 
 // Course types
