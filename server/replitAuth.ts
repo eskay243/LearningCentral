@@ -58,7 +58,7 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
-  await storage.upsertUser({
+  const user = await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
@@ -66,6 +66,7 @@ async function upsertUser(
     profileImageUrl: claims["profile_image_url"],
     role: UserRole.STUDENT, // Default role for new users
   });
+  return user;
 }
 
 export async function setupAuth(app: Express) {
@@ -80,10 +81,24 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
+    try {
+      const claims = tokens.claims();
+      const dbUser = await upsertUser(claims);
+      
+      // Create a user object that combines the DB user with claims
+      const user = {
+        ...dbUser,
+        claims
+      };
+      
+      // Add token information
+      updateUserSession(user, tokens);
+      
+      verified(null, user);
+    } catch (error) {
+      console.error("Authentication verification error:", error);
+      verified(error as Error);
+    }
   };
 
   for (const domain of process.env
@@ -130,29 +145,50 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    console.log("Authentication failed: User not authenticated");
+    return res.status(401).json({ message: "Unauthorized: Not authenticated" });
+  }
+  
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
-    return res.status(401).json({ message: "Unauthorized" });
+  if (!user) {
+    console.log("Authentication failed: No user in request");
+    return res.status(401).json({ message: "Unauthorized: No user" });
   }
 
-  const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
+  // Check if token has expired
+  if (user.expires_at) {
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Token is still valid
+    if (now <= user.expires_at) {
+      return next();
+    }
+    
+    // Token expired, try to refresh
+    const refreshToken = user.refresh_token;
+    if (!refreshToken) {
+      console.log("Authentication failed: Token expired and no refresh token");
+      return res.redirect("/api/login");
+    }
+    
+    try {
+      const config = await getOidcConfig();
+      const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
+      updateUserSession(user, tokenResponse);
+      return next();
+    } catch (error) {
+      console.error("Authentication failed: Token refresh error", error);
+      return res.redirect("/api/login");
+    }
+  } else if (user.id || (user.claims && user.claims.sub)) {
+    // User exists in DB but doesn't have token info
+    // This is a valid user that was authenticated via session
     return next();
-  }
-
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    return res.redirect("/api/login");
-  }
-
-  try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    return next();
-  } catch (error) {
-    return res.redirect("/api/login");
+  } else {
+    console.log("Authentication failed: Invalid user or missing required fields");
+    return res.status(401).json({ message: "Unauthorized: Invalid session data" });
   }
 };
 
@@ -164,11 +200,22 @@ export const hasRole = (role: string | string[]): RequestHandler => {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      // Get user data - first try from the request which should have the DB user
+      let user = req.user;
       
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
+      // If no role in the user object from the request, try to get from DB
+      if (!user.role && user.claims && user.claims.sub) {
+        const dbUser = await storage.getUser(user.claims.sub);
+        if (dbUser) {
+          // Update the request user with DB data for future middleware
+          req.user = { ...user, ...dbUser };
+          user = req.user;
+        }
+      }
+      
+      if (!user || !user.role) {
+        console.error("Role check failed: User has no role", user);
+        return res.status(401).json({ message: "User not found or has no role assigned" });
       }
       
       // Check if user has one of the required roles
