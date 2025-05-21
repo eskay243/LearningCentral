@@ -100,10 +100,10 @@ export default function Certificates() {
 
   return (
     <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Certificates</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">My Certificates</h1>
+          <p className="text-muted-foreground mt-1">
             View, download, and share your achievement certificates
           </p>
         </div>
@@ -127,15 +127,15 @@ export default function Certificates() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {certificates.map((certificate: any) => (
-            <Card key={certificate.id} className="overflow-hidden">
+            <Card key={certificate.id} className="overflow-hidden flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg font-semibold">
+                  <CardTitle className="text-lg font-semibold truncate">
                     {certificate.courseTitle || "Course Certificate"}
                   </CardTitle>
-                  <Badge variant={certificate.status === "issued" ? "default" : "destructive"}>
+                  <Badge variant={certificate.status === "issued" ? "default" : "destructive"} className="ml-2 flex-shrink-0">
                     {certificate.status === "issued" ? "Valid" : "Revoked"}
                   </Badge>
                 </div>
@@ -143,27 +143,29 @@ export default function Certificates() {
                   Issued on: {new Date(certificate.issuedAt).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pb-0">
+              <CardContent className="pb-0 flex-1">
                 <div 
-                  className="certificate-preview bg-muted rounded-md p-4 mb-4 text-center h-48 flex items-center justify-center" 
+                  className="certificate-preview bg-muted rounded-md p-4 mb-4 text-center h-40 sm:h-48 flex items-center justify-center overflow-hidden" 
                   dangerouslySetInnerHTML={{ __html: certificate.template }} 
                 />
-                <div className="text-sm text-muted-foreground mb-2">
-                  Verification Code: <code className="bg-muted px-1 py-0.5 rounded">{certificate.verificationCode}</code>
+                <div className="text-sm text-muted-foreground mb-2 break-all">
+                  <span className="block mb-1">Verification Code:</span> 
+                  <code className="bg-muted px-1 py-0.5 rounded text-xs">{certificate.verificationCode}</code>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between pt-4">
-                <Button variant="outline" size="sm" onClick={() => handlePrint(certificate)}>
+              <CardFooter className="flex flex-wrap justify-center md:justify-between gap-2 pt-4">
+                <Button variant="outline" size="sm" className="flex-1 min-w-[80px]" onClick={() => handlePrint(certificate)}>
                   <Printer className="h-4 w-4 mr-2" />
                   Print
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => downloadPDF(certificate)}>
+                <Button variant="outline" size="sm" className="flex-1 min-w-[80px]" onClick={() => downloadPDF(certificate)}>
                   <Download className="h-4 w-4 mr-2" />
                   Download
                 </Button>
                 <Button 
                   variant="outline" 
-                  size="sm" 
+                  size="sm"
+                  className="flex-1 min-w-[80px]"
                   onClick={() => window.open(`/certificate/verify/${certificate.id}`, '_blank')}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />

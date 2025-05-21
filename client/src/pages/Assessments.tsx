@@ -222,52 +222,54 @@ const Assessments = () => {
                   )}
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Quiz Title</TableHead>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Questions</TableHead>
-                      <TableHead>Passing Score</TableHead>
-                      <TableHead>Attempts</TableHead>
-                      <TableHead>Avg. Score</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredQuizzes.map((quiz) => (
-                      <TableRow key={quiz.id}>
-                        <TableCell className="font-medium">{quiz.title}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p>{quiz.course.title}</p>
-                            <p className="text-xs text-gray-500">{quiz.lesson.title}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{quiz.questionCount}</TableCell>
-                        <TableCell>{quiz.passingScore}%</TableCell>
-                        <TableCell>{quiz.attempts}</TableCell>
-                        <TableCell>
-                          <Badge variant={quiz.avgScore >= quiz.passingScore ? "success" : "destructive"}>
-                            {quiz.avgScore}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(quiz.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              Edit
-                            </Button>
-                            <Button size="sm">
-                              View Results
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table className="min-w-[900px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Quiz Title</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Questions</TableHead>
+                        <TableHead>Passing Score</TableHead>
+                        <TableHead>Attempts</TableHead>
+                        <TableHead>Avg. Score</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredQuizzes.map((quiz) => (
+                        <TableRow key={quiz.id}>
+                          <TableCell className="font-medium">{quiz.title}</TableCell>
+                          <TableCell>
+                            <div className="max-w-[150px]">
+                              <p className="truncate">{quiz.course.title}</p>
+                              <p className="text-xs text-gray-500 truncate">{quiz.lesson.title}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{quiz.questionCount}</TableCell>
+                          <TableCell>{quiz.passingScore}%</TableCell>
+                          <TableCell>{quiz.attempts}</TableCell>
+                          <TableCell>
+                            <Badge variant={quiz.avgScore >= quiz.passingScore ? "success" : "destructive"}>
+                              {quiz.avgScore}%
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(quiz.createdAt)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" size="sm" className="whitespace-nowrap">
+                                Edit
+                              </Button>
+                              <Button size="sm" className="whitespace-nowrap">
+                                View Results
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -297,52 +299,54 @@ const Assessments = () => {
                   )}
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Assignment Title</TableHead>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Submissions</TableHead>
-                      <TableHead>Pending</TableHead>
-                      <TableHead>Graded</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAssignments.map((assignment) => (
-                      <TableRow key={assignment.id}>
-                        <TableCell className="font-medium">{assignment.title}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p>{assignment.course.title}</p>
-                            <p className="text-xs text-gray-500">{assignment.lesson.title}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{formatDate(assignment.dueDate)}</TableCell>
-                        <TableCell>{assignment.submissions}</TableCell>
-                        <TableCell>
-                          <Badge variant={assignment.pending > 0 ? "secondary" : "outline"}>
-                            {assignment.pending}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{assignment.graded}</TableCell>
-                        <TableCell>{formatDate(assignment.createdAt)}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              Edit
-                            </Button>
-                            <Button size="sm">
-                              Review
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table className="min-w-[900px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Assignment Title</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Submissions</TableHead>
+                        <TableHead>Pending</TableHead>
+                        <TableHead>Graded</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAssignments.map((assignment) => (
+                        <TableRow key={assignment.id}>
+                          <TableCell className="font-medium">{assignment.title}</TableCell>
+                          <TableCell>
+                            <div className="max-w-[150px]">
+                              <p className="truncate">{assignment.course.title}</p>
+                              <p className="text-xs text-gray-500 truncate">{assignment.lesson.title}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatDate(assignment.dueDate)}</TableCell>
+                          <TableCell>{assignment.submissions}</TableCell>
+                          <TableCell>
+                            <Badge variant={assignment.pending > 0 ? "secondary" : "outline"}>
+                              {assignment.pending}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{assignment.graded}</TableCell>
+                          <TableCell>{formatDate(assignment.createdAt)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" size="sm" className="whitespace-nowrap">
+                                Edit
+                              </Button>
+                              <Button size="sm" className="whitespace-nowrap">
+                                Review
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
