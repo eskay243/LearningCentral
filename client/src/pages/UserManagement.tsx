@@ -41,6 +41,7 @@ const UserManagement = () => {
     role: "",
     bio: "",
     profileImageUrl: "",
+    commissionRate: 37,
   });
   
   const [createForm, setCreateForm] = useState({
@@ -48,6 +49,7 @@ const UserManagement = () => {
     lastName: "",
     email: "",
     role: "student",
+    commissionRate: 37,
     bio: "",
     profileImageUrl: "",
     password: "",
@@ -544,6 +546,27 @@ const UserManagement = () => {
                   rows={3}
                 />
               </div>
+              
+              {/* Commission Rate Field - Only visible for mentors */}
+              {editForm.role === "mentor" && (
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="commissionRate">Commission Rate (%)</Label>
+                  <div className="flex items-center">
+                    <Input
+                      id="commissionRate"
+                      name="commissionRate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={editForm.commissionRate}
+                      onChange={handleInputChange}
+                      className="flex-1"
+                    />
+                    <span className="ml-2">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Default commission rate is 37% of student payments</p>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -672,6 +695,27 @@ const UserManagement = () => {
                   rows={3}
                 />
               </div>
+              
+              {/* Commission Rate Field - Only visible for mentors */}
+              {createForm.role === "mentor" && (
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="createCommissionRate">Commission Rate (%)</Label>
+                  <div className="flex items-center">
+                    <Input
+                      id="createCommissionRate"
+                      name="commissionRate"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={createForm.commissionRate}
+                      onChange={handleCreateInputChange}
+                      className="flex-1"
+                    />
+                    <span className="ml-2">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Default commission rate is 37% of student payments</p>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
