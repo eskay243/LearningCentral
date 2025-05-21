@@ -172,12 +172,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             </a>
           </Link>
           
-          <Link href="/code-companion">
-            <a className={menuItemClass("/code-companion")}>
-              <Code2 className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Code Companion</span>
-            </a>
-          </Link>
+          <div 
+            className={menuItemClass("/code-companion")}
+            onClick={() => window.location.href = '/code-companion'} 
+          >
+            <Code2 className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Code Companion</span>
+          </div>
           
           <Link href="/profile">
             <a className={menuItemClass("/profile")}>

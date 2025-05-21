@@ -256,7 +256,7 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
                       ? 'bg-muted text-foreground dark:bg-gray-700 dark:text-gray-200' 
                       : 'bg-primary text-primary-foreground'}`}
                   >
-                    <ReactMarkdown className="prose dark:prose-invert prose-sm max-w-none">
+                    <ReactMarkdown>
                       {msg.message}
                     </ReactMarkdown>
                     <div className="text-xs opacity-70 mt-1 text-right">
