@@ -370,17 +370,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setDefaultSystemSettings(): Promise<void> {
-    // Check if settings already exist
-    const existingSettings = await this.getSystemSettings();
+    try {
+      // Check if settings already exist
+      const existingSettings = await this.getSystemSettings();
+      
+      if (existingSettings.length === 0) {
+        // Set default currency to NGN (Nigerian Naira) as requested
+        await this.updateSystemSetting('currency.default', Currency.NGN);
+      
+        // Set available currencies
+        await this.updateSystemSetting('currency.available', 
+          JSON.stringify([Currency.NGN, Currency.USD, Currency.GBP]));
+          
+        // Set mentor commission rate default
+        await this.updateSystemSetting('commission.mentor.rate', '37');
+        
+        // Set affiliate commission rate default
+        await this.updateSystemSetting('commission.affiliate.rate', '4');
+      }
+    } catch (error) {
+      console.error('Error setting default system settings:', error);
+      // Continue execution even if system settings fail
+    }
     
-    if (existingSettings.length === 0) {
-      // Set default currency to NGN (Nigerian Naira) as requested
-      await this.updateSystemSetting('currency.default', Currency.NGN);
-      
-      // Set available currencies
-      await this.updateSystemSetting('currency.available', 
-        JSON.stringify([Currency.NGN, Currency.USD, Currency.GBP]));
-      
+    try {
       // Set exchange rates (these should be updated regularly in production)
       await this.updateSystemSetting('currency.exchangeRates', 
         JSON.stringify({
@@ -388,14 +401,26 @@ export class DatabaseStorage implements IStorage {
           "GBP": 0.79,
           "NGN": 910.50
         }));
+    } catch (error) {
+      console.error('Error setting exchange rates:', error);
+      // Continue execution even if exchange rates fail
+    }
       
+    try {
       // Set system name
       await this.updateSystemSetting('system.name', 'Codelab Educare LMS');
-      
+    } catch (error) {
+      console.error('Error setting system name:', error);
+    }
+    
+    try {
       // Set system timezone
       await this.updateSystemSetting('system.timezone', 'Africa/Lagos');
+    } catch (error) {
+      console.error('Error setting system timezone:', error);
     }
   }
+}
   // Live Session Operations
   async createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession> {
     const [session] = await db
