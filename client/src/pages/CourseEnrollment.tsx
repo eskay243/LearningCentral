@@ -193,12 +193,12 @@ export default function CourseEnrollment() {
             <CardContent>
               <div className="mb-4">
                 <div className="text-3xl font-bold">
-                  {course.price > 0 ? formatCurrency(course.price) : "Free"}
+                  {course.price > 0 ? formatCurrency(course.price, 'NGN') : "Free"}
                 </div>
                 {course.originalPrice && course.originalPrice > course.price && (
                   <div className="flex items-center mt-1">
                     <span className="text-gray-500 line-through mr-2">
-                      {formatCurrency(course.originalPrice)}
+                      {formatCurrency(course.originalPrice, 'NGN')}
                     </span>
                     <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                       Save {Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)}%
