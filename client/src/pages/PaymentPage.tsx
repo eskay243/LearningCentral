@@ -16,6 +16,19 @@ import { Button } from "@/components/ui/button";
 import { Course } from "@/types";
 import { ContextualHelp } from "@/components/ui/ContextualHelp";
 import { formatCurrency } from "@/lib/currencyUtils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 export default function PaymentPage() {
   const { id } = useParams();
@@ -23,6 +36,8 @@ export default function PaymentPage() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'bank-transfer' | 'wallet'>('paystack');
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Fetch course details
   const { data: course, isLoading: courseLoading } = useQuery<Course>({
@@ -44,8 +59,9 @@ export default function PaymentPage() {
   const formatPrice = (amount: number) => {
     return formatCurrency(amount, 'NGN');
   };
-
-  const handlePayment = async () => {
+  
+  // Open confirmation dialog before processing payment
+  const initiatePayment = () => {
     if (!user || !user.email) {
       toast({
         title: "Error",
@@ -54,24 +70,76 @@ export default function PaymentPage() {
       });
       return;
     }
-
+    
+    setShowConfirmation(true);
+  };
+  
+  // Process payment after confirmation
+  const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      const response = await apiRequest("POST", `/api/courses/${id}/payment`, {
-        email: user.email,
-      });
-      
-      const data = await response.json();
-      
-      // Redirect to Paystack payment URL
-      window.location.href = data.authorization_url;
-    } catch (error) {
-      setIsProcessing(false);
+      // Different handling based on payment method
+      if (paymentMethod === 'paystack') {
+        const response = await apiRequest("POST", `/api/courses/${id}/payment`, {
+          email: user?.email,
+          paymentMethod: "paystack"
+        });
+        
+        const data = await response.json();
+        
+        // Redirect to Paystack payment URL
+        window.location.href = data.authorization_url;
+      } 
+      else if (paymentMethod === 'bank-transfer') {
+        // For bank transfer, we'll show the account details
+        toast({
+          title: "Bank Transfer Selected",
+          description: "You'll be shown bank details to complete your payment",
+        });
+        
+        // In a real app, we would get these details from the API
+        const accountDetails = {
+          bankName: "First Bank of Nigeria",
+          accountNumber: "3089765432",
+          accountName: "Codelab Educare Ltd",
+          reference: `CLB-${id}-${Date.now().toString().substring(8)}`
+        };
+        
+        // Navigate to bank transfer instructions page
+        navigate(`/courses/${id}/bank-transfer`, { 
+          state: { accountDetails, amount: course?.price }
+        });
+      }
+      else if (paymentMethod === 'wallet') {
+        // For wallet payments
+        const response = await apiRequest("POST", `/api/courses/${id}/wallet-payment`, {
+          email: user?.email,
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Insufficient wallet balance");
+        }
+        
+        const data = await response.json();
+        
+        // Show success message
+        toast({
+          title: "Payment Successful",
+          description: "Your payment was processed successfully using your wallet balance.",
+        });
+        
+        // Navigate to course view
+        navigate(`/courses/${id}/view`);
+      }
+    } catch (error: any) {
       toast({
         title: "Payment Error",
-        description: "There was a problem initializing payment",
+        description: error.message || "There was a problem processing your payment",
         variant: "destructive",
       });
+      setIsProcessing(false);
+      setShowConfirmation(false);
     }
   };
 
