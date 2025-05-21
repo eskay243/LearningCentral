@@ -51,7 +51,10 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Demo user role switching endpoint
+  // Setup authentication middleware first
+  await setupAuth(app);
+  
+  // Now add the role-switching endpoint (after auth is set up)
   app.get("/api/switch-user-role/:role", isAuthenticated, async (req, res) => {
     try {
       if (!req.user || !req.user.claims?.sub) {
@@ -84,9 +87,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to switch user role" });
     }
   });
-
-  // Setup authentication middleware
-  await setupAuth(app);
   
   // Serve uploads directory as static files
   app.use('/uploads', expressModule.default.static(uploadsDir));
