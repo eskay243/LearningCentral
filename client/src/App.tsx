@@ -31,6 +31,7 @@ import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import CodeCompanion from "@/pages/CodeCompanion";
+import DemoUsers from "@/pages/DemoUsers";
 
 function Router() {
   return (
