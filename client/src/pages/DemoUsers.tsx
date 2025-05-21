@@ -49,12 +49,12 @@ export default function DemoUsers() {
       
       const data: SwitchRoleResponse = await response.json();
       
-      // Invalidate auth queries to refresh user data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      // Force refresh user data
+      window.location.reload();
       
       toast({
         title: "Role updated successfully",
-        description: `Your role has been changed to ${role}. You may need to refresh to see all changes.`,
+        description: `Your role has been changed to ${role}. The page will refresh to apply changes.`,
       });
 
       setSelectedRole(role);
