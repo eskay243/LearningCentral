@@ -76,33 +76,25 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</h2>
           </div>
           
-          <Link href="/dashboard">
-            <a className={menuItemClass("/dashboard")}>
-              <LayoutDashboard className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Dashboard</span>
-            </a>
+          <Link href="/dashboard" className={menuItemClass("/dashboard")}>
+            <LayoutDashboard className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Dashboard</span>
           </Link>
           
-          <Link href="/courses">
-            <a className={menuItemClass("/courses")}>
-              <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">My Courses</span>
-            </a>
+          <Link href="/courses" className={menuItemClass("/courses")}>
+            <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">My Courses</span>
           </Link>
           
-          <Link href="/schedule">
-            <a className={menuItemClass("/schedule")}>
-              <Calendar className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Schedule</span>
-            </a>
+          <Link href="/schedule" className={menuItemClass("/schedule")}>
+            <Calendar className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Schedule</span>
           </Link>
           
           {(isAdmin || isMentor) && (
-            <Link href="/students">
-              <a className={menuItemClass("/students")}>
-                <Users className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Students</span>
-              </a>
+            <Link href="/students" className={menuItemClass("/students")}>
+              <Users className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate">Students</span>
             </Link>
           )}
           
@@ -112,33 +104,25 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                 <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Teaching</h2>
               </div>
               
-              <Link href="/create-course">
-                <a className={menuItemClass("/create-course")}>
-                  <PlusCircle className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">Create Course</span>
-                </a>
+              <Link href="/create-course" className={menuItemClass("/create-course")}>
+                <PlusCircle className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Create Course</span>
               </Link>
               
-              <Link href="/assessments">
-                <a className={menuItemClass("/assessments")}>
-                  <FileText className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">Assessments</span>
-                </a>
+              <Link href="/assessments" className={menuItemClass("/assessments")}>
+                <FileText className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Assessments</span>
               </Link>
               
-              <Link href="/analytics">
-                <a className={menuItemClass("/analytics")}>
-                  <LineChart className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">Analytics</span>
-                </a>
+              <Link href="/analytics" className={menuItemClass("/analytics")}>
+                <LineChart className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Analytics</span>
               </Link>
               
               {isAdmin && (
-                <Link href="/users">
-                  <a className={menuItemClass("/users")}>
-                    <UsersRound className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="truncate">User Management</span>
-                  </a>
+                <Link href="/users" className={menuItemClass("/users")}>
+                  <UsersRound className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                  <span className="truncate">User Management</span>
                 </Link>
               )}
             </>

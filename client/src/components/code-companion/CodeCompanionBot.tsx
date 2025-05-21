@@ -214,7 +214,7 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-3xl h-[600px] flex flex-col dark:bg-gray-800 dark:border-gray-700">
+    <Card className="w-full max-w-4xl h-[700px] flex flex-col dark:bg-gray-800 dark:border-gray-700">
       <CardHeader className="px-4 py-3 border-b flex flex-row items-center justify-between space-y-0 dark:border-gray-700">
         <div className="flex items-center space-x-2">
           <Avatar className="h-8 w-8 bg-primary/20">
@@ -234,14 +234,14 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
       </CardHeader>
       
       <Tabs defaultValue="chat" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="px-4 pt-2 bg-background border-b justify-start dark:bg-gray-800 dark:border-gray-700">
+        <TabsList className="px-4 pt-2 bg-background border-b justify-start gap-2 dark:bg-gray-800 dark:border-gray-700">
           <TabsTrigger value="chat" className="text-xs dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">
             <MessageCircle className="h-3.5 w-3.5 mr-1" />
             Chat
           </TabsTrigger>
           <TabsTrigger value="code" className="text-xs dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">
             <Code className="h-3.5 w-3.5 mr-1" />
-            Code
+            Code Input
           </TabsTrigger>
           <TabsTrigger value="settings" className="text-xs dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">
             <Sparkles className="h-3.5 w-3.5 mr-1" />
