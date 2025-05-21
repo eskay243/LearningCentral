@@ -228,9 +228,9 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
   };
 
   // Use real data when available, otherwise use mock data
-  const quizAnalytics = quizStats || mockQuizStats;
-  const assignmentAnalytics = assignmentStats || mockAssignmentStats;
-  const studentAnalytics = studentPerformance || mockStudentPerformance;
+  const quizAnalytics: QuizAnalytics = quizStats || mockQuizStats;
+  const assignmentAnalytics: AssignmentAnalytics = assignmentStats || mockAssignmentStats;
+  const studentAnalytics: StudentPerformanceAnalytics = studentPerformance || mockStudentPerformance;
 
   return (
     <div className="space-y-6">

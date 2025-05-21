@@ -17,6 +17,24 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import useAuth from "@/hooks/useAuth";
 
+// Type definitions for user profile and notification settings
+interface UserProfile {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  bio?: string;
+  profileImageUrl?: string;
+}
+
+interface NotificationSettings {
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  classReminders: boolean;
+  assignmentReminders: boolean;
+  messageNotifications: boolean;
+  announcementNotifications: boolean;
+}
+
 // Profile settings form schema
 const profileFormSchema = z.object({
   firstName: z.string().min(2, { message: "First name must be at least 2 characters" }).optional(),
@@ -41,26 +59,39 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState("profile");
 
   // Fetch user profile
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
+  const { data: profile, isLoading: isProfileLoading } = useQuery<UserProfile>({
     queryKey: ["/api/users/profile"],
     enabled: !!user,
   });
 
   // Fetch notification settings
-  const { data: notificationSettings, isLoading: isNotificationsLoading } = useQuery({
+  const { data: notificationSettings, isLoading: isNotificationsLoading } = useQuery<NotificationSettings>({
     queryKey: ["/api/users/notification-settings"],
     enabled: !!user,
   });
 
+  // Default profile values
+  const defaultProfile: z.infer<typeof profileFormSchema> = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    bio: "",
+  };
+
+  // Default notification values
+  const defaultNotifications: z.infer<typeof notificationFormSchema> = {
+    emailNotifications: true,
+    smsNotifications: false,
+    classReminders: true,
+    assignmentReminders: true, 
+    messageNotifications: true,
+    announcementNotifications: true,
+  };
+
   // Profile form
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      firstName: profile?.firstName || "",
-      lastName: profile?.lastName || "",
-      email: profile?.email || "",
-      bio: profile?.bio || "",
-    },
+    defaultValues: defaultProfile,
   });
 
   // Update when profile data is loaded
@@ -78,26 +109,19 @@ const Settings = () => {
   // Notification form
   const notificationForm = useForm<z.infer<typeof notificationFormSchema>>({
     resolver: zodResolver(notificationFormSchema),
-    defaultValues: {
-      emailNotifications: notificationSettings?.emailNotifications ?? true,
-      smsNotifications: notificationSettings?.smsNotifications ?? false,
-      classReminders: notificationSettings?.classReminders ?? true,
-      assignmentReminders: notificationSettings?.assignmentReminders ?? true,
-      messageNotifications: notificationSettings?.messageNotifications ?? true,
-      announcementNotifications: notificationSettings?.announcementNotifications ?? true,
-    },
+    defaultValues: defaultNotifications,
   });
 
   // Update when notification settings are loaded
   useEffect(() => {
     if (notificationSettings) {
       notificationForm.reset({
-        emailNotifications: notificationSettings.emailNotifications,
-        smsNotifications: notificationSettings.smsNotifications,
-        classReminders: notificationSettings.classReminders,
-        assignmentReminders: notificationSettings.assignmentReminders,
-        messageNotifications: notificationSettings.messageNotifications,
-        announcementNotifications: notificationSettings.announcementNotifications,
+        emailNotifications: notificationSettings.emailNotifications || true,
+        smsNotifications: notificationSettings.smsNotifications || false,
+        classReminders: notificationSettings.classReminders || true,
+        assignmentReminders: notificationSettings.assignmentReminders || true,
+        messageNotifications: notificationSettings.messageNotifications || true,
+        announcementNotifications: notificationSettings.announcementNotifications || true,
       });
     }
   }, [notificationSettings, notificationForm]);
@@ -254,14 +278,19 @@ const Settings = () => {
                       <h3 className="text-lg font-medium">Profile Picture</h3>
                       <div className="flex items-center gap-4">
                         <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                          {profile?.profileImageUrl ? (
+                          {profile && profile.profileImageUrl ? (
                             <img
                               src={profile.profileImageUrl}
                               alt="Profile"
                               className="h-full w-full object-cover"
                             />
                           ) : (
-                            <i className="ri-user-line text-4xl text-gray-400"></i>
+                            <div className="text-4xl text-gray-400 flex items-center justify-center h-full w-full">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                              </svg>
+                            </div>
                           )}
                         </div>
                         <div className="space-y-2">
