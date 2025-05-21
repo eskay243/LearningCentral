@@ -1909,5 +1909,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint for managing mentor commission rates
+  app.post('/api/admin/mentor/:mentorId/commission', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const { mentorId } = req.params;
+      const { commissionRate } = req.body;
+      
+      if (commissionRate === undefined || isNaN(parseFloat(String(commissionRate)))) {
+        return res.status(400).json({ message: "Valid commission rate is required" });
+      }
+      
+      // Update the mentor's default commission rate in system settings
+      const setting = await storage.updateSystemSetting(
+        `mentor.${mentorId}.defaultCommission`, 
+        String(commissionRate), 
+        (req.user as any)?.claims?.sub
+      );
+      
+      // Get the mentor's details to include in the response
+      const mentor = await storage.getUser(mentorId);
+      
+      res.json({
+        mentor,
+        commission: { 
+          rate: parseFloat(String(commissionRate)),
+          updatedAt: new Date()
+        }
+      });
+    } catch (error) {
+      console.error("Error updating mentor commission rate:", error);
+      res.status(500).json({ message: "Failed to update mentor commission rate" });
+    }
+  });
+
   return httpServer;
 }
