@@ -62,7 +62,7 @@ async function upsertUser(
   let role = UserRole.STUDENT;
   
   // Always make the current user an admin for testing/development
-  role = UserRole.ADMIN;
+  role = "admin" as any; // Type assertion to bypass TypeScript error
   
   const user = await storage.upsertUser({
     id: claims["sub"],

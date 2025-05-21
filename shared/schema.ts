@@ -531,7 +531,7 @@ export const chatMessages = pgTable("chat_messages", {
   sentAt: timestamp("sent_at").defaultNow(),
   isEdited: boolean("is_edited").default(false),
   editedAt: timestamp("edited_at"),
-  replyToId: integer("reply_to_id").references(() => chatMessages.id),
+  replyToId: integer("reply_to_id"),
 });
 
 export const messageReactions = pgTable("message_reactions", {
