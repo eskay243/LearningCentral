@@ -13,6 +13,7 @@ import { StatsCardItem, UpcomingClass, StudentProgressItem, RecentActivityItem, 
 import { apiRequest } from "@/lib/queryClient";
 import { formatDate, getFullName } from "@/lib/utils";
 import useAuth from "@/hooks/useAuth";
+import { ContextualHelp, WithContextualHelp } from "@/components/ui/ContextualHelp";
 
 const Dashboard = () => {
   const { user, isLoading: isAuthLoading, isMentor, isAdmin } = useAuth();
@@ -353,7 +354,7 @@ const Dashboard = () => {
     <div className="p-4 sm:p-6 md:p-8 max-w-[1600px] mx-auto">
       {/* Welcome Section */}
       <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="relative">
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
               Hey, {getFullName(user)?.split(' ')[0] || "Dibbendo"}!
@@ -361,6 +362,17 @@ const Dashboard = () => {
             <div className="hidden sm:flex text-xl text-yellow-500">👋</div>
           </div>
           <p className="mt-1.5 text-primary font-medium">You've got 82 Points!</p>
+          
+          {/* Welcome help bubble with Sammy */}
+          <ContextualHelp
+            id="dashboard-welcome"
+            title="Welcome to Codelab Educare!"
+            content="This is your personal dashboard where you can track your progress, see upcoming classes, and access your courses."
+            characterId="sammy"
+            position="bottom"
+            size="md"
+            triggerOnFirstVisit={true}
+          />
         </div>
         
         <div className="mt-4 sm:mt-0 flex gap-3">
@@ -383,7 +395,17 @@ const Dashboard = () => {
       {/* Time Spendings */}
       <div className="mb-8 bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Time Spendings</h2>
+          <WithContextualHelp
+            id="dashboard-time-spending"
+            title="Track Your Learning Time"
+            content="This chart shows your study time across different time periods. You're making good progress! Regular study sessions lead to better learning outcomes."
+            characterId="ada"
+            position="right"
+            size="md"
+          >
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Time Spendings</h2>
+          </WithContextualHelp>
+          
           <Select defaultValue="month">
             <SelectTrigger className="w-32 bg-gray-50 dark:bg-gray-800 border-0 text-sm">
               <SelectValue placeholder="Month" />
@@ -426,8 +448,17 @@ const Dashboard = () => {
       {/* Stats Cards and Analytics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Statistics Card */}
-        <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Statistics</h3>
+        <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative">
+          <WithContextualHelp
+            id="dashboard-stats"
+            title="Learning Statistics"
+            content="Your learning statistics give you a quick overview of your progress. The more you practice, the better you'll get!"
+            characterId="cody"
+            position="left"
+            size="md"
+          >
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Statistics</h3>
+          </WithContextualHelp>
           
           <div className="relative h-44 w-44 mx-auto mb-4">
             <div className="absolute inset-0 flex items-center justify-center">
