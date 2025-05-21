@@ -65,6 +65,7 @@ function Router() {
         <Route path="/certificate/admin" component={CertificateAdmin} />
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route path="/code-companion" component={CodeCompanion} />
+        <Route path="/demo-users" component={DemoUsers} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
