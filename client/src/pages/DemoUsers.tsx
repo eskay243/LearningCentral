@@ -41,16 +41,8 @@ export default function DemoUsers() {
 
     setIsSwitching(true);
     try {
-      const response = await fetch(`/api/switch-user-role/${role}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to switch user role");
-      }
-      
-      const data: SwitchRoleResponse = await response.json();
-      
-      // Force refresh user data
-      window.location.reload();
+      // Use the proper API request method
+      const { data } = await apiRequest("GET", `/api/switch-user-role/${role}`);
       
       toast({
         title: "Role updated successfully",
@@ -58,7 +50,16 @@ export default function DemoUsers() {
       });
 
       setSelectedRole(role);
+      
+      // Invalidate query cache and refresh user data
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      // Wait a moment for the state to update, then refresh
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     } catch (error) {
+      console.error("Role switch error:", error);
       toast({
         title: "Error switching role",
         description: error instanceof Error ? error.message : "An unexpected error occurred",

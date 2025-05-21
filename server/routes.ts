@@ -5,6 +5,9 @@ import { initializePayment, verifyPayment } from "./paystack";
 import { storage } from "./storage";
 import { isAuthenticated, hasRole } from "./replitAuth";
 import { UserRole } from "@shared/schema";
+import { db } from "./db";
+import { users, courses, courseEnrollments } from "@shared/schema";
+import { eq, and, or, like, desc, asc, isNull, count } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -196,36 +199,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid role" });
       }
       
-      // Update user role in database
-      const updateResult = await db
-        .update(users)
-        .set({ role })
-        .where(eq(users.id, userId))
-        .returning();
-      
-      const updatedUser = updateResult[0];
-      if (!updatedUser) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Update session information
-      if (req.user) {
-        req.user.role = role;
-      }
-      
-      // Return updated user info
-      res.json({
-        message: `Role updated to ${role}`,
-        user: {
-          id: updatedUser.id,
-          email: updatedUser.email,
-          firstName: updatedUser.firstName,
-          lastName: updatedUser.lastName,
-          profileImageUrl: updatedUser.profileImageUrl,
-          role: updatedUser.role,
-          affiliateCode: updatedUser.affiliateCode
+      try {
+        // Update user role in database
+        const updateResult = await db
+          .update(users)
+          .set({ role, updatedAt: new Date() })
+          .where(eq(users.id, userId))
+          .returning();
+        
+        const updatedUser = updateResult[0];
+        if (!updatedUser) {
+          return res.status(404).json({ message: "User not found" });
         }
-      });
+        
+        // Update session information
+        if (req.user) {
+          req.user.role = role;
+          
+          // If using claims, update those too
+          if (req.user.claims) {
+            req.user.claims.role = role;
+          }
+        }
+        
+        // Return updated user info
+        res.json({
+          message: `Role updated to ${role}`,
+          user: {
+            id: updatedUser.id,
+            email: updatedUser.email,
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            profileImageUrl: updatedUser.profileImageUrl,
+            role: updatedUser.role,
+            affiliateCode: updatedUser.affiliateCode
+          }
+        });
+      } catch (dbError) {
+        console.error("Database error when switching role:", dbError);
+        res.status(500).json({ message: "Database error when switching role" });
+      }
     } catch (error) {
       console.error("Error switching user role:", error);
       res.status(500).json({ message: "Failed to switch user role" });
