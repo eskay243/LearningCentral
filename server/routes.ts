@@ -4,7 +4,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
 import { z } from "zod";
-import { UserRole } from "@shared/schema";
+import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
@@ -51,6 +51,8 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize default system settings
+  await storage.setDefaultSystemSettings();
   // Setup authentication middleware first
   await setupAuth(app);
   

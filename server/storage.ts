@@ -269,6 +269,82 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // System Settings operations
+  async getSystemSetting(key: string): Promise<any> {
+    const [setting] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, key));
+    return setting;
+  }
+
+  async getSystemSettings(category?: string): Promise<any[]> {
+    let query = db.select().from(systemSettings);
+    
+    if (category) {
+      query = query.where(eq(systemSettings.category, category));
+    }
+    
+    return await query;
+  }
+
+  async updateSystemSetting(key: string, value: string, userId?: string): Promise<any> {
+    const existingSetting = await this.getSystemSetting(key);
+    
+    if (existingSetting) {
+      const [updatedSetting] = await db
+        .update(systemSettings)
+        .set({ 
+          value, 
+          updatedAt: new Date(),
+          updatedBy: userId || null
+        })
+        .where(eq(systemSettings.key, key))
+        .returning();
+      
+      return updatedSetting;
+    } else {
+      const [newSetting] = await db
+        .insert(systemSettings)
+        .values({
+          key,
+          value,
+          category: key.includes('.') ? key.split('.')[0] : 'general',
+          updatedBy: userId || null
+        })
+        .returning();
+      
+      return newSetting;
+    }
+  }
+
+  async setDefaultSystemSettings(): Promise<void> {
+    // Check if settings already exist
+    const existingSettings = await this.getSystemSettings();
+    
+    if (existingSettings.length === 0) {
+      // Set default currency to NGN (Nigerian Naira) as requested
+      await this.updateSystemSetting('currency.default', Currency.NGN);
+      
+      // Set available currencies
+      await this.updateSystemSetting('currency.available', 
+        JSON.stringify([Currency.NGN, Currency.USD, Currency.GBP]));
+      
+      // Set exchange rates (these should be updated regularly in production)
+      await this.updateSystemSetting('currency.exchangeRates', 
+        JSON.stringify({
+          "USD": 1,
+          "GBP": 0.79,
+          "NGN": 910.50
+        }));
+      
+      // Set system name
+      await this.updateSystemSetting('system.name', 'Codelab Educare LMS');
+      
+      // Set system timezone
+      await this.updateSystemSetting('system.timezone', 'Africa/Lagos');
+    }
+  }
   // Live Session Operations
   async createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession> {
     const [session] = await db
