@@ -184,12 +184,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const course = await storage.createCourse(courseData);
       
       // Assign the creator as a mentor for this course if they're a mentor
-      if (req.user && req.user.claims && req.user.claims.role === UserRole.MENTOR) {
-        await storage.assignMentorToCourse({
-          courseId: course.id,
-          mentorId: req.user.claims.sub,
-          commission: 80  // Default commission for course creator
-        });
+      if (req.user) {
+        // Get user ID and role - either directly from user object or from claims
+        const userId = req.user.id || (req.user.claims && req.user.claims.sub);
+        const userRole = req.user.role || (req.user.claims && req.user.claims.role);
+        
+        if (userId && userRole === UserRole.MENTOR) {
+          await storage.assignMentorToCourse({
+            courseId: course.id,
+            mentorId: userId,
+            commission: 80  // Default commission for course creator
+          });
+        }
       }
       
       res.status(201).json(course);
