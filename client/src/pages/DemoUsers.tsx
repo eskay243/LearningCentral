@@ -42,7 +42,7 @@ export default function DemoUsers() {
     setIsSwitching(true);
     try {
       // Use the proper API request method with fetch since this endpoint requires special handling
-      const response = await fetch(`/api/switch-user-role/${role}`);
+      const response = await fetch(`/api/auth/switch-role/${role}`);
       if (!response.ok) {
         throw new Error(`Failed to switch role: ${response.statusText}`);
       }

@@ -29,7 +29,14 @@ export function useAuth() {
 
   // Provide a login function
   const login = () => {
-    window.location.href = "/api/login";
+    // For testing/development purposes, use the test login page
+    // In production, this would use the regular login endpoint
+    window.location.href = "/test-login";
+  };
+
+  // Provide a test login function specifically for demo roles
+  const testLogin = () => {
+    window.location.href = "/test-login";
   };
 
   // Provide a logout function
@@ -58,6 +65,7 @@ export function useAuth() {
     isStudent: user?.role === UserRole.STUDENT,
     isAffiliate: user?.role === UserRole.AFFILIATE,
     login,
+    testLogin,
     logout,
     retryAuth
   };
