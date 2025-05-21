@@ -36,6 +36,83 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 
+// Define interfaces for our analytics data types
+interface ScoreDistribution {
+  range: string;
+  count: number;
+}
+
+interface QuizByDifficulty {
+  difficulty: string;
+  avgScore: number;
+  count: number;
+}
+
+interface PassFailRatio {
+  name: string;
+  value: number;
+}
+
+interface RecentAttempt {
+  quizTitle: string;
+  date: string;
+  score: number;
+  passed: boolean;
+}
+
+interface QuizAnalytics {
+  attemptCount: number;
+  averageScore: number;
+  passRate: number;
+  scoreDistribution: ScoreDistribution[];
+  quizzesByDifficulty: QuizByDifficulty[];
+  passFailRatio: PassFailRatio[];
+  recentAttempts: RecentAttempt[];
+}
+
+interface AssignmentsByType {
+  type: string;
+  avgGrade: number;
+  count: number;
+}
+
+interface RecentSubmission {
+  assignmentTitle: string;
+  date: string;
+  grade: number | null;
+  status: string;
+}
+
+interface AssignmentAnalytics {
+  submissionCount: number;
+  averageGrade: number;
+  onTimeSubmissionRate: number;
+  gradeDistribution: ScoreDistribution[];
+  assignmentsByType: AssignmentsByType[];
+  recentSubmissions: RecentSubmission[];
+}
+
+interface StudentPerformer {
+  name: string;
+  score: number;
+  completed: number;
+  total: number;
+}
+
+interface StudentPerformanceAnalytics {
+  studentCount: number;
+  completionRate: number;
+  averageScore: number;
+  topPerformers: StudentPerformer[];
+  needsImprovement: StudentPerformer[];
+  scoreDistribution?: ScoreDistribution[];
+}
+
+interface Course {
+  id: number;
+  title: string;
+}
+
 // Color constants
 const CHART_COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#f43f5e", "#a855f7", "#ec4899"];
 const PASS_FAIL_COLORS = ["#22c55e", "#ef4444"];
@@ -54,22 +131,22 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
   const [selectedTab, setSelectedTab] = useState<string>("overview");
   
   // Fetch courses for dropdown selector
-  const { data: courses, isLoading: isCoursesLoading } = useQuery({
+  const { data: courses = [], isLoading: isCoursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
   });
 
   // Fetch quiz analytics data
-  const { data: quizStats, isLoading: isQuizStatsLoading } = useQuery({
+  const { data: quizStats, isLoading: isQuizStatsLoading } = useQuery<QuizAnalytics>({
     queryKey: [`/api/analytics/quizzes`, { courseId: selectedCourse !== "all" ? parseInt(selectedCourse) : undefined, userId }],
   });
   
   // Fetch assignment analytics data
-  const { data: assignmentStats, isLoading: isAssignmentStatsLoading } = useQuery({
+  const { data: assignmentStats, isLoading: isAssignmentStatsLoading } = useQuery<AssignmentAnalytics>({
     queryKey: [`/api/analytics/assignments`, { courseId: selectedCourse !== "all" ? parseInt(selectedCourse) : undefined, userId }],
   });
 
   // If mentor view, fetch student performance data
-  const { data: studentPerformance, isLoading: isStudentPerformanceLoading } = useQuery({
+  const { data: studentPerformance, isLoading: isStudentPerformanceLoading } = useQuery<StudentPerformanceAnalytics>({
     queryKey: [`/api/analytics/student-performance`, { courseId: selectedCourse !== "all" ? parseInt(selectedCourse) : undefined }],
     enabled: !!isMentorView,
   });
