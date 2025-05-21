@@ -196,48 +196,49 @@ const Courses = () => {
             <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary-600 dark:border-primary-500"></div>
           </div>
         ) : filteredCourses.length === 0 ? (
-        <ResponsiveCard className="p-4 sm:p-8 text-center">
-          <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">No courses found</h3>
-          <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-            {searchTerm || categoryFilter !== "all" 
-              ? "Try adjusting your filters or search term" 
-              : isMentor 
-                ? "Start creating your first course"
-                : "Explore the catalog to enroll in courses"
-            }
-          </p>
-          {isMentor && (
-            <Button 
-              className="mt-4 sm:mt-6 text-sm" 
-              asChild
-            >
-              <Link href="/create-course">Create Your First Course</Link>
-            </Button>
-          )}
-        </ResponsiveCard>
-      ) : (
-        <CourseGrid 
-          courses={filteredCourses.map((course: any) => ({
-            id: course.id,
-            title: course.title,
-            description: course.description || '',
-            thumbnailUrl: course.thumbnail,
-            instructorName: course.instructorName || 'Instructor',
-            instructorAvatar: course.instructorAvatar,
-            rating: course.rating || 4.5,
-            totalStudents: course.enrollmentCount || 0,
-            duration: course.duration || null,
-            price: course.price || 0,
-            currency: 'NGN',
-            progress: course.progress,
-            enrollmentStatus: course.progress !== undefined 
-              ? (course.progress === 100 ? 'completed' : 'enrolled')
-              : 'not-enrolled',
-            category: course.category,
-            level: course.level || 'Beginner',
-          }))}
-        />
-      )}
+          <ResponsiveCard className="p-4 sm:p-8 text-center">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">No courses found</h3>
+            <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+              {searchTerm || categoryFilter !== "all" 
+                ? "Try adjusting your filters or search term" 
+                : isMentor 
+                  ? "Start creating your first course"
+                  : "Explore the catalog to enroll in courses"
+              }
+            </p>
+            {isMentor && (
+              <Button 
+                className="mt-4 sm:mt-6 text-sm" 
+                asChild
+              >
+                <Link href="/create-course">Create Your First Course</Link>
+              </Button>
+            )}
+          </ResponsiveCard>
+        ) : (
+          <CourseGrid 
+            courses={filteredCourses.map((course: any) => ({
+              id: course.id,
+              title: course.title,
+              description: course.description || '',
+              thumbnailUrl: course.thumbnail,
+              instructorName: course.instructorName || 'Instructor',
+              instructorAvatar: course.instructorAvatar,
+              rating: course.rating || 4.5,
+              totalStudents: course.enrollmentCount || 0,
+              duration: course.duration || null,
+              price: course.price || 0,
+              currency: 'NGN',
+              progress: course.progress,
+              enrollmentStatus: course.progress !== undefined 
+                ? (course.progress === 100 ? 'completed' : 'enrolled')
+                : 'not-enrolled',
+              category: course.category,
+              level: course.level || 'Beginner',
+            }))}
+          />
+        )}
+      </div>
     </div>
   );
 };

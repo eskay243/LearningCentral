@@ -111,8 +111,17 @@ const CodeCompanionPage: React.FC = () => {
         </WithContextualHelp>
       </div>
 
-      <div className="flex justify-center mb-10">
-        <CodeCompanionBot />
+      <div className="flex justify-center mb-10 relative">
+        <WithContextualHelp
+          id="code-companion-chat"
+          title="Start Chatting With Your Code Companion"
+          content="Type your programming questions here and get instant responses. Share code snippets by using the code format option or pasting directly into the chat."
+          characterId="guru"
+          position="top-right"
+          size="md"
+        >
+          <CodeCompanionBot />
+        </WithContextualHelp>
       </div>
 
       <div className="mt-12 max-w-2xl mx-auto">
