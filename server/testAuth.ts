@@ -14,44 +14,54 @@ export const devLogin: RequestHandler = async (req: Request, res: Response) => {
     // Use username as email if no @ is present
     const email = username.includes('@') ? username : `${username}@example.com`;
     
+    console.log(`[TEST LOGIN] Attempting login for ${username} with role ${role}`);
+    
     // Create or update the user in the database
-    const user = await db
-      .insert(users)
-      .values({
-        id: userId,
-        email,
-        role,
-        firstName: "Test",
-        lastName: "User",
-        profileImageUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${email}&backgroundColor=6d28d9`,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .onConflictDoUpdate({
-        target: users.id,
-        set: { 
+    let userResult;
+    try {
+      userResult = await db
+        .insert(users)
+        .values({
+          id: userId,
+          email,
           role,
+          firstName: "Test",
+          lastName: "User",
+          profileImageUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${email}&backgroundColor=6d28d9`,
+          createdAt: new Date(),
           updatedAt: new Date()
-        }
-      })
-      .returning();
+        })
+        .onConflictDoUpdate({
+          target: users.id,
+          set: { 
+            role,
+            updatedAt: new Date()
+          }
+        })
+        .returning();
+      
+      console.log("[TEST LOGIN] User record created/updated successfully:", userResult);
+    } catch (dbError) {
+      console.error("[TEST LOGIN] Database error:", dbError);
+      throw dbError;
+    }
       
     // Create session and login
-    if (req.session && user[0]) {
+    if (req.session && userResult && userResult[0]) {
       const mockAuthUser = {
-        id: user[0].id,
-        email: user[0].email,
-        role: user[0].role,
-        firstName: user[0].firstName,
-        lastName: user[0].lastName,
-        profileImageUrl: user[0].profileImageUrl,
+        id: userResult[0].id,
+        email: userResult[0].email,
+        role: userResult[0].role,
+        firstName: userResult[0].firstName,
+        lastName: userResult[0].lastName,
+        profileImageUrl: userResult[0].profileImageUrl,
         claims: {
-          sub: user[0].id,
-          email: user[0].email,
-          first_name: user[0].firstName,
-          last_name: user[0].lastName,
-          profile_image_url: user[0].profileImageUrl,
-          role: user[0].role,
+          sub: userResult[0].id,
+          email: userResult[0].email,
+          first_name: userResult[0].firstName,
+          last_name: userResult[0].lastName,
+          profile_image_url: userResult[0].profileImageUrl,
+          role: userResult[0].role,
           exp: Math.floor(Date.now() / 1000) + 86400
         },
         access_token: "dev-mock-token",
@@ -68,11 +78,11 @@ export const devLogin: RequestHandler = async (req: Request, res: Response) => {
         return res.json({
           message: "Development login successful",
           user: {
-            id: user[0].id,
-            email: user[0].email,
-            firstName: user[0].firstName,
-            lastName: user[0].lastName,
-            role: user[0].role
+            id: userResult[0].id,
+            email: userResult[0].email,
+            firstName: userResult[0].firstName,
+            lastName: userResult[0].lastName,
+            role: userResult[0].role
           }
         });
       });

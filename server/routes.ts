@@ -53,6 +53,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/dev-login", devLogin);
   app.get("/api/auth/switch-role/:role", isTestAuthenticated, updateUserRole);
   
+  // Get currently logged in user
+  app.get("/api/auth/user", (req, res) => {
+    if (req.isAuthenticated() && req.user) {
+      // Return user information
+      res.json(req.user);
+    } else {
+      // No authenticated user
+      res.status(401).json({ message: "Not authenticated" });
+    }
+  });
+  
   // Get all courses (used by multiple components)
   app.get("/api/courses", async (req, res) => {
     try {
