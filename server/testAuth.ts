@@ -75,15 +75,26 @@ export const devLogin: RequestHandler = async (req: Request, res: Response) => {
           console.error("Login error:", err);
           return res.status(500).json({ message: "Session error", error: err.message });
         }
-        return res.json({
-          message: "Development login successful",
-          user: {
-            id: userResult[0].id,
-            email: userResult[0].email,
-            firstName: userResult[0].firstName,
-            lastName: userResult[0].lastName,
-            role: userResult[0].role
+        
+        // Force save the session before responding
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr);
+            return res.status(500).json({ message: "Session save error", error: saveErr.message });
           }
+          
+          console.log("[TEST LOGIN] Session saved successfully, user logged in as:", userResult[0].role);
+          
+          return res.json({
+            message: "Development login successful",
+            user: {
+              id: userResult[0].id,
+              email: userResult[0].email,
+              firstName: userResult[0].firstName,
+              lastName: userResult[0].lastName,
+              role: userResult[0].role
+            }
+          });
         });
       });
     } else {

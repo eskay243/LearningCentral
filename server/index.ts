@@ -24,12 +24,13 @@ const sessionStore = new pgStore({
 app.use(session({
   secret: process.env.SESSION_SECRET || "dev-session-secret",
   store: sessionStore,
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   cookie: {
     httpOnly: true,
     secure: false, // Set to false for development to work without HTTPS
     maxAge: sessionTtl,
+    sameSite: 'lax'
   },
 }));
 
