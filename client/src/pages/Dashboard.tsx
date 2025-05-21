@@ -28,8 +28,20 @@ const Dashboard = () => {
     enabled: !isAuthLoading && !!user
   });
 
+  // Define a type for the analytics stats
+  interface DashboardStats {
+    totalStudents?: number;
+    totalCourses?: number;
+    totalEarnings?: number;
+    hoursThisWeek?: number;
+    totalEnrollments?: number;
+    completedCourses?: number;
+    averageProgress?: number;
+    recentActivity?: RecentActivityItem[];
+  }
+
   // Fetch stats based on user role
-  const { data: stats, isLoading: isStatsLoading } = useQuery({
+  const { data: stats, isLoading: isStatsLoading } = useQuery<DashboardStats>({
     queryKey: [isMentor ? `/api/analytics/mentor/${user?.id}` : isAdmin ? "/api/analytics/admin" : `/api/analytics/student/${user?.id}`],
     enabled: !isAuthLoading && !!user
   });
