@@ -500,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Handle file uploads for user creation
   app.post('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), upload.single('profileImage'), async (req, res) => {
     try {
-      const { email, password, firstName, lastName, role, bio } = req.body;
+      const { email, password, firstName, lastName, role, bio, commissionRate } = req.body;
       
       // Validate required fields
       if (!email || !password) {
@@ -533,6 +533,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password // This will be hashed by the storage layer
       });
       
+      // If the user is a mentor, set their commission rate
+      if (role === 'mentor' && commissionRate) {
+        // Create a system setting for this mentor's default commission
+        await storage.updateSystemSetting(
+          `mentor.${newUser.id}.defaultCommission`, 
+          String(commissionRate), 
+          (req.user as any)?.claims?.sub
+        );
+      }
+      
       res.status(201).json(newUser);
     } catch (error) {
       console.error("Error creating user:", error);
@@ -543,7 +553,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/admin/users/:id', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
     try {
       const { id } = req.params;
-      const updatedUser = await storage.updateUser(id, req.body);
+      const { commissionRate, ...userData } = req.body;
+      
+      // Update the user's basic information
+      const updatedUser = await storage.updateUser(id, userData);
+      
+      // If the user is a mentor and commission rate is provided, update it
+      if (updatedUser.role === 'mentor' && commissionRate !== undefined) {
+        // Update the mentor's commission rate in system settings
+        await storage.updateSystemSetting(
+          `mentor.${id}.defaultCommission`, 
+          String(commissionRate), 
+          (req.user as any)?.claims?.sub
+        );
+      }
+      
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user as admin:", error);
@@ -628,10 +652,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       
       if (user?.role === UserRole.MENTOR) {
+        // Check if mentor has a custom commission rate
+        const mentorCommissionSetting = await storage.getSystemSetting(`mentor.${userId}.defaultCommission`);
+        const commissionRate = mentorCommissionSetting ? parseFloat(mentorCommissionSetting.value) : 37;
+        
         await storage.assignMentorToCourse({
           courseId: course.id,
           mentorId: userId,
-          commission: 37, // Default commission rate
+          commission: commissionRate, // Use mentor's custom rate or default
         });
       }
       
