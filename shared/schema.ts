@@ -372,6 +372,32 @@ export const discussionReplies = pgTable("discussion_replies", {
 });
 
 // NotificationSettings table
+// Define currency options
+export const Currency = {
+  USD: "USD",
+  GBP: "GBP", 
+  NGN: "NGN"
+} as const;
+
+// System Settings table for application-wide settings
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  key: varchar("key").notNull().unique(),
+  value: text("value").notNull(),
+  category: varchar("category").notNull().default("general"),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedBy: varchar("updated_by").references(() => users.id),
+});
+
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  updatedAt: true
+});
+
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type InsertSystemSettings = typeof systemSettings.$inferInsert;
+
 export const notificationSettings = pgTable("notification_settings", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),

@@ -26,6 +26,8 @@ import {
   notifications,
   codingExercises,
   exerciseProgress,
+  systemSettings,
+  Currency,
   // Communication related schema
   conversations,
   conversationParticipants,
@@ -248,6 +250,22 @@ export interface IStorage {
   // Live session implementation
   getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]>;
   getLiveSession(id: number): Promise<LiveSession | undefined>;
+}
+
+export interface IStorage {
+  // User operations
+  getUser(id: string): Promise<any>;
+  getUserByEmail(email: string): Promise<any>;
+  getUsers(role?: string): Promise<any[]>;
+  createUser(user: any): Promise<any>;
+  updateUser(id: string, userData: any): Promise<any>;
+  upsertUser(userData: any): Promise<any>;
+  
+  // System settings operations
+  getSystemSetting(key: string): Promise<any>;
+  getSystemSettings(category?: string): Promise<any[]>;
+  updateSystemSetting(key: string, value: string, userId?: string): Promise<any>;
+  setDefaultSystemSettings(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
