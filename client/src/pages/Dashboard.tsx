@@ -22,8 +22,25 @@ const Dashboard = () => {
   const [activities, setActivities] = useState<RecentActivityItem[]>([]);
   const [courses, setCourses] = useState<CourseCardItem[]>([]);
 
+  // Define LiveSession type
+  interface LiveSession {
+    id: number;
+    startTime: string;
+    lesson?: {
+      title: string;
+      duration: number;
+    };
+    module?: {
+      title: string;
+    };
+    course?: {
+      category: string;
+    };
+    enrolledCount?: number;
+  }
+
   // Fetch upcoming live sessions
-  const { data: liveSessions, isLoading: isSessionsLoading } = useQuery({
+  const { data: liveSessions, isLoading: isSessionsLoading } = useQuery<LiveSession[]>({
     queryKey: ["/api/live-sessions"],
     enabled: !isAuthLoading && !!user
   });
@@ -55,7 +72,7 @@ const Dashboard = () => {
             id: "students",
             title: "Total Students",
             value: stats.totalStudents || 0,
-            change: "18% from last month",
+            change: 18,
             changeType: "increase",
             icon: "ri-user-follow-line",
             iconBgClass: "bg-blue-100 text-blue-600"
@@ -71,7 +88,7 @@ const Dashboard = () => {
             id: "earnings",
             title: "Total Earnings",
             value: `$${stats.totalEarnings || 0}`,
-            change: "12% from last month",
+            change: 12,
             changeType: "increase",
             icon: "ri-funds-line",
             iconBgClass: "bg-green-100 text-green-600"
@@ -112,7 +129,7 @@ const Dashboard = () => {
             id: "hours",
             title: "Hours Studied",
             value: `${stats.hoursThisWeek || 0}h`,
-            change: "This week",
+            change: 0,
             changeType: "neutral",
             icon: "ri-time-line",
             iconBgClass: "bg-red-100 text-red-600"
@@ -124,8 +141,8 @@ const Dashboard = () => {
 
   // Format upcoming classes from live sessions
   useEffect(() => {
-    if (liveSessions) {
-      const formattedSessions = liveSessions.map((session: any) => ({
+    if (liveSessions && Array.isArray(liveSessions)) {
+      const formattedSessions = liveSessions.map((session) => ({
         id: session.id,
         title: session.lesson?.title || "Untitled Lesson",
         module: `Module: ${session.module?.title || "Untitled Module"}`,

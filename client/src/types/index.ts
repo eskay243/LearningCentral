@@ -23,11 +23,12 @@ export interface StatsCardItem {
 export interface UpcomingClass {
   id: number;
   title: string;
-  date: string;
-  time: string;
-  mentor: string;
-  course: string;
-  status: string;
+  module: string;
+  startTime: string;
+  duration: number;
+  enrolledCount: number;
+  iconClass: string;
+  iconBgClass: string;
 }
 
 export interface StudentProgressItem {
