@@ -6,6 +6,64 @@ export enum UserRole {
   AFFILIATE = "affiliate"
 }
 
+// Dashboard component types
+export interface StatsCardItem {
+  id?: string;
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  description?: string;
+  trend?: number;
+  trendDirection?: 'up' | 'down' | 'neutral';
+  iconBgClass?: string;
+  change?: number;
+  changeType?: 'increase' | 'decrease' | 'neutral';
+}
+
+export interface UpcomingClass {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  mentor: string;
+  course: string;
+  status: string;
+}
+
+export interface StudentProgressItem {
+  id: string;
+  name: string;
+  course: string;
+  progress: number;
+  lastActive: string;
+}
+
+export interface RecentActivityItem {
+  id: number;
+  user: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  action: string;
+  target: string;
+  timestamp: string;
+  type: string;
+}
+
+export interface CourseCardItem {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail?: string;
+  progress?: number;
+  status: string;
+  author?: string;
+  category?: string;
+  enrollments?: number;
+  lastUpdated?: string;
+}
+
 // Course types
 export interface Course {
   id: number;
@@ -83,4 +141,85 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
   affiliateCode?: string;
+  claims?: {
+    sub: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    profile_image_url?: string;
+    iat?: number;
+    exp?: number;
+  };
+}
+
+// Messaging types
+export interface Conversation {
+  id: number;
+  title: string | null;
+  type: string;
+  courseId: number | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  participants?: ConversationParticipant[];
+  isGroup?: boolean;
+  lastMessage?: ChatMessage;
+  unreadCount?: number;
+  typingUsers?: string[];
+}
+
+export interface ConversationParticipant {
+  id: number;
+  conversationId: number;
+  userId: string;
+  isAdmin?: boolean;
+  joinedAt?: Date;
+  lastReadMessageId?: number;
+  user?: User;
+}
+
+export interface ChatMessage {
+  id: number;
+  content: string;
+  conversationId: number;
+  senderId: string;
+  contentType: string | null;
+  attachmentUrl: string | null;
+  sentAt: Date | null;
+  isEdited: boolean | null;
+  editedAt: Date | null;
+  replyToId: number | null;
+  senderName?: string;
+  reactions?: MessageReaction[];
+}
+
+export interface MessageReaction {
+  id: number;
+  messageId: number;
+  userId: string;
+  reaction: string;
+  createdAt?: Date;
+}
+
+export interface CourseAnnouncement {
+  id: number;
+  title: string;
+  content: string;
+  courseId: number | null;
+  authorId: string;
+  publishedAt: Date | null;
+  updatedAt: Date | null;
+  isPinned: boolean | null;
+  attachmentUrl: string | null;
+}
+
+// Rich text editor interface
+export interface RichTextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSend: () => Promise<void>;
+  onTypingStateChange: (isTyping: boolean) => void;
+  attachment: { url: string; name: string; type: string; } | null;
+  onAttachment: (fileUrl: string, fileName: string, fileType: string) => void;
+  placeholder: string;
+  className?: string;
 }
