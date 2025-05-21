@@ -9,6 +9,7 @@ import { CourseGrid } from "@/components/courses/CourseGrid";
 import { Plus, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatCurrency } from "@/lib/currencyUtils";
+import { ContextualHelp, WithContextualHelp } from "@/components/ui/ContextualHelp";
 
 const Courses = () => {
   const { user, isMentor, isAdmin } = useAuth();
