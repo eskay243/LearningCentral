@@ -55,11 +55,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get currently logged in user
   app.get("/api/auth/user", (req, res) => {
+    console.log("[AUTH] Check user auth, session:", req.session.id, "isAuthenticated:", req.isAuthenticated());
+    console.log("[AUTH] User in session:", req.user ? 'Yes' : 'No', req.user ? `(${req.user.id})` : '');
+    
     if (req.isAuthenticated() && req.user) {
       // Return user information
+      console.log("[AUTH] Returning authenticated user:", req.user.id, req.user.role);
       res.json(req.user);
     } else {
       // No authenticated user
+      console.log("[AUTH] No authenticated user found in session");
       res.status(401).json({ message: "Not authenticated" });
     }
   });

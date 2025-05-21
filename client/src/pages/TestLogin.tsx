@@ -29,8 +29,9 @@ export default function TestLogin() {
       
       const data = await response.json();
       
-      // Invalidate any user-related queries
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      // Force refetch user data to update authentication state
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
       
       toast({
         title: "Login successful",
