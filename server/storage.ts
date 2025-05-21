@@ -95,6 +95,7 @@ export interface IStorage {
   addConversationParticipants(conversationId: number, participantIds: string[]): Promise<void>;
   sendMessage(data: Partial<InsertChatMessage>): Promise<ChatMessage>;
   markMessagesAsRead(conversationId: number, userId: string): Promise<void>;
+  getUserMessages(userId: string): Promise<any[]>;
   getAnnouncements(options: { limit: number, offset: number }): Promise<any[]>;
   getCourseAnnouncements(courseId: number, options: { limit: number, offset: number }): Promise<any[]>;
   getUsersByRole(role?: string): Promise<User[]>;
@@ -948,6 +949,52 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return message;
+  }
+
+  async getUserMessages(userId: string): Promise<any[]> {
+    try {
+      // Get all conversations the user is part of
+      const userConversations = await this.getUserConversations(userId);
+      const conversationIds = userConversations.map(c => c.id);
+      
+      if (conversationIds.length === 0) {
+        return [];
+      }
+      
+      // Get messages from all these conversations
+      const messages = await db
+        .select({
+          id: chatMessages.id,
+          conversationId: chatMessages.conversationId,
+          senderId: chatMessages.senderId,
+          content: chatMessages.content,
+          sentAt: chatMessages.sentAt,
+          isRead: chatMessages.isRead,
+          isEdited: chatMessages.isEdited,
+          editedAt: chatMessages.editedAt
+        })
+        .from(chatMessages)
+        .where(inArray(chatMessages.conversationId, conversationIds))
+        .orderBy(desc(chatMessages.sentAt));
+      
+      // Get conversation details to include with each message
+      const enhancedMessages = await Promise.all(
+        messages.map(async (message) => {
+          const conversation = userConversations.find(c => c.id === message.conversationId);
+          return {
+            ...message,
+            conversationTitle: conversation?.title || 'Untitled Conversation',
+            isPrivate: conversation?.isPrivate || false,
+            participantCount: conversation?.participantCount || 0
+          };
+        })
+      );
+      
+      return enhancedMessages;
+    } catch (error) {
+      console.error("Error fetching user messages:", error);
+      return [];
+    }
   }
 
   async deleteChatMessage(messageId: number): Promise<void> {
