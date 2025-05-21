@@ -83,12 +83,12 @@ const Courses = () => {
   const filteredCourses = filterCourses(coursesToShow);
   
   return (
-    <div className="p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark-800">
+    <div className="p-3 sm:p-4 md:p-6 dark:bg-gray-900">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-dark-800 dark:text-white">
           {isMentor ? "My Teaching Courses" : "Courses"}
         </h1>
-        <p className="mt-1 text-gray-500">
+        <p className="mt-1 text-sm sm:text-base text-gray-500 dark:text-gray-400">
           {isMentor 
             ? "Manage your courses and track student progress"
             : "Explore and manage your enrolled courses"
@@ -97,24 +97,28 @@ const Courses = () => {
       </div>
       
       {/* Filters & Controls */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4 items-end md:items-center">
-        <div className="flex-grow">
+      <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
+        <div className="w-full">
           <Input
             placeholder="Search courses..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
+            className="w-full text-sm h-9 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
           />
         </div>
         
         <div className="flex flex-wrap gap-2">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px] text-xs sm:text-sm h-9 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
               {categories.map(category => (
-                <SelectItem key={category.value} value={category.value}>
+                <SelectItem 
+                  key={category.value} 
+                  value={category.value}
+                  className="text-xs sm:text-sm dark:text-gray-200 dark:focus:bg-gray-700"
+                >
                   {category.label}
                 </SelectItem>
               ))}
@@ -122,12 +126,16 @@ const Courses = () => {
           </Select>
           
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px] text-xs sm:text-sm h-9 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
               {sortOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
+                <SelectItem 
+                  key={option.value} 
+                  value={option.value}
+                  className="text-xs sm:text-sm dark:text-gray-200 dark:focus:bg-gray-700"
+                >
                   {option.label}
                 </SelectItem>
               ))}
@@ -135,7 +143,10 @@ const Courses = () => {
           </Select>
           
           {(isMentor || isAdmin) && (
-            <Button asChild>
+            <Button 
+              asChild
+              className="text-xs sm:text-sm h-9 w-full sm:w-auto mt-2 sm:mt-0"
+            >
               <Link href="/create-course">
                 <i className="ri-add-line mr-2"></i>
                 Create Course
