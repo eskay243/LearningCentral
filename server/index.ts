@@ -19,10 +19,13 @@ const sessionStore = new pgStore({
   createTableIfMissing: true,
   ttl: sessionTtl,
   tableName: "sessions",
+  pruneSessionInterval: 60 // prune expired sessions every minute
 });
 
+// Configure session middleware
 app.use(session({
   secret: process.env.SESSION_SECRET || "dev-session-secret",
+  name: 'codelab.sid',
   store: sessionStore,
   resave: true,
   saveUninitialized: true,
@@ -30,7 +33,8 @@ app.use(session({
     httpOnly: true,
     secure: false, // Set to false for development to work without HTTPS
     maxAge: sessionTtl,
-    sameSite: 'lax'
+    sameSite: 'lax',
+    path: '/'
   },
 }));
 
@@ -38,9 +42,16 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Passport serialization
-passport.serializeUser((user: any, cb) => cb(null, user));
-passport.deserializeUser((user: any, cb) => cb(null, user));
+// Enhanced passport serialization
+passport.serializeUser((user: any, cb) => {
+  console.log("[PASSPORT] Serializing user:", user.id);
+  cb(null, user);
+});
+
+passport.deserializeUser((user: any, cb) => {
+  console.log("[PASSPORT] Deserializing user:", user.id);
+  cb(null, user);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
