@@ -175,47 +175,84 @@ const Dashboard = () => {
       {
         id: 1,
         type: "assignment",
+        action: "submitted",
+        target: "JavaScript Arrays Exercise",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         title: "Assignment Submitted",
         description: "Emma Johnson submitted \"JavaScript Arrays Exercise\"",
-        time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        iconClass: "ri-file-text-line",
-        iconBgClass: "bg-green-100 text-green-600"
+        user: {
+          id: "user1",
+          name: "Emma Johnson",
+          avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
+        }
       },
       {
         id: 2,
         type: "message",
+        action: "asked",
+        target: "SQL joins",
+        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
         title: "New Message",
         description: "Alex Chen asked a question about SQL joins",
         time: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
         iconClass: "ri-message-2-line",
-        iconBgClass: "bg-blue-100 text-blue-600"
+        iconBgClass: "bg-blue-100 text-blue-600",
+        user: {
+          id: "user2",
+          name: "Alex Chen",
+          avatar: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
+        }
       },
       {
         id: 3,
         type: "enrollment",
+        action: "enrolled",
+        target: "Python for Beginners",
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         title: "New Enrollment",
         description: "5 new students enrolled in \"Python for Beginners\"",
         time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
         iconClass: "ri-user-add-line",
-        iconBgClass: "bg-purple-100 text-purple-600"
+        iconBgClass: "bg-purple-100 text-purple-600",
+        user: {
+          id: "admin1",
+          name: "System",
+          avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
+        }
       },
       {
         id: 4,
         type: "review",
+        action: "reviewed",
+        target: "JavaScript Course",
+        timestamp: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString(),
         title: "New Review",
         description: "Sophia Martinez gave \"JavaScript Course\" a 5-star review",
         time: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString(),
         iconClass: "ri-star-line",
-        iconBgClass: "bg-yellow-100 text-yellow-600"
+        iconBgClass: "bg-yellow-100 text-yellow-600",
+        user: {
+          id: "user3",
+          name: "Sophia Martinez",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
+        }
       },
       {
         id: 5,
         type: "session",
+        action: "completed",
+        target: "SQL for Data Science: Module 1",
+        timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
         title: "Completed Live Session",
         description: "SQL for Data Science: Module 1 session completed",
         time: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
         iconClass: "ri-calendar-check-line",
-        iconBgClass: "bg-red-100 text-red-600"
+        iconBgClass: "bg-red-100 text-red-600",
+        user: {
+          id: "user4",
+          name: "John Doe",
+          avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&h=200"
+        }
       }
     ]);
   }, []);

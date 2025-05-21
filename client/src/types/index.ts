@@ -52,6 +52,9 @@ export interface RecentActivityItem {
   type: string;
   title?: string;
   description?: string;
+  time?: string; // For compatibility with existing components
+  iconClass?: string;
+  iconBgClass?: string;
 }
 
 export interface CourseCardItem {
