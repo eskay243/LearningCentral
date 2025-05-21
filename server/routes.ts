@@ -1303,7 +1303,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const messages = await storage.getMessagesForUser(userId);
+      // Using getUserMessages instead of getMessagesForUser which doesn't exist
+      const messages = await storage.getUserMessages(userId);
       res.json(messages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -1314,7 +1315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/messages/:id/read', isAuthenticated, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);
-      const message = await storage.markMessageAsRead(messageId);
+      const message = await storage.markMessagesAsRead(parseInt(messageId), req.user.id);
       res.json(message);
     } catch (error) {
       console.error("Error marking message as read:", error);

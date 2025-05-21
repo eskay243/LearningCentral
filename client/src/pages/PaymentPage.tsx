@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Course } from "@/types";
+import { ContextualHelp } from "@/components/ui/ContextualHelp";
 
 export default function PaymentPage() {
   const { id } = useParams();
@@ -106,7 +107,7 @@ export default function PaymentPage() {
       <p className="text-gray-600 mb-8">You're just one step away from accessing your course.</p>
 
       <div className="grid md:grid-cols-2 gap-8">
-        <div>
+        <div className="relative">
           <Card>
             <CardHeader>
               <CardTitle>Course Details</CardTitle>
@@ -137,9 +138,23 @@ export default function PaymentPage() {
               )}
             </CardContent>
           </Card>
+          
+          <ContextualHelp 
+            id="course-details-help"
+            title="Course Overview"
+            content={
+              <div>
+                <p>This section shows you what you'll be learning in this course. Make sure it aligns with your learning goals before completing the payment.</p>
+                <p className="mt-2">The instructor information shows who created the course and will be available to support your learning journey.</p>
+              </div>
+            }
+            characterId="ada"
+            position="left"
+            triggerOnFirstVisit={true}
+          />
         </div>
 
-        <div>
+        <div className="relative">
           <Card>
             <CardHeader>
               <CardTitle>Payment Summary</CardTitle>
@@ -189,6 +204,27 @@ export default function PaymentPage() {
               </div>
             </CardFooter>
           </Card>
+          
+          <ContextualHelp 
+            id="payment-process-help"
+            title="Secure Payment"
+            content={
+              <div>
+                <p>Your payment will be processed securely through Paystack, a trusted payment provider in Nigeria.</p>
+                <p className="mt-2">After clicking the button, you'll be redirected to complete your payment with any of these methods:</p>
+                <ul className="list-disc pl-5 mt-1">
+                  <li>Bank cards (Mastercard, Visa, Verve)</li>
+                  <li>Bank transfers</li>
+                  <li>USSD payments</li>
+                  <li>Mobile money</li>
+                </ul>
+                <p className="mt-2">After successful payment, you'll be automatically enrolled in the course.</p>
+              </div>
+            }
+            characterId="sammy"
+            position="right"
+            triggerOnFirstVisit={true}
+          />
         </div>
       </div>
     </div>
