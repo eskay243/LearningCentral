@@ -304,7 +304,7 @@ const InteractiveLearning = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col space-y-8">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center relative">
           <h1 className="text-3xl font-bold">Interactive Learning</h1>
           {isAuthenticated && (
             <div className="flex flex-col items-end">
@@ -315,6 +315,17 @@ const InteractiveLearning = () => {
               <Progress value={progressPercentage} className="w-60" />
             </div>
           )}
+          
+          {/* Add welcome contextual help with Ada character */}
+          <ContextualHelp
+            id="interactive-welcome"
+            title="Welcome to Interactive Learning"
+            content="This is your coding playground where you can practice programming concepts and improve your skills through hands-on exercises. Complete exercises to track your progress and earn achievements!"
+            characterId="ada"
+            position="bottom-right"
+            size="md"
+            triggerOnFirstVisit={true}
+          />
         </div>
         
         <Tabs 
@@ -342,54 +353,78 @@ const InteractiveLearning = () => {
           </div>
           
           <TabsContent value="exercises" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 relative">
+              {/* Add exercise selection help with Cody character */}
+              <ContextualHelp
+                id="exercise-selection"
+                title="Choose Your Challenge"
+                content="Browse through the available coding exercises. Green borders indicate completed exercises. Start with beginner-level challenges and work your way up to more advanced ones."
+                characterId="cody"
+                position="top-left"
+                size="md"
+              />
+              
               {(exercises || SAMPLE_EXERCISES).map((exercise, index) => (
-                <Card key={exercise.id} className={completedExercises.includes(exercise.id) ? "border-green-300" : ""}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle>{exercise.title}</CardTitle>
-                      {completedExercises.includes(exercise.id) && (
-                        <span className="bg-green-100 text-green-600 p-1 rounded-full">
-                          <Check className="h-5 w-5" />
-                        </span>
-                      )}
-                    </div>
-                    <CardDescription>{exercise.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="flex space-x-2">
-                      <DifficultyBadge difficulty={exercise.difficulty} />
-                      <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
-                        {exercise.language}
-                      </Badge>
-                    </div>
-                    {exercise.courseId && (
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        <span>From course: </span>
-                        <a href={`/courses/${exercise.courseId}/view`} className="text-primary hover:underline">
-                          View Course
-                        </a>
+                <WithContextualHelp
+                  key={exercise.id}
+                  id={`exercise-card-${exercise.id}`}
+                  title={completedExercises.includes(exercise.id) ? "Review Your Work" : "Start Coding"}
+                  content={completedExercises.includes(exercise.id) 
+                    ? "You've already completed this exercise. Great job! You can always review it to refresh your skills."
+                    : "Click to start this coding challenge. You'll write code in a real editor and get instant feedback when you run your solution."
+                  }
+                  characterId="cody"
+                  position="right"
+                  size="sm"
+                  showOnlyOnHover={true}
+                >
+                  <Card className={completedExercises.includes(exercise.id) ? "border-green-300" : ""}>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle>{exercise.title}</CardTitle>
+                        {completedExercises.includes(exercise.id) && (
+                          <span className="bg-green-100 text-green-600 p-1 rounded-full">
+                            <Check className="h-5 w-5" />
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      variant={completedExercises.includes(exercise.id) ? "outline" : "default"}
-                      className="w-full justify-between"
-                      onClick={() => selectExercise(index)}
-                    >
-                      <span>
-                        {completedExercises.includes(exercise.id) 
-                          ? "Review Exercise" 
-                          : exerciseProgress[exercise.id]?.status === 'in_progress'
-                            ? "Continue Exercise"
-                            : "Start Exercise"
-                        }
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </CardFooter>
-                </Card>
+                      <CardDescription>{exercise.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pb-2">
+                      <div className="flex space-x-2">
+                        <DifficultyBadge difficulty={exercise.difficulty} />
+                        <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                          {exercise.language}
+                        </Badge>
+                      </div>
+                      {exercise.courseId && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          <span>From course: </span>
+                          <a href={`/courses/${exercise.courseId}/view`} className="text-primary hover:underline">
+                            View Course
+                          </a>
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardFooter>
+                      <Button
+                        variant={completedExercises.includes(exercise.id) ? "outline" : "default"}
+                        className="w-full justify-between"
+                        onClick={() => selectExercise(index)}
+                      >
+                        <span>
+                          {completedExercises.includes(exercise.id) 
+                            ? "Review Exercise" 
+                            : exerciseProgress[exercise.id]?.status === 'in_progress'
+                              ? "Continue Exercise"
+                              : "Start Exercise"
+                          }
+                        </span>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </WithContextualHelp>
               ))}
             </div>
           </TabsContent>
@@ -397,7 +432,7 @@ const InteractiveLearning = () => {
           <TabsContent value="code">
             {currentExercise && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center relative">
                   <div>
                     <h2 className="text-2xl font-bold">{currentExercise.title}</h2>
                     <p className="text-muted-foreground">{currentExercise.description}</p>
@@ -408,20 +443,39 @@ const InteractiveLearning = () => {
                       {currentExercise.language}
                     </Badge>
                   </div>
+                  
+                  {/* Add coding interface help with Sammy character */}
+                  <ContextualHelp
+                    id="coding-interface"
+                    title="Your Coding Workspace"
+                    content="This is your coding workspace where you'll complete programming challenges. Read the instructions on the left, write your code on the right, and test your solution."
+                    characterId="sammy"
+                    position="top-right"
+                    size="md"
+                  />
                 </div>
                 
-                <div className="border rounded-lg overflow-hidden">
-                  <EnhancedCodeEditor
-                    initialCode={exerciseProgress[currentExercise.id]?.currentCode || currentExercise.initialCode}
-                    language={currentExercise.language}
-                    instructions={currentExercise.instructions}
-                    solution={currentExercise.solution}
-                    hints={currentExercise.hints}
-                    tests={currentExercise.tests}
-                    onCodeChange={handleCodeChange}
-                    onCompletion={handleExerciseComplete}
-                    exerciseId={currentExercise.id}
-                  />
+                <div className="border rounded-lg overflow-hidden relative">
+                  <WithContextualHelp
+                    id="code-editor-guide"
+                    title="Writing Your Code"
+                    content="Type your solution in the editor. Use syntax highlighting and auto-completion features to help you code more efficiently. Test your solution before submitting!"
+                    characterId="cody"
+                    position="right"
+                    size="sm"
+                  >
+                    <EnhancedCodeEditor
+                      initialCode={exerciseProgress[currentExercise.id]?.currentCode || currentExercise.initialCode}
+                      language={currentExercise.language}
+                      instructions={currentExercise.instructions}
+                      solution={currentExercise.solution}
+                      hints={currentExercise.hints}
+                      tests={currentExercise.tests}
+                      onCodeChange={handleCodeChange}
+                      onCompletion={handleExerciseComplete}
+                      exerciseId={currentExercise.id}
+                    />
+                  </WithContextualHelp>
                 </div>
                 
                 <div className="flex justify-between">
