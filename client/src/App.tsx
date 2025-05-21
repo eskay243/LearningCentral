@@ -25,6 +25,7 @@ import Login from "@/pages/Login";
 import AdminSetup from "@/pages/AdminSetup";
 import PaymentCallback from "@/pages/PaymentCallback";
 import PaymentPage from "@/pages/PaymentPage";
+import BankTransferInstructions from "@/pages/BankTransferInstructions";
 import ContentDemo from "@/pages/ContentDemo";
 import InteractiveLearning from "@/pages/InteractiveLearning";
 import Certificates from "@/pages/Certificates";
@@ -45,6 +46,7 @@ function Router() {
         <Route path="/courses/:id/exercises" component={CourseExercises} />
         <Route path="/courses/:id/view" component={CourseView} />
         <Route path="/courses/:id/payment" component={PaymentPage} />
+        <Route path="/courses/:id/bank-transfer" component={BankTransferInstructions} />
         <Route path="/create-course" component={CreateCourse} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/students" component={Students} />

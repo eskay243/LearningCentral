@@ -248,9 +248,42 @@ export default function PaymentPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col">
+              <div className="mb-4">
+                <div className="text-sm font-medium mb-2">Payment Method</div>
+                <RadioGroup 
+                  value={paymentMethod} 
+                  onValueChange={(value) => setPaymentMethod(value as 'paystack' | 'bank-transfer' | 'wallet')}
+                  className="space-y-3"
+                >
+                  <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-gray-50">
+                    <RadioGroupItem value="paystack" id="paystack" />
+                    <Label htmlFor="paystack" className="flex-1 cursor-pointer">
+                      <div className="font-medium">Pay with Card</div>
+                      <div className="text-sm text-gray-500">Debit/Credit Cards via Paystack</div>
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-gray-50">
+                    <RadioGroupItem value="bank-transfer" id="bank-transfer" />
+                    <Label htmlFor="bank-transfer" className="flex-1 cursor-pointer">
+                      <div className="font-medium">Bank Transfer</div>
+                      <div className="text-sm text-gray-500">Manual transfer to our account</div>
+                    </Label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-gray-50">
+                    <RadioGroupItem value="wallet" id="wallet" />
+                    <Label htmlFor="wallet" className="flex-1 cursor-pointer">
+                      <div className="font-medium">Wallet Balance</div>
+                      <div className="text-sm text-gray-500">Use your existing wallet balance</div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
               <Button 
                 className="w-full" 
-                onClick={handlePayment}
+                onClick={initiatePayment}
                 disabled={isProcessing}
               >
                 {isProcessing ? (
@@ -262,13 +295,67 @@ export default function PaymentPage() {
                     Processing...
                   </span>
                 ) : (
-                  "Pay with Paystack"
+                  paymentMethod === 'paystack' 
+                    ? "Pay with Card" 
+                    : paymentMethod === 'bank-transfer' 
+                      ? "Pay with Bank Transfer" 
+                      : "Pay with Wallet"
                 )}
               </Button>
+              
               <div className="text-center mt-4 text-sm text-gray-500">
-                <p>Secure payment powered by Paystack</p>
-                <p className="mt-1">You'll be redirected to complete your payment</p>
+                <p>Secure payment processing</p>
+                <p className="mt-1">Your data is protected</p>
               </div>
+              
+              {/* Payment Confirmation Dialog */}
+              <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Confirm Your Payment</DialogTitle>
+                    <DialogDescription>
+                      You're about to make a payment of {course && formatPrice(course.price || 0)} for the course "{course?.title}".
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">Course:</span>
+                        <span>{course?.title}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">Amount:</span>
+                        <span>{course && formatPrice(course.price || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">Payment Method:</span>
+                        <span>
+                          {paymentMethod === 'paystack' 
+                            ? 'Card Payment (Paystack)' 
+                            : paymentMethod === 'bank-transfer' 
+                              ? 'Bank Transfer' 
+                              : 'Wallet Balance'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter className="flex-col sm:flex-row sm:justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowConfirmation(false)}
+                      className="mb-2 sm:mb-0"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handlePayment}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? 'Processing...' : 'Confirm Payment'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardFooter>
           </Card>
           
