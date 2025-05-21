@@ -80,12 +80,29 @@ export default function PaymentPage() {
     try {
       // Different handling based on payment method
       if (paymentMethod === 'paystack') {
-        const response = await apiRequest("POST", `/api/courses/${id}/payment`, {
-          email: user?.email,
-          paymentMethod: "paystack"
+        const response = await fetch(`/api/courses/${id}/payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: user?.email,
+            paymentMethod: "paystack"
+          })
         });
         
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Payment error response:", errorText);
+          throw new Error('Payment initialization failed');
+        }
+        
         const data = await response.json();
+        
+        if (!data || !data.authorization_url) {
+          console.error("Invalid payment response:", data);
+          throw new Error('Invalid payment response');
+        }
         
         // Redirect to Paystack payment URL
         window.location.href = data.authorization_url;
