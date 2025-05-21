@@ -254,18 +254,66 @@ export interface IStorage {
 
 export interface IStorage {
   // User operations
-  getUser(id: string): Promise<any>;
-  getUserByEmail(email: string): Promise<any>;
-  getUsers(role?: string): Promise<any[]>;
-  createUser(user: any): Promise<any>;
-  updateUser(id: string, userData: any): Promise<any>;
-  upsertUser(userData: any): Promise<any>;
+  getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUsers(role?: string): Promise<User[]>;
+  createUser(user: UpsertUser): Promise<User>;
+  updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
+  upsertUser(userData: UpsertUser): Promise<User>;
   
   // System settings operations
-  getSystemSetting(key: string): Promise<any>;
-  getSystemSettings(category?: string): Promise<any[]>;
-  updateSystemSetting(key: string, value: string, userId?: string): Promise<any>;
+  getSystemSetting(key: string): Promise<SystemSettings | undefined>;
+  getSystemSettings(category?: string): Promise<SystemSettings[]>;
+  updateSystemSetting(key: string, value: string, userId?: string): Promise<SystemSettings>;
   setDefaultSystemSettings(): Promise<void>;
+
+  // Course operations
+  getCourse(id: number): Promise<Course | undefined>;
+  getCourses(options?: { isPublished?: boolean; mentorId?: string }): Promise<Course[]>;
+  createCourse(courseData: Omit<Course, "id">): Promise<Course>;
+  updateCourse(id: number, courseData: Partial<Course>): Promise<Course | undefined>;
+  deleteCourse(id: number): Promise<boolean>;
+
+  // Module operations
+  getModule(id: number): Promise<Module | undefined>;
+  getModulesByCourse(courseId: number): Promise<Module[]>;
+  createModule(moduleData: Omit<Module, "id">): Promise<Module>;
+  updateModule(id: number, moduleData: Partial<Module>): Promise<Module | undefined>;
+  deleteModule(id: number): Promise<boolean>;
+
+  // Lesson operations
+  getLesson(id: number): Promise<Lesson | undefined>;
+  getLessonsByModule(moduleId: number): Promise<Lesson[]>;
+  createLesson(lessonData: Omit<Lesson, "id">): Promise<Lesson>;
+  updateLesson(id: number, lessonData: Partial<Lesson>): Promise<Lesson | undefined>;
+  deleteLesson(id: number): Promise<boolean>;
+
+  // Enrollment operations
+  enrollUserInCourse(userId: string, courseId: number, paymentData?: any): Promise<any>;
+  getUserEnrollments(userId: string): Promise<any[]>;
+  getCourseEnrollments(courseId: number): Promise<any[]>;
+  updateEnrollmentProgress(userId: string, courseId: number, progress: number): Promise<any>;
+  getEnrollmentDetails(userId: string, courseId: number): Promise<any>;
+
+  // Mentor operations
+  assignMentorToCourse(mentorId: string, courseId: number, commission?: number): Promise<any>;
+  getMentorCourses(mentorId: string): Promise<Course[]>;
+  getMentorStats(mentorId: string): Promise<any>;
+
+  // Certificate operations
+  getCertificate(id: number): Promise<Certificate | undefined>;
+  getCertificateByVerificationCode(code: string): Promise<Certificate | undefined>;
+  getCertificatesByUser(userId: string): Promise<Certificate[]>;
+  generateCertificate(certificateData: InsertCertificate): Promise<Certificate>;
+
+  // Live Session operations
+  createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession>;
+  updateLiveSession(id: number, sessionData: Partial<LiveSession>): Promise<LiveSession | undefined>;
+  getLiveSession(id: number): Promise<LiveSession | undefined>;
+  getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]>;
+
+  // Other operations for notifications, discussions, etc.
+  // These will be implemented as needed
 }
 
 export class DatabaseStorage implements IStorage {

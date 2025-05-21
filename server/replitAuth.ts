@@ -9,6 +9,26 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { UserRole } from "@shared/schema";
 
+// Define the AuthUser type that combines database User with authentication claims
+export interface AuthClaims {
+  sub: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_image_url?: string;
+  exp?: number;
+  iat?: number;
+}
+
+export interface AuthUser {
+  claims: AuthClaims;
+  access_token: string;
+  refresh_token: string;
+  expires_at: number;
+  id?: string;
+  role?: string;
+}
+
 if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
@@ -46,13 +66,13 @@ export function getSession() {
 }
 
 function updateUserSession(
-  user: any,
+  user: AuthUser,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
 ) {
-  user.claims = tokens.claims();
+  user.claims = tokens.claims() as AuthClaims;
   user.access_token = tokens.access_token;
   user.refresh_token = tokens.refresh_token;
-  user.expires_at = user.claims?.exp;
+  user.expires_at = user.claims?.exp || 0;
 }
 
 async function upsertUser(
