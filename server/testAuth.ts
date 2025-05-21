@@ -6,10 +6,13 @@ import { eq } from "drizzle-orm";
 // Test user login for development purposes
 export const devLogin: RequestHandler = async (req: Request, res: Response) => {
   try {
-    const { email = "test@example.com", role = UserRole.ADMIN } = req.body;
+    const { username = "testuser", role = UserRole.ADMIN } = req.body;
     
-    // Create a user ID from the email
-    const userId = `dev-${Buffer.from(email).toString('base64').substring(0, 10)}`;
+    // Create a user ID from the username
+    const userId = `dev-${Buffer.from(username).toString('base64').substring(0, 10)}`;
+    
+    // Use username as email if no @ is present
+    const email = username.includes('@') ? username : `${username}@example.com`;
     
     // Create or update the user in the database
     const user = await db
