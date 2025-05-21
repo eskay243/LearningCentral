@@ -129,16 +129,21 @@ export async function setupAuth(app: Express) {
       const claims = tokens.claims();
       const dbUser = await upsertUser(claims);
       
-      // Create a user object that combines the DB user with claims
-      const user = {
-        ...dbUser,
-        claims
+      // Create a new auth user object that combines DB user data with authentication data
+      const authUser: AuthUser = {
+        id: dbUser.id,
+        role: dbUser.role,
+        email: dbUser.email || null,
+        firstName: dbUser.firstName,
+        lastName: dbUser.lastName,
+        profileImageUrl: dbUser.profileImageUrl,
+        claims: claims as AuthClaims,
+        access_token: tokens.access_token as string,
+        refresh_token: tokens.refresh_token as string,
+        expires_at: ((claims && 'exp' in claims) ? (claims.exp as number) : 0)
       };
       
-      // Add token information
-      updateUserSession(user, tokens);
-      
-      verified(null, user);
+      verified(null, authUser);
     } catch (error) {
       console.error("Authentication verification error:", error);
       verified(error as Error);

@@ -255,6 +255,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is a mentor for this course or an admin
+      if (!req.user || !req.user.claims) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       const user = req.user.claims;
       const isMentor = user.role === UserRole.MENTOR;
       const isAdmin = user.role === UserRole.ADMIN;

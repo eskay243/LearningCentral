@@ -38,7 +38,7 @@ import {
   type User,
   type UpsertUser,
   type Course,
-  type Certificate,
+  type Certificate as CertificateType,
   type InsertCertificate,
   type SystemSettings,
   type Module,
