@@ -577,7 +577,7 @@ const CourseDetail = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <span>
-                    <strong>Price:</strong> {course.price > 0 ? formatCurrency(course.price) : "Free"}
+                    <strong>Price:</strong> {course.price > 0 ? formatCurrency(course.price, 'NGN') : "Free"}
                   </span>
                 </div>
               </div>
@@ -860,7 +860,7 @@ const CourseDetail = () => {
             <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
               <div className="text-center mb-4 sm:mb-6">
                 <div className="text-2xl sm:text-3xl font-bold mb-2 dark:text-white">
-                  {course.price > 0 ? formatCurrency(course.price) : "Free"}
+                  {course.price > 0 ? formatCurrency(course.price, 'NGN') : "Free"}
                 </div>
                 {isEnrolled ? (
                   <div className="flex flex-col gap-3">
