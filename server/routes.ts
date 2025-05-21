@@ -429,6 +429,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid course ID" });
       }
       
+      // Ensure user is authenticated
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       // Get user ID from either the user object directly or from claims
       const userId = req.user.id || (req.user.claims && req.user.claims.sub);
       
@@ -450,6 +455,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (isNaN(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Ensure user is authenticated
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
       }
       
       // Get user ID from either the user object directly or from claims
