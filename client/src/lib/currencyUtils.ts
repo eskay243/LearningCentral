@@ -1,92 +1,112 @@
-import { useQuery } from "@tanstack/react-query";
+/**
+ * Currency formatting utilities for consistent display across the application
+ */
 
-// Currency symbols mapping
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: "$",
-  NGN: "₦",
-  GBP: "£"
+type CurrencyCode = 'NGN' | 'USD' | 'GBP' | 'EUR';
+
+const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+  NGN: '₦',
+  USD: '$',
+  GBP: '£',
+  EUR: '€'
 };
 
-// Default exchange rates (fallback values)
-const DEFAULT_EXCHANGE_RATES: Record<string, number> = {
-  USD: 1,
-  NGN: 1500,
-  GBP: 0.79
+const CURRENCY_DECIMALS: Record<CurrencyCode, number> = {
+  NGN: 0,  // Nigerian Naira typically shown without decimals
+  USD: 2,
+  GBP: 2,
+  EUR: 2
 };
 
-// Hook to get the system currency settings
-export function useCurrencySettings() {
-  const { data, isLoading } = useQuery({
-    queryKey: ["/api/settings/system", "currency"],
-    queryFn: async () => {
-      try {
-        const response = await fetch("/api/settings/system?category=currency");
-        if (!response.ok) throw new Error("Failed to fetch currency settings");
-        
-        const data = await response.json();
-        return {
-          defaultCurrency: data.find((s: any) => s.key === "defaultCurrency")?.value || "NGN",
-          exchangeRates: JSON.parse(data.find((s: any) => s.key === "exchangeRates")?.value || 
-            JSON.stringify(DEFAULT_EXCHANGE_RATES))
-        };
-      } catch (error) {
-        console.error("Error fetching currency settings:", error);
-        return {
-          defaultCurrency: "NGN",
-          exchangeRates: DEFAULT_EXCHANGE_RATES
-        };
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+/**
+ * Format a number as currency with the appropriate symbol and formatting
+ * 
+ * @param amount The amount to format
+ * @param currencyCode The currency code (NGN, USD, GBP, EUR)
+ * @param options Additional formatting options
+ * @returns Formatted currency string
+ */
+export function formatCurrency(
+  amount: number,
+  currencyCode: CurrencyCode = 'NGN',
+  options?: {
+    showCurrencyCode?: boolean;
+    minimumFractionDigits?: number;
+    maximumFractionDigits?: number;
+    compact?: boolean;
+  }
+): string {
+  const symbol = CURRENCY_SYMBOLS[currencyCode] || '₦';
+  const decimals = options?.maximumFractionDigits ?? CURRENCY_DECIMALS[currencyCode] ?? 2;
+  const minDecimals = options?.minimumFractionDigits ?? (currencyCode === 'NGN' ? 0 : 2);
 
-  return {
-    currency: data?.defaultCurrency || "NGN",
-    exchangeRates: data?.exchangeRates || DEFAULT_EXCHANGE_RATES,
-    symbol: CURRENCY_SYMBOLS[data?.defaultCurrency || "NGN"] || "₦",
-    isLoading
-  };
+  // Use compact notation for large numbers if requested
+  const formattedAmount = options?.compact && amount >= 1000
+    ? new Intl.NumberFormat('en', {
+        notation: 'compact',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1
+      }).format(amount)
+    : new Intl.NumberFormat('en', {
+        minimumFractionDigits: minDecimals,
+        maximumFractionDigits: decimals
+      }).format(amount);
+
+  return options?.showCurrencyCode
+    ? `${symbol}${formattedAmount} ${currencyCode}`
+    : `${symbol}${formattedAmount}`;
 }
 
-// Format a value (in USD) to the specified currency
-export function formatCurrency(
-  value: number, 
-  currency?: string, 
-  exchangeRates?: Record<string, number>
-) {
-  if (!currency) currency = "NGN";
-  if (!exchangeRates) exchangeRates = DEFAULT_EXCHANGE_RATES;
+/**
+ * Convert an amount from one currency to another using the provided exchange rate
+ * 
+ * @param amount The amount to convert
+ * @param fromCurrency Source currency code
+ * @param toCurrency Target currency code
+ * @param exchangeRates Exchange rate object
+ * @returns Converted amount
+ */
+export function convertCurrency(
+  amount: number,
+  fromCurrency: CurrencyCode,
+  toCurrency: CurrencyCode,
+  exchangeRates: Record<string, number>
+): number {
+  if (fromCurrency === toCurrency) return amount;
   
-  // Default to NGN for safety
-  const rate = exchangeRates[currency] || exchangeRates.NGN || 1500;
-  const symbol = CURRENCY_SYMBOLS[currency] || "₦";
+  const exchangeKey = `${fromCurrency}_${toCurrency}`;
+  const rate = exchangeRates[exchangeKey];
   
-  // Convert the value from USD to the target currency
-  const convertedValue = value * rate;
-  
-  // Format the value with appropriate decimal places
-  let formattedValue: string;
-  if (currency === "NGN") {
-    // No decimal places for Naira
-    formattedValue = Math.round(convertedValue).toLocaleString();
-  } else {
-    formattedValue = convertedValue.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+  if (!rate) {
+    console.warn(`Exchange rate for ${exchangeKey} not found`);
+    return amount;
   }
   
-  return `${symbol}${formattedValue}`;
+  return amount * rate;
 }
 
-// Component props for useCurrencyFormatter hook
-export interface CurrencyFormatterProps {
-  value: number;
+/**
+ * Parse a currency string back into a number
+ * 
+ * @param currencyString The formatted currency string
+ * @returns Numeric value
+ */
+export function parseCurrency(currencyString: string): number {
+  // Remove currency symbols and non-numeric characters except decimal point
+  const numericString = currencyString.replace(/[^\d.-]/g, '');
+  return parseFloat(numericString) || 0;
 }
 
-// Hook to provide consistent currency formatting in components
-export function useCurrencyFormatter() {
-  const { currency, exchangeRates, symbol } = useCurrencySettings();
+/**
+ * Get a discount percentage text
+ * 
+ * @param originalPrice Original price
+ * @param discountedPrice Discounted price
+ * @returns Formatted discount percentage string
+ */
+export function getDiscountPercentage(originalPrice: number, discountedPrice: number): string {
+  if (originalPrice <= 0 || discountedPrice >= originalPrice) return '';
   
-  return (value: number) => formatCurrency(value, currency, exchangeRates);
+  const discountPercent = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+  return `-${discountPercent}%`;
 }

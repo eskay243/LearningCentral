@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import useAuth from "@/hooks/useAuth";
-import { Course } from "@/types";
-import { formatCurrency, truncateText } from "@/lib/utils";
+import { ResponsiveCard } from "@/components/ui/ResponsiveCard";
+import { CourseGrid } from "@/components/courses/CourseGrid";
+import { Plus, Search } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { formatCurrency } from "@/lib/currencyUtils";
 
 const Courses = () => {
   const { user, isMentor, isAdmin } = useAuth();
@@ -159,10 +159,10 @@ const Courses = () => {
       {/* Courses Grid */}
       {isLoading ? (
         <div className="flex justify-center items-center py-8 sm:py-12">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary-600 dark:border-blue-500"></div>
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary-600 dark:border-primary-500"></div>
         </div>
       ) : filteredCourses.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-8 text-center shadow-sm">
+        <ResponsiveCard className="p-4 sm:p-8 text-center">
           <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">No courses found</h3>
           <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {searchTerm || categoryFilter !== "all" 
@@ -174,111 +174,35 @@ const Courses = () => {
           </p>
           {isMentor && (
             <Button 
-              className="mt-4 sm:mt-6 text-xs sm:text-sm h-9" 
+              className="mt-4 sm:mt-6 text-sm" 
               asChild
             >
               <Link href="/create-course">Create Your First Course</Link>
             </Button>
           )}
-        </div>
+        </ResponsiveCard>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-          {filteredCourses.map((course: any) => (
-            <Card key={course.id} className="overflow-hidden hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
-              <div className="h-32 sm:h-40 overflow-hidden bg-gray-100 dark:bg-gray-700">
-                {course.thumbnail ? (
-                  <img 
-                    src={course.thumbnail} 
-                    alt={course.title} 
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
-                    <i className="ri-image-line text-3xl sm:text-4xl"></i>
-                  </div>
-                )}
-              </div>
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <Badge 
-                    variant={course.isPublished ? "default" : "secondary"} 
-                    className={course.isPublished ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs py-0 h-5" : "text-xs py-0 h-5 dark:bg-gray-700 dark:text-gray-300"}
-                  >
-                    {course.isPublished ? "Published" : "Draft"}
-                  </Badge>
-                  {course.price > 0 ? (
-                    <span className="font-medium text-xs sm:text-sm text-green-700 dark:text-green-500">{formatCurrency(course.price)}</span>
-                  ) : (
-                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Free</span>
-                  )}
-                </div>
-                
-                <Link href={`/courses/${course.id}`}>
-                  <h3 className="text-sm sm:text-base font-medium text-dark-800 dark:text-white mb-1 hover:text-primary-600 dark:hover:text-blue-400 cursor-pointer line-clamp-2">
-                    {course.title}
-                  </h3>
-                </Link>
-                
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 line-clamp-2">
-                  {truncateText(course.description, 80)}
-                </p>
-                
-                {isMentor ? (
-                  <div className="flex justify-between items-center mt-3 sm:mt-4">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {course.enrollmentCount || 0} students
-                    </span>
-                    <Button 
-                      asChild
-                      size="sm"
-                      className="h-7 sm:h-8 text-xs px-2 sm:px-3"
-                    >
-                      <Link href={`/courses/${course.id}`}>
-                        Manage
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-center mt-3 sm:mt-4">
-                    {course.progress !== undefined ? (
-                      <>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                            Progress: {course.progress}%
-                          </span>
-                          <div className="w-full sm:w-32 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mt-1">
-                            <div 
-                              className="h-1.5 bg-primary-500 dark:bg-blue-600 rounded-full" 
-                              style={{ width: `${course.progress}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                        <Button 
-                          asChild
-                          size="sm"
-                          className="h-7 sm:h-8 text-xs px-2 sm:px-3 w-full sm:w-auto"
-                        >
-                          <Link href={`/courses/${course.id}`}>
-                            Continue
-                          </Link>
-                        </Button>
-                      </>
-                    ) : (
-                      <Button 
-                        asChild 
-                        className="w-full h-7 sm:h-8 text-xs px-2 sm:px-3"
-                      >
-                        <Link href={`/courses/${course.id}`}>
-                          {course.price > 0 ? "Enroll Now" : "Start Learning"}
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <CourseGrid 
+          courses={filteredCourses.map((course: any) => ({
+            id: course.id,
+            title: course.title,
+            description: course.description || '',
+            thumbnailUrl: course.thumbnail,
+            instructorName: course.instructorName || 'Instructor',
+            instructorAvatar: course.instructorAvatar,
+            rating: course.rating || 4.5,
+            totalStudents: course.enrollmentCount || 0,
+            duration: course.duration || null,
+            price: course.price || 0,
+            currency: 'NGN',
+            progress: course.progress,
+            enrollmentStatus: course.progress !== undefined 
+              ? (course.progress === 100 ? 'completed' : 'enrolled')
+              : 'not-enrolled',
+            category: course.category,
+            level: course.level || 'Beginner',
+          }))}
+        />
       )}
     </div>
   );

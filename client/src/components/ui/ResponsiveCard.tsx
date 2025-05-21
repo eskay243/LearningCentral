@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface ResponsiveCardProps {
@@ -25,44 +24,58 @@ export const ResponsiveCard = ({
   children,
   footer,
   onClick,
-  hoverable = false,
+  hoverable = false
 }: ResponsiveCardProps) => {
+  const cardClasses = cn(
+    'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm',
+    hoverable && 'transition-all duration-200 hover:shadow-md hover:border-gray-200 dark:hover:border-gray-600',
+    onClick && 'cursor-pointer',
+    className
+  );
+
+  const headerClasses = cn(
+    'px-4 py-3 border-b border-gray-100 dark:border-gray-700',
+    headerClassName
+  );
+
+  const contentClasses = cn(
+    'p-4',
+    contentClassName
+  );
+
+  const footerClasses = cn(
+    'px-4 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800',
+    footerClassName
+  );
+
   return (
-    <Card
-      className={cn(
-        "w-full border-gray-200 dark:border-gray-800 overflow-hidden transition-all duration-200",
-        hoverable && "hover:shadow-md dark:hover:shadow-gray-900/30 hover:border-gray-300 dark:hover:border-gray-700",
-        onClick && "cursor-pointer",
-        className
-      )}
-      onClick={onClick}
-    >
+    <div className={cardClasses} onClick={onClick}>
       {(title || description) && (
-        <CardHeader className={cn("px-4 sm:px-6 py-4 sm:py-5", headerClassName)}>
+        <div className={headerClasses}>
           {title && (
-            typeof title === 'string' ? (
-              <CardTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</CardTitle>
-            ) : (
-              title
-            )
+            typeof title === 'string' 
+              ? <h3 className="text-base font-medium text-gray-900 dark:text-white">{title}</h3>
+              : title
           )}
           {description && (
-            typeof description === 'string' ? (
-              <CardDescription className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</CardDescription>
-            ) : (
-              description
-            )
+            typeof description === 'string'
+              ? <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{description}</p>
+              : description
           )}
-        </CardHeader>
+        </div>
       )}
-      <CardContent className={cn("px-4 sm:px-6 py-3 sm:py-4", !title && !description && "pt-5", contentClassName)}>
-        {children}
-      </CardContent>
+      
+      {children && (
+        <div className={contentClasses}>
+          {children}
+        </div>
+      )}
+      
       {footer && (
-        <CardFooter className={cn("px-4 sm:px-6 py-3 sm:py-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50", footerClassName)}>
+        <div className={footerClasses}>
           {footer}
-        </CardFooter>
+        </div>
       )}
-    </Card>
+    </div>
   );
 };
