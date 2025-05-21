@@ -4,6 +4,7 @@ import { WebSocketServer } from "ws";
 import { initializePayment, verifyPayment } from "./paystack";
 import { storage } from "./storage";
 import { isAuthenticated, hasRole } from "./replitAuth";
+import { devLogin, updateUserRole, isTestAuthenticated } from "./testAuth";
 import { UserRole } from "@shared/schema";
 import { db } from "./db";
 import { users, courses, courseEnrollments } from "@shared/schema";
@@ -48,6 +49,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Welcome to Codelab Educare API" });
   });
 
+  // Test authentication routes for development/demo
+  app.post("/api/auth/dev-login", devLogin);
+  app.get("/api/auth/switch-role/:role", isTestAuthenticated, updateUserRole);
+  
   // User profile routes
   app.get("/api/profile", isAuthenticated, async (req: any, res) => {
     try {

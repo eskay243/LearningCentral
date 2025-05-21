@@ -130,11 +130,11 @@ export default function DemoUsers() {
                 You need to be logged in to test different user roles. Please log in to continue.
               </p>
               <Button 
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/test-login"}
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                Log In
+                Test Login
               </Button>
             </div>
           </CardContent>
