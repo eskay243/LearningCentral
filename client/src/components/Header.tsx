@@ -34,43 +34,57 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
   };
 
   return (
-    <header className="fixed top-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-40">
-      <div className="flex justify-between items-center px-3 sm:px-4 md:px-6 h-16">
+    <header className="fixed top-0 w-full bg-white dark:bg-gray-900 shadow-sm z-40">
+      <div className="flex justify-between items-center px-4 sm:px-6 md:px-8 h-16">
         {/* Mobile Menu Button */}
         <button 
           onClick={toggleSidebar} 
-          className="lg:hidden flex items-center justify-center p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+          className="lg:hidden flex items-center justify-center p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:text-primary hover:bg-primary/10 focus:outline-none"
           aria-label="Open menu"
         >
           <Menu size={20} />
         </button>
         
-        {/* Logo */}
-        <div className="flex items-center flex-shrink-0">
+        {/* Logo (visible on small screens) */}
+        <div className="flex items-center flex-shrink-0 lg:hidden">
           <Link href="/">
-            <span className="text-xl font-bold text-primary-600 dark:text-primary-400 hidden sm:block cursor-pointer">Codelab Educare</span>
-            <span className="text-xl font-bold text-primary-600 dark:text-primary-400 sm:hidden cursor-pointer">CL Educare</span>
+            <span className="text-lg font-bold text-gray-800 dark:text-white hidden sm:block cursor-pointer">Codelab Educare</span>
+            <span className="text-lg font-bold text-gray-800 dark:text-white sm:hidden cursor-pointer">CL</span>
           </Link>
         </div>
         
+        {/* Search Box */}
+        <div className="hidden sm:flex items-center relative max-w-md w-full mx-6 lg:mx-0">
+          <div className="relative w-full">
+            <input 
+              type="search" 
+              className="w-full bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-0 rounded-xl pl-10 pr-4 py-2 focus:ring-1 focus:ring-primary/30 focus:outline-none" 
+              placeholder="Search..." 
+            />
+            <div className="absolute left-3 top-2.5 text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        
         {/* Navigation Icons */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-5">
           {isAuthenticated && (
             <>
               <button 
-                className="hidden xs:flex items-center justify-center p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 relative"
+                className="flex items-center justify-center h-10 w-10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary relative"
                 aria-label="Notifications"
               >
-                <Bell size={18} />
-                <Badge className="absolute top-0 right-0 h-4 w-4 flex items-center justify-center p-0 translate-x-1/2 -translate-y-1/2 text-[10px]">
-                  3
-                </Badge>
+                <Bell size={20} />
+                <span className="absolute top-1 right-1.5 h-2 w-2 bg-primary rounded-full"></span>
               </button>
               <button 
-                className="hidden xs:flex items-center justify-center p-1.5 rounded-full text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+                className="hidden sm:flex items-center justify-center h-10 w-10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
                 aria-label="Messages"
               >
-                <MessageSquare size={18} />
+                <MessageSquare size={20} />
               </button>
             </>
           )}
@@ -81,18 +95,23 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
               <button 
                 id="profileDropdown" 
                 onClick={handleProfileClick}
-                className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900 rounded-full p-1"
+                className="flex items-center gap-2.5 focus:outline-none hover:opacity-90 transition-opacity rounded-full"
                 aria-label="User menu"
                 aria-expanded={showProfileMenu}
                 aria-controls="user-menu"
               >
-                <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {getFullName(user)}
-                </span>
-                <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-white dark:border-gray-800">
+                <div className="flex flex-col items-end justify-center mr-1 hidden md:flex">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-white">
+                    {getFullName(user) || 'Dibbendo'}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Student'}
+                  </span>
+                </div>
+                <Avatar className="h-10 w-10 border-2 border-primary/10 rounded-full">
                   <AvatarImage src={user?.profileImageUrl} alt={getFullName(user)} />
-                  <AvatarFallback className="bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 text-xs sm:text-sm">
-                    {getInitials(getFullName(user))}
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                    {getInitials(getFullName(user) || 'Dibbendo')}
                   </AvatarFallback>
                 </Avatar>
               </button>
@@ -101,30 +120,47 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
               {showProfileMenu && (
                 <div 
                   id="user-menu"
-                  className="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-md shadow-lg dark:shadow-gray-900/30 z-50 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-2 w-56 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg z-50 border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-100"
                 >
-                  <Link href="/profile">
-                    <a className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                      My Profile
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-medium text-gray-800 dark:text-white">
+                      {getFullName(user) || 'Dibbendo'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {user?.email || 'user@example.com'}
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <Link href="/profile">
+                      <a className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <User className="mr-2 h-4 w-4 text-gray-500" />
+                        My Profile
+                      </a>
+                    </Link>
+                    <Link href="/settings">
+                      <a className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <Settings className="mr-2 h-4 w-4 text-gray-500" />
+                        Settings
+                      </a>
+                    </Link>
+                    <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                    <a 
+                      href="/api/logout" 
+                      className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      Logout
                     </a>
-                  </Link>
-                  <Link href="/settings">
-                    <a className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                      Settings
-                    </a>
-                  </Link>
-                  <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                  <a 
-                    href="/api/logout" 
-                    className="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Logout
-                  </a>
+                  </div>
                 </div>
               )}
             </div>
           ) : (
-            <Button asChild size="sm" className="px-3 sm:px-4">
+            <Button asChild size="sm" className="rounded-xl bg-primary hover:bg-primary/90 px-5">
               <a href="/api/login">Login</a>
             </Button>
           )}

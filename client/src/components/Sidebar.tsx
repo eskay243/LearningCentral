@@ -28,7 +28,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const { user, isAdmin, isMentor } = useAuth();
   
   const sidebarClass = cn(
-    "sidebar fixed left-0 top-16 bottom-0 w-72 sm:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-md dark:shadow-gray-900/30",
+    "sidebar fixed left-0 top-16 bottom-0 w-72 sm:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-lg rounded-tr-3xl rounded-br-3xl",
     {
       "transform -translate-x-full": !isOpen,
       "transform translate-x-0": isOpen
@@ -49,10 +49,10 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   };
   
   const menuItemClass = (path: string) => cn(
-    "menu-item flex items-center px-4 py-3 sm:py-2.5 text-sm rounded-lg my-1 mx-2 transition-colors",
+    "menu-item flex items-center px-4 py-3 text-sm rounded-xl my-1.5 mx-3 transition-all duration-200",
     {
-      "bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium": isActive(path),
-      "hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700": !isActive(path),
+      "bg-primary text-primary-foreground font-medium": isActive(path),
+      "hover:bg-primary/10 hover:text-primary active:bg-primary/20": !isActive(path),
       "text-gray-700 dark:text-gray-300": !isActive(path)
     }
   );
@@ -61,18 +61,30 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
     <>
       <div className={backdropClass} onClick={closeSidebar}></div>
       <aside className={sidebarClass}>
+        {/* Logo and Brand */}
+        <div className="px-6 py-5">
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/10 p-2 rounded-lg">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
+                CE
+              </div>
+            </div>
+            <span className="text-lg font-bold text-gray-800 dark:text-white">Codelab Educare</span>
+          </div>
+        </div>
+        
         {/* Role Label */}
         {user && (
-          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-md shadow-sm">
+          <div className="px-6 py-2 mb-4">
+            <div className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
             </div>
           </div>
         )}
         
         {/* Navigation Menu */}
-        <nav className="py-4">
-          <div className="px-6 mb-3">
+        <nav className="py-2 px-3">
+          <div className="px-4 mb-2">
             <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</h2>
           </div>
           
