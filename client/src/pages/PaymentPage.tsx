@@ -114,18 +114,50 @@ export default function PaymentPage() {
           description: "You'll be shown bank details to complete your payment",
         });
         
-        // In a real app, we would get these details from the API
-        const accountDetails = {
-          bankName: "First Bank of Nigeria",
-          accountNumber: "3089765432",
-          accountName: "Codelab Educare Ltd",
-          reference: `CLB-${id}-${Date.now().toString().substring(8)}`
-        };
-        
-        // Navigate to bank transfer instructions page
-        navigate(`/courses/${id}/bank-transfer`, { 
-          state: { accountDetails, amount: course?.price }
-        });
+        try {
+          const response = await fetch(`/api/courses/${id}/bank-transfer`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+          });
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Bank transfer error:", errorText);
+            throw new Error('Bank transfer setup failed');
+          }
+          
+          const data = await response.json();
+          
+          if (!data || !data.accountDetails) {
+            throw new Error('Invalid bank transfer response');
+          }
+          
+          // Store the reference from the server or generate one if needed
+          const reference = data.reference || `CLB-${id}-${Date.now().toString().substring(8)}`;
+          
+          // Use the server-provided account details
+          const accountDetails = data.accountDetails;
+          
+          // Navigate to bank transfer instructions page
+          navigate(`/bank-transfer-instructions`, { 
+            state: { 
+              courseId: id,
+              accountDetails, 
+              amount: course?.price, 
+              reference 
+            }
+          });
+        } catch (error: any) {
+          console.error("Bank transfer error:", error);
+          toast({
+            title: "Payment Setup Failed",
+            description: error.message || "Could not setup bank transfer payment",
+            variant: "destructive",
+          });
+        }
       }
       else if (paymentMethod === 'wallet') {
         // For wallet payments
