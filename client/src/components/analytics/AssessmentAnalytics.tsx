@@ -37,8 +37,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 
 // Color constants
-const CHART_COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#a855f7", "#ec4899"];
+const CHART_COLORS = ["#0ea5e9", "#10b981", "#f59e0b", "#f43f5e", "#a855f7", "#ec4899"];
 const PASS_FAIL_COLORS = ["#22c55e", "#ef4444"];
+const LIGHT_CHART_BACKGROUND = "#ffffff";
+const DARK_CHART_BACKGROUND = "#1e293b";
 
 interface AssessmentAnalyticsProps {
   courseId?: number;
@@ -155,10 +157,10 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg shadow-sm">
         <div>
-          <h2 className="text-2xl font-bold">Assessment Analytics</h2>
-          <p className="text-gray-500">
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Assessment Analytics</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
             {isMentorView 
               ? "Monitor student performance and identify areas for improvement" 
               : "Track your progress and performance on assessments"}
@@ -169,10 +171,10 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
           value={selectedCourse}
           onValueChange={setSelectedCourse}
         >
-          <SelectTrigger className="w-[200px]">
+          <SelectTrigger className="w-[220px] bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm">
             <SelectValue placeholder="Select Course" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white dark:bg-slate-800">
             <SelectItem value="all">All Courses</SelectItem>
             {(courses || []).map((course: any) => (
               <SelectItem key={course.id} value={course.id.toString()}>
@@ -183,37 +185,42 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
         </Select>
       </div>
 
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-4">
-        <TabsList className="grid grid-cols-3 md:w-[400px]">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+        <TabsList className="grid grid-cols-3 md:w-[400px] bg-slate-100 dark:bg-slate-800/60 p-1 rounded-lg">
+          <TabsTrigger value="overview" className="text-sm font-medium">Overview</TabsTrigger>
+          <TabsTrigger value="quizzes" className="text-sm font-medium">Quizzes</TabsTrigger>
+          <TabsTrigger value="assignments" className="text-sm font-medium">Assignments</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Overall Quiz Performance */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Quiz Performance</CardTitle>
+            <Card className="border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800 rounded-t-lg">
+                <CardTitle className="text-lg text-blue-700 dark:text-blue-400 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                  </svg>
+                  Quiz Performance
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 {isLoading ? (
-                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-20 w-full" />
                 ) : (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Average Score:</span>
-                      <span className="font-medium">{quizAnalytics.averageScore}%</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Average Score</span>
+                      <span className="text-lg font-semibold text-blue-600 dark:text-blue-400">{quizAnalytics.averageScore}%</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Pass Rate:</span>
-                      <span className="font-medium">{Math.round(quizAnalytics.passRate * 100)}%</span>
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Pass Rate</span>
+                      <span className="text-lg font-semibold text-green-600 dark:text-green-400">{Math.round(quizAnalytics.passRate * 100)}%</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Total Attempts:</span>
-                      <span className="font-medium">{quizAnalytics.attemptCount}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Total Attempts</span>
+                      <span className="text-lg font-semibold text-slate-700 dark:text-slate-300">{quizAnalytics.attemptCount}</span>
                     </div>
                   </div>
                 )}
@@ -221,26 +228,32 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
             </Card>
 
             {/* Overall Assignment Performance */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Assignment Performance</CardTitle>
+            <Card className="border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2 bg-gradient-to-r from-green-50 to-teal-50 dark:from-slate-800 dark:to-slate-800 rounded-t-lg">
+                <CardTitle className="text-lg text-green-700 dark:text-green-400 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                  </svg>
+                  Assignment Performance
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 {isLoading ? (
-                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className="h-20 w-full" />
                 ) : (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Average Grade:</span>
-                      <span className="font-medium">{assignmentAnalytics.averageGrade}%</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Average Grade</span>
+                      <span className="text-lg font-semibold text-green-600 dark:text-green-400">{assignmentAnalytics.averageGrade}%</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">On-time Rate:</span>
-                      <span className="font-medium">{Math.round(assignmentAnalytics.onTimeSubmissionRate * 100)}%</span>
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-2">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">On-time Rate</span>
+                      <span className="text-lg font-semibold text-amber-600 dark:text-amber-400">{Math.round(assignmentAnalytics.onTimeSubmissionRate * 100)}%</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Total Submissions:</span>
-                      <span className="font-medium">{assignmentAnalytics.submissionCount}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-500 dark:text-slate-400">Total Submissions</span>
+                      <span className="text-lg font-semibold text-slate-700 dark:text-slate-300">{assignmentAnalytics.submissionCount}</span>
                     </div>
                   </div>
                 )}
@@ -248,32 +261,46 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
             </Card>
 
             {/* Pass/Fail Ratio */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Assessment Status</CardTitle>
+            <Card className="border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-2 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-slate-800 dark:to-slate-800 rounded-t-lg">
+                <CardTitle className="text-lg text-purple-700 dark:text-purple-400 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                    <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                  </svg>
+                  Assessment Status
+                </CardTitle>
               </CardHeader>
-              <CardContent className="flex justify-center">
+              <CardContent className="flex justify-center pt-4">
                 {isLoading ? (
                   <Skeleton className="h-40 w-full" />
                 ) : (
-                  <div className="h-40">
+                  <div className="h-48 w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={quizAnalytics.passFailRatio}
                           cx="50%"
                           cy="50%"
-                          innerRadius={30}
-                          outerRadius={60}
-                          paddingAngle={5}
+                          innerRadius={40}
+                          outerRadius={70}
+                          paddingAngle={8}
                           dataKey="value"
                           label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          labelLine={false}
                         >
                           {quizAnalytics.passFailRatio.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={PASS_FAIL_COLORS[index % PASS_FAIL_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+                            borderRadius: '8px',
+                            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                            border: 'none'
+                          }}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -283,27 +310,57 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
           </div>
 
           {/* Score Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Score Distribution</CardTitle>
-              <CardDescription>Distribution of scores across all assessments</CardDescription>
+          <Card className="border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800 rounded-t-lg">
+              <CardTitle className="text-lg text-indigo-700 dark:text-indigo-400 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                </svg>
+                Score Distribution
+              </CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400">Distribution of scores across all assessments</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {isLoading ? (
                 <Skeleton className="h-80 w-full" />
               ) : (
-                <div className="h-80">
+                <div className="h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={quizAnalytics.scoreDistribution}
-                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="range" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="count" name="Number of Attempts" fill="#8884d8" />
+                      <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                      <XAxis 
+                        dataKey="range" 
+                        tick={{ fill: '#64748b' }}
+                        tickLine={{ stroke: '#64748b' }}
+                        axisLine={{ stroke: '#94a3b8' }}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#64748b' }}
+                        tickLine={{ stroke: '#64748b' }}
+                        axisLine={{ stroke: '#94a3b8' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                          borderRadius: '8px',
+                          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                          border: 'none'
+                        }}
+                        cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                      />
+                      <Legend 
+                        wrapperStyle={{ paddingTop: '20px' }}
+                      />
+                      <Bar 
+                        dataKey="count" 
+                        name="Number of Attempts" 
+                        fill="#6366f1"
+                        radius={[4, 4, 0, 0]}
+                        barSize={40}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -313,60 +370,108 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
 
           {/* Student Performance (Mentor View Only) */}
           {isMentorView && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Student Performance</CardTitle>
-                <CardDescription>Analysis of student assessment completion and scores</CardDescription>
+            <Card className="border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-800 rounded-t-lg">
+                <CardTitle className="text-lg text-blue-700 dark:text-blue-400 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                  </svg>
+                  Student Performance
+                </CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400">Analysis of student assessment completion and scores</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-5">
                 {isLoading ? (
                   <Skeleton className="h-80 w-full" />
                 ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-gray-500">Students</div>
-                        <div className="text-2xl font-bold">{studentAnalytics.studentCount}</div>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                            </svg>
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-300">Total Students</div>
+                        </div>
+                        <div className="text-3xl font-bold text-blue-700 dark:text-blue-400 mt-2">{studentAnalytics.studentCount}</div>
                       </div>
-                      <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-gray-500">Completion Rate</div>
-                        <div className="text-2xl font-bold">{Math.round(studentAnalytics.completionRate * 100)}%</div>
+                      
+                      <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-300">Completion Rate</div>
+                        </div>
+                        <div className="text-3xl font-bold text-green-700 dark:text-green-400 mt-2">{Math.round(studentAnalytics.completionRate * 100)}%</div>
                       </div>
-                      <div className="p-4 border rounded-lg">
-                        <div className="text-sm text-gray-500">Average Score</div>
-                        <div className="text-2xl font-bold">{studentAnalytics.averageScore.toFixed(1)}%</div>
+                      
+                      <div className="p-6 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-800 dark:to-slate-700 rounded-lg shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-full bg-amber-100 dark:bg-amber-900/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-amber-600 dark:text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </div>
+                          <div className="text-sm text-slate-600 dark:text-slate-300">Average Score</div>
+                        </div>
+                        <div className="text-3xl font-bold text-amber-700 dark:text-amber-400 mt-2">{studentAnalytics.averageScore.toFixed(1)}%</div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="text-lg font-medium mb-2">Top Performers</h3>
-                        <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <h3 className="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-600 dark:text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Top Performers
+                        </h3>
+                        <div className="space-y-3">
                           {studentAnalytics.topPerformers.map((student, index) => (
-                            <div key={index} className="flex justify-between items-center p-2 border-b">
-                              <div>
-                                <div className="font-medium">{student.name}</div>
-                                <div className="text-sm text-gray-500">
-                                  {student.completed}/{student.total} completed
+                            <div key={index} className="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-md transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-shrink-0 w-8 h-8 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center font-bold">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-slate-800 dark:text-slate-200">{student.name}</div>
+                                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                                    {student.completed}/{student.total} completed
+                                  </div>
                                 </div>
                               </div>
-                              <div className="text-xl font-bold text-green-600">{student.score}%</div>
+                              <div className="text-xl font-bold text-green-600 dark:text-green-400">{student.score}%</div>
                             </div>
                           ))}
                         </div>
                       </div>
-                      <div>
-                        <h3 className="text-lg font-medium mb-2">Needs Improvement</h3>
-                        <div className="space-y-2">
+                      <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <h3 className="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200 flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-red-600 dark:text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Needs Improvement
+                        </h3>
+                        <div className="space-y-3">
                           {studentAnalytics.needsImprovement.map((student, index) => (
-                            <div key={index} className="flex justify-between items-center p-2 border-b">
-                              <div>
-                                <div className="font-medium">{student.name}</div>
-                                <div className="text-sm text-gray-500">
-                                  {student.completed}/{student.total} completed
+                            <div key={index} className="flex justify-between items-center p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-md transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-shrink-0 w-8 h-8 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center font-bold">
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-slate-800 dark:text-slate-200">{student.name}</div>
+                                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                                    {student.completed}/{student.total} completed
+                                  </div>
                                 </div>
                               </div>
-                              <div className="text-xl font-bold text-red-500">{student.score}%</div>
+                              <div className="text-xl font-bold text-red-500 dark:text-red-400">{student.score}%</div>
                             </div>
                           ))}
                         </div>
