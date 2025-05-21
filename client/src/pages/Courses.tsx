@@ -158,13 +158,13 @@ const Courses = () => {
       
       {/* Courses Grid */}
       {isLoading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="flex justify-center items-center py-8 sm:py-12">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary-600 dark:border-blue-500"></div>
         </div>
       ) : filteredCourses.length === 0 ? (
-        <div className="bg-white rounded-lg p-8 text-center shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900">No courses found</h3>
-          <p className="mt-2 text-gray-500">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-8 text-center shadow-sm">
+          <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">No courses found</h3>
+          <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
             {searchTerm || categoryFilter !== "all" 
               ? "Try adjusting your filters or search term" 
               : isMentor 
@@ -173,16 +173,19 @@ const Courses = () => {
             }
           </p>
           {isMentor && (
-            <Button className="mt-6" asChild>
+            <Button 
+              className="mt-4 sm:mt-6 text-xs sm:text-sm h-9" 
+              asChild
+            >
               <Link href="/create-course">Create Your First Course</Link>
             </Button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {filteredCourses.map((course: any) => (
-            <Card key={course.id} className="overflow-hidden hover:shadow-md transition-shadow">
-              <div className="h-40 overflow-hidden bg-gray-100">
+            <Card key={course.id} className="overflow-hidden hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700">
+              <div className="h-32 sm:h-40 overflow-hidden bg-gray-100 dark:bg-gray-700">
                 {course.thumbnail ? (
                   <img 
                     src={course.thumbnail} 
@@ -190,67 +193,81 @@ const Courses = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <i className="ri-image-line text-4xl"></i>
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                    <i className="ri-image-line text-3xl sm:text-4xl"></i>
                   </div>
                 )}
               </div>
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <Badge variant={course.isPublished ? "default" : "secondary"} className={course.isPublished ? "bg-green-100 text-green-800" : ""}>
+                  <Badge 
+                    variant={course.isPublished ? "default" : "secondary"} 
+                    className={course.isPublished ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs py-0 h-5" : "text-xs py-0 h-5 dark:bg-gray-700 dark:text-gray-300"}
+                  >
                     {course.isPublished ? "Published" : "Draft"}
                   </Badge>
                   {course.price > 0 ? (
-                    <span className="font-medium text-green-700">{formatCurrency(course.price)}</span>
+                    <span className="font-medium text-xs sm:text-sm text-green-700 dark:text-green-500">{formatCurrency(course.price)}</span>
                   ) : (
-                    <span className="text-sm text-gray-500">Free</span>
+                    <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Free</span>
                   )}
                 </div>
                 
                 <Link href={`/courses/${course.id}`}>
-                  <h3 className="text-lg font-medium text-dark-800 mb-1 hover:text-primary-600 cursor-pointer">
+                  <h3 className="text-sm sm:text-base font-medium text-dark-800 dark:text-white mb-1 hover:text-primary-600 dark:hover:text-blue-400 cursor-pointer line-clamp-2">
                     {course.title}
                   </h3>
                 </Link>
                 
-                <p className="text-sm text-gray-500 mb-4">
-                  {truncateText(course.description, 100)}
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-3 sm:mb-4 line-clamp-2">
+                  {truncateText(course.description, 80)}
                 </p>
                 
                 {isMentor ? (
-                  <div className="flex justify-between items-center mt-4">
-                    <span className="text-sm text-gray-500">
+                  <div className="flex justify-between items-center mt-3 sm:mt-4">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
                       {course.enrollmentCount || 0} students
                     </span>
-                    <Button asChild>
+                    <Button 
+                      asChild
+                      size="sm"
+                      className="h-7 sm:h-8 text-xs px-2 sm:px-3"
+                    >
                       <Link href={`/courses/${course.id}`}>
                         Manage
                       </Link>
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-center mt-4">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-2 sm:items-center mt-3 sm:mt-4">
                     {course.progress !== undefined ? (
                       <>
                         <div className="flex flex-col">
-                          <span className="text-xs font-medium text-gray-500">
+                          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
                             Progress: {course.progress}%
                           </span>
-                          <div className="w-32 h-1.5 bg-gray-200 rounded-full mt-1">
+                          <div className="w-full sm:w-32 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mt-1">
                             <div 
-                              className="h-1.5 bg-primary-500 rounded-full" 
+                              className="h-1.5 bg-primary-500 dark:bg-blue-600 rounded-full" 
                               style={{ width: `${course.progress}%` }}
                             ></div>
                           </div>
                         </div>
-                        <Button asChild>
+                        <Button 
+                          asChild
+                          size="sm"
+                          className="h-7 sm:h-8 text-xs px-2 sm:px-3 w-full sm:w-auto"
+                        >
                           <Link href={`/courses/${course.id}`}>
                             Continue
                           </Link>
                         </Button>
                       </>
                     ) : (
-                      <Button asChild className="w-full">
+                      <Button 
+                        asChild 
+                        className="w-full h-7 sm:h-8 text-xs px-2 sm:px-3"
+                      >
                         <Link href={`/courses/${course.id}`}>
                           {course.price > 0 ? "Enroll Now" : "Start Learning"}
                         </Link>
