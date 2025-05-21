@@ -95,6 +95,11 @@ export interface IStorage {
   addConversationParticipants(conversationId: number, participantIds: string[]): Promise<void>;
   sendMessage(data: Partial<InsertChatMessage>): Promise<ChatMessage>;
   markMessagesAsRead(conversationId: number, userId: string): Promise<void>;
+  createMessage(messageData: any): Promise<any>; // Added for WebSocket functionality
+  getMessage(messageId: number): Promise<any>; // Added for WebSocket functionality
+  markMessageRead(conversationId: number, userId: string, messageId: number): Promise<void>; // Added for WebSocket functionality
+  addMessageReaction(reactionData: { messageId: number; emoji: string; userId: string }): Promise<any>; // Added for WebSocket functionality
+  removeMessageReaction(messageId: number, userId: string, emoji: string): Promise<void>; // Added for WebSocket functionality
   getUserMessages(userId: string): Promise<any[]>;
   getAnnouncements(options: { limit: number, offset: number }): Promise<any[]>;
   getCourseAnnouncements(courseId: number, options: { limit: number, offset: number }): Promise<any[]>;
