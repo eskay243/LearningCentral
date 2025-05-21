@@ -38,6 +38,32 @@ import { Switch } from "@/components/ui/switch";
 import { CheckIcon, PlusIcon, FileIcon, PlayIcon, UsersIcon, EditIcon, TrashIcon, LockIcon, UnlockIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
+// Define interface for course data
+interface CourseData {
+  title: string;
+  description: string;
+  thumbnail: string;
+  price: number;
+  isPublished: boolean;
+  category: string;
+  tags: string[];
+}
+
+// Define interface for course from API
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail: string;
+  price: number;
+  isPublished: boolean;
+  category: string;
+  tags: string[];
+  enrollmentCount?: number;
+  mentors?: { id: string; name: string }[];
+  modules?: any[];
+}
+
 const CourseDetail = () => {
   const { id } = useParams();
   const [, navigate] = useLocation();
@@ -45,7 +71,7 @@ const CourseDetail = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("content");
   const [isEditMode, setIsEditMode] = useState(false);
-  const [courseData, setCourseData] = useState({
+  const [courseData, setCourseData] = useState<CourseData>({
     title: "",
     description: "",
     thumbnail: "",
@@ -67,12 +93,37 @@ const CourseDetail = () => {
     orderIndex: 0,
   });
 
+  // Define interfaces for API responses
+  interface Module {
+    id: number;
+    title: string;
+    description: string;
+    orderIndex: number;
+    lessons: any[];
+  }
+  
+  interface Mentor {
+    id: string;
+    name: string;
+    email?: string;
+    profileImageUrl?: string;
+  }
+  
+  interface Enrollment {
+    id: number;
+    courseId: number;
+    userId: string;
+    enrolledAt: string;
+    progress: number;
+    status: string;
+  }
+
   // Fetch course details
   const {
     data: course,
     isLoading: isCourseLoading,
     isError: isCourseError,
-  } = useQuery({
+  } = useQuery<Course>({
     queryKey: [`/api/courses/${id}`],
     enabled: !!id,
   });
@@ -82,7 +133,7 @@ const CourseDetail = () => {
     data: modules,
     isLoading: isModulesLoading,
     isError: isModulesError,
-  } = useQuery({
+  } = useQuery<Module[]>({
     queryKey: [`/api/courses/${id}/modules`],
     enabled: !!id,
   });
@@ -91,7 +142,7 @@ const CourseDetail = () => {
   const {
     data: mentors,
     isLoading: isMentorsLoading,
-  } = useQuery({
+  } = useQuery<Mentor[]>({
     queryKey: [`/api/courses/${id}/mentors`],
     enabled: !!id,
   });
@@ -100,7 +151,7 @@ const CourseDetail = () => {
   const {
     data: enrollment,
     isLoading: isEnrollmentLoading,
-  } = useQuery({
+  } = useQuery<Enrollment>({
     queryKey: [`/api/courses/${id}/enrollment`],
     enabled: !!id && isAuthenticated,
   });
