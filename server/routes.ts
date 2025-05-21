@@ -1677,6 +1677,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Course payment endpoint using Paystack (alternate endpoint for consistency)
+  app.post('/api/courses/:id/payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const paymentMethod = req.body.paymentMethod || 'paystack';
+      
+      // Get user details
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "User email required for payment" });
+      }
+      
+      // Check if already enrolled
+      const existingEnrollment = await storage.getCourseEnrollment(courseId, userId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+      
+      // Get course details
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Initialize payment with Paystack
+      const paymentData = await initializePayment({
+        email: user.email,
+        amount: course.price,
+        metadata: {
+          courseId,
+          userId,
+          courseName: course.title,
+          paymentMethod
+        },
+        callbackUrl: `${req.protocol}://${req.get('host')}/payment-callback?courseId=${courseId}`
+      });
+      
+      res.json({
+        authorization_url: paymentData.authorization_url, 
+        reference: paymentData.reference,
+        amount: course.price
+      });
+    } catch (error: any) {
+      console.error("Error initializing payment:", error);
+      res.status(500).json({ message: `Payment initialization failed: ${error.message}` });
+    }
+  });
+  
   // Paystack payment callback route - receives redirects from Paystack
   app.get('/api/payment-callback', async (req, res) => {
     try {

@@ -45,15 +45,27 @@ export default function PaymentPage() {
   });
 
   useEffect(() => {
+    // If not authenticated, redirect to login
     if (!isAuthenticated) {
       toast({
         title: "Authentication Required",
-        description: "Please log in to continue",
+        description: "Please log in to complete payment",
         variant: "destructive",
       });
       navigate("/login");
     }
   }, [isAuthenticated, navigate, toast]);
+
+  if (courseLoading || !course) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="h-32 bg-gray-200 rounded mb-4"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Using the consistent currency formatter from our utility
   const formatPrice = (amount: number) => {
@@ -77,6 +89,7 @@ export default function PaymentPage() {
   // Process payment after confirmation
   const handlePayment = async () => {
     setIsProcessing(true);
+    
     try {
       // Different handling based on payment method
       if (paymentMethod === 'paystack') {
@@ -99,13 +112,13 @@ export default function PaymentPage() {
         
         const data = await response.json();
         
-        if (!data || !data.authorization_url) {
+        if (!data || (!data.authorization_url && !data.authorizationUrl)) {
           console.error("Invalid payment response:", data);
           throw new Error('Invalid payment response');
         }
         
-        // Redirect to Paystack payment URL
-        window.location.href = data.authorization_url;
+        // Redirect to Paystack payment URL (handle both property naming conventions)
+        window.location.href = data.authorization_url || data.authorizationUrl;
       } 
       else if (paymentMethod === 'bank-transfer') {
         // For bank transfer, we'll show the account details
@@ -161,275 +174,210 @@ export default function PaymentPage() {
       }
       else if (paymentMethod === 'wallet') {
         // For wallet payments
-        const response = await apiRequest("POST", `/api/courses/${id}/wallet-payment`, {
-          email: user?.email,
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || "Insufficient wallet balance");
+        try {
+          const response = await fetch(`/api/courses/${id}/wallet-payment`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: user?.email
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Wallet payment failed");
+          }
+          
+          // Show success message
+          toast({
+            title: "Payment Successful",
+            description: "Your payment was processed successfully using your wallet balance.",
+          });
+          
+          // Redirect to course page
+          navigate(`/courses/${id}/view`);
+        } catch (error: any) {
+          console.error("Wallet payment error:", error);
+          toast({
+            title: "Payment Failed",
+            description: error.message || "Insufficient wallet balance",
+            variant: "destructive",
+          });
         }
-        
-        const data = await response.json();
-        
-        // Show success message
-        toast({
-          title: "Payment Successful",
-          description: "Your payment was processed successfully using your wallet balance.",
-        });
-        
-        // Navigate to course view
-        navigate(`/courses/${id}/view`);
       }
     } catch (error: any) {
+      console.error("Payment error:", error);
       toast({
-        title: "Payment Error",
+        title: "Payment Failed",
         description: error.message || "There was a problem processing your payment",
         variant: "destructive",
       });
+    } finally {
       setIsProcessing(false);
       setShowConfirmation(false);
     }
   };
 
-  if (courseLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-6 bg-gray-200 rounded w-2/4 mb-8"></div>
-          <div className="h-32 bg-gray-200 rounded mb-4"></div>
-          <div className="h-12 bg-gray-200 rounded w-1/3"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!course) {
-    return (
-      <div className="container mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Course Not Found</h1>
-        <p>The course you're trying to enroll in doesn't exist.</p>
-        <Button onClick={() => navigate("/courses")} className="mt-4">
-          Back to Courses
-        </Button>
-      </div>
-    );
-  }
-
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-2">Complete Your Enrollment</h1>
-      <p className="text-gray-600 mb-8">You're just one step away from accessing your course.</p>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-2">Complete Your Payment</h1>
+      <p className="text-gray-600 mb-8">
+        You're one step away from enrolling in {course.title}
+      </p>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="relative">
+      <div className="relative">
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Course Details */}
           <Card>
             <CardHeader>
               <CardTitle>Course Details</CardTitle>
+              <CardDescription>{course.title}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <h2 className="text-xl font-medium mb-2">{course.title}</h2>
-              <p className="text-gray-600 mb-4">{course.description}</p>
-              
-              <div className="mb-4">
-                <h3 className="font-medium mb-1">What you'll get:</h3>
-                <ul className="list-disc pl-5 space-y-1">
-                  <li>Full access to all course content</li>
-                  <li>Certificate of completion</li>
-                  <li>Mentor support</li>
-                  <li>Lifetime updates</li>
+            <CardContent className="space-y-4">
+              <div>
+                <h3 className="font-medium">Course Overview</h3>
+                <p className="text-sm text-gray-600 mt-1">{course.description}</p>
+              </div>
+              <div>
+                <h3 className="font-medium">What You'll Learn</h3>
+                <ul className="text-sm text-gray-600 mt-1 list-disc list-inside">
+                  {course.highlights?.split('\n').map((highlight, i) => (
+                    <li key={i}>{highlight}</li>
+                  )) || <li>Comprehensive course content</li>}
                 </ul>
               </div>
-              
-              {course.mentorName && (
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 mr-3">
-                    {course.mentorName.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="font-medium">Instructor: {course.mentorName}</p>
-                  </div>
-                </div>
-              )}
+              <div>
+                <h3 className="font-medium">Course Duration</h3>
+                <p className="text-sm text-gray-600 mt-1">{course.duration || '8 weeks'}</p>
+              </div>
             </CardContent>
           </Card>
-          
-          <ContextualHelp 
-            id="course-details-help"
-            title="Course Overview"
-            content={
-              <div>
-                <p>This section shows you what you'll be learning in this course. Make sure it aligns with your learning goals before completing the payment.</p>
-                <p className="mt-2">The instructor information shows who created the course and will be available to support your learning journey.</p>
-              </div>
-            }
-            characterId="ada"
-            position="left"
-            triggerOnFirstVisit={true}
-          />
-        </div>
 
-        <div className="relative">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Summary</CardTitle>
-              <CardDescription>Complete your payment securely with Paystack</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center pb-4 border-b">
-                  <span>Course Fee</span>
-                  <span className="font-medium">{formatPrice(course.price || 0)}</span>
-                </div>
-                
-                {course.discountAmount > 0 && (
-                  <div className="flex justify-between items-center pb-4 border-b text-green-600">
-                    <span>Discount</span>
-                    <span>-{formatPrice(course.discountAmount)}</span>
-                  </div>
-                )}
-                
-                <div className="flex justify-between items-center pt-2 text-lg font-bold">
-                  <span>Total</span>
-                  <span>{formatPrice(course.price || 0)}</span>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col">
-              <div className="mb-4">
-                <div className="text-sm font-medium mb-2">Payment Method</div>
-                <RadioGroup 
-                  value={paymentMethod} 
-                  onValueChange={(value) => setPaymentMethod(value as 'paystack' | 'bank-transfer' | 'wallet')}
-                  className="space-y-3"
-                >
-                  <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-gray-50">
-                    <RadioGroupItem value="paystack" id="paystack" />
-                    <Label htmlFor="paystack" className="flex-1 cursor-pointer">
-                      <div className="font-medium">Pay with Card</div>
-                      <div className="text-sm text-gray-500">Debit/Credit Cards via Paystack</div>
-                    </Label>
+          {/* Payment Details */}
+          <div className="relative">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Summary</CardTitle>
+                <CardDescription>Complete your payment securely</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-4 border-b">
+                    <span>Course Fee</span>
+                    <span className="font-medium">{formatPrice(course.price || 0)}</span>
                   </div>
                   
-                  <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-gray-50">
-                    <RadioGroupItem value="bank-transfer" id="bank-transfer" />
-                    <Label htmlFor="bank-transfer" className="flex-1 cursor-pointer">
-                      <div className="font-medium">Bank Transfer</div>
-                      <div className="text-sm text-gray-500">Manual transfer to our account</div>
-                    </Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-gray-50">
-                    <RadioGroupItem value="wallet" id="wallet" />
-                    <Label htmlFor="wallet" className="flex-1 cursor-pointer">
-                      <div className="font-medium">Wallet Balance</div>
-                      <div className="text-sm text-gray-500">Use your existing wallet balance</div>
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <Button 
-                className="w-full" 
-                onClick={initiatePayment}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <span className="flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </span>
-                ) : (
-                  paymentMethod === 'paystack' 
-                    ? "Pay with Card" 
-                    : paymentMethod === 'bank-transfer' 
-                      ? "Pay with Bank Transfer" 
-                      : "Pay with Wallet"
-                )}
-              </Button>
-              
-              <div className="text-center mt-4 text-sm text-gray-500">
-                <p>Secure payment processing</p>
-                <p className="mt-1">Your data is protected</p>
-              </div>
-              
-              {/* Payment Confirmation Dialog */}
-              <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Confirm Your Payment</DialogTitle>
-                    <DialogDescription>
-                      You're about to make a payment of {course && formatPrice(course.price || 0)} for the course "{course?.title}".
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">Course:</span>
-                        <span>{course?.title}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">Amount:</span>
-                        <span>{course && formatPrice(course.price || 0)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">Payment Method:</span>
-                        <span>
-                          {paymentMethod === 'paystack' 
-                            ? 'Card Payment (Paystack)' 
-                            : paymentMethod === 'bank-transfer' 
-                              ? 'Bank Transfer' 
-                              : 'Wallet Balance'}
-                        </span>
-                      </div>
+                  {course.discountAmount > 0 && (
+                    <div className="flex justify-between items-center pb-4 border-b text-green-600">
+                      <span>Discount</span>
+                      <span>-{formatPrice(course.discountAmount)}</span>
                     </div>
+                  )}
+                  
+                  <div className="flex justify-between items-center pt-2 text-lg font-bold">
+                    <span>Total</span>
+                    <span>{formatPrice(course.price || 0)}</span>
                   </div>
-                  <DialogFooter className="flex-col sm:flex-row sm:justify-between">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowConfirmation(false)}
-                      className="mb-2 sm:mb-0"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handlePayment}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? 'Processing...' : 'Confirm Payment'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </CardFooter>
-          </Card>
-          
-          <ContextualHelp 
-            id="payment-process-help"
-            title="Secure Payment"
-            content={
-              <div>
-                <p>Your payment will be processed securely through Paystack, a trusted payment provider in Nigeria.</p>
-                <p className="mt-2">After clicking the button, you'll be redirected to complete your payment with any of these methods:</p>
-                <ul className="list-disc pl-5 mt-1">
-                  <li>Bank cards (Mastercard, Visa, Verve)</li>
-                  <li>Bank transfers</li>
-                  <li>USSD payments</li>
-                  <li>Mobile money</li>
-                </ul>
-                <p className="mt-2">After successful payment, you'll be automatically enrolled in the course.</p>
-              </div>
-            }
-            characterId="sammy"
-            position="right"
-            triggerOnFirstVisit={true}
-          />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col">
+                <div className="mb-4">
+                  <div className="text-sm font-medium mb-2">Payment Method</div>
+                  <RadioGroup 
+                    value={paymentMethod} 
+                    onValueChange={(value) => setPaymentMethod(value as 'paystack' | 'bank-transfer' | 'wallet')}
+                    className="space-y-3"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="paystack" id="paystack" />
+                      <Label htmlFor="paystack" className="flex items-center">
+                        <span>Paystack (Card/USSD)</span>
+                        <span className="ml-1 text-xs text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">
+                          Recommended
+                        </span>
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="bank-transfer" id="bank-transfer" />
+                      <Label htmlFor="bank-transfer">Bank Transfer</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="wallet" id="wallet" />
+                      <Label htmlFor="wallet">Wallet Balance</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={initiatePayment}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Processing..." : "Proceed to Payment"}
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <ContextualHelp 
+              id="payment-help"
+              title="Payment Options"
+              content={
+                <div>
+                  <p>We offer multiple secure payment options:</p>
+                  <ul className="list-disc pl-5 mt-2 space-y-1">
+                    <li><strong>Paystack:</strong> Pay with debit/credit card, USSD or bank transfers</li>
+                    <li><strong>Bank Transfer:</strong> Manually transfer from your bank account</li>
+                    <li><strong>Wallet:</strong> Use your existing account balance</li>
+                  </ul>
+                  <p className="mt-2">All payments are secure and your data is protected.</p>
+                </div>
+              }
+              characterId="sammy"
+              position="right"
+              triggerOnFirstVisit={true}
+            />
+          </div>
         </div>
       </div>
+      
+      {/* Payment confirmation dialog */}
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Payment</DialogTitle>
+            <DialogDescription>
+              You're about to make a payment of {formatPrice(course.price || 0)} for {course.title}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600">
+              Payment Method: {
+                paymentMethod === 'paystack' ? 'Paystack (Card/USSD)' : 
+                paymentMethod === 'bank-transfer' ? 'Bank Transfer' : 'Wallet Balance'
+              }
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              By proceeding, you agree to our terms and conditions for course enrollment.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConfirmation(false)}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handlePayment}
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Processing..." : "Confirm Payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
