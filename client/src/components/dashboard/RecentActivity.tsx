@@ -47,7 +47,7 @@ const RecentActivity = ({ activities, isLoading = false }: RecentActivityProps) 
               <div className="ml-3">
                 <p className="text-sm font-medium text-dark-800">{activity.title}</p>
                 <p className="text-xs text-gray-500">{activity.description}</p>
-                <p className="text-xs text-gray-400 mt-1">{formatTimeFromNow(activity.time)}</p>
+                <p className="text-xs text-gray-400 mt-1">{activity.timestamp ? formatTimeFromNow(activity.timestamp) : "Recently"}</p>
               </div>
             </div>
           </div>
