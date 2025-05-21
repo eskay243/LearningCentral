@@ -38,6 +38,9 @@ import {
   type User,
   type UpsertUser,
   type Course,
+  type Certificate,
+  type InsertCertificate,
+  type SystemSettings,
   type Module,
   type Lesson,
   type Resource,
@@ -318,7 +321,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // System Settings operations
-  async getSystemSetting(key: string): Promise<any> {
+  async getSystemSetting(key: string): Promise<SystemSettings | undefined> {
     const [setting] = await db
       .select()
       .from(systemSettings)
@@ -326,7 +329,7 @@ export class DatabaseStorage implements IStorage {
     return setting;
   }
 
-  async getSystemSettings(category?: string): Promise<any[]> {
+  async getSystemSettings(category?: string): Promise<SystemSettings[]> {
     let query = db.select().from(systemSettings);
     
     if (category) {
@@ -336,7 +339,7 @@ export class DatabaseStorage implements IStorage {
     return await query;
   }
 
-  async updateSystemSetting(key: string, value: string, userId?: string): Promise<any> {
+  async updateSystemSetting(key: string, value: string, userId?: string): Promise<SystemSettings> {
     const existingSetting = await this.getSystemSetting(key);
     
     if (existingSetting) {

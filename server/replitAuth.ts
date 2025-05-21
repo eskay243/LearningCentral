@@ -18,6 +18,7 @@ export interface AuthClaims {
   profile_image_url?: string;
   exp?: number;
   iat?: number;
+  role?: string;
 }
 
 export interface AuthUser {
@@ -25,8 +26,19 @@ export interface AuthUser {
   access_token: string;
   refresh_token: string;
   expires_at: number;
-  id?: string;
+  id: string;
   role?: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  profileImageUrl?: string | null;
+}
+
+// Extend Express types to include our AuthUser
+declare global {
+  namespace Express {
+    interface User extends AuthUser {}
+  }
 }
 
 if (!process.env.REPLIT_DOMAINS) {
@@ -66,13 +78,19 @@ export function getSession() {
 }
 
 function updateUserSession(
-  user: AuthUser,
+  user: Partial<AuthUser>,
   tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers
 ) {
-  user.claims = tokens.claims() as AuthClaims;
+  const claims = tokens.claims() as AuthClaims;
+  user.claims = claims;
   user.access_token = tokens.access_token;
   user.refresh_token = tokens.refresh_token;
-  user.expires_at = user.claims?.exp || 0;
+  user.expires_at = claims.exp || 0;
+  user.id = claims.sub;
+  user.email = claims.email;
+  user.firstName = claims.first_name;
+  user.lastName = claims.last_name;
+  user.profileImageUrl = claims.profile_image_url;
 }
 
 async function upsertUser(
