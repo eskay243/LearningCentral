@@ -215,14 +215,14 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
 
   return (
     <Card className="w-full max-w-4xl h-[700px] flex flex-col dark:bg-gray-800 dark:border-gray-700">
-      <CardHeader className="px-4 py-3 border-b flex flex-row items-center justify-between space-y-0 dark:border-gray-700">
+      <CardHeader className="px-4 py-3 border-b flex flex-row items-center justify-between space-y-0 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-750">
         <div className="flex items-center space-x-2">
-          <Avatar className="h-8 w-8 bg-primary/20">
-            <AvatarFallback className="text-primary text-sm">CC</AvatarFallback>
+          <Avatar className="h-9 w-9 bg-primary/20 shadow-sm">
+            <AvatarFallback className="text-primary text-sm font-semibold">CC</AvatarFallback>
           </Avatar>
           <div>
             <CardTitle className="text-base font-semibold dark:text-white">Code Companion</CardTitle>
-            <p className="text-xs text-muted-foreground dark:text-gray-400">Your programming assistant</p>
+            <p className="text-xs text-muted-foreground dark:text-gray-400">Your interactive programming assistant</p>
           </div>
         </div>
         {onClose && (
@@ -254,20 +254,20 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
             {messages.map((msg) => (
               <div 
                 key={msg.id} 
-                className={`mb-4 ${msg.sender === 'bot' ? 'mr-12' : 'ml-12'}`}
+                className={`mb-6 ${msg.sender === 'bot' ? 'mr-8 md:mr-16' : 'ml-8 md:ml-16'}`}
               >
                 <div className={`flex ${msg.sender === 'bot' ? 'justify-start' : 'justify-end'}`}>
                   {msg.sender === 'bot' && (
-                    <Avatar className="h-8 w-8 mr-2">
+                    <Avatar className="h-8 w-8 mr-2 flex-shrink-0">
                       <AvatarFallback className="bg-primary/20 text-primary text-xs">CC</AvatarFallback>
                     </Avatar>
                   )}
                   <div 
                     className={`rounded-lg p-4 text-sm shadow-md transform transition-all duration-300 ease-in-out ${msg.sender === 'bot' 
-                      ? 'bg-muted text-foreground dark:bg-gray-700 dark:text-gray-200 border-l-4 border-blue-500' 
+                      ? 'bg-muted text-foreground dark:bg-gray-700 dark:text-gray-200 border-l-4 border-blue-500 w-full md:max-w-[85%]' 
                       : 'bg-primary text-primary-foreground'}`}
                     style={{
-                      animation: `fadeIn 0.5s ease-out forwards`,
+                      animation: `fadeIn 0.6s ease-out forwards`,
                     }}
                   >
                     {msg.sender === 'bot' && (
@@ -278,7 +278,7 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
                         <span className="font-semibold text-blue-600 dark:text-blue-400">Code Companion</span>
                       </div>
                     )}
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className="prose prose-sm dark:prose-invert max-w-none overflow-auto text-[15px] leading-relaxed">
                       <ReactMarkdown>
                         {msg.message}
                       </ReactMarkdown>
