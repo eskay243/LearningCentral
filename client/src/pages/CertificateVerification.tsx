@@ -104,9 +104,9 @@ export default function CertificateVerification() {
   }
 
   return (
-    <div className="container mx-auto py-10">
+    <div className="container mx-auto py-6 md:py-10 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Certificate Verification</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-4 md:mb-6">Certificate Verification</h1>
         
         {!id ? (
           <Card>
@@ -162,7 +162,8 @@ export default function CertificateVerification() {
               </CardHeader>
               <CardContent>
                 <div 
-                  className="certificate-preview bg-muted rounded-md p-6 mb-6" 
+                  className="certificate-preview bg-muted rounded-md p-3 sm:p-6 mb-4 sm:mb-6 overflow-auto" 
+                  style={{ maxHeight: '500px' }}
                   dangerouslySetInnerHTML={{ __html: verification.certificate?.template }} 
                 />
                 
