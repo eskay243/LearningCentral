@@ -15,9 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { AlertCircle, DollarSign, PoundSterling } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import useAuth from "@/hooks/useAuth";
 
-// Type definitions for user profile and notification settings
+// Type definitions for user profile, notification settings, and currency settings
 interface UserProfile {
   firstName?: string;
   lastName?: string;
@@ -33,6 +35,12 @@ interface NotificationSettings {
   assignmentReminders: boolean;
   messageNotifications: boolean;
   announcementNotifications: boolean;
+}
+
+interface CurrencySettings {
+  default: string;
+  available: string[];
+  exchangeRates: Record<string, number>;
 }
 
 // Profile settings form schema
@@ -53,10 +61,17 @@ const notificationFormSchema = z.object({
   announcementNotifications: z.boolean().default(true),
 });
 
+// Currency settings form schema
+const currencyFormSchema = z.object({
+  defaultCurrency: z.string(),
+  exchangeRates: z.record(z.string(), z.number()),
+});
+
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+  const isAdmin = user?.role === "admin";
 
   // Fetch user profile
   const { data: profile, isLoading: isProfileLoading } = useQuery<UserProfile>({
@@ -68,6 +83,12 @@ const Settings = () => {
   const { data: notificationSettings, isLoading: isNotificationsLoading } = useQuery<NotificationSettings>({
     queryKey: ["/api/users/notification-settings"],
     enabled: !!user,
+  });
+  
+  // Fetch currency settings (admin only)
+  const { data: currencySettings, isLoading: isCurrencyLoading } = useQuery<CurrencySettings>({
+    queryKey: ["/api/settings/currency"],
+    enabled: !!user && isAdmin,
   });
 
   // Default profile values

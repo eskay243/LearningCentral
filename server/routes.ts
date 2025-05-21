@@ -1773,6 +1773,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register certificate routes for certificate management
   app.use('/api/certificates', certificateRoutes);
   
+  // System settings routes
+  app.get("/api/settings", isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getSystemSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error getting system settings:", error);
+      res.status(500).json({ message: "Failed to retrieve system settings" });
+    }
+  });
+  
+  app.get("/api/settings/currency", isAuthenticated, async (req, res) => {
+    try {
+      const defaultCurrency = await storage.getSystemSetting('currency.default');
+      const availableCurrencies = await storage.getSystemSetting('currency.available');
+      const exchangeRates = await storage.getSystemSetting('currency.exchangeRates');
+      
+      res.json({
+        default: defaultCurrency?.value || Currency.NGN,
+        available: availableCurrencies ? JSON.parse(availableCurrencies.value) : [Currency.NGN, Currency.USD, Currency.GBP],
+        exchangeRates: exchangeRates ? JSON.parse(exchangeRates.value) : {
+          "USD": 1,
+          "GBP": 0.79,
+          "NGN": 910.50
+        }
+      });
+    } catch (error) {
+      console.error("Error getting currency settings:", error);
+      res.status(500).json({ message: "Failed to retrieve currency settings" });
+    }
+  });
+  
+  // Admin-only route to update currency settings
+  app.post("/api/settings/currency", isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+    try {
+      const { defaultCurrency, exchangeRates } = req.body;
+      
+      if (defaultCurrency) {
+        if (!Object.values(Currency).includes(defaultCurrency)) {
+          return res.status(400).json({ message: "Invalid currency" });
+        }
+        
+        await storage.updateSystemSetting('currency.default', defaultCurrency, req.user.id);
+      }
+      
+      if (exchangeRates) {
+        await storage.updateSystemSetting('currency.exchangeRates', JSON.stringify(exchangeRates), req.user.id);
+      }
+      
+      res.json({ message: "Currency settings updated successfully" });
+    } catch (error) {
+      console.error("Error updating currency settings:", error);
+      res.status(500).json({ message: "Failed to update currency settings" });
+    }
+  });
+  
   // Basic course data for analytics
   app.get('/api/courses/basic', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
