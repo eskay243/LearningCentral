@@ -51,62 +51,37 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Demo users creation endpoint
-  app.get("/api/create-demo-users", async (req, res) => {
+  // Demo user role switching endpoint
+  app.get("/api/switch-user-role/:role", isAuthenticated, async (req, res) => {
     try {
-      // Create demo admin user
-      const demoAdmin = await storage.upsertUser({
-        id: "demo-admin-123",
-        email: "admin@codelabeducare.com",
-        firstName: "Admin",
-        lastName: "User",
-        profileImageUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Admin%20User",
-        role: UserRole.ADMIN,
-      });
+      if (!req.user || !req.user.claims?.sub) {
+        return res.status(401).json({ message: "You must be logged in to switch roles" });
+      }
+
+      const userId = req.user.claims.sub;
+      const { role } = req.params;
       
-      // Create demo mentor user
-      const demoMentor = await storage.upsertUser({
-        id: "demo-mentor-456",
-        email: "mentor@codelabeducare.com", 
-        firstName: "Mentor",
-        lastName: "User",
-        profileImageUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Mentor%20User",
-        role: UserRole.MENTOR,
-      });
+      // Validate role parameter
+      if (!Object.values(UserRole).includes(role as any)) {
+        return res.status(400).json({ 
+          message: "Invalid role specified", 
+          validRoles: Object.values(UserRole) 
+        });
+      }
       
-      // Create demo student user
-      const demoStudent = await storage.upsertUser({
-        id: "demo-student-789",
-        email: "student@codelabeducare.com",
-        firstName: "Student",
-        lastName: "User",
-        profileImageUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Student%20User",
-        role: UserRole.STUDENT,
-      });
-      
-      // Create demo affiliate user
-      const demoAffiliate = await storage.upsertUser({
-        id: "demo-affiliate-012",
-        email: "affiliate@codelabeducare.com",
-        firstName: "Affiliate",
-        lastName: "User",
-        profileImageUrl: "https://api.dicebear.com/7.x/initials/svg?seed=Affiliate%20User",
-        role: UserRole.AFFILIATE,
-        affiliateCode: "DEMOAFF",
+      // Update the current user's role
+      const updatedUser = await storage.upsertUser({
+        id: userId,
+        role: role as any,
       });
       
       res.json({
-        message: "Demo users created successfully",
-        users: {
-          admin: demoAdmin,
-          mentor: demoMentor,
-          student: demoStudent,
-          affiliate: demoAffiliate
-        }
+        message: `Your role has been updated to ${role}`,
+        user: updatedUser
       });
     } catch (error) {
-      console.error("Error creating demo users:", error);
-      res.status(500).json({ message: "Failed to create demo users" });
+      console.error("Error switching user role:", error);
+      res.status(500).json({ message: "Failed to switch user role" });
     }
   });
 

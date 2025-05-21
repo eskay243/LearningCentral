@@ -1,69 +1,72 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRole } from "@shared/schema";
-import { Loader2, Check, AlertCircle } from "lucide-react";
+import { Loader2, Check, AlertCircle, RefreshCw } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
-interface DemoUser {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  profileImageUrl: string;
-  role: string;
-  affiliateCode?: string;
-}
-
-interface DemoUsersResponse {
+interface SwitchRoleResponse {
   message: string;
-  users: {
-    admin: DemoUser;
-    mentor: DemoUser;
-    student: DemoUser;
-    affiliate: DemoUser;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    profileImageUrl: string;
+    role: string;
+    affiliateCode?: string;
   }
 }
 
 export default function DemoUsers() {
   const { toast } = useToast();
-  const [selectedRole, setSelectedRole] = useState<string>("admin");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [demoUsers, setDemoUsers] = useState<DemoUsersResponse | null>(null);
+  const { user: currentUser, isLoading: authLoading, isAuthenticated } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<string>(currentUser?.role || UserRole.ADMIN);
+  const [isSwitching, setIsSwitching] = useState(false);
 
-  // Fetch demo users
-  const generateDemoUsers = async () => {
-    setIsGenerating(true);
-    try {
-      const response = await fetch("/api/create-demo-users");
-      if (!response.ok) {
-        throw new Error("Failed to create demo users");
-      }
-      const data = await response.json();
-      setDemoUsers(data);
+  // Switch the current user's role
+  const switchUserRole = async (role: string) => {
+    if (!isAuthenticated) {
       toast({
-        title: "Demo users created successfully!",
-        description: "You can now test the app with different user roles.",
+        title: "Authentication required",
+        description: "Please log in to switch roles",
+        variant: "destructive",
       });
+      return;
+    }
+
+    setIsSwitching(true);
+    try {
+      const response = await fetch(`/api/switch-user-role/${role}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to switch user role");
+      }
+      
+      const data: SwitchRoleResponse = await response.json();
+      
+      // Invalidate auth queries to refresh user data
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
+      toast({
+        title: "Role updated successfully",
+        description: `Your role has been changed to ${role}. You may need to refresh to see all changes.`,
+      });
+
+      setSelectedRole(role);
     } catch (error) {
       toast({
-        title: "Error creating demo users",
+        title: "Error switching role",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
-      setIsGenerating(false);
+      setIsSwitching(false);
     }
-  };
-
-  const copyLoginInfo = (email: string) => {
-    navigator.clipboard.writeText(email);
-    toast({
-      title: "Copied to clipboard!",
-      description: `Email "${email}" copied. You can use this to log in.`,
-    });
   };
 
   const getRoleColor = (role: string) => {
@@ -81,72 +84,153 @@ export default function DemoUsers() {
     }
   };
 
+  const roleDescriptions = {
+    [UserRole.ADMIN]: "Full access to manage courses, users, and system settings",
+    [UserRole.MENTOR]: "Create and manage courses, assignments, and student progress",
+    [UserRole.STUDENT]: "Enroll in courses, complete exercises, and earn certificates",
+    [UserRole.AFFILIATE]: "Promote courses and earn commission on enrollments",
+  };
+
+  const roleIcons = {
+    [UserRole.ADMIN]: () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>,
+    [UserRole.MENTOR]: () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z"/><path d="m2 9 20 6"/><path d="M15 13v3"/><path d="M9 13v9"/></svg>,
+    [UserRole.STUDENT]: () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M5 19v-4.5A2.5 2.5 0 0 1 7.5 12h9a2.5 2.5 0 0 1 2.5 2.5V19"/><path d="M3 19h18"/></svg>,
+    [UserRole.AFFILIATE]: () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 max-w-6xl">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2 text-slate-800 dark:text-slate-100">Codelab Educare LMS Demo Users</h1>
+        <h1 className="text-3xl font-bold mb-2 text-slate-800 dark:text-slate-100">Role Switcher</h1>
         <p className="text-slate-500 dark:text-slate-400 text-lg max-w-3xl mx-auto">
-          Test the Learning Management System with different user roles to explore all features and functionality
+          Test the Codelab Educare Learning Management System with different user roles
         </p>
       </div>
 
-      {!demoUsers ? (
+      {authLoading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : !isAuthenticated ? (
         <Card className="border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden">
           <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700">
-            <CardTitle className="text-xl text-blue-700 dark:text-blue-400">Create Demo Users</CardTitle>
+            <CardTitle className="text-xl text-blue-700 dark:text-blue-400">Authentication Required</CardTitle>
             <CardDescription className="text-slate-600 dark:text-slate-400">
-              Generate demo accounts to test all user roles in the Learning Management System
+              Please log in to use the role switcher
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8">
-            <div className="text-center mb-6">
+            <div className="text-center">
               <p className="mb-6 text-slate-600 dark:text-slate-300">
-                Click the button below to create demo users for all available roles. After creation, you can use these accounts to log in and test the system's features.
+                You need to be logged in to test different user roles. Please log in to continue.
               </p>
               <Button 
-                onClick={generateDemoUsers} 
+                onClick={() => window.location.href = "/api/login"}
                 size="lg" 
                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                disabled={isGenerating}
               >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating Demo Users...
-                  </>
-                ) : (
-                  <>Generate Demo Users</>
-                )}
+                Log In
               </Button>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          <Tabs value={selectedRole} onValueChange={setSelectedRole} className="space-y-6">
-            <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
-              <TabsTrigger value="admin" className="font-medium">Admin</TabsTrigger>
-              <TabsTrigger value="mentor" className="font-medium">Mentor</TabsTrigger>
-              <TabsTrigger value="student" className="font-medium">Student</TabsTrigger>
-              <TabsTrigger value="affiliate" className="font-medium">Affiliate</TabsTrigger>
-            </TabsList>
+          <Card className="border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700">
+              <CardTitle className="text-xl text-blue-700 dark:text-blue-400">Current User</CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400">
+                Your current user information
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 flex-shrink-0">
+                  <img 
+                    src={currentUser?.profileImageUrl || "https://api.dicebear.com/7.x/initials/svg?seed=User"} 
+                    alt={`${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`} 
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="space-y-2 flex-grow">
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">
+                      {currentUser?.firstName || ""} {currentUser?.lastName || ""}
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400">{currentUser?.email || ""}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mr-2">Current role:</p>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleColor(currentUser?.role || "")}`}>
+                      {currentUser?.role || "None"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <TabsContent value="admin">
-              <UserRoleCard user={demoUsers.users.admin} onCopy={copyLoginInfo} />
-            </TabsContent>
-            
-            <TabsContent value="mentor">
-              <UserRoleCard user={demoUsers.users.mentor} onCopy={copyLoginInfo} />
-            </TabsContent>
-            
-            <TabsContent value="student">
-              <UserRoleCard user={demoUsers.users.student} onCopy={copyLoginInfo} />
-            </TabsContent>
-            
-            <TabsContent value="affiliate">
-              <UserRoleCard user={demoUsers.users.affiliate} onCopy={copyLoginInfo} />
-            </TabsContent>
-          </Tabs>
+          <Card className="border border-slate-200 dark:border-slate-700 shadow-md overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800 border-b border-slate-200 dark:border-slate-700">
+              <CardTitle className="text-xl text-blue-700 dark:text-blue-400">Switch User Role</CardTitle>
+              <CardDescription className="text-slate-600 dark:text-slate-400">
+                Select a role to test different features and permissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.values(UserRole).map((role) => (
+                  <Card 
+                    key={role}
+                    className={`border transition-all hover:shadow-md cursor-pointer ${
+                      currentUser?.role === role 
+                        ? "border-primary bg-primary/5" 
+                        : "border-slate-200 dark:border-slate-700"
+                    }`}
+                    onClick={() => switchUserRole(role)}
+                  >
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className={`p-2 rounded-full ${getRoleColor(role)}`}>
+                            {roleIcons[role as keyof typeof roleIcons]?.()}
+                          </div>
+                          <h3 className="font-medium text-slate-800 dark:text-slate-200">{role}</h3>
+                        </div>
+                        {currentUser?.role === role && (
+                          <Check className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {roleDescriptions[role as keyof typeof roleDescriptions]}
+                      </p>
+                      <Button 
+                        variant={currentUser?.role === role ? "outline" : "default"}
+                        size="sm" 
+                        className="w-full"
+                        disabled={isSwitching || currentUser?.role === role}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          switchUserRole(role);
+                        }}
+                      >
+                        {isSwitching ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Switching...
+                          </>
+                        ) : currentUser?.role === role ? (
+                          <>Current Role</>
+                        ) : (
+                          <>Switch to {role}</>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
           
           <Card className="border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30">
             <CardHeader>
@@ -155,13 +239,23 @@ export default function DemoUsers() {
                 Important Information
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-2">
               <p className="text-amber-700 dark:text-amber-400">
-                To test each user role, click the "Copy Email" button for the user you want to test. Then log out of your current session and log back in using the copied email.
+                After switching roles, you may need to refresh the page or navigate to a different section to see the changes.
               </p>
-              <p className="mt-2 text-amber-700 dark:text-amber-400">
-                Since this is a demo version using Replit Auth, you'll be asked to authenticate, but the system will recognize the user role from the email you copied.
+              <p className="text-amber-700 dark:text-amber-400">
+                Different roles have different permissions and access to features in the LMS.
               </p>
+              <div className="pt-4">
+                <Button 
+                  variant="outline" 
+                  className="text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800"
+                  onClick={() => queryClient.invalidateQueries()}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh All Data
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -170,76 +264,3 @@ export default function DemoUsers() {
   );
 }
 
-function UserRoleCard({ user, onCopy }: { user: DemoUser; onCopy: (email: string) => void }) {
-  const roleColors = {
-    [UserRole.ADMIN]: "bg-red-100 dark:bg-red-900/40 border-red-200 dark:border-red-800",
-    [UserRole.MENTOR]: "bg-blue-100 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800",
-    [UserRole.STUDENT]: "bg-green-100 dark:bg-green-900/40 border-green-200 dark:border-green-800",
-    [UserRole.AFFILIATE]: "bg-purple-100 dark:bg-purple-900/40 border-purple-200 dark:border-purple-800",
-  };
-
-  const roleGradients = {
-    [UserRole.ADMIN]: "from-red-50 to-orange-50 dark:from-slate-800 dark:to-slate-800",
-    [UserRole.MENTOR]: "from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800",
-    [UserRole.STUDENT]: "from-green-50 to-emerald-50 dark:from-slate-800 dark:to-slate-800",
-    [UserRole.AFFILIATE]: "from-purple-50 to-violet-50 dark:from-slate-800 dark:to-slate-800",
-  };
-
-  const roleTextColors = {
-    [UserRole.ADMIN]: "text-red-700 dark:text-red-400",
-    [UserRole.MENTOR]: "text-blue-700 dark:text-blue-400",
-    [UserRole.STUDENT]: "text-green-700 dark:text-green-400",
-    [UserRole.AFFILIATE]: "text-purple-700 dark:text-purple-400",
-  };
-
-  return (
-    <Card className={`border shadow-md overflow-hidden ${roleColors[user.role as keyof typeof roleColors] || "border-slate-200 dark:border-slate-700"}`}>
-      <CardHeader className={`bg-gradient-to-r ${roleGradients[user.role as keyof typeof roleGradients] || "from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-800"} border-b border-slate-200 dark:border-slate-700`}>
-        <CardTitle className={`text-xl flex items-center ${roleTextColors[user.role as keyof typeof roleTextColors] || "text-slate-700 dark:text-slate-200"}`}>
-          {user.firstName} {user.lastName} 
-          <span className="ml-2 text-sm font-normal px-2 py-1 rounded-full bg-white/60 dark:bg-black/20 border border-current">
-            {user.role}
-          </span>
-        </CardTitle>
-        <CardDescription className="text-slate-600 dark:text-slate-400">
-          Test the platform with {user.role} privileges
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-          <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 flex-shrink-0">
-            <img 
-              src={user.profileImageUrl} 
-              alt={`${user.firstName} ${user.lastName}`} 
-              className="h-full w-full object-cover"
-            />
-          </div>
-          <div className="space-y-2 flex-grow">
-            <div>
-              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Email</p>
-              <p className="font-mono text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 p-2 rounded-md">
-                {user.email}
-              </p>
-            </div>
-            {user.affiliateCode && (
-              <div>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Affiliate Code</p>
-                <p className="font-mono text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 p-2 rounded-md">
-                  {user.affiliateCode}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="bg-slate-50 dark:bg-slate-800/50 p-4 border-t border-slate-200 dark:border-slate-700">
-        <Button 
-          onClick={() => onCopy(user.email)}
-          className="w-full bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
-        >
-          <Check className="mr-2 h-4 w-4" /> Copy Email
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
