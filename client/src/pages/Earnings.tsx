@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import useAuth from "@/hooks/useAuth";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { useCurrencyFormatter } from "@/lib/currencyUtils";
 
 const Earnings = () => {
   const { user, isMentor, isAdmin } = useAuth();
   const [timeFrame, setTimeFrame] = useState("month");
   const [courseFilter, setCourseFilter] = useState("all");
+  const formatCurrency = useCurrencyFormatter();
 
   // Fetch earnings data
   const { data: earningsData, isLoading } = useQuery({
@@ -243,7 +245,7 @@ const Earnings = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [`$${value}`, "Earnings"]} />
+                    <Tooltip formatter={(value) => [formatCurrency(value), "Earnings"]} />
                     <Legend />
                     <Line
                       type="monotone"
@@ -285,7 +287,7 @@ const Earnings = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [`$${value}`, "Earnings"]} />
+                      <Tooltip formatter={(value) => [formatCurrency(value), "Earnings"]} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
