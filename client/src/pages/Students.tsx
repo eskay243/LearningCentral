@@ -242,81 +242,83 @@ const Students = () => {
                   <p className="text-gray-500">No students found matching your criteria</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Courses</TableHead>
-                      <TableHead>Progress</TableHead>
-                      <TableHead>Last Active</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Avatar className="h-10 w-10 mr-3">
-                              <AvatarImage src={student.profileImageUrl} />
-                              <AvatarFallback>
-                                {getInitials(`${student.firstName} ${student.lastName}`)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{student.firstName} {student.lastName}</p>
-                              <p className="text-sm text-gray-500">{student.email}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <span className="font-medium">{student.totalCourses}</span>
-                            <span className="mx-2 text-gray-300">/</span>
-                            <span className="text-green-600">{student.completedCourses} completed</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {student.courses.slice(0, 2).map((course: any) => (
-                              <Badge key={course.id} variant="outline" className="text-xs">
-                                {course.title.length > 15 ? course.title.substring(0, 15) + '...' : course.title}
-                              </Badge>
-                            ))}
-                            {student.courses.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{student.courses.length - 2} more
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium mb-1">{student.progress}%</span>
-                            <Progress value={student.progress} className="h-2 w-32" />
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {formatTimeFromNow(student.lastActive)}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {formatDate(student.lastActive, true)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <i className="ri-message-line mr-1"></i>
-                              Message
-                            </Button>
-                            <Button size="sm">
-                              View
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table className="min-w-[800px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Courses</TableHead>
+                        <TableHead>Progress</TableHead>
+                        <TableHead>Last Active</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredStudents.map((student) => (
+                        <TableRow key={student.id}>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Avatar className="h-10 w-10 mr-3 flex-shrink-0">
+                                <AvatarImage src={student.profileImageUrl} />
+                                <AvatarFallback>
+                                  {getInitials(`${student.firstName} ${student.lastName}`)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{student.firstName} {student.lastName}</p>
+                                <p className="text-sm text-gray-500 truncate">{student.email}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <span className="font-medium">{student.totalCourses}</span>
+                              <span className="mx-2 text-gray-300">/</span>
+                              <span className="text-green-600">{student.completedCourses} completed</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {student.courses.slice(0, 2).map((course: any) => (
+                                <Badge key={course.id} variant="outline" className="text-xs">
+                                  {course.title.length > 15 ? course.title.substring(0, 15) + '...' : course.title}
+                                </Badge>
+                              ))}
+                              {student.courses.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{student.courses.length - 2} more
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium mb-1">{student.progress}%</span>
+                              <Progress value={student.progress} className="h-2 w-32" />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {formatTimeFromNow(student.lastActive)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {formatDate(student.lastActive, true)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="outline" size="sm" className="whitespace-nowrap">
+                                <i className="ri-message-line mr-1"></i>
+                                Message
+                              </Button>
+                              <Button size="sm">
+                                View
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

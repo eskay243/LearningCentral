@@ -299,26 +299,28 @@ const Earnings = () => {
                 <CardDescription>Detailed view by course</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Students</TableHead>
-                      <TableHead className="text-right">Earnings</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {mockEarningsData.courseEarnings.map((course, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{course.name}</TableCell>
-                        <TableCell>{course.students}</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(course.amount)}
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Students</TableHead>
+                        <TableHead className="text-right">Earnings</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {mockEarningsData.courseEarnings.map((course, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{course.name}</TableCell>
+                          <TableCell>{course.students}</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(course.amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -349,38 +351,40 @@ const Earnings = () => {
                   <p className="text-gray-500">No commission history found for this period</p>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Commission Rate</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(commissionHistory || mockCommissionHistory).map((commission) => (
-                      <TableRow key={commission.id}>
-                        <TableCell>{formatDate(commission.date)}</TableCell>
-                        <TableCell>{commission.student}</TableCell>
-                        <TableCell>{commission.course}</TableCell>
-                        <TableCell>{commission.commissionRate}%</TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(commission.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={commission.status === "paid" ? "success" : "secondary"}
-                          >
-                            {commission.status}
-                          </Badge>
-                        </TableCell>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <Table className="min-w-[800px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Student</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Commission Rate</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {(commissionHistory || mockCommissionHistory).map((commission) => (
+                        <TableRow key={commission.id}>
+                          <TableCell>{formatDate(commission.date)}</TableCell>
+                          <TableCell>{commission.student}</TableCell>
+                          <TableCell>{commission.course}</TableCell>
+                          <TableCell>{commission.commissionRate}%</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(commission.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={commission.status === "paid" ? "success" : "secondary"}
+                            >
+                              {commission.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>
