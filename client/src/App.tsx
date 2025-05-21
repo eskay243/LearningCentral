@@ -34,6 +34,7 @@ import CertificateAdmin from "@/pages/CertificateAdmin";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import CodeCompanion from "@/pages/CodeCompanion";
 import DemoUsers from "@/pages/DemoUsers";
+import TestLogin from "@/pages/TestLogin";
 
 function Router() {
   return (
@@ -69,6 +70,7 @@ function Router() {
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route path="/code-companion" component={CodeCompanion} />
         <Route path="/demo-users" component={DemoUsers} />
+        <Route path="/test-login" component={TestLogin} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
