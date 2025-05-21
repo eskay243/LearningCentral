@@ -1582,6 +1582,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // System Settings routes
+  app.get('/api/settings/system', isAuthenticated, async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const settings = await storage.getSystemSettings(category);
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching system settings:", error);
+      res.status(500).json({ message: "Failed to fetch system settings" });
+    }
+  });
+
+  app.post('/api/settings/system/batch', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const { settings } = req.body;
+      if (!Array.isArray(settings)) {
+        return res.status(400).json({ message: "Settings must be an array" });
+      }
+      
+      const results = await Promise.all(
+        settings.map(setting => storage.upsertSystemSetting(setting))
+      );
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error updating system settings:", error);
+      res.status(500).json({ message: "Failed to update system settings" });
+    }
+  });
+
   // Analytics routes
   app.get('/api/analytics/course/:courseId', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {

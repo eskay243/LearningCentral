@@ -226,18 +226,20 @@ const Settings = () => {
   const currencyMutation = useMutation({
     mutationFn: (values: z.infer<typeof currencyFormSchema>) => {
       // Update multiple system settings at once
-      return apiRequest("POST", "/api/settings/system/batch", [
-        {
-          key: "defaultCurrency",
-          value: values.defaultCurrency,
-          category: "currency"
-        },
-        {
-          key: "exchangeRates",
-          value: JSON.stringify(values.exchangeRates),
-          category: "currency"
-        }
-      ]);
+      return apiRequest("POST", "/api/settings/system/batch", {
+        settings: [
+          {
+            key: "defaultCurrency",
+            value: values.defaultCurrency,
+            category: "currency"
+          },
+          {
+            key: "exchangeRates",
+            value: JSON.stringify(values.exchangeRates),
+            category: "currency"
+          }
+        ]
+      });
     },
     onSuccess: () => {
       toast({
