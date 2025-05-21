@@ -66,12 +66,6 @@ const currencyFormSchema = z.object({
   exchangeRates: z.record(z.number().positive()),
 });
 
-// Currency settings form schema
-const currencyFormSchema = z.object({
-  defaultCurrency: z.string(),
-  exchangeRates: z.record(z.string(), z.number()),
-});
-
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -746,6 +740,106 @@ const Settings = () => {
                   <div className="flex justify-end">
                     <Button>Save Billing Information</Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* System Settings (Admin Only) */}
+          <TabsContent value="system">
+            <Card>
+              <CardHeader>
+                <CardTitle>System Settings</CardTitle>
+                <CardDescription>
+                  Configure platform-wide settings and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Currency Settings</h3>
+                  <Form {...currencyForm}>
+                    <form onSubmit={currencyForm.handleSubmit(onCurrencySubmit)} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={currencyForm.control}
+                          name="defaultCurrency"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Default Currency</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a currency" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="NGN">Nigerian Naira (₦)</SelectItem>
+                                  <SelectItem value="USD">US Dollar ($)</SelectItem>
+                                  <SelectItem value="GBP">British Pound (£)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormDescription>
+                                The default currency for all transactions on the platform
+                              </FormDescription>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <h4 className="text-md font-medium">Exchange Rates</h4>
+                        <p className="text-sm text-gray-500">Set exchange rates relative to USD</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor="ngn-rate" className="w-20">NGN Rate:</Label>
+                            <Input 
+                              id="ngn-rate"
+                              type="number" 
+                              step="0.01"
+                              value={currencyForm.watch('exchangeRates')?.NGN || 1500}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value) && value > 0) {
+                                  const exchangeRates = { ...currencyForm.getValues('exchangeRates'), NGN: value };
+                                  currencyForm.setValue('exchangeRates', exchangeRates, { shouldDirty: true });
+                                }
+                              }}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor="gbp-rate" className="w-20">GBP Rate:</Label>
+                            <Input 
+                              id="gbp-rate"
+                              type="number" 
+                              step="0.01"
+                              value={currencyForm.watch('exchangeRates')?.GBP || 0.79}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value);
+                                if (!isNaN(value) && value > 0) {
+                                  const exchangeRates = { ...currencyForm.getValues('exchangeRates'), GBP: value };
+                                  currencyForm.setValue('exchangeRates', exchangeRates, { shouldDirty: true });
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-end">
+                        <Button
+                          type="submit"
+                          disabled={currencyMutation.isPending || !currencyForm.formState.isDirty}
+                        >
+                          {currencyMutation.isPending ? "Saving..." : "Save Currency Settings"}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
                 </div>
               </CardContent>
             </Card>
