@@ -18,6 +18,7 @@ export function useAuth() {
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
+    refetchInterval: 10000, // Check auth status every 10 seconds
   });
 
   useEffect(() => {

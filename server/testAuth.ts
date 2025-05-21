@@ -76,6 +76,10 @@ export const devLogin: RequestHandler = async (req: Request, res: Response) => {
           return res.status(500).json({ message: "Session error", error: err.message });
         }
         
+        // Add debugging for authentication state
+        console.log("[TEST LOGIN] Auth state after login:", req.isAuthenticated());
+        console.log("[TEST LOGIN] Session ID:", req.sessionID);
+        
         // Force save the session before responding
         req.session.save((saveErr) => {
           if (saveErr) {
@@ -84,6 +88,7 @@ export const devLogin: RequestHandler = async (req: Request, res: Response) => {
           }
           
           console.log("[TEST LOGIN] Session saved successfully, user logged in as:", userResult[0].role);
+          console.log("[TEST LOGIN] Auth state after session save:", req.isAuthenticated());
           
           return res.json({
             message: "Development login successful",
