@@ -2779,6 +2779,378 @@ export class DatabaseStorage implements IStorage {
       return { valid: false };
     }
   }
+
+  // System settings additional methods
+  async upsertSystemSetting(key: string, value: string, updatedBy: string): Promise<SystemSettings> {
+    try {
+      const [setting] = await db
+        .insert(systemSettings)
+        .values({
+          key,
+          value,
+          updatedBy,
+          updatedAt: new Date()
+        })
+        .onConflictDoUpdate({
+          target: systemSettings.key,
+          set: {
+            value,
+            updatedBy,
+            updatedAt: new Date()
+          }
+        })
+        .returning();
+      return setting;
+    } catch (error) {
+      console.error(`Error upserting system setting ${key}:`, error);
+      throw error;
+    }
+  }
+  
+  // Statistics methods
+  async getCourseStats(): Promise<any> {
+    try {
+      const totalCourses = await db.select({ count: sql`count(*)` }).from(courses);
+      const publishedCourses = await db.select({ count: sql`count(*)` }).from(courses)
+        .where(eq(courses.published, true));
+      const totalEnrollments = await db.select({ count: sql`count(*)` }).from(courseEnrollments);
+      
+      return {
+        totalCourses: parseInt(totalCourses[0].count.toString() || '0'),
+        publishedCourses: parseInt(publishedCourses[0].count.toString() || '0'),
+        totalEnrollments: parseInt(totalEnrollments[0].count.toString() || '0')
+      };
+    } catch (error) {
+      console.error("Error getting course stats:", error);
+      return { totalCourses: 0, publishedCourses: 0, totalEnrollments: 0 };
+    }
+  }
+  
+  async getMentorStats(): Promise<any> {
+    try {
+      const totalMentors = await db.select({ count: sql`count(*)` }).from(users)
+        .where(eq(users.role, 'mentor'));
+      const activeMentors = await db.select({ count: sql`count(distinct ${mentorCourses.userId})` })
+        .from(mentorCourses)
+        .innerJoin(users, eq(mentorCourses.userId, users.id))
+        .where(eq(users.role, 'mentor'));
+      
+      return {
+        totalMentors: parseInt(totalMentors[0].count.toString() || '0'),
+        activeMentors: parseInt(activeMentors[0].count.toString() || '0')
+      };
+    } catch (error) {
+      console.error("Error getting mentor stats:", error);
+      return { totalMentors: 0, activeMentors: 0 };
+    }
+  }
+  
+  async getStudentStats(): Promise<any> {
+    try {
+      const totalStudents = await db.select({ count: sql`count(*)` }).from(users)
+        .where(eq(users.role, 'student'));
+      const activeStudents = await db.select({ count: sql`count(distinct ${courseEnrollments.userId})` })
+        .from(courseEnrollments)
+        .innerJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(eq(users.role, 'student'));
+      
+      return {
+        totalStudents: parseInt(totalStudents[0].count.toString() || '0'),
+        activeStudents: parseInt(activeStudents[0].count.toString() || '0')
+      };
+    } catch (error) {
+      console.error("Error getting student stats:", error);
+      return { totalStudents: 0, activeStudents: 0 };
+    }
+  }
+  
+  // Notification functions
+  async getUserNotifications(userId: string, limit = 20, offset = 0): Promise<any[]> {
+    try {
+      return await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt))
+        .limit(limit)
+        .offset(offset);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return [];
+    }
+  }
+  
+  async createNotification(notification: any): Promise<any> {
+    try {
+      const [newNotification] = await db
+        .insert(notifications)
+        .values(notification)
+        .returning();
+      return newNotification;
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
+  }
+  
+  async markNotificationAsRead(notificationId: number): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(notifications)
+        .set({ read: true })
+        .where(eq(notifications.id, notificationId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw error;
+    }
+  }
+  
+  // Discussions
+  async createDiscussion(discussion: any): Promise<any> {
+    try {
+      const [newDiscussion] = await db
+        .insert(courseDiscussions)
+        .values(discussion)
+        .returning();
+      return newDiscussion;
+    } catch (error) {
+      console.error("Error creating discussion:", error);
+      throw error;
+    }
+  }
+  
+  async getDiscussionsByCourse(courseId: number): Promise<any[]> {
+    try {
+      const discussions = await db
+        .select({
+          discussion: courseDiscussions,
+          author: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            profileImageUrl: users.profileImageUrl
+          }
+        })
+        .from(courseDiscussions)
+        .leftJoin(users, eq(courseDiscussions.authorId, users.id))
+        .where(eq(courseDiscussions.courseId, courseId))
+        .orderBy(desc(courseDiscussions.createdAt));
+      
+      return discussions.map(d => ({
+        ...d.discussion,
+        author: d.author
+      }));
+    } catch (error) {
+      console.error("Error getting discussions for course:", error);
+      return [];
+    }
+  }
+  
+  async addDiscussionReply(reply: any): Promise<any> {
+    try {
+      const [newReply] = await db
+        .insert(discussionReplies)
+        .values(reply)
+        .returning();
+      return newReply;
+    } catch (error) {
+      console.error("Error adding discussion reply:", error);
+      throw error;
+    }
+  }
+  
+  // Bookmark functions
+  async getUserBookmarks(userId: string): Promise<any[]> {
+    try {
+      return await db
+        .select()
+        .from(bookmarks)
+        .where(eq(bookmarks.userId, userId))
+        .orderBy(desc(bookmarks.createdAt));
+    } catch (error) {
+      console.error("Error fetching bookmarks:", error);
+      return [];
+    }
+  }
+  
+  async getBookmarkByLessonAndUser(lessonId: number, userId: string): Promise<any> {
+    try {
+      const [bookmark] = await db
+        .select()
+        .from(bookmarks)
+        .where(and(
+          eq(bookmarks.lessonId, lessonId),
+          eq(bookmarks.userId, userId)
+        ));
+      return bookmark;
+    } catch (error) {
+      console.error("Error fetching bookmark:", error);
+      return null;
+    }
+  }
+  
+  async createBookmark(bookmarkData: any): Promise<any> {
+    try {
+      const [bookmark] = await db
+        .insert(bookmarks)
+        .values(bookmarkData)
+        .returning();
+      return bookmark;
+    } catch (error) {
+      console.error("Error creating bookmark:", error);
+      throw error;
+    }
+  }
+  
+  async getBookmark(bookmarkId: number): Promise<any> {
+    try {
+      const [bookmark] = await db
+        .select()
+        .from(bookmarks)
+        .where(eq(bookmarks.id, bookmarkId));
+      return bookmark;
+    } catch (error) {
+      console.error("Error fetching bookmark:", error);
+      return null;
+    }
+  }
+  
+  async updateBookmark(bookmarkId: number, data: any): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(bookmarks)
+        .set(data)
+        .where(eq(bookmarks.id, bookmarkId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating bookmark:", error);
+      throw error;
+    }
+  }
+  
+  async deleteBookmark(bookmarkId: number): Promise<boolean> {
+    try {
+      await db
+        .delete(bookmarks)
+        .where(eq(bookmarks.id, bookmarkId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting bookmark:", error);
+      return false;
+    }
+  }
+  
+  // Content search
+  async searchContent(query: string): Promise<any[]> {
+    try {
+      // Perform basic search across content tables
+      const courseResults = await db
+        .select()
+        .from(courses)
+        .where(
+          or(
+            sql`${courses.title} ILIKE ${`%${query}%`}`,
+            sql`${courses.description} ILIKE ${`%${query}%`}`
+          )
+        )
+        .limit(10);
+      
+      const lessonResults = await db
+        .select({
+          lesson: lessons,
+          course: {
+            id: courses.id,
+            title: courses.title
+          }
+        })
+        .from(lessons)
+        .leftJoin(modules, eq(lessons.moduleId, modules.id))
+        .leftJoin(courses, eq(modules.courseId, courses.id))
+        .where(
+          or(
+            sql`${lessons.title} ILIKE ${`%${query}%`}`,
+            sql`${lessons.content} ILIKE ${`%${query}%`}`
+          )
+        )
+        .limit(10);
+      
+      return [
+        ...courseResults.map(course => ({ type: 'course', item: course })),
+        ...lessonResults.map(result => ({ 
+          type: 'lesson', 
+          item: {
+            ...result.lesson,
+            course: result.course
+          }
+        }))
+      ];
+    } catch (error) {
+      console.error("Error performing search:", error);
+      return [];
+    }
+  }
+  
+  // Content sharing
+  async createContentShare(shareData: any): Promise<any> {
+    try {
+      const [share] = await db
+        .insert(contentShares)
+        .values(shareData)
+        .returning();
+      return share;
+    } catch (error) {
+      console.error("Error creating content share:", error);
+      throw error;
+    }
+  }
+  
+  async getContentShareByCode(code: string): Promise<any> {
+    try {
+      const [share] = await db
+        .select()
+        .from(contentShares)
+        .where(eq(contentShares.shareCode, code));
+      return share;
+    } catch (error) {
+      console.error("Error fetching content share:", error);
+      return null;
+    }
+  }
+  
+  async updateContentShareAccess(shareId: number, accessData: any): Promise<any> {
+    try {
+      const [updated] = await db
+        .update(contentShares)
+        .set({
+          lastAccessedAt: new Date(),
+          accessCount: sql`${contentShares.accessCount} + 1`,
+          ...accessData
+        })
+        .where(eq(contentShares.id, shareId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating content share access:", error);
+      throw error;
+    }
+  }
+  
+  // Certificate generation
+  async generateCertificate(certificateData: InsertCertificate): Promise<Certificate> {
+    try {
+      const [certificate] = await db
+        .insert(certificates)
+        .values(certificateData)
+        .returning();
+      return certificate;
+    } catch (error) {
+      console.error("Error generating certificate:", error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
