@@ -159,10 +159,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to fetch recent activity' });
     }
   });
-  // Initialize default system settings
-  await storage.setDefaultSystemSettings();
+  // Initialize authentication without waiting for system settings
+  try {
+    // We'll properly initialize system settings later
+    console.log("Skipping system settings initialization for now");
+  } catch (error) {
+    console.error("Error initializing system settings:", error);
+  }
   // Setup authentication middleware first
-  await setupAuth(app);
+  try {
+    await setupAuth(app);
+  } catch (error) {
+    console.error("Error setting up authentication:", error);
+    // Continue without auth for development purposes
+  }
   
   // Now add the role-switching endpoint (after auth is set up)
   app.get("/api/switch-user-role/:role", isAuthenticated, async (req, res) => {

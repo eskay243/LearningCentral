@@ -420,8 +420,8 @@ export class DatabaseStorage implements IStorage {
       console.error('Error setting system timezone:', error);
     }
   }
-}
-  // Live Session Operations
+  
+  // Live Session Operations  
   async createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession> {
     const [session] = await db
       .insert(liveSessions)
