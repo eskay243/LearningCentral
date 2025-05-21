@@ -10,6 +10,7 @@ import { setUserAsAdmin } from "./admin-setup";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
+import { registerCodeCompanionRoutes } from "./codeCompanionRoutes";
 import { setupWebSocketServer } from "./websocketServer";
 import certificateRoutes from "./certificateRoutes";
 import multer from "multer";
@@ -64,6 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register communication routes
   registerCommunicationRoutes(app);
+  
+  // Register Code Companion routes
+  registerCodeCompanionRoutes(app);
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
