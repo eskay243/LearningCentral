@@ -2,6 +2,62 @@ import { type Express, type Request } from "express";
 import * as expressModule from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+
+// Mock data for UI display when database is not fully connected
+const mockData = {
+  courses: Array(6).fill(null).map((_, i) => ({
+    id: i + 1,
+    title: `Web Development ${i + 1}`,
+    description: 'Learn modern web development with React, Node.js, and PostgreSQL',
+    coverImage: 'https://images.unsplash.com/photo-1593720213428-28a5b9e94613?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1770&q=80',
+    price: 25000,
+    status: 'published',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    enrolledStudents: Math.floor(Math.random() * 200),
+    rating: 4.5 + (Math.random() * 0.5),
+    instructor: 'Dr. Adeola Johnson',
+    categories: ['Programming', 'Web Development'],
+    isNew: i < 2,
+    isFeatured: i % 3 === 0,
+    duration: '12 weeks',
+    completionRate: 78 + (Math.floor(Math.random() * 20)),
+    lastUpdated: '2 weeks ago'
+  })),
+  upcomingClasses: Array(3).fill(null).map((_, i) => ({
+    id: i + 1,
+    title: `Advanced JavaScript Concepts`,
+    date: '2023-07-15',
+    time: '10:00 AM',
+    duration: '2 hours',
+    instructor: 'Prof. Chinedu Okonkwo',
+    courseName: 'Full-Stack JavaScript',
+    courseId: 2,
+    status: i === 0 ? 'live' : 'scheduled',
+    meetingUrl: 'https://meet.zoom.us/123456789'
+  })),
+  studentProgress: Array(5).fill(null).map((_, i) => ({
+    id: i + 1,
+    studentName: `Student ${i + 1}`,
+    profileImage: 'https://avatars.githubusercontent.com/u/12345678',
+    course: 'React Development',
+    progress: 30 + Math.floor(Math.random() * 70),
+    lastActivity: '3 hours ago',
+    status: i % 3 === 0 ? 'at-risk' : (i % 2 === 0 ? 'inactive' : 'active')
+  })),
+  recentActivity: Array(10).fill(null).map((_, i) => ({
+    id: i + 1,
+    type: ['completed', 'submitted', 'joined', 'commented', 'message'][i % 5],
+    content: `Activity ${i + 1} related to course content or assessment`,
+    timestamp: '2 hours ago',
+    user: `User ${i + 1}`,
+    userImage: 'https://avatars.githubusercontent.com/u/12345678',
+    link: {
+      url: '/courses/1',
+      text: 'View Details'
+    }
+  }))
+};
 import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
 import { z } from "zod";
 import { UserRole, Currency } from "@shared/schema";
@@ -52,6 +108,57 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Dashboard data endpoints with fallback to mock data
+  app.get('/api/dashboard/stats', async (req, res) => {
+    try {
+      // In future, get this from database
+      res.json({
+        students: { count: 1250, change: 12.5 },
+        courses: { count: 48, change: 8.3 },
+        revenue: { amount: 825000, change: 15.2, currency: 'NGN' },
+        completionRate: { rate: 83.7, change: 4.2 }
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    }
+  });
+  
+  app.get('/api/dashboard/courses', async (req, res) => {
+    try {
+      res.json(mockData.courses);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      res.status(500).json({ error: 'Failed to fetch courses' });
+    }
+  });
+  
+  app.get('/api/dashboard/upcoming-classes', async (req, res) => {
+    try {
+      res.json(mockData.upcomingClasses);
+    } catch (error) {
+      console.error('Error fetching upcoming classes:', error);
+      res.status(500).json({ error: 'Failed to fetch upcoming classes' });
+    }
+  });
+  
+  app.get('/api/dashboard/student-progress', async (req, res) => {
+    try {
+      res.json(mockData.studentProgress);
+    } catch (error) {
+      console.error('Error fetching student progress:', error);
+      res.status(500).json({ error: 'Failed to fetch student progress' });
+    }
+  });
+  
+  app.get('/api/dashboard/recent-activity', async (req, res) => {
+    try {
+      res.json(mockData.recentActivity);
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+      res.status(500).json({ error: 'Failed to fetch recent activity' });
+    }
+  });
   // Initialize default system settings
   await storage.setDefaultSystemSettings();
   // Setup authentication middleware first

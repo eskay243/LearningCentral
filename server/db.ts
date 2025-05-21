@@ -65,32 +65,50 @@ export const initializeDatabase = async () => {
   }
 };
 
-// Initialize database connection
-let poolConnection;
-let dbInstance;
+// Initialize database connection with a function to avoid top-level await
+const initDb = async () => {
+  let poolConnection;
+  let dbInstance;
 
-try {
-  const result = await initializeDatabase();
-  poolConnection = result.pool;
-  dbInstance = result.db;
-} catch (error) {
-  console.error("Database initialization failed:", error);
-  // Provide fallback implementations
-  poolConnection = {
-    query: async () => [],
-    end: async () => {}
-  } as unknown as Pool;
-  
-  dbInstance = {
-    select: () => ({ from: () => ({ where: () => [] }) }),
-    insert: () => ({ values: () => ({ returning: () => [] }) }),
-    update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) })
-  } as unknown as ReturnType<typeof drizzle>;
-}
+  try {
+    const result = await initializeDatabase();
+    poolConnection = result.pool;
+    dbInstance = result.db;
+  } catch (error) {
+    console.error("Database initialization failed:", error);
+    // Provide fallback implementations
+    poolConnection = {
+      query: async () => [],
+      end: async () => {}
+    } as unknown as Pool;
+    
+    dbInstance = {
+      select: () => ({ from: () => ({ where: () => [] }) }),
+      insert: () => ({ values: () => ({ returning: () => [] }) }),
+      update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) })
+    } as unknown as ReturnType<typeof drizzle>;
+  }
 
-// Export pool and db
-export const pool = poolConnection;
-export const db = dbInstance;
+  return { pool: poolConnection, db: dbInstance };
+};
 
-// Export the database connection and Drizzle ORM instance
-export { pool, db };
+// Export pool and db with initial fallbacks that will be replaced
+export let pool: Pool = {
+  query: async () => [],
+  end: async () => {}
+} as unknown as Pool;
+
+export let db: ReturnType<typeof drizzle> = {
+  select: () => ({ from: () => ({ where: () => [] }) }),
+  insert: () => ({ values: () => ({ returning: () => [] }) }),
+  update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) })
+} as unknown as ReturnType<typeof drizzle>;
+
+// Initialize the database (will update pool and db)
+initDb().then(result => {
+  pool = result.pool;
+  db = result.db;
+  console.log("Database connection initialized successfully");
+}).catch(error => {
+  console.error("Failed to initialize database:", error);
+});
