@@ -1,6 +1,7 @@
 /**
  * Currency formatting utilities for consistent display across the application
  */
+import { useState, useCallback } from 'react';
 
 type CurrencyCode = 'NGN' | 'USD' | 'GBP' | 'EUR';
 
@@ -109,4 +110,33 @@ export function getDiscountPercentage(originalPrice: number, discountedPrice: nu
   
   const discountPercent = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
   return `-${discountPercent}%`;
+}
+
+/**
+ * React hook for currency formatting with state management of currency preferences
+ * 
+ * @returns A function to format currency values with current preferences
+ */
+export function useCurrencyFormatter() {
+  const [currency, setCurrency] = useState<CurrencyCode>('NGN');
+  
+  const formatter = useCallback((
+    amount: number, 
+    options?: {
+      showCurrencyCode?: boolean;
+      currencyOverride?: CurrencyCode;
+      compact?: boolean;
+    }
+  ) => {
+    return formatCurrency(
+      amount,
+      options?.currencyOverride || currency,
+      {
+        showCurrencyCode: options?.showCurrencyCode,
+        compact: options?.compact
+      }
+    );
+  }, [currency]);
+  
+  return formatter;
 }
