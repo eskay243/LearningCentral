@@ -85,7 +85,7 @@ const Courses = () => {
   
   return (
     <div className="p-3 sm:p-4 md:p-6 dark:bg-gray-900">
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6 relative">
         <h1 className="text-xl sm:text-2xl font-bold text-dark-800 dark:text-white">
           {isMentor ? "My Teaching Courses" : "Courses"}
         </h1>
@@ -95,17 +95,40 @@ const Courses = () => {
             : "Explore and manage your enrolled courses"
           }
         </p>
+        
+        {/* Add welcome contextual help with Guru character */}
+        <ContextualHelp
+          id="courses-welcome"
+          title="Welcome to Your Courses"
+          content={isMentor 
+            ? "This is where you can manage all your teaching courses, create new content, and track your students' progress."
+            : "Here you'll find all available courses and the ones you're enrolled in. Browse, search and continue your learning journey."
+          }
+          characterId="guru"
+          position="bottom-right"
+          size="md"
+          triggerOnFirstVisit={true}
+        />
       </div>
       
       {/* Filters & Controls */}
       <div className="mb-4 sm:mb-6 flex flex-col gap-3 sm:gap-4">
-        <div className="w-full">
-          <Input
-            placeholder="Search courses..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full text-sm h-9 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
-          />
+        <div className="w-full relative">
+          <WithContextualHelp
+            id="courses-search"
+            title="Find the Perfect Course"
+            content="Use the search bar to find courses by title or description. Type keywords related to what you want to learn."
+            characterId="cody"
+            position="right"
+            size="sm"
+          >
+            <Input
+              placeholder="Search courses..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full text-sm h-9 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700"
+            />
+          </WithContextualHelp>
         </div>
         
         <div className="flex flex-wrap gap-2">
@@ -158,11 +181,21 @@ const Courses = () => {
       </div>
       
       {/* Courses Grid */}
-      {isLoading ? (
-        <div className="flex justify-center items-center py-8 sm:py-12">
-          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary-600 dark:border-primary-500"></div>
-        </div>
-      ) : filteredCourses.length === 0 ? (
+      <div className="relative">
+        <ContextualHelp
+          id="courses-explore"
+          title="Explore Your Learning Options"
+          content="Browse through our catalog of courses designed to enhance your skills. Click on any course to see more details and begin your learning journey."
+          characterId="ada"
+          position="top-right"
+          size="md"
+        />
+        
+        {isLoading ? (
+          <div className="flex justify-center items-center py-8 sm:py-12">
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-primary-600 dark:border-primary-500"></div>
+          </div>
+        ) : filteredCourses.length === 0 ? (
         <ResponsiveCard className="p-4 sm:p-8 text-center">
           <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">No courses found</h3>
           <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
