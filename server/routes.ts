@@ -100,7 +100,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup admin user - this endpoint will make the currently logged in user an admin
   app.post('/api/setup-admin', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      // Get user ID from either the user object directly or from claims
+      const userId = req.user.id || (req.user.claims && req.user.claims.sub);
+      
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid user session data" });
+      }
+      
       const updatedUser = await setUserAsAdmin(userId);
       
       if (!updatedUser) {

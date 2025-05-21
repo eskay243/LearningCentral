@@ -1,13 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
-import { User } from "@/types";
+import { User, UserRole } from "@/types";
+import { useState, useEffect } from "react";
+import { getQueryFn } from "@/lib/queryClient";
 
 export function useAuth() {
-  const { data: user, isLoading, isError, error } = useQuery<User>({
+  const [redirectToLogin, setRedirectToLogin] = useState(false);
+  
+  const { 
+    data: user, 
+    isLoading, 
+    isError, 
+    error,
+    refetch
+  } = useQuery<User>({
     queryKey: ["/api/auth/user"],
+    queryFn: getQueryFn({ on401: "returnNull" }),
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    if (redirectToLogin) {
+      // Redirect to login
+      window.location.href = "/api/login";
+    }
+  }, [redirectToLogin]);
+
+  // Provide a login function
+  const login = () => {
+    window.location.href = "/api/login";
+  };
+
+  // Provide a logout function
+  const logout = () => {
+    window.location.href = "/api/logout";
+  };
+
+  // Handle manual retry of authentication
+  const retryAuth = async () => {
+    try {
+      await refetch();
+    } catch (error) {
+      console.error("Authentication retry failed:", error);
+      setRedirectToLogin(true);
+    }
+  };
 
   return {
     user,
@@ -15,10 +53,13 @@ export function useAuth() {
     isError,
     error,
     isAuthenticated: !!user,
-    isAdmin: user?.role === "admin",
-    isMentor: user?.role === "mentor",
-    isStudent: user?.role === "student",
-    isAffiliate: user?.role === "affiliate",
+    isAdmin: user?.role === UserRole.ADMIN,
+    isMentor: user?.role === UserRole.MENTOR,
+    isStudent: user?.role === UserRole.STUDENT,
+    isAffiliate: user?.role === UserRole.AFFILIATE,
+    login,
+    logout,
+    retryAuth
   };
 }
 
