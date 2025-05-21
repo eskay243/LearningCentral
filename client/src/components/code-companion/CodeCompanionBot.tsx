@@ -146,12 +146,23 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
       setMessages(prev => [...prev, botMessage]);
 
     } catch (error: any) {
+      console.error("Code Companion error:", error);
+      
+      // Add a bot message for the error
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'bot',
+        message: "I'm sorry, I encountered an issue processing your request. Please try again with a different question or check your connection.",
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to get a response. Please try again.",
+        title: "Request Error",
+        description: "Failed to get a response. Please try again.",
         variant: "destructive"
       });
-      console.error("Code Companion error:", error);
     } finally {
       setIsLoading(false);
     }
