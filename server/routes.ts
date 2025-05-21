@@ -2083,5 +2083,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bank transfer payment endpoint
+  app.post('/api/courses/:id/bank-transfer', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      // Get user details
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.email) {
+        return res.status(400).json({ message: "User email required for payment" });
+      }
+      
+      // Check if already enrolled
+      const existingEnrollment = await storage.getCourseEnrollment(courseId, userId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+      
+      // Get course details
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Generate a unique payment reference
+      const reference = `BT-${courseId}-${Date.now().toString().slice(-8)}`;
+      
+      // Create a pending enrollment record
+      const enrollmentData = {
+        courseId,
+        userId,
+        progress: 0,
+        paymentStatus: "pending",
+        paymentMethod: "bank-transfer",
+        paymentAmount: course.price,
+        paymentReference: reference
+      };
+      
+      const enrollment = await storage.enrollUserInCourse(enrollmentData);
+      
+      // Return bank details and reference
+      res.json({
+        success: true,
+        accountDetails: {
+          bankName: "First Bank of Nigeria",
+          accountNumber: "3089765432",
+          accountName: "Codelab Educare Ltd",
+          reference: reference
+        },
+        reference,
+        amount: course.price
+      });
+      
+    } catch (error: any) {
+      console.error("Error setting up bank transfer:", error);
+      res.status(500).json({ message: `Bank transfer setup failed: ${error.message}` });
+    }
+  });
+  
+  // Wallet payment endpoint
+  app.post('/api/courses/:id/wallet-payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      // Get user details
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+      
+      // Check if already enrolled
+      const existingEnrollment = await storage.getCourseEnrollment(courseId, userId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+      
+      // Get course details
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Check user wallet balance
+      const wallet = await storage.getUserWallet(userId);
+      
+      if (!wallet || wallet.balance < course.price) {
+        return res.status(400).json({ message: "Insufficient wallet balance" });
+      }
+      
+      // Generate a unique payment reference
+      const reference = `WLT-${courseId}-${Date.now().toString().slice(-8)}`;
+      
+      // Deduct from wallet
+      await storage.updateWalletBalance(userId, wallet.balance - course.price);
+      
+      // Create a completed enrollment
+      const enrollmentData = {
+        courseId,
+        userId,
+        progress: 0,
+        paymentStatus: "completed",
+        paymentMethod: "wallet",
+        paymentAmount: course.price,
+        paymentReference: reference
+      };
+      
+      const enrollment = await storage.enrollUserInCourse(enrollmentData);
+      
+      res.json({
+        success: true,
+        message: "Payment successful",
+        enrollment
+      });
+      
+    } catch (error: any) {
+      console.error("Error processing wallet payment:", error);
+      res.status(500).json({ message: `Wallet payment failed: ${error.message}` });
+    }
+  });
+
   return httpServer;
 }
