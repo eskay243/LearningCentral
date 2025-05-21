@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Course } from "@/types";
 import { ContextualHelp } from "@/components/ui/ContextualHelp";
+import { formatCurrency } from "@/lib/currencyUtils";
 
 export default function PaymentPage() {
   const { id } = useParams();

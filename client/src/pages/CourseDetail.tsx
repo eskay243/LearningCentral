@@ -335,6 +335,13 @@ const CourseDetail = () => {
       return;
     }
     
+    // If the course has a price, redirect to payment page
+    if (course.price && course.price > 0) {
+      navigate(`/courses/${id}/payment`);
+      return;
+    }
+    
+    // Otherwise enroll for free
     enrollCourseMutation.mutate();
   };
 
