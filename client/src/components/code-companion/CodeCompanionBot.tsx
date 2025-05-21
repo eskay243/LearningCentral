@@ -263,14 +263,27 @@ const CodeCompanionBot: React.FC<CodeCompanionProps> = ({
                     </Avatar>
                   )}
                   <div 
-                    className={`rounded-lg p-3 text-sm ${msg.sender === 'bot' 
-                      ? 'bg-muted text-foreground dark:bg-gray-700 dark:text-gray-200' 
+                    className={`rounded-lg p-4 text-sm shadow-md transform transition-all duration-300 ease-in-out ${msg.sender === 'bot' 
+                      ? 'bg-muted text-foreground dark:bg-gray-700 dark:text-gray-200 border-l-4 border-blue-500' 
                       : 'bg-primary text-primary-foreground'}`}
+                    style={{
+                      animation: `fadeIn 0.5s ease-out forwards`,
+                    }}
                   >
-                    <ReactMarkdown>
-                      {msg.message}
-                    </ReactMarkdown>
-                    <div className="text-xs opacity-70 mt-1 text-right">
+                    {msg.sender === 'bot' && (
+                      <div className="flex items-center mb-2 pb-1 border-b border-gray-200 dark:border-gray-600">
+                        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center mr-2">
+                          <Code className="h-3 w-3 text-white" />
+                        </div>
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">Code Companion</span>
+                      </div>
+                    )}
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown>
+                        {msg.message}
+                      </ReactMarkdown>
+                    </div>
+                    <div className="text-xs opacity-70 mt-2 text-right">
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
