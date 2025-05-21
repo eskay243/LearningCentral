@@ -28,7 +28,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const { user, isAdmin, isMentor } = useAuth();
   
   const sidebarClass = cn(
-    "sidebar fixed left-0 top-16 bottom-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-sm",
+    "sidebar fixed left-0 top-16 bottom-0 w-72 sm:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-md dark:shadow-gray-900/30",
     {
       "transform -translate-x-full": !isOpen,
       "transform translate-x-0": isOpen
@@ -37,7 +37,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   );
   
   const backdropClass = cn(
-    "fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden transition-opacity duration-300",
+    "fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden transition-opacity duration-300 backdrop-blur-sm",
     {
       "opacity-100": isOpen,
       "opacity-0 pointer-events-none": !isOpen
@@ -49,10 +49,10 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   };
   
   const menuItemClass = (path: string) => cn(
-    "menu-item flex items-center px-4 py-2.5 text-sm rounded-md my-0.5 mx-2 transition-colors",
+    "menu-item flex items-center px-4 py-3 sm:py-2.5 text-sm rounded-lg my-1 mx-2 transition-colors",
     {
-      "bg-primary/10 text-primary font-medium": isActive(path),
-      "hover:bg-gray-100 dark:hover:bg-gray-800": !isActive(path),
+      "bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 font-medium": isActive(path),
+      "hover:bg-gray-100 dark:hover:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700": !isActive(path),
       "text-gray-700 dark:text-gray-300": !isActive(path)
     }
   );
@@ -64,7 +64,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
         {/* Role Label */}
         {user && (
           <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div className="inline-flex items-center justify-center px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-md">
+            <div className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 rounded-md shadow-sm">
               {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
             </div>
           </div>
@@ -72,7 +72,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
         
         {/* Navigation Menu */}
         <nav className="py-4">
-          <div className="px-6 mb-2">
+          <div className="px-6 mb-3">
             <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Main</h2>
           </div>
           
