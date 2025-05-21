@@ -11,26 +11,26 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatCurrency } from "@/lib/currencyUtils";
 import { ContextualHelp, WithContextualHelp } from "@/components/ui/ContextualHelp";
 
-const Courses = () => {
+function Courses() {
   const { user, isMentor, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
 
   // Fetch courses for the current user
-  const { data: userCourses, isLoading: userCoursesLoading } = useQuery<Course[]>({
+  const { data: userCourses, isLoading: userCoursesLoading } = useQuery({
     queryKey: [isMentor ? "/api/courses" : "/api/user/enrollments"],
     enabled: !!user
   });
 
   // Fetch all published courses (for discovery)
-  const { data: publishedCourses, isLoading: publishedCoursesLoading } = useQuery<Course[]>({
+  const { data: publishedCourses, isLoading: publishedCoursesLoading } = useQuery({
     queryKey: ["/api/courses?published=true"],
   });
   
   const isLoading = userCoursesLoading || publishedCoursesLoading;
 
-  const filterCourses = (courses: Course[] | undefined) => {
+  const filterCourses = (courses) => {
     if (!courses || courses.length === 0) return [];
     
     return courses
@@ -78,8 +78,6 @@ const Courses = () => {
     { value: "price-desc", label: "Price (High to Low)" },
   ];
 
-
-  
   const coursesToShow = isMentor || isAdmin ? userCourses : publishedCourses;
   const filteredCourses = filterCourses(coursesToShow);
   
@@ -217,7 +215,7 @@ const Courses = () => {
           </ResponsiveCard>
         ) : (
           <CourseGrid 
-            courses={filteredCourses.map((course: any) => ({
+            courses={filteredCourses.map((course) => ({
               id: course.id,
               title: course.title,
               description: course.description || '',
@@ -241,6 +239,6 @@ const Courses = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Courses;

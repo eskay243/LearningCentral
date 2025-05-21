@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, Check, ArrowLeft, ArrowRight, Code, BookOpen, Award } from 'lucide-react';
 import EnhancedCodeEditor from '@/components/content/EnhancedCodeEditor';
+import { ContextualHelp, WithContextualHelp } from '@/components/ui/ContextualHelp';
 
 const SAMPLE_EXERCISES = [
   {
