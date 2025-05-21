@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { createServer } from "http";
 
 const app = express();
 app.use(express.json());
@@ -37,8 +38,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  let server;
+  
   try {
-    const server = await registerRoutes(app);
+    server = await registerRoutes(app);
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
@@ -49,16 +52,21 @@ app.use((req, res, next) => {
     });
   } catch (error) {
     console.error('Failed to register routes:', error);
-    // Continue anyway so the frontend can load
+    // Create a simple HTTP server if route registration failed
+    server = createServer(app);
   }
 
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+  try {
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
+    }
+  } catch (error) {
+    console.error('Failed to setup frontend:', error);
   }
 
   // ALWAYS serve the app on port 5000

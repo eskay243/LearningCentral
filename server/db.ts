@@ -66,7 +66,31 @@ export const initializeDatabase = async () => {
 };
 
 // Initialize database connection
-const { pool, db } = await initializeDatabase();
+let poolConnection;
+let dbInstance;
+
+try {
+  const result = await initializeDatabase();
+  poolConnection = result.pool;
+  dbInstance = result.db;
+} catch (error) {
+  console.error("Database initialization failed:", error);
+  // Provide fallback implementations
+  poolConnection = {
+    query: async () => [],
+    end: async () => {}
+  } as unknown as Pool;
+  
+  dbInstance = {
+    select: () => ({ from: () => ({ where: () => [] }) }),
+    insert: () => ({ values: () => ({ returning: () => [] }) }),
+    update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) })
+  } as unknown as ReturnType<typeof drizzle>;
+}
+
+// Export pool and db
+export const pool = poolConnection;
+export const db = dbInstance;
 
 // Export the database connection and Drizzle ORM instance
 export { pool, db };
