@@ -1,104 +1,109 @@
-import React, { useState } from 'react';
-import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
+import React from 'react';
+import { useHelpBubbles } from '@/contexts/HelpBubbleContext';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from '@/components/ui/popover';
-import { HelpCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
-interface CharacterIllustration {
-  id: string;
-  name: string;
-  imageUrl: string;
-  role: 'mentor' | 'student' | 'admin' | 'guide';
-}
-
-// Our playful character illustrations
-const characters: CharacterIllustration[] = [
-  {
-    id: 'cody',
-    name: 'Cody the Coder',
-    imageUrl: '/assets/characters/cody.svg',
-    role: 'mentor'
-  },
-  {
-    id: 'ada',
-    name: 'Ada the Admin',
-    imageUrl: '/assets/characters/ada.svg',
-    role: 'admin'
-  },
-  {
-    id: 'sammy',
-    name: 'Sammy the Student',
-    imageUrl: '/assets/characters/sammy.svg',
-    role: 'student'
-  },
-  {
-    id: 'guru',
-    name: 'Guru the Guide',
-    imageUrl: '/assets/characters/guru.svg',
-    role: 'guide'
-  }
-];
-
-export interface HelpBubbleProps {
+interface HelpBubbleProps {
   content: React.ReactNode;
-  characterId?: string; // defaults to 'guru' if not specified
-  size?: 'sm' | 'md' | 'lg';
+  characterId?: string;
   position?: 'top' | 'right' | 'bottom' | 'left';
-  className?: string;
-  iconClassName?: string;
+  size?: 'sm' | 'md' | 'lg';
+  onClose?: () => void;
+  forceOpen?: boolean;
 }
 
-export function HelpBubble({
+export const HelpBubble: React.FC<HelpBubbleProps> = ({
   content,
   characterId = 'guru',
-  size = 'md',
   position = 'top',
-  className = '',
-  iconClassName = ''
-}: HelpBubbleProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  size = 'md',
+  onClose,
+  forceOpen = false,
+}) => {
+  const [isOpen, setIsOpen] = React.useState(forceOpen);
+  const { updateHelpPreferences } = useHelpBubbles();
+  const bubbleRef = React.useRef<HTMLDivElement>(null);
   
-  // Find the requested character or default to Guru
-  const character = characters.find(c => c.id === characterId) || characters.find(c => c.id === 'guru')!;
+  // Map size to actual dimensions
+  const sizeMap = {
+    sm: {
+      width: 60,
+      height: 60,
+      bubbleWidth: 200,
+    },
+    md: {
+      width: 80, 
+      height: 80,
+      bubbleWidth: 280,
+    },
+    lg: {
+      width: 100,
+      height: 100,
+      bubbleWidth: 350,
+    },
+  };
   
-  // Determine icon size based on prop
-  const iconSize = size === 'sm' ? 16 : size === 'md' ? 20 : 24;
+  const { width, height, bubbleWidth } = sizeMap[size];
   
-  // Determine content width based on size
-  const contentWidth = size === 'sm' ? 'w-56' : size === 'md' ? 'w-72' : 'w-96';
+  // Character paths for SVGs
+  const characterPaths: Record<string, string> = {
+    guru: '/assets/characters/guru.svg',
+    cody: '/assets/characters/cody.svg',
+    ada: '/assets/characters/ada.svg',
+    sammy: '/assets/characters/sammy.svg',
+  };
+  
+  // Close the help bubble
+  const handleClose = () => {
+    setIsOpen(false);
+    if (onClose) onClose();
+  };
   
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button
-          className={`text-primary hover:text-primary-focus focus:outline-none transition-colors ${iconClassName}`}
+          className="help-bubble-trigger outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary rounded-full overflow-hidden transition-transform hover:scale-110 active:scale-95"
+          style={{ width, height }}
           onClick={() => setIsOpen(!isOpen)}
-          aria-label="Help information"
         >
-          <HelpCircle size={iconSize} />
+          <img
+            src={characterPaths[characterId] || characterPaths.guru}
+            alt={`${characterId} character`}
+            className="w-full h-full object-cover"
+          />
         </button>
       </PopoverTrigger>
-      <PopoverContent 
-        side={position} 
-        className={`${contentWidth} p-4 rounded-lg border border-purple-200 bg-white dark:bg-zinc-900 shadow-md ${className}`}
+      <PopoverContent
+        side={position}
+        className="help-bubble-content p-4 rounded-lg border border-primary/20 bg-card shadow-md"
+        style={{ width: bubbleWidth, maxWidth: '90vw' }}
+        ref={bubbleRef}
       >
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full overflow-hidden flex items-center justify-center border-2 border-purple-300 dark:border-purple-700">
-            {/* Placeholder for character image - we'll create SVGs later */}
-            <div className="font-bold text-lg text-purple-600 dark:text-purple-300">
-              {character.name.charAt(0)}
-            </div>
+        <div className="help-bubble-header flex justify-between items-start mb-2">
+          <div className="help-bubble-character flex items-center gap-2">
+            <img
+              src={characterPaths[characterId] || characterPaths.guru}
+              alt={`${characterId} character`}
+              className="w-8 h-8 rounded-full"
+            />
           </div>
-          <div className="flex-1">
-            <h4 className="font-bold text-purple-700 dark:text-purple-300 mb-1">{character.name} says:</h4>
-            <div className="text-sm text-gray-700 dark:text-gray-300">
-              {content}
-            </div>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-6 h-6 rounded-full"
+            onClick={handleClose}
+          >
+            <X size={14} />
+          </Button>
         </div>
+        <div className="help-bubble-body text-sm">{content}</div>
       </PopoverContent>
     </Popover>
   );
-}
+};
