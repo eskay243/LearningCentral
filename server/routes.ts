@@ -330,11 +330,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all enrolled courses for the current user
   app.get('/api/user/enrollments', isAuthenticated, async (req, res) => {
     try {
-      if (!req.user || !req.user.claims) {
+      if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
       
-      const userId = req.user.claims.sub;
+      // Get user ID from either the user object directly or from claims
+      const userId = req.user.id || (req.user.claims && req.user.claims.sub);
+      
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid user data" });
+      }
       
       // Get all enrollments for this user
       const enrollments = await storage.getEnrolledCourses(userId);
@@ -373,10 +378,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/courses/:id/enrollment', isAuthenticated, async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
-      const userId = req.user.claims.sub;
       
       if (isNaN(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Get user ID from either the user object directly or from claims
+      const userId = req.user.id || (req.user.claims && req.user.claims.sub);
+      
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid user data" });
       }
       
       const enrollment = await storage.getCourseEnrollment(courseId, userId);
@@ -390,10 +401,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/courses/:id/enroll', isAuthenticated, async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
-      const userId = req.user.claims.sub;
       
       if (isNaN(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Get user ID from either the user object directly or from claims
+      const userId = req.user.id || (req.user.claims && req.user.claims.sub);
+      
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid user data" });
       }
       
       // Check if user is already enrolled
