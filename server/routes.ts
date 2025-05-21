@@ -13,6 +13,7 @@ import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 import { registerCodeCompanionRoutes } from "./codeCompanionRoutes";
 import { setupWebSocketServer } from "./websocketServer";
 import certificateRoutes from "./certificateRoutes";
+import drmRoutes from "./drmRoutes";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -1830,6 +1831,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register certificate routes for certificate management
   app.use('/api/certificates', certificateRoutes);
+  
+  // Register DRM routes for content protection
+  app.use('/api/drm', drmRoutes);
   
   // System settings routes
   app.get("/api/settings", isAuthenticated, async (req, res) => {
