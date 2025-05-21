@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -25,7 +26,12 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const [location] = useLocation();
-  const { user, isAdmin, isMentor } = useAuth();
+  const { user, isAdmin, isMentor, isAuthenticated } = useAuth();
+  
+  // Add debugging to help identify authentication issues
+  useEffect(() => {
+    console.log('Sidebar auth state:', { isAuthenticated, userExists: !!user, user });
+  }, [isAuthenticated, user]);
   
   const sidebarClass = cn(
     "sidebar fixed left-0 top-16 bottom-0 w-72 sm:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-lg rounded-tr-3xl rounded-br-3xl",

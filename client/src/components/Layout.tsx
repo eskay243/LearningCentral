@@ -9,7 +9,12 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  
+  // Log authentication state for debugging
+  useEffect(() => {
+    console.log('Layout auth state:', { isAuthenticated, userExists: !!user });
+  }, [isAuthenticated, user]);
 
   // Close sidebar when screen resizes to desktop
   useEffect(() => {
