@@ -30,6 +30,7 @@ import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
+import CodeCompanion from "@/pages/CodeCompanion";
 
 function Router() {
   return (
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/certificate/verify" component={CertificateVerification} />
         <Route path="/certificate/admin" component={CertificateAdmin} />
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
+        <Route path="/code-companion" component={CodeCompanion} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
