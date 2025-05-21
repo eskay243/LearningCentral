@@ -69,18 +69,20 @@ export const devLogin: RequestHandler = async (req: Request, res: Response) => {
         expires_at: Math.floor(Date.now() / 1000) + 86400 // 24 hours
       };
       
-      // Save user to session
+      // This is a critical part that needs fixing - we need to ensure the user is properly saved to session
       req.login(mockAuthUser, (err) => {
         if (err) {
           console.error("Login error:", err);
           return res.status(500).json({ message: "Session error", error: err.message });
         }
         
-        // Add debugging for authentication state
+        // Add extra logging for better debugging
+        console.log("[TEST LOGIN] Login successful, user:", mockAuthUser.id);
         console.log("[TEST LOGIN] Auth state after login:", req.isAuthenticated());
         console.log("[TEST LOGIN] Session ID:", req.sessionID);
+        console.log("[TEST LOGIN] Session cookie:", req.headers.cookie);
         
-        // Force save the session before responding
+        // Now save the session with the properly logged-in user
         req.session.save((saveErr) => {
           if (saveErr) {
             console.error("Session save error:", saveErr);
