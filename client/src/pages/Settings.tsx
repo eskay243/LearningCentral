@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,7 +64,7 @@ const Settings = () => {
   });
 
   // Update when profile data is loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (profile) {
       profileForm.reset({
         firstName: profile.firstName || "",
@@ -89,7 +89,7 @@ const Settings = () => {
   });
 
   // Update when notification settings are loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (notificationSettings) {
       notificationForm.reset({
         emailNotifications: notificationSettings.emailNotifications,
