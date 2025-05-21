@@ -132,50 +132,37 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <h2 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Account</h2>
           </div>
           
-          <Link href="/messages">
-            <a className={menuItemClass("/messages")}>
-              <MessageSquare className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Messages</span>
-              <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-primary rounded-full">5</span>
-            </a>
+          <Link href="/messages" className={menuItemClass("/messages")}>
+            <MessageSquare className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Messages</span>
+            <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-primary rounded-full">5</span>
           </Link>
           
           {(isAdmin || isMentor) && (
-            <Link href="/earnings">
-              <a className={menuItemClass("/earnings")}>
-                <DollarSign className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                <span className="truncate">Earnings</span>
-              </a>
+            <Link href="/earnings" className={menuItemClass("/earnings")}>
+              <DollarSign className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate">Earnings</span>
             </Link>
           )}
           
-          <Link href="/certificates">
-            <a className={menuItemClass("/certificates")}>
-              <Award className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Certificates</span>
-            </a>
+          <Link href="/certificates" className={menuItemClass("/certificates")}>
+            <Award className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Certificates</span>
           </Link>
           
-          <div 
-            className={menuItemClass("/code-companion")}
-            onClick={() => window.location.href = '/code-companion'} 
-          >
+          <Link href="/code-companion" className={menuItemClass("/code-companion")}>
             <Code2 className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Code Companion</span>
-          </div>
-          
-          <Link href="/profile">
-            <a className={menuItemClass("/profile")}>
-              <User className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Profile</span>
-            </a>
           </Link>
           
-          <Link href="/settings">
-            <a className={menuItemClass("/settings")}>
-              <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Settings</span>
-            </a>
+          <Link href="/profile" className={menuItemClass("/profile")}>
+            <User className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Profile</span>
+          </Link>
+          
+          <Link href="/settings" className={menuItemClass("/settings")}>
+            <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Settings</span>
           </Link>
         </nav>
       </aside>
