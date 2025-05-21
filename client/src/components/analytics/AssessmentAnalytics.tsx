@@ -485,30 +485,60 @@ export default function AssessmentAnalytics({ courseId, userId, isMentorView = f
         </TabsContent>
 
         {/* Quizzes Tab */}
-        <TabsContent value="quizzes" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <TabsContent value="quizzes" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Score Distribution */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quiz Score Distribution</CardTitle>
-                <CardDescription>Breakdown of scores across all quizzes</CardDescription>
+            <Card className="border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-slate-800 dark:to-slate-800 rounded-t-lg">
+                <CardTitle className="text-lg text-indigo-700 dark:text-indigo-400 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                  </svg>
+                  Quiz Score Distribution
+                </CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400">Breakdown of scores across all quizzes</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-5">
                 {isLoading ? (
-                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-72 w-full" />
                 ) : (
-                  <div className="h-64">
+                  <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={quizAnalytics.scoreDistribution}
-                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                        margin={{ top: 20, right: 30, left: 20, bottom: 25 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="range" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="count" name="Number of Attempts" fill="#8884d8" />
+                        <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                        <XAxis 
+                          dataKey="range" 
+                          tick={{ fill: '#64748b' }}
+                          tickLine={{ stroke: '#64748b' }}
+                          axisLine={{ stroke: '#94a3b8' }}
+                        />
+                        <YAxis 
+                          tick={{ fill: '#64748b' }}
+                          tickLine={{ stroke: '#64748b' }}
+                          axisLine={{ stroke: '#94a3b8' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                            borderRadius: '8px',
+                            boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+                            border: 'none'
+                          }}
+                          cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                        />
+                        <Legend 
+                          wrapperStyle={{ paddingTop: '20px' }}
+                        />
+                        <Bar 
+                          dataKey="count" 
+                          name="Number of Attempts" 
+                          fill="#6366f1"
+                          radius={[4, 4, 0, 0]}
+                          barSize={40}
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
