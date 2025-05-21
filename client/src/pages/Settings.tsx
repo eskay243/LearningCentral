@@ -38,8 +38,7 @@ interface NotificationSettings {
 }
 
 interface CurrencySettings {
-  default: string;
-  available: string[];
+  defaultCurrency: string;
   exchangeRates: Record<string, number>;
 }
 
@@ -59,6 +58,12 @@ const notificationFormSchema = z.object({
   assignmentReminders: z.boolean().default(true),
   messageNotifications: z.boolean().default(true),
   announcementNotifications: z.boolean().default(true),
+});
+
+// Currency settings form schema (admin only)
+const currencyFormSchema = z.object({
+  defaultCurrency: z.enum(["USD", "NGN", "GBP"]).default("NGN"),
+  exchangeRates: z.record(z.number().positive()),
 });
 
 // Currency settings form schema
@@ -86,9 +91,17 @@ const Settings = () => {
   });
   
   // Fetch currency settings (admin only)
-  const { data: currencySettings, isLoading: isCurrencyLoading } = useQuery<CurrencySettings>({
-    queryKey: ["/api/settings/currency"],
+  const { data: currencySettings, isLoading: isCurrencyLoading } = useQuery({
+    queryKey: ["/api/settings/system", "currency"],
     enabled: !!user && isAdmin,
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/settings/system?category=currency");
+      const data = await response.json();
+      return {
+        defaultCurrency: data.find((s: any) => s.key === "defaultCurrency")?.value || "NGN",
+        exchangeRates: JSON.parse(data.find((s: any) => s.key === "exchangeRates")?.value || '{"NGN": 1500, "GBP": 0.79}')
+      };
+    }
   });
 
   // Default profile values
@@ -97,6 +110,15 @@ const Settings = () => {
     lastName: "",
     email: "",
     bio: "",
+  };
+  
+  // Default currency settings
+  const defaultCurrency: z.infer<typeof currencyFormSchema> = {
+    defaultCurrency: "NGN",
+    exchangeRates: {
+      NGN: 1500,
+      GBP: 0.79,
+    }
   };
 
   // Default notification values
@@ -113,6 +135,12 @@ const Settings = () => {
   const profileForm = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: defaultProfile,
+  });
+  
+  // Currency form (admin only)
+  const currencyForm = useForm<z.infer<typeof currencyFormSchema>>({
+    resolver: zodResolver(currencyFormSchema),
+    defaultValues: defaultCurrency,
   });
 
   // Update when profile data is loaded
@@ -146,6 +174,16 @@ const Settings = () => {
       });
     }
   }, [notificationSettings, notificationForm]);
+  
+  // Update when currency settings are loaded (admin only)
+  useEffect(() => {
+    if (currencySettings && isAdmin) {
+      currencyForm.reset({
+        defaultCurrency: currencySettings.defaultCurrency,
+        exchangeRates: currencySettings.exchangeRates
+      });
+    }
+  }, [currencySettings, currencyForm, isAdmin]);
 
   // Profile update mutation
   const profileMutation = useMutation({
@@ -193,14 +231,26 @@ const Settings = () => {
   // Currency settings mutation (admin only)
   const currencyMutation = useMutation({
     mutationFn: (values: z.infer<typeof currencyFormSchema>) => {
-      return apiRequest("PATCH", "/api/settings/currency", values);
+      // Update multiple system settings at once
+      return apiRequest("POST", "/api/settings/system/batch", [
+        {
+          key: "defaultCurrency",
+          value: values.defaultCurrency,
+          category: "currency"
+        },
+        {
+          key: "exchangeRates",
+          value: JSON.stringify(values.exchangeRates),
+          category: "currency"
+        }
+      ]);
     },
     onSuccess: () => {
       toast({
         title: "Currency settings updated",
         description: "The platform currency settings have been updated successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/settings/currency"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/system", "currency"] });
     },
     onError: (error) => {
       toast({
