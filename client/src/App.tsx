@@ -7,7 +7,7 @@ import { HelpBubbleProvider } from "./contexts/HelpBubbleContext";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
-import Courses from "@/pages/Courses";
+import { Courses } from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
 import CourseView from "@/pages/CourseView";
 import CourseExercises from "@/pages/CourseExercises";

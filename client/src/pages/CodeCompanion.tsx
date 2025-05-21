@@ -117,7 +117,7 @@ const CodeCompanionPage: React.FC = () => {
           title="Start Chatting With Your Code Companion"
           content="Type your programming questions here and get instant responses. Share code snippets by using the code format option or pasting directly into the chat."
           characterId="guru"
-          position="top-right"
+          position="top"
           size="md"
         >
           <CodeCompanionBot />
