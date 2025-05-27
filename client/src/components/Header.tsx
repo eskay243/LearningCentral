@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useState, useEffect, useRef } from "react";
-import { Menu, Bell, MessageSquare } from "lucide-react";
+import { Menu, Bell, MessageSquare, User, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
