@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +11,18 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAuthenticated } = useAuth();
+  const [location, navigate] = useLocation();
+
+  // Public pages that don't require authentication
+  const publicPages = ['/login', '/demo-users'];
+  const isPublicPage = publicPages.includes(location);
+
+  // Redirect unauthenticated users to login page (except for public pages)
+  useEffect(() => {
+    if (!isAuthenticated && !isPublicPage) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isPublicPage, navigate]);
 
   // Close sidebar when screen resizes to desktop
   useEffect(() => {
@@ -45,6 +58,15 @@ const Layout = ({ children }: LayoutProps) => {
   const closeSidebar = () => {
     setSidebarOpen(false);
   };
+
+  // For public pages, render without header/sidebar/footer
+  if (isPublicPage) {
+    return (
+      <div className="min-h-screen">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
