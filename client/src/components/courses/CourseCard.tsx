@@ -67,9 +67,39 @@ export const CourseCard = ({
 
   return (
     <ResponsiveCard
-      className="h-full flex flex-col"
+      className="h-full flex flex-col relative group"
       hoverable
     >
+      {/* Admin Actions - Beautiful floating menu */}
+      {showAdminActions && (
+        <div className="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="h-8 w-8 p-0 bg-white/90 backdrop-blur-sm hover:bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <MoreVertical className="h-4 w-4 text-gray-600" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onDeleteCourse?.(id);
+                }}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Course
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
       <Link href={`/courses/${id}`} className="block">
         <div className="relative aspect-[16/9] overflow-hidden rounded-t-lg">
           <img 
@@ -86,8 +116,16 @@ export const CourseCard = ({
             </div>
           )}
           
-          {level && (
+          {level && !showAdminActions && (
             <div className="absolute top-3 right-3">
+              <Badge variant={getLevelBadgeVariant(level)}>
+                {level}
+              </Badge>
+            </div>
+          )}
+          
+          {level && showAdminActions && (
+            <div className="absolute bottom-3 right-3">
               <Badge variant={getLevelBadgeVariant(level)}>
                 {level}
               </Badge>
