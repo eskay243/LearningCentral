@@ -275,16 +275,7 @@ export const messages = pgTable("messages", {
   readAt: timestamp("read_at"),
 });
 
-// Announcements table
-export const announcements = pgTable("announcements", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  courseId: integer("course_id").references(() => courses.id),
-  createdBy: varchar("created_by").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  isPlatformWide: boolean("is_platform_wide").notNull().default(false),
-});
+
 
 // Certificates table
 export const certificates = pgTable("certificates", {
@@ -320,6 +311,35 @@ export const coupons = pgTable("coupons", {
   maxUses: integer("max_uses"),
   usedCount: integer("used_count").notNull().default(0),
 });
+
+// Announcements table
+export const announcements = pgTable("announcements", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull().default("general"), // general, urgent, update, reminder
+  priority: text("priority").notNull().default("normal"), // low, normal, high
+  isPublished: boolean("is_published").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// CourseMentors table - many-to-many relationship between courses and mentors
+export const courseMentors = pgTable("course_mentors", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  assignedBy: varchar("assigned_by").notNull().references(() => users.id),
+  role: text("role").notNull().default("mentor"), // mentor, lead_mentor, teaching_assistant
+  permissions: jsonb("permissions"), // specific permissions for this mentor on this course
+  assignedAt: timestamp("assigned_at").defaultNow(),
+}, (table) => [
+  // Ensure a mentor can only be assigned once per course
+  primaryKey({ columns: [table.courseId, table.mentorId] })
+]);
 
 // CourseRatings table
 export const courseRatings = pgTable("course_ratings", {
@@ -497,6 +517,8 @@ export const insertMentorCourseSchema = createInsertSchema(mentorCourses);
 export const insertAffiliateCommissionSchema = createInsertSchema(affiliateCommissions);
 export const insertCodingExerciseSchema = createInsertSchema(codingExercises);
 export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress);
+export const insertAnnouncementSchema = createInsertSchema(announcements);
+export const insertCourseMentorSchema = createInsertSchema(courseMentors);
 
 // Type definitions for the schema
 export type UpsertUser = typeof users.$inferInsert;
