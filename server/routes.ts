@@ -2476,18 +2476,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { courseId } = req.params;
     
     try {
-      const mentors = await db.select({
+      const mentorsData = await db.select({
         id: users.id,
         firstName: users.firstName,
         lastName: users.lastName,
         email: users.email,
         profileImageUrl: users.profileImageUrl,
+        bio: users.bio,
         role: courseMentors.role,
         assignedAt: courseMentors.assignedAt
       })
       .from(courseMentors)
       .innerJoin(users, eq(courseMentors.mentorId, users.id))
       .where(eq(courseMentors.courseId, parseInt(courseId)));
+      
+      // Transform data to match frontend expectations
+      const mentors = mentorsData.map(mentor => ({
+        ...mentor,
+        name: `${mentor.firstName || ''} ${mentor.lastName || ''}`.trim()
+      }));
       
       res.json(mentors);
     } catch (error) {

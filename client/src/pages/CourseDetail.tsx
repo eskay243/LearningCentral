@@ -165,7 +165,7 @@ const CourseDetail = () => {
     data: mentors,
     isLoading: isMentorsLoading,
   } = useQuery<Mentor[]>({
-    queryKey: [`/api/courses/${id}/mentors`],
+    queryKey: ["/api/courses", id, "mentors"],
     enabled: !!id,
   });
 
