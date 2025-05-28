@@ -6,7 +6,8 @@ import { db } from "./db";
 import { 
   announcements,
   users,
-  courseMentors
+  courseMentors,
+  courseEnrollments
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";
