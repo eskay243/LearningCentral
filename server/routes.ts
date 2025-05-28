@@ -1,4 +1,4 @@
-import { type Express, type Request } from "express";
+import { type Express, type Request, type Response } from "express";
 import * as expressModule from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -2474,6 +2474,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Course Mentors (assigned mentors for a specific course)
   app.get("/api/courses/:courseId/mentors", async (req: Request, res: Response) => {
     const { courseId } = req.params;
+    console.log(`Fetching mentors for course ${courseId}`);
     
     try {
       const mentorsData = await db.select({
@@ -2490,12 +2491,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .innerJoin(users, eq(courseMentors.mentorId, users.id))
       .where(eq(courseMentors.courseId, parseInt(courseId)));
       
+      console.log(`Found ${mentorsData.length} mentors:`, mentorsData);
+      
       // Transform data to match frontend expectations
       const mentors = mentorsData.map(mentor => ({
         ...mentor,
         name: `${mentor.firstName || ''} ${mentor.lastName || ''}`.trim()
       }));
       
+      console.log('Transformed mentors:', mentors);
       res.json(mentors);
     } catch (error) {
       console.error('Error fetching course mentors:', error);
