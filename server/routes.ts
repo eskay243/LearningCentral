@@ -98,10 +98,10 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB file size limit
   },
-  fileFilter: function(req, file, cb) {
+  fileFilter: function(req: any, file: any, cb: any) {
     // Accept images only
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      cb(null, false);
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+      cb(new Error('Invalid file type. Only images are allowed.'), false);
       return;
     }
     cb(null, true);
