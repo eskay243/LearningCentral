@@ -220,7 +220,7 @@ const CourseDetail = () => {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/modules/${selectedModuleId}/lessons`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/modules`] });
       setLessonDialogOpen(false);
       setNewLesson({
         title: "",
@@ -691,7 +691,7 @@ const CourseDetail = () => {
                                   Add Lesson
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent>
+                              <DialogContent className="max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                   <DialogTitle>Create a New Lesson</DialogTitle>
                                   <DialogDescription>
