@@ -158,6 +158,11 @@ const CreateCourse = () => {
       });
       
       setNewCategory("");
+      setIsAddingCategory(false); // Close the popup
+      
+      // Update the form with the new category
+      form.setValue("category", categoryValue);
+      
       toast({
         title: "Category added!",
         description: `"${categoryLabel}" has been added to the categories.`,
@@ -200,7 +205,7 @@ const CreateCourse = () => {
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
       
-      // Navigate to the course edit page
+      // Navigate to the course detail page
       navigate(`/courses/${courseData.id}`);
     } catch (error: any) {
       toast({

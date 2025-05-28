@@ -297,20 +297,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Course image upload endpoint
   app.post('/api/upload/course-image', isAuthenticated, upload.single('image'), async (req: any, res) => {
     try {
+      console.log('Upload request received:', req.file);
+      console.log('Request body:', req.body);
+      
       if (!req.file) {
+        console.log('No file in request');
         return res.status(400).json({ error: 'No image file provided' });
       }
 
-      // Generate a unique filename
-      const fileExtension = path.extname(req.file.originalname);
-      const fileName = `course-${Date.now()}-${Math.random().toString(36).substring(7)}${fileExtension}`;
-      const newPath = path.join('./uploads', fileName);
-      
-      // Move file to final location
-      fs.renameSync(req.file.path, newPath);
-      
-      // Return the URL
-      const imageUrl = `/uploads/${fileName}`;
+      // The file is already saved by multer, just return the URL
+      const imageUrl = `/uploads/${req.file.filename}`;
+      console.log('Image uploaded successfully:', imageUrl);
       res.json({ url: imageUrl });
     } catch (error) {
       console.error('Image upload error:', error);
