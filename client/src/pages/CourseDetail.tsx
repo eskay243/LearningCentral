@@ -47,7 +47,7 @@ export default function CourseDetail() {
   });
 
   // Check enrollment status
-  const { data: enrollmentStatus } = useQuery({
+  const { data: enrollmentStatus, isLoading: isEnrollmentLoading } = useQuery({
     queryKey: [`/api/courses/${id}/enrollment-status`],
     enabled: !!id && isAuthenticated,
   });
@@ -346,14 +346,16 @@ export default function CourseDetail() {
                   size="lg" 
                   className={isEnrolled ? "bg-green-600 hover:bg-green-700" : "bg-purple-600 hover:bg-purple-700"}
                   onClick={handleEnroll}
-                  disabled={enrollMutation.isPending}
+                  disabled={enrollMutation.isPending || isEnrollmentLoading}
                 >
                   <PlayIcon className="h-5 w-5 mr-2" />
                   {enrollMutation.isPending 
                     ? "Processing..." 
-                    : isEnrolled 
-                      ? "Continue Learning" 
-                      : "Start Learning"}
+                    : isEnrollmentLoading
+                      ? "Loading..."
+                      : isEnrolled 
+                        ? "Continue Learning" 
+                        : "Start Learning"}
                 </Button>
               </div>
             </div>
