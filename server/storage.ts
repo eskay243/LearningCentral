@@ -2022,6 +2022,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async deleteCourse(id: number): Promise<boolean> {
+    try {
+      // Delete course and all related data (cascade deletes should handle this)
+      await db.delete(courses).where(eq(courses.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      throw new Error("Failed to delete course");
+    }
+  }
+
   async getCourses(options?: { published?: boolean }): Promise<Course[]> {
     try {
       let query = db.select().from(courses);

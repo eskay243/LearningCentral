@@ -476,6 +476,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update course" });
     }
   });
+
+  app.delete('/api/courses/:id', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Check if course exists
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Delete the course (this should cascade delete related data)
+      await storage.deleteCourse(courseId);
+      
+      res.json({ message: "Course deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
   
   // Course Module Routes
   app.get('/api/courses/:id/modules', async (req, res) => {
