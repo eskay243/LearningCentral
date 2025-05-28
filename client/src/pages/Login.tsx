@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   BookOpen, 
   Users, 
@@ -16,12 +17,15 @@ import {
   ArrowRight,
   Zap,
   Shield,
-  Globe
+  Globe,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 export default function Login() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -33,230 +37,221 @@ export default function Login() {
     window.location.href = "/api/login";
   };
 
-  const features = [
-    {
-      icon: <Code className="h-6 w-6" />,
-      title: "Interactive Coding",
-      description: "Learn by doing with hands-on coding exercises and real-world projects"
-    },
-    {
-      icon: <Brain className="h-6 w-6" />,
-      title: "AI Code Companion",
-      description: "Get instant help and smart suggestions from our AI-powered coding assistant"
-    },
-    {
-      icon: <Users className="h-6 w-6" />,
-      title: "Expert Mentorship",
-      description: "Learn from industry professionals with years of real-world experience"
-    },
-    {
-      icon: <Award className="h-6 w-6" />,
-      title: "Professional Certificates",
-      description: "Earn recognized certificates to boost your career prospects"
-    },
-    {
-      icon: <MessageSquare className="h-6 w-6" />,
-      title: "Community Support",
-      description: "Connect with fellow learners and get help when you need it"
-    },
-    {
-      icon: <Zap className="h-6 w-6" />,
-      title: "Progressive Learning",
-      description: "Structured curriculum that adapts to your learning pace and style"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Sarah Johnson",
-      role: "Full-Stack Developer",
-      content: "Codelab Educare transformed my career. The hands-on approach and expert mentorship helped me land my dream job.",
-      rating: 5
-    },
-    {
-      name: "Michael Chen",
-      role: "Data Scientist",
-      content: "The AI Code Companion is incredible. It's like having a personal tutor available 24/7.",
-      rating: 5
-    },
-    {
-      name: "Amara Okafor",
-      role: "Mobile Developer",
-      content: "The practical projects and real-world scenarios prepared me for actual industry challenges.",
-      rating: 5
-    }
-  ];
-
   const stats = [
-    { number: "10,000+", label: "Students Enrolled" },
-    { number: "500+", label: "Courses Available" },
-    { number: "95%", label: "Job Placement Rate" },
-    { number: "4.9/5", label: "Average Rating" }
+    { number: "10,000+", label: "Students" },
+    { number: "500+", label: "Courses" },
+    { number: "95%", label: "Success Rate" },
+    { number: "4.9/5", label: "Rating" }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-cream-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Header */}
-      <header className="relative z-10 px-4 py-6">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-purple-600 to-purple-800 flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-white" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
+      {/* Left side - Login Form */}
+      <div className="flex-1 flex flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
+        <div className="mx-auto w-full max-w-sm lg:w-96">
+          <div>
+            {/* Logo */}
+            <div className="flex items-center space-x-2 mb-8">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-purple-600 to-purple-800 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                Codelab Educare
+              </span>
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">
-              Codelab Educare
-            </span>
-          </div>
-          <Badge variant="outline" className="hidden sm:flex items-center gap-1">
-            <Shield className="h-3 w-3" />
-            Secure Authentication
-          </Badge>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 pb-12">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-              Master <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-800">Coding Skills</span> for the Future
-            </h1>
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              Join Nigeria's premier coding education platform. Learn from industry experts, 
-              build real projects, and accelerate your tech career with our comprehensive courses.
-            </p>
             
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="text-2xl md:text-3xl font-bold text-purple-600 dark:text-purple-400">
-                    {stat.number}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Title */}
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Let's Sign You In
+            </h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              Don't have an account?{" "}
+              <a href="/demo-users" className="font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400">
+                Try demo
+              </a>
+            </p>
+          </div>
 
-            <Card className="max-w-md mx-auto shadow-xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-              <CardHeader className="text-center pb-2">
-                <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-gradient-to-r from-purple-600 to-purple-800 flex items-center justify-center">
-                  <Globe className="h-6 w-6 text-white" />
+          <div className="mt-8">
+            <form className="space-y-6">
+              {/* Username/Email Field */}
+              <div>
+                <Label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Username or Email
+                </Label>
+                <div className="mt-1">
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="hello.user@email.co"
+                    className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white opacity-50"
+                    disabled
+                  />
                 </div>
-                <CardTitle className="text-2xl">Welcome Back</CardTitle>
-                <CardDescription className="text-base">
-                  Sign in to continue your learning journey
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <Button 
-                  onClick={handleLogin}
-                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 transition-all duration-200 transform hover:scale-105"
+              </div>
+
+              {/* Password Field */}
+              <div>
+                <Label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Password
+                </Label>
+                <div className="mt-1 relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    className="block w-full px-3 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white opacity-50"
+                    disabled
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center opacity-50"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember Me & Forgot Password */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Checkbox 
+                    id="remember-me"
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 dark:border-gray-600 rounded opacity-50"
+                    disabled
+                  />
+                  <Label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    Remember Me
+                  </Label>
+                </div>
+
+                <div className="text-sm">
+                  <a href="#" className="font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400">
+                    Forgot Password?
+                  </a>
+                </div>
+              </div>
+
+              {/* Login Button (disabled) */}
+              <div>
+                <Button
+                  type="button"
+                  className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 opacity-50 cursor-not-allowed"
+                  disabled
                 >
-                  Continue with Replit
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  Login
                 </Button>
-                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-4">
-                  New to Codelab Educare? You'll be able to create an account after clicking above.
+              </div>
+
+              {/* Divider */}
+              <div className="mt-6">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400">OR</span>
+                  </div>
+                </div>
+
+                {/* Replit Login Button */}
+                <div className="mt-6">
+                  <Button
+                    onClick={handleLogin}
+                    variant="outline"
+                    className="w-full py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors duration-200"
+                  >
+                    <Globe className="w-5 h-5 mr-2" />
+                    Continue with Replit
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      {/* Right side - Illustration & Features */}
+      <div className="hidden lg:block relative w-0 flex-1">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800">
+          <div className="absolute inset-0 bg-black/10"></div>
+          <div className="relative h-full flex items-center justify-center p-12">
+            <div className="text-center text-white space-y-8 max-w-lg">
+              {/* Animated Coding Illustration */}
+              <div className="w-64 h-64 mx-auto relative">
+                <div className="absolute inset-0 bg-white/10 rounded-full backdrop-blur-sm"></div>
+                <div className="absolute inset-4 bg-gradient-to-br from-white/20 to-white/5 rounded-full flex items-center justify-center">
+                  <div className="relative">
+                    <div className="text-8xl filter drop-shadow-lg">👨‍💻</div>
+                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-400 rounded-full flex items-center justify-center animate-pulse">
+                      <CheckCircle className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Floating code elements */}
+                <div className="absolute top-8 left-8 bg-white/20 backdrop-blur-sm rounded-lg p-2 animate-bounce" style={{ animationDelay: '1s' }}>
+                  <Code className="w-4 h-4" />
+                </div>
+                <div className="absolute bottom-8 right-8 bg-white/20 backdrop-blur-sm rounded-lg p-2 animate-bounce" style={{ animationDelay: '2s' }}>
+                  <Brain className="w-4 h-4" />
+                </div>
+                <div className="absolute top-1/2 left-0 bg-white/20 backdrop-blur-sm rounded-lg p-2 animate-bounce" style={{ animationDelay: '0.5s' }}>
+                  <Zap className="w-4 h-4" />
+                </div>
+              </div>
+              
+              {/* Hero Text */}
+              <div>
+                <h3 className="text-4xl font-bold mb-4">Master Coding Skills</h3>
+                <p className="text-lg text-purple-100 leading-relaxed">
+                  Join thousands of students learning to code with our interactive platform. 
+                  Build real projects, get instant feedback, and accelerate your career.
                 </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Features Section */}
-        <div className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Why Choose Codelab Educare?
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              We combine cutting-edge technology with proven teaching methods to deliver 
-              the most effective coding education experience.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="h-12 w-12 rounded-lg bg-gradient-to-r from-purple-100 to-purple-200 dark:from-purple-800 dark:to-purple-700 flex items-center justify-center mb-4">
-                    <div className="text-purple-600 dark:text-purple-300">
-                      {feature.icon}
-                    </div>
+              </div>
+              
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-6 text-sm">
+                {stats.map((stat, index) => (
+                  <div key={index} className="text-center p-4 bg-white/10 backdrop-blur-sm rounded-lg">
+                    <div className="text-2xl font-bold">{stat.number}</div>
+                    <div className="text-purple-200">{stat.label}</div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
+                ))}
+              </div>
 
-        {/* Testimonials Section */}
-        <div className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              What Our Students Say
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Join thousands of successful graduates who transformed their careers
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border-0 shadow-lg bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
-                <CardContent className="p-6">
-                  <div className="flex items-center mb-4">
-                    {Array.from({ length: testimonial.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    ))}
+              {/* Feature Highlights */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 text-left">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Code className="w-4 h-4" />
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300 mb-4 italic">
-                    "{testimonial.content}"
-                  </p>
-                  <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">
-                      {testimonial.name}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {testimonial.role}
-                    </div>
+                  <span className="text-purple-100">Interactive coding exercises</span>
+                </div>
+                <div className="flex items-center space-x-3 text-left">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Brain className="w-4 h-4" />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <span className="text-purple-100">AI-powered learning assistant</span>
+                </div>
+                <div className="flex items-center space-x-3 text-left">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <span className="text-purple-100">Industry-recognized certificates</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center">
-          <Card className="max-w-2xl mx-auto border-0 shadow-xl bg-gradient-to-r from-purple-600 to-purple-800 text-white">
-            <CardContent className="p-8">
-              <h2 className="text-3xl font-bold mb-4">
-                Ready to Start Your Journey?
-              </h2>
-              <p className="text-lg mb-6 text-purple-100">
-                Join thousands of students who are already building their future in tech. 
-                Your next career breakthrough is just one click away.
-              </p>
-              <Button 
-                onClick={handleLogin}
-                variant="secondary"
-                className="h-12 px-8 text-base font-semibold bg-white text-purple-700 hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
-              >
-                Get Started Today
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
