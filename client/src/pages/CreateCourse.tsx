@@ -35,7 +35,7 @@ const formSchema = z.object({
   price: z.string().transform((val) => (val === "" ? "0" : val)),
   isPublished: z.boolean().default(false),
   category: z.string().optional(),
-  tags: z.string().optional().transform((val) => val ? val.split(',').map(tag => tag.trim()) : []),
+  tags: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,7 +57,7 @@ const CreateCourse = () => {
       price: "0",
       isPublished: false,
       category: "",
-      tags: "",
+      tags: undefined,
     },
   });
 
@@ -119,18 +119,19 @@ const CreateCourse = () => {
 
       <Card>
         <CardHeader>
+          <CardTitle>Course Details</CardTitle>
+        </CardHeader>
+        <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-3 w-full max-w-md">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
               <TabsTrigger value="pricing">Pricing</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
-          </Tabs>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <TabsContent value="basic" className="space-y-6">
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+                <TabsContent value="basic" className="space-y-6">
                 <FormField
                   control={form.control}
                   name="title"
@@ -343,6 +344,7 @@ const CreateCourse = () => {
               </div>
             </form>
           </Form>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
