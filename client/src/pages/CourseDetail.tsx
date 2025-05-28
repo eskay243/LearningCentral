@@ -312,6 +312,90 @@ const CourseDetail = () => {
     },
   });
 
+  // Announcement and mentor API queries
+  const { data: announcements } = useQuery({
+    queryKey: ["/api/courses", courseId, "announcements"],
+    enabled: !!courseId
+  });
+
+  const { data: availableMentors } = useQuery({
+    queryKey: ["/api/mentors/available"],
+    enabled: user?.role === 'admin'
+  });
+
+  const { data: courseMentors } = useQuery({
+    queryKey: ["/api/courses", courseId, "mentors"],
+    enabled: !!courseId
+  });
+
+  // Announcement mutations
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async (announcementData: any) => {
+      const res = await apiRequest("POST", `/api/courses/${courseId}/announcements`, announcementData);
+      if (!res.ok) throw new Error('Failed to create announcement');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "announcements"] });
+      setAnnouncementDialogOpen(false);
+      setNewAnnouncement({ title: "", content: "", type: "general", priority: "normal" });
+      toast({ title: "Success", description: "Announcement created successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to create announcement", variant: "destructive" });
+    }
+  });
+
+  // Mentor mutations
+  const assignMentorMutation = useMutation({
+    mutationFn: async (mentorData: any) => {
+      const res = await apiRequest("POST", `/api/courses/${courseId}/mentors`, mentorData);
+      if (!res.ok) throw new Error('Failed to assign mentor');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "mentors"] });
+      setMentorDialogOpen(false);
+      setSelectedMentorId("");
+      toast({ title: "Success", description: "Mentor assigned successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to assign mentor", variant: "destructive" });
+    }
+  });
+
+  const removeMentorMutation = useMutation({
+    mutationFn: async (mentorId: string) => {
+      const res = await apiRequest("DELETE", `/api/courses/${courseId}/mentors/${mentorId}`);
+      if (!res.ok) throw new Error('Failed to remove mentor');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "mentors"] });
+      toast({ title: "Success", description: "Mentor removed successfully!" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to remove mentor", variant: "destructive" });
+    }
+  });
+
+  // Event handlers
+  const handleCreateAnnouncement = () => {
+    if (!newAnnouncement.title || !newAnnouncement.content) {
+      toast({ title: "Error", description: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+    createAnnouncementMutation.mutate(newAnnouncement);
+  };
+
+  const handleAssignMentor = () => {
+    if (!selectedMentorId) {
+      toast({ title: "Error", description: "Please select a mentor", variant: "destructive" });
+      return;
+    }
+    assignMentorMutation.mutate({ mentorId: selectedMentorId });
+  };
+
   const handleCreateModule = () => {
     if (!newModule.title) {
       toast({
