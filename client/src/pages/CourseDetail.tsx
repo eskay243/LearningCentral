@@ -13,6 +13,13 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -220,6 +227,10 @@ const CourseDetail = () => {
         description: "",
         content: "",
         contentType: "text",
+        videoUrl: "",
+        videoPoster: "",
+        videoProvider: "self-hosted",
+        duration: 0,
         isPreview: false,
         orderIndex: 0,
       });
