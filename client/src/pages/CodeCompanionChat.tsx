@@ -213,7 +213,14 @@ export default function CodeCompanionChat() {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      const finalMessages = [...newMessages, assistantMessage];
+      setMessages(finalMessages);
+      
+      // Save final messages to current conversation
+      setConversationMessages(prev => ({
+        ...prev,
+        [activeConversation]: finalMessages
+      }));
     } catch (error) {
       toast({
         title: "Error",
