@@ -278,7 +278,7 @@ function Courses() {
               category: course.category,
               level: course.level || 'Beginner',
             }))}
-            showAdminActions={isAdmin}
+            showAdminActions={true}
             onDeleteCourse={(courseId) => setCourseToDelete(courseId)}
           />
         )}
