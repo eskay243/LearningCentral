@@ -165,8 +165,9 @@ const CourseDetail = () => {
     data: mentors,
     isLoading: isMentorsLoading,
   } = useQuery<Mentor[]>({
-    queryKey: ["/api/courses", id, "mentors"],
+    queryKey: [`/api/courses/${id}/mentors`],
     enabled: !!id,
+    staleTime: 0, // Force refresh
   });
 
   // Fetch course enrollment status
@@ -354,7 +355,7 @@ const CourseDetail = () => {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "mentors"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/mentors`] });
       setMentorDialogOpen(false);
       setSelectedMentorId("");
       toast({ title: "Success", description: "Mentor assigned successfully!" });
@@ -371,7 +372,7 @@ const CourseDetail = () => {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "mentors"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/mentors`] });
       toast({ title: "Success", description: "Mentor removed successfully!" });
     },
     onError: (error: any) => {
