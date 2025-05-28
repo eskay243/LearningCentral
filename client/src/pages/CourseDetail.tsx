@@ -314,8 +314,8 @@ const CourseDetail = () => {
 
   // Announcement and mentor API queries
   const { data: announcements } = useQuery({
-    queryKey: ["/api/courses", courseId, "announcements"],
-    enabled: !!courseId
+    queryKey: ["/api/courses", id, "announcements"],
+    enabled: !!id
   });
 
   const { data: availableMentors } = useQuery({
@@ -324,19 +324,19 @@ const CourseDetail = () => {
   });
 
   const { data: courseMentors } = useQuery({
-    queryKey: ["/api/courses", courseId, "mentors"],
-    enabled: !!courseId
+    queryKey: ["/api/courses", id, "mentors"],
+    enabled: !!id
   });
 
   // Announcement mutations
   const createAnnouncementMutation = useMutation({
     mutationFn: async (announcementData: any) => {
-      const res = await apiRequest("POST", `/api/courses/${courseId}/announcements`, announcementData);
+      const res = await apiRequest("POST", `/api/courses/${id}/announcements`, announcementData);
       if (!res.ok) throw new Error('Failed to create announcement');
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "announcements"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "announcements"] });
       setAnnouncementDialogOpen(false);
       setNewAnnouncement({ title: "", content: "", type: "general", priority: "normal" });
       toast({ title: "Success", description: "Announcement created successfully!" });
@@ -349,12 +349,12 @@ const CourseDetail = () => {
   // Mentor mutations
   const assignMentorMutation = useMutation({
     mutationFn: async (mentorData: any) => {
-      const res = await apiRequest("POST", `/api/courses/${courseId}/mentors`, mentorData);
+      const res = await apiRequest("POST", `/api/courses/${id}/mentors`, mentorData);
       if (!res.ok) throw new Error('Failed to assign mentor');
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "mentors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "mentors"] });
       setMentorDialogOpen(false);
       setSelectedMentorId("");
       toast({ title: "Success", description: "Mentor assigned successfully!" });
@@ -366,12 +366,12 @@ const CourseDetail = () => {
 
   const removeMentorMutation = useMutation({
     mutationFn: async (mentorId: string) => {
-      const res = await apiRequest("DELETE", `/api/courses/${courseId}/mentors/${mentorId}`);
+      const res = await apiRequest("DELETE", `/api/courses/${id}/mentors/${mentorId}`);
       if (!res.ok) throw new Error('Failed to remove mentor');
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", courseId, "mentors"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "mentors"] });
       toast({ title: "Success", description: "Mentor removed successfully!" });
     },
     onError: (error: any) => {
