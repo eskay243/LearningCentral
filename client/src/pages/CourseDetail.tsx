@@ -213,12 +213,13 @@ export default function CourseDetail() {
       return;
     }
     
-    // If already enrolled, go to course content
+    // If already enrolled, go directly to course content without enrolling again
     if (enrollmentStatus?.isEnrolled) {
       setLocation(`/courses/${id}/view`);
       return;
     }
     
+    // Only enroll if not already enrolled
     enrollMutation.mutate();
   };
 
