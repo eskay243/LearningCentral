@@ -73,9 +73,7 @@ import { registerCodeCompanionRoutes } from "./codeCompanionRoutes";
 import { setupWebSocketServer } from "./websocketServer";
 import certificateRoutes from "./certificateRoutes";
 import drmRoutes from "./drmRoutes";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+
 
 // Set up storage for uploaded files
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -297,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Course image upload endpoint
-  app.post('/api/upload/course-image', isAuthenticated, upload.single('image'), async (req, res) => {
+  app.post('/api/upload/course-image', isAuthenticated, upload.single('image'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No image file provided' });
@@ -404,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: parseFloat(req.body.price) || 0,
         isPublished: req.body.isPublished || false,
         category: req.body.category,
-        tags: req.body.tags || [],
+        tags: req.body.tags ? (typeof req.body.tags === 'string' ? req.body.tags.split(',').map((tag: string) => tag.trim()) : req.body.tags) : [],
       };
       
       const course = await storage.createCourse(courseData);
