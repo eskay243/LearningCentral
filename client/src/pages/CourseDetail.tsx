@@ -220,7 +220,7 @@ const CourseDetail = () => {
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/modules`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${course?.id}/modules`] });
       setLessonDialogOpen(false);
       setNewLesson({
         title: "",
@@ -906,7 +906,12 @@ const CourseDetail = () => {
                     : "Stay updated with important course announcements"}
                 </p>
                 {canEdit && (
-                  <Button>Create Announcement</Button>
+                  <Button onClick={() => {
+                    toast({
+                      title: "Feature Coming Soon",
+                      description: "Announcement creation will be available in the next update.",
+                    });
+                  }}>Create Announcement</Button>
                 )}
               </div>
             </TabsContent>
@@ -952,7 +957,12 @@ const CourseDetail = () => {
                       : "This course doesn't have any mentors assigned yet"}
                   </p>
                   {isAdmin && (
-                    <Button>Assign Mentors</Button>
+                    <Button onClick={() => {
+                      toast({
+                        title: "Feature Coming Soon",
+                        description: "Mentor assignment will be available in the next update.",
+                      });
+                    }}>Assign Mentors</Button>
                   )}
                 </div>
               )}
