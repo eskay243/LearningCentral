@@ -217,28 +217,33 @@ const CreateCourse = () => {
         thumbnail: uploadedImage || values.thumbnail
       };
       
-      const response = await apiRequest("POST", "/api/courses", finalValues);
+      const url = isEditMode ? `/api/courses/${courseId}` : "/api/courses";
+      const method = isEditMode ? "PUT" : "POST";
+      const response = await apiRequest(method, url, finalValues);
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to create course");
+        throw new Error(error.message || `Failed to ${isEditMode ? 'update' : 'create'} course`);
       }
       
       const courseData = await response.json();
       
       toast({
-        title: "Course created successfully!",
-        description: "You can now add modules and lessons to your course.",
+        title: `Course ${isEditMode ? 'updated' : 'created'} successfully!`,
+        description: isEditMode ? "Your course changes have been saved." : "You can now add modules and lessons to your course.",
       });
       
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      if (isEditMode) {
+        queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}`] });
+      }
       
       // Navigate to the course detail page
-      navigate(`/courses/${courseData.id}`);
+      navigate(`/courses/${courseData.id || courseId}`);
     } catch (error: any) {
       toast({
-        title: "Failed to create course",
+        title: `Failed to ${isEditMode ? 'update' : 'create'} course`,
         description: error.message,
         variant: "destructive",
       });
@@ -253,8 +258,8 @@ const CreateCourse = () => {
     <div className="container py-6 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Create a New Course</h1>
-          <p className="text-gray-500">Fill in the details to create your course</p>
+          <h1 className="text-2xl font-bold">{isEditMode ? 'Edit Course' : 'Create a New Course'}</h1>
+          <p className="text-gray-500">{isEditMode ? 'Update your course details' : 'Fill in the details to create your course'}</p>
         </div>
         <Button variant="outline" onClick={() => navigate("/courses")}>Cancel</Button>
       </div>
