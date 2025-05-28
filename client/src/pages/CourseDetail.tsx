@@ -1088,51 +1088,109 @@ const CourseDetail = () => {
                   <p className="mt-2 text-gray-500">Loading mentor information...</p>
                 </div>
               ) : mentors && mentors.length > 0 ? (
-                <div className="space-y-6">
-                  {mentors.map((mentor: any) => (
-                    <div key={mentor.id} className="flex gap-4 items-start justify-between">
-                      <div className="flex gap-4 items-start">
-                        <div className="h-16 w-16 rounded-full overflow-hidden bg-gray-200">
-                          {mentor.profileImageUrl ? (
-                            <img 
-                              src={mentor.profileImageUrl} 
-                              alt={mentor.name} 
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-gray-400">
-                              <UsersIcon className="h-8 w-8" />
-                            </div>
-                          )}
+                <>
+                  <div className="space-y-6">
+                    {mentors.map((mentor: any) => (
+                      <div key={mentor.id} className="flex gap-4 items-start justify-between">
+                        <div className="flex gap-4 items-start">
+                          <div className="h-16 w-16 rounded-full overflow-hidden bg-gray-200">
+                            {mentor.profileImageUrl ? (
+                              <img 
+                                src={mentor.profileImageUrl} 
+                                alt={mentor.name} 
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-gray-400">
+                                <UsersIcon className="h-8 w-8" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-lg">{mentor.name}</h3>
+                            <p className="text-gray-500 mb-1">{mentor.email}</p>
+                            <p className="text-gray-500 mb-2">Instructor</p>
+                            <p>{mentor.bio || "No bio provided"}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium text-lg">{mentor.name}</h3>
-                          <p className="text-gray-500 mb-1">{mentor.email}</p>
-                          <p className="text-gray-500 mb-2">Instructor</p>
-                          <p>{mentor.bio || "No bio provided"}</p>
-                        </div>
+                        {isAdmin && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeMentorMutation.mutate(mentor.id)}
+                            disabled={removeMentorMutation.isPending}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            {removeMentorMutation.isPending ? "Removing..." : "Remove"}
+                          </Button>
+                        )}
                       </div>
-                      {isAdmin && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeMentorMutation.mutate(mentor.id)}
-                          disabled={removeMentorMutation.isPending}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          {removeMentorMutation.isPending ? "Removing..." : "Remove"}
-                        </Button>
-                      )}
+                    ))}
+                  </div>
+                  {isAdmin && (
+                    <div className="mt-6 text-center">
+                      <Dialog open={mentorDialogOpen} onOpenChange={setMentorDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline">
+                            <PlusIcon className="h-4 w-4 mr-2" />
+                            Assign More Mentors
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Assign Mentor to Course</DialogTitle>
+                            <DialogDescription>
+                              Select a mentor to help guide students in this course.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="mentor-select">Select Mentor</Label>
+                              <Select value={selectedMentorId} onValueChange={setSelectedMentorId}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose a mentor" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableMentors?.map((mentor: any) => (
+                                    <SelectItem key={mentor.id} value={mentor.id}>
+                                      {mentor.firstName} {mentor.lastName} ({mentor.email})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button variant="outline" onClick={() => setMentorDialogOpen(false)}>
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={handleAssignMentor}
+                              disabled={assignMentorMutation.isPending}
+                            >
+                              {assignMentorMutation.isPending ? "Assigning..." : "Assign Mentor"}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                  ))}
-                </div>
-                {isAdmin && (
-                  <div className="mt-6 text-center">
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8 border rounded-lg">
+                  <div className="text-5xl mb-2">👨‍🏫</div>
+                  <h3 className="text-lg font-medium mb-1">No mentors assigned</h3>
+                  <p className="text-gray-500 mb-4">
+                    {isAdmin
+                      ? "Assign mentors to help teach and manage this course"
+                      : "This course doesn't have any mentors assigned yet"}
+                  </p>
+                  {isAdmin && (
                     <Dialog open={mentorDialogOpen} onOpenChange={setMentorDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button variant="outline">
+                        <Button>
                           <PlusIcon className="h-4 w-4 mr-2" />
-                          Assign More Mentors
+                          Assign Mentors
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -1174,6 +1232,7 @@ const CourseDetail = () => {
                     </Dialog>
                   </div>
                 )}
+                </div>
               ) : (
                 <div className="text-center py-8 border rounded-lg">
                   <div className="text-5xl mb-2">👨‍🏫</div>
@@ -1181,7 +1240,7 @@ const CourseDetail = () => {
                   <p className="text-gray-500 mb-4">
                     {isAdmin
                       ? "Assign mentors to help teach and manage this course"
-                      : "This course doesn't have any mentors assigned yet"}
+                      : "No mentors have been assigned to this course yet"}
                   </p>
                   {isAdmin && (
                     <Dialog open={mentorDialogOpen} onOpenChange={setMentorDialogOpen}>
