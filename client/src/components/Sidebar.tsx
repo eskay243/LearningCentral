@@ -132,10 +132,17 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               </Link>
               
               {isAdmin && (
-                <Link href="/users" className={menuItemClass("/users")}>
-                  <UsersRound className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">User Management</span>
-                </Link>
+                <>
+                  <Link href="/users" className={menuItemClass("/users")}>
+                    <UsersRound className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <span className="truncate">User Management</span>
+                  </Link>
+                  
+                  <Link href="/admin/oauth-settings" className={menuItemClass("/admin/oauth-settings")}>
+                    <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <span className="truncate">OAuth Settings</span>
+                  </Link>
+                </>
               )}
             </>
           )}
