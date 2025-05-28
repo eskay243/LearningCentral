@@ -214,7 +214,7 @@ export default function CourseDetail() {
     }
     
     // If already enrolled, go directly to course content without enrolling again
-    if (enrollmentStatus?.isEnrolled) {
+    if (isEnrolled) {
       setLocation(`/courses/${id}/view`);
       return;
     }
@@ -223,8 +223,12 @@ export default function CourseDetail() {
     enrollMutation.mutate();
   };
 
-  // Check if user is enrolled
-  const isEnrolled = enrollmentStatus?.isEnrolled || false;
+  // Check if user is enrolled - handle both data structures
+  const isEnrolled = enrollmentStatus?.isEnrolled === true;
+  
+  // Debug logging
+  console.log('Enrollment Status:', enrollmentStatus);
+  console.log('Is Enrolled:', isEnrolled);
 
   if (isLoading) {
     return (
