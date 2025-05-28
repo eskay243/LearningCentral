@@ -184,8 +184,8 @@ export default function Login() {
       <div className="hidden lg:block relative w-0 flex-1">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800">
           <div className="absolute inset-0 bg-black/10"></div>
-          <div className="relative h-full flex items-center justify-center p-12">
-            <div className="text-center text-white space-y-8 max-w-lg">
+          <div className="relative h-full overflow-y-auto p-12">
+            <div className="text-center text-white space-y-8 max-w-lg mx-auto min-h-full flex flex-col justify-center">
               {/* Animated Coding Illustration */}
               <div className="w-64 h-64 mx-auto relative">
                 <div className="absolute inset-0 bg-white/10 rounded-full backdrop-blur-sm"></div>
@@ -230,7 +230,7 @@ export default function Login() {
               </div>
 
               {/* Feature Highlights */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center space-x-3 text-left">
                   <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                     <Code className="w-4 h-4" />
@@ -248,6 +248,110 @@ export default function Login() {
                     <Award className="w-4 h-4" />
                   </div>
                   <span className="text-purple-100">Industry-recognized certificates</span>
+                </div>
+                <div className="flex items-center space-x-3 text-left">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span className="text-purple-100">Expert mentor guidance</span>
+                </div>
+                <div className="flex items-center space-x-3 text-left">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <span className="text-purple-100">Community support network</span>
+                </div>
+                <div className="flex items-center space-x-3 text-left">
+                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <span className="text-purple-100">Real-time progress tracking</span>
+                </div>
+              </div>
+
+              {/* Popular Courses */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 space-y-4">
+                <h4 className="text-xl font-semibold mb-4">Popular Courses</h4>
+                <div className="space-y-3 text-left">
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-100">JavaScript Fundamentals</span>
+                    <span className="text-sm bg-white/20 px-2 py-1 rounded">₦25,000</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-100">Python for Beginners</span>
+                    <span className="text-sm bg-white/20 px-2 py-1 rounded">₦30,000</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-100">React Development</span>
+                    <span className="text-sm bg-white/20 px-2 py-1 rounded">₦45,000</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-purple-100">Data Science Bootcamp</span>
+                    <span className="text-sm bg-white/20 px-2 py-1 rounded">₦65,000</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Testimonials */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 space-y-4">
+                <h4 className="text-xl font-semibold mb-4">What Students Say</h4>
+                <div className="space-y-4 text-left">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-purple-100 text-sm italic">
+                      "Codelab Educare changed my life. The interactive approach made learning so much easier!"
+                    </p>
+                    <p className="text-purple-200 text-xs">- Sarah O., Lagos</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-purple-100 text-sm italic">
+                      "The AI assistant is incredible. It's like having a personal tutor available 24/7."
+                    </p>
+                    <p className="text-purple-200 text-xs">- David M., Abuja</p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-purple-100 text-sm italic">
+                      "Got my first tech job within 3 months of completing the program. Highly recommended!"
+                    </p>
+                    <p className="text-purple-200 text-xs">- Adaora N., Port Harcourt</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Learning Path */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 space-y-4">
+                <h4 className="text-xl font-semibold mb-4">Your Learning Journey</h4>
+                <div className="space-y-3 text-left">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-green-400 rounded-full flex items-center justify-center text-xs font-bold text-white">1</div>
+                    <span className="text-purple-100">Choose your learning path</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-blue-400 rounded-full flex items-center justify-center text-xs font-bold text-white">2</div>
+                    <span className="text-purple-100">Learn through interactive exercises</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-purple-400 rounded-full flex items-center justify-center text-xs font-bold text-white">3</div>
+                    <span className="text-purple-100">Build real-world projects</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-white">4</div>
+                    <span className="text-purple-100">Get certified and land your dream job</span>
+                  </div>
                 </div>
               </div>
             </div>
