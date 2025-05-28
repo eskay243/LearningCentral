@@ -38,6 +38,15 @@ const CodeCompanionPage: React.FC = () => {
         <h1 className="text-3xl font-bold mb-2">Code Companion</h1>
         <p className="text-muted-foreground">Your AI programming assistant for learning and problem-solving</p>
         
+        <div className="mt-4">
+          <Button 
+            onClick={() => navigate('/code-companion/chat')}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            Open Chat Interface
+          </Button>
+        </div>
+        
         <ContextualHelp
           id="code-companion-welcome"
           title="Welcome to Code Companion!"
