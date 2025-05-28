@@ -89,6 +89,10 @@ const CourseDetail = () => {
     description: "",
     content: "",
     contentType: "text",
+    videoUrl: "",
+    videoPoster: "",
+    videoProvider: "self-hosted",
+    duration: 0,
     isPreview: false,
     orderIndex: 0,
   });
@@ -703,15 +707,106 @@ const CourseDetail = () => {
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor="lesson-content">Content</Label>
+                                    <Label htmlFor="content-type">Content Type</Label>
+                                    <Select value={newLesson.contentType} onValueChange={(value) => setNewLesson({...newLesson, contentType: value})}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select content type" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="text">📝 Text Content</SelectItem>
+                                        <SelectItem value="video">🎥 Video Lesson</SelectItem>
+                                        <SelectItem value="interactive">💻 Interactive Content</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  
+                                  {newLesson.contentType === 'video' && (
+                                    <div className="space-y-4 p-4 border rounded-lg bg-slate-50 dark:bg-slate-800">
+                                      <h4 className="font-medium text-sm text-slate-700 dark:text-slate-300">Video Configuration</h4>
+                                      
+                                      <div className="space-y-2">
+                                        <Label htmlFor="video-provider">Video Hosting</Label>
+                                        <Select value={newLesson.videoProvider} onValueChange={(value) => setNewLesson({...newLesson, videoProvider: value})}>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Choose video hosting" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="self-hosted">🏠 Self-Hosted Video</SelectItem>
+                                            <SelectItem value="youtube">▶️ YouTube</SelectItem>
+                                            <SelectItem value="vimeo">🎬 Vimeo</SelectItem>
+                                            <SelectItem value="wistia">📺 Wistia</SelectItem>
+                                            <SelectItem value="loom">🎯 Loom</SelectItem>
+                                            <SelectItem value="external">🌐 External URL</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      
+                                      <div className="space-y-2">
+                                        <Label htmlFor="video-url">Video URL</Label>
+                                        <Input 
+                                          id="video-url"
+                                          placeholder={
+                                            newLesson.videoProvider === 'youtube' ? 'https://www.youtube.com/watch?v=...' :
+                                            newLesson.videoProvider === 'vimeo' ? 'https://vimeo.com/...' :
+                                            newLesson.videoProvider === 'self-hosted' ? 'Upload video file or enter direct URL' :
+                                            'Enter video URL'
+                                          }
+                                          value={newLesson.videoUrl}
+                                          onChange={(e) => setNewLesson({...newLesson, videoUrl: e.target.value})}
+                                        />
+                                        <p className="text-xs text-slate-500">
+                                          {newLesson.videoProvider === 'youtube' && 'YouTube URLs will be automatically embedded for optimal playback'}
+                                          {newLesson.videoProvider === 'vimeo' && 'Vimeo URLs will be automatically embedded with privacy controls'}
+                                          {newLesson.videoProvider === 'self-hosted' && 'Upload your video file or provide a direct link to your hosted video'}
+                                          {newLesson.videoProvider === 'wistia' && 'Wistia URLs provide advanced analytics and viewing controls'}
+                                          {newLesson.videoProvider === 'loom' && 'Loom recordings are perfect for screen sharing and tutorials'}
+                                          {newLesson.videoProvider === 'external' && 'Any valid video URL from supported platforms'}
+                                        </p>
+                                      </div>
+                                      
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label htmlFor="video-poster">Thumbnail URL (Optional)</Label>
+                                          <Input 
+                                            id="video-poster"
+                                            placeholder="https://example.com/thumbnail.jpg"
+                                            value={newLesson.videoPoster}
+                                            onChange={(e) => setNewLesson({...newLesson, videoPoster: e.target.value})}
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor="video-duration">Duration (minutes)</Label>
+                                          <Input 
+                                            id="video-duration"
+                                            type="number"
+                                            min="0"
+                                            step="0.5"
+                                            placeholder="e.g. 15"
+                                            value={newLesson.duration || ''}
+                                            onChange={(e) => setNewLesson({...newLesson, duration: parseFloat(e.target.value) || 0})}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div className="space-y-2">
+                                    <Label htmlFor="lesson-content">
+                                      {newLesson.contentType === 'video' ? 'Additional Notes (Optional)' : 'Content'}
+                                    </Label>
                                     <Textarea 
                                       id="lesson-content" 
-                                      placeholder="Lesson content (markdown supported)"
+                                      placeholder={
+                                        newLesson.contentType === 'video' 
+                                          ? "Add notes, transcripts, or supplementary content for this video lesson"
+                                          : "Lesson content (markdown supported)"
+                                      }
                                       className="min-h-32"
                                       value={newLesson.content}
                                       onChange={(e) => setNewLesson({...newLesson, content: e.target.value})}
                                     />
                                   </div>
+                                  
                                   <div className="flex items-center space-x-2">
                                     <Switch 
                                       id="is-preview"
