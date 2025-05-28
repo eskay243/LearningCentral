@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -46,6 +46,50 @@ export default function CodeCompanionChat() {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
+  const [conversationMessages, setConversationMessages] = useState<{[key: string]: Message[]}>({
+    "1": [
+      {
+        id: "1",
+        content: "How can I improve my loop performance in JavaScript?",
+        role: "user",
+        timestamp: new Date(Date.now() - 1000 * 60 * 30)
+      },
+      {
+        id: "2",
+        content: "Here are several ways to improve loop performance in JavaScript:\n\n1. **Use for loops instead of forEach for large datasets**\n2. **Cache array length**: `for(let i = 0, len = arr.length; i < len; i++)`\n3. **Use for...of for cleaner code when you don't need indices**\n4. **Consider using map(), filter(), reduce() for functional operations**\n\nWhat type of loop optimization are you specifically looking for?",
+        role: "assistant",
+        timestamp: new Date(Date.now() - 1000 * 60 * 29)
+      }
+    ],
+    "2": [
+      {
+        id: "3",
+        content: "I have a question about useEffect dependency arrays in React",
+        role: "user", 
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2)
+      },
+      {
+        id: "4",
+        content: "Great question! The dependency array in useEffect controls when the effect runs:\n\n```jsx\n// Runs after every render\nuseEffect(() => {\n  // effect logic\n});\n\n// Runs only once (on mount)\nuseEffect(() => {\n  // effect logic\n}, []);\n\n// Runs when dependencies change\nuseEffect(() => {\n  // effect logic\n}, [dependency1, dependency2]);\n```\n\nWhat specific scenario are you working with?",
+        role: "assistant",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2 + 60000)
+      }
+    ],
+    "3": [
+      {
+        id: "5",
+        content: "How should I handle async/await errors in API calls?",
+        role: "user",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24)
+      },
+      {
+        id: "6", 
+        content: "Here's the best way to handle async/await errors:\n\n```javascript\ntry {\n  const response = await fetch('/api/data');\n  if (!response.ok) {\n    throw new Error(`HTTP error! status: ${response.status}`);\n  }\n  const data = await response.json();\n  return data;\n} catch (error) {\n  console.error('API call failed:', error);\n  // Handle error appropriately\n  throw error; // or return default value\n}\n```\n\nAlways check response.ok and handle both network and HTTP errors!",
+        role: "assistant",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 + 120000)
+      }
+    ]
+  });
   const [conversations, setConversations] = useState<Conversation[]>([
     { 
       id: "1", 
@@ -73,6 +117,26 @@ export default function CodeCompanionChat() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Load initial messages for the active conversation
+  useEffect(() => {
+    setMessages(conversationMessages[activeConversation] || []);
+  }, []);
+
+  // Load messages when switching conversations
+  const switchToConversation = (conversationId: string) => {
+    // Save current messages to conversation
+    if (activeConversation && messages.length > 0) {
+      setConversationMessages(prev => ({
+        ...prev,
+        [activeConversation]: messages
+      }));
+    }
+    
+    // Load messages for new conversation
+    setActiveConversation(conversationId);
+    setMessages(conversationMessages[conversationId] || []);
+  };
 
   const quickActions = [
     { 
@@ -113,9 +177,16 @@ export default function CodeCompanionChat() {
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInputMessage("");
     setIsLoading(true);
+
+    // Save messages to current conversation
+    setConversationMessages(prev => ({
+      ...prev,
+      [activeConversation]: newMessages
+    }));
 
     try {
       const response = await fetch('/api/code-companion/tip', {
@@ -272,7 +343,7 @@ export default function CodeCompanionChat() {
                     }`}
                   >
                     <button
-                      onClick={() => setActiveConversation(conv.id)}
+                      onClick={() => switchToConversation(conv.id)}
                       className="w-full text-left p-3 rounded-lg"
                     >
                       <div className="flex items-start space-x-3">
