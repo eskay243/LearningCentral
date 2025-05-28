@@ -2380,5 +2380,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============= ANNOUNCEMENTS API =============
+  
+  // Create Course Announcement
+  app.post("/api/courses/:courseId/announcements", isAuthenticated, hasRole(['admin', 'mentor']), async (req: any, res: Response) => {
+    const { courseId } = req.params;
+    const { title, content, priority = 'normal', type = 'general' } = req.body;
+    
+    try {
+      const [announcement] = await db.insert(announcements).values({
+        courseId: parseInt(courseId),
+        title,
+        content,
+        priority,
+        type,
+        createdBy: req.user.id,
+        isPublished: true,
+        publishedAt: new Date()
+      }).returning();
+      
+      res.status(201).json(announcement);
+    } catch (error) {
+      console.error('Error creating announcement:', error);
+      res.status(500).json({ message: 'Failed to create announcement' });
+    }
+  });
+
+  // Get Course Announcements
+  app.get("/api/courses/:courseId/announcements", async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+    
+    try {
+      const courseAnnouncements = await db.select()
+        .from(announcements)
+        .where(eq(announcements.courseId, parseInt(courseId)))
+        .orderBy(desc(announcements.createdAt));
+      
+      res.json(courseAnnouncements);
+    } catch (error) {
+      console.error('Error fetching announcements:', error);
+      res.status(500).json({ message: 'Failed to fetch announcements' });
+    }
+  });
+
+  // ============= MENTOR ASSIGNMENT API =============
+
+  // Assign Mentor to Course
+  app.post("/api/courses/:courseId/mentors", isAuthenticated, hasRole(['admin']), async (req: any, res: Response) => {
+    const { courseId } = req.params;
+    const { mentorId, role = 'mentor' } = req.body;
+    
+    try {
+      // Check if mentor exists and has mentor role
+      const mentor = await db.select().from(users).where(eq(users.id, mentorId)).limit(1);
+      if (!mentor.length || mentor[0].role !== 'mentor') {
+        return res.status(400).json({ message: 'Invalid mentor ID or user is not a mentor' });
+      }
+
+      // Check if already assigned
+      const existing = await db.select()
+        .from(courseMentors)
+        .where(and(
+          eq(courseMentors.courseId, parseInt(courseId)),
+          eq(courseMentors.mentorId, mentorId)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return res.status(400).json({ message: 'Mentor already assigned to this course' });
+      }
+
+      const [assignment] = await db.insert(courseMentors).values({
+        courseId: parseInt(courseId),
+        mentorId,
+        assignedBy: req.user.id,
+        role
+      }).returning();
+      
+      res.status(201).json(assignment);
+    } catch (error) {
+      console.error('Error assigning mentor:', error);
+      res.status(500).json({ message: 'Failed to assign mentor' });
+    }
+  });
+
+  // Get Available Mentors for Assignment
+  app.get("/api/mentors/available", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const mentors = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        profileImageUrl: users.profileImageUrl
+      })
+      .from(users)
+      .where(eq(users.role, 'mentor'));
+      
+      res.json(mentors);
+    } catch (error) {
+      console.error('Error fetching mentors:', error);
+      res.status(500).json({ message: 'Failed to fetch mentors' });
+    }
+  });
+
+  // Remove Mentor from Course
+  app.delete("/api/courses/:courseId/mentors/:mentorId", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    const { courseId, mentorId } = req.params;
+    
+    try {
+      await db.delete(courseMentors)
+        .where(and(
+          eq(courseMentors.courseId, parseInt(courseId)),
+          eq(courseMentors.mentorId, mentorId)
+        ));
+      
+      res.json({ message: 'Mentor removed successfully' });
+    } catch (error) {
+      console.error('Error removing mentor:', error);
+      res.status(500).json({ message: 'Failed to remove mentor' });
+    }
+  });
+
   return httpServer;
 }

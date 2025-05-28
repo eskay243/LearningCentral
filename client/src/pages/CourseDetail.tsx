@@ -906,12 +906,81 @@ const CourseDetail = () => {
                     : "Stay updated with important course announcements"}
                 </p>
                 {canEdit && (
-                  <Button onClick={() => {
-                    toast({
-                      title: "Feature Coming Soon",
-                      description: "Announcement creation will be available in the next update.",
-                    });
-                  }}>Create Announcement</Button>
+                  <Dialog open={announcementDialogOpen} onOpenChange={setAnnouncementDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        Create Announcement
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Create Course Announcement</DialogTitle>
+                        <DialogDescription>
+                          Share important updates with your students.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="announcement-title">Title</Label>
+                          <Input 
+                            id="announcement-title" 
+                            placeholder="Announcement title"
+                            value={newAnnouncement.title}
+                            onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="announcement-type">Type</Label>
+                          <Select value={newAnnouncement.type} onValueChange={(value) => setNewAnnouncement({...newAnnouncement, type: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select announcement type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="general">General</SelectItem>
+                              <SelectItem value="urgent">Urgent</SelectItem>
+                              <SelectItem value="update">Course Update</SelectItem>
+                              <SelectItem value="reminder">Reminder</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="announcement-priority">Priority</Label>
+                          <Select value={newAnnouncement.priority} onValueChange={(value) => setNewAnnouncement({...newAnnouncement, priority: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low</SelectItem>
+                              <SelectItem value="normal">Normal</SelectItem>
+                              <SelectItem value="high">High</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="announcement-content">Content</Label>
+                          <Textarea 
+                            id="announcement-content" 
+                            placeholder="Write your announcement content here..."
+                            className="min-h-32"
+                            value={newAnnouncement.content}
+                            onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setAnnouncementDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={handleCreateAnnouncement}
+                          disabled={createAnnouncementMutation.isPending}
+                        >
+                          {createAnnouncementMutation.isPending ? "Creating..." : "Create Announcement"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 )}
               </div>
             </TabsContent>

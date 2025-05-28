@@ -34,6 +34,8 @@ import {
   chatMessages,
   messageReactions,
   courseAnnouncements,
+  announcements,
+  courseMentors,
   // Regular types
   type User,
   type UpsertUser,
@@ -198,6 +200,19 @@ export interface IStorage {
   getCourseAnnouncementsByCourse(courseId: number): Promise<CourseAnnouncement[]>;
   getCourseAnnouncementsByUser(userId: string): Promise<CourseAnnouncement[]>;
   deleteCourseAnnouncement(announcementId: number): Promise<void>;
+  
+  // Course Announcements
+  createAnnouncement(announcementData: any): Promise<any>;
+  getAnnouncementsByCourse(courseId: number): Promise<any[]>;
+  updateAnnouncement(announcementId: number, updateData: any): Promise<any>;
+  deleteAnnouncement(announcementId: number): Promise<void>;
+  
+  // Mentor Assignment
+  assignMentorToCourse(courseId: number, mentorId: string, assignedBy: string, role?: string): Promise<any>;
+  removeMentorFromCourse(courseId: number, mentorId: string): Promise<void>;
+  getCourseMentors(courseId: number): Promise<any[]>;
+  getMentorCourses(mentorId: string): Promise<any[]>;
+  updateMentorRole(courseId: number, mentorId: string, role: string): Promise<any>;
   
   // Certificates
   // Certificate Management

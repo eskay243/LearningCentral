@@ -535,7 +535,7 @@ export type AssignmentSubmission = typeof assignmentSubmissions.$inferSelect;
 export type LiveSession = typeof liveSessions.$inferSelect;
 export type LiveSessionAttendance = typeof liveSessionAttendance.$inferSelect;
 export type Message = typeof messages.$inferSelect;
-export type Announcement = typeof announcements.$inferSelect;
+export type CourseMentor = typeof courseMentors.$inferSelect;
 // Certificate type is already defined above, removed duplicate
 export type Coupon = typeof coupons.$inferSelect;
 export type CourseRating = typeof courseRatings.$inferSelect;
