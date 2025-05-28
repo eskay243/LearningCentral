@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, ArrowLeft, Upload, Video, FileText, Code } from "lucide-react";
+import { Save, ArrowLeft, Upload, Video, FileText, Code, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import VideoPlayer from "@/components/VideoPlayer";
 
 export default function LessonEditor() {
   const { courseId, lessonId } = useParams();
@@ -18,6 +19,8 @@ export default function LessonEditor() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
 
   const isNewLesson = lessonId === 'new';
 
@@ -251,16 +254,41 @@ export default function LessonEditor() {
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="videoUrl">Video URL</Label>
-                  <Input 
-                    id="videoUrl"
-                    name="videoUrl"
-                    defaultValue={lesson?.videoUrl}
-                    placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
-                  />
+                  <div className="flex space-x-2">
+                    <Input 
+                      id="videoUrl"
+                      name="videoUrl"
+                      defaultValue={lesson?.videoUrl}
+                      placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                      onChange={(e) => setCurrentVideoUrl(e.target.value)}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setShowVideoPreview(!showVideoPreview)}
+                      disabled={!currentVideoUrl && !uploadedVideo && !lesson?.videoUrl}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Preview
+                    </Button>
+                  </div>
                   <p className="text-sm text-gray-500 mt-1">
                     Supports YouTube, Vimeo, or direct video URLs
                   </p>
                 </div>
+
+                {showVideoPreview && (currentVideoUrl || uploadedVideo || lesson?.videoUrl) && (
+                  <div className="mt-4">
+                    <Label>Video Preview</Label>
+                    <div className="mt-2 border rounded-lg overflow-hidden">
+                      <VideoPlayer 
+                        src={currentVideoUrl || uploadedVideo || lesson?.videoUrl || ""}
+                        title={lesson?.title || "Video Preview"}
+                        className="h-64"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />

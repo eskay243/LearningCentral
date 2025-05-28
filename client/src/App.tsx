@@ -14,6 +14,7 @@ import CourseExercises from "@/pages/CourseExercises";
 import CreateCourse from "@/pages/CreateCourse";
 import CourseCurriculum from "@/pages/CourseCurriculum";
 import LessonEditor from "@/pages/LessonEditor";
+import CoursePreview from "@/pages/CoursePreview";
 import Schedule from "@/pages/Schedule";
 import Students from "@/pages/Students";
 import Assessments from "@/pages/Assessments";
@@ -75,6 +76,7 @@ function Router() {
         <Route path="/certificate/admin" component={CertificateAdmin} />
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route path="/code-companion" component={CodeCompanion} />
+        <Route path="/courses/:id/preview" component={CoursePreview} />
         <Route path="/demo-users" component={DemoUsers} />
         <Route component={NotFound} />
       </Switch>
