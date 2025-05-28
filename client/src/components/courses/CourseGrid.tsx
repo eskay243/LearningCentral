@@ -22,9 +22,11 @@ interface Course {
 interface CourseGridProps {
   courses: Course[];
   loading?: boolean;
+  showAdminActions?: boolean;
+  onDeleteCourse?: (courseId: number) => void;
 }
 
-export const CourseGrid = ({ courses, loading = false }: CourseGridProps) => {
+export const CourseGrid = ({ courses, loading = false, showAdminActions = false, onDeleteCourse }: CourseGridProps) => {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 animate-pulse">
@@ -47,10 +49,13 @@ export const CourseGrid = ({ courses, loading = false }: CourseGridProps) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
       {courses.map((course) => (
-        <CourseCard
-          key={course.id}
-          {...course}
-        />
+        <div key={course.id} className="relative">
+          <CourseCard
+            {...course}
+            showAdminActions={showAdminActions}
+            onDeleteCourse={onDeleteCourse}
+          />
+        </div>
       ))}
     </div>
   );

@@ -4,9 +4,16 @@ import { ResponsiveCard } from '@/components/ui/ResponsiveCard';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BookOpen, Star, Users, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BookOpen, Star, Users, Clock, MoreVertical, Trash2 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { formatCurrency } from '@/lib/currencyUtils';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 interface CourseCardProps {
   id: number;
@@ -24,6 +31,8 @@ interface CourseCardProps {
   enrollmentStatus?: 'enrolled' | 'completed' | 'not-enrolled';
   category?: string;
   level?: string;
+  showAdminActions?: boolean;
+  onDeleteCourse?: (courseId: number) => void;
 }
 
 export const CourseCard = ({
@@ -42,6 +51,8 @@ export const CourseCard = ({
   enrollmentStatus,
   category,
   level,
+  showAdminActions = false,
+  onDeleteCourse,
 }: CourseCardProps) => {
   
   // Determine badge color based on level

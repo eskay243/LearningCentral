@@ -258,53 +258,29 @@ function Courses() {
             )}
           </ResponsiveCard>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCourses.map((course) => (
-              <div key={course.id} className="relative">
-                <CourseGrid 
-                  courses={[{
-                    id: course.id,
-                    title: course.title,
-                    description: course.description || '',
-                    thumbnailUrl: course.thumbnail,
-                    instructorName: course.instructorName || 'Instructor',
-                    instructorAvatar: course.instructorAvatar,
-                    rating: course.rating || 4.5,
-                    totalStudents: course.enrollmentCount || 0,
-                    duration: course.duration || null,
-                    price: course.price || 0,
-                    currency: 'NGN',
-                    progress: course.progress,
-                    enrollmentStatus: course.progress !== undefined 
-                      ? (course.progress === 100 ? 'completed' : 'enrolled')
-                      : 'not-enrolled',
-                    category: course.category,
-                    level: course.level || 'Beginner',
-                  }]}
-                />
-                {isAdmin && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => setCourseToDelete(course.id)}
-                          className="text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Course
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <CourseGrid 
+            courses={filteredCourses.map((course) => ({
+              id: course.id,
+              title: course.title,
+              description: course.description || '',
+              thumbnailUrl: course.thumbnail,
+              instructorName: course.instructorName || 'Instructor',
+              instructorAvatar: course.instructorAvatar,
+              rating: course.rating || 4.5,
+              totalStudents: course.enrollmentCount || 0,
+              duration: course.duration || null,
+              price: course.price || 0,
+              currency: 'NGN',
+              progress: course.progress,
+              enrollmentStatus: course.progress !== undefined 
+                ? (course.progress === 100 ? 'completed' : 'enrolled')
+                : 'not-enrolled',
+              category: course.category,
+              level: course.level || 'Beginner',
+            }))}
+            showAdminActions={isAdmin}
+            onDeleteCourse={(courseId) => setCourseToDelete(courseId)}
+          />
         )}
       </div>
 
