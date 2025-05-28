@@ -1,21 +1,42 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveCard } from "@/components/ui/ResponsiveCard";
 import { CourseGrid } from "@/components/courses/CourseGrid";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2, MoreVertical } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currencyUtils";
 import { ContextualHelp, WithContextualHelp } from "@/components/ui/ContextualHelp";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { apiRequest } from "@/lib/queryClient";
 
 function Courses() {
   const { user, isMentor, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+  const [courseToDelete, setCourseToDelete] = useState<number | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch courses for the current user
   const { data: userCourses, isLoading: userCoursesLoading } = useQuery({
@@ -26,6 +47,29 @@ function Courses() {
   // Fetch all published courses (for discovery)
   const { data: publishedCourses, isLoading: publishedCoursesLoading } = useQuery({
     queryKey: ["/api/courses?published=true"],
+  });
+
+  // Delete course mutation (admin only)
+  const deleteMutation = useMutation({
+    mutationFn: async (courseId: number) => {
+      await apiRequest("DELETE", `/api/courses/${courseId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses?published=true"] });
+      toast({
+        title: "Success",
+        description: "Course deleted successfully",
+      });
+      setCourseToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete course",
+        variant: "destructive",
+      });
+    },
   });
   
   const isLoading = userCoursesLoading || publishedCoursesLoading;
@@ -214,29 +258,78 @@ function Courses() {
             )}
           </ResponsiveCard>
         ) : (
-          <CourseGrid 
-            courses={filteredCourses.map((course) => ({
-              id: course.id,
-              title: course.title,
-              description: course.description || '',
-              thumbnailUrl: course.thumbnail,
-              instructorName: course.instructorName || 'Instructor',
-              instructorAvatar: course.instructorAvatar,
-              rating: course.rating || 4.5,
-              totalStudents: course.enrollmentCount || 0,
-              duration: course.duration || null,
-              price: course.price || 0,
-              currency: 'NGN',
-              progress: course.progress,
-              enrollmentStatus: course.progress !== undefined 
-                ? (course.progress === 100 ? 'completed' : 'enrolled')
-                : 'not-enrolled',
-              category: course.category,
-              level: course.level || 'Beginner',
-            }))}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCourses.map((course) => (
+              <div key={course.id} className="relative">
+                <CourseGrid 
+                  courses={[{
+                    id: course.id,
+                    title: course.title,
+                    description: course.description || '',
+                    thumbnailUrl: course.thumbnail,
+                    instructorName: course.instructorName || 'Instructor',
+                    instructorAvatar: course.instructorAvatar,
+                    rating: course.rating || 4.5,
+                    totalStudents: course.enrollmentCount || 0,
+                    duration: course.duration || null,
+                    price: course.price || 0,
+                    currency: 'NGN',
+                    progress: course.progress,
+                    enrollmentStatus: course.progress !== undefined 
+                      ? (course.progress === 100 ? 'completed' : 'enrolled')
+                      : 'not-enrolled',
+                    category: course.category,
+                    level: course.level || 'Beginner',
+                  }]}
+                />
+                {isAdmin && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => setCourseToDelete(course.id)}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Course
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
+
+      {/* Delete Course Confirmation Dialog */}
+      <AlertDialog open={!!courseToDelete} onOpenChange={() => setCourseToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Course</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this course? This action cannot be undone and will permanently 
+              remove the course, all its content, and all student enrollments.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => courseToDelete && deleteMutation.mutate(courseToDelete)}
+              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Course"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
