@@ -14,6 +14,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatDate, getFullName } from "@/lib/utils";
 import useAuth from "@/hooks/useAuth";
 import { ContextualHelp, WithContextualHelp } from "@/components/ui/ContextualHelp";
+import { AddStudentDialog } from "@/components/admin/AddStudentDialog";
 
 const Dashboard = () => {
   const { user, isLoading: isAuthLoading, isMentor, isAdmin } = useAuth();

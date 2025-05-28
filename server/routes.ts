@@ -2159,6 +2159,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all students (admin only)
+  app.get("/api/admin/students", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const students = await storage.getUsersByRole('student');
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      res.status(500).json({ message: "Failed to fetch students" });
+    }
+  });
+
+  // Add new student (admin only)
+  app.post("/api/admin/students", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { firstName, lastName, email, phone, address } = req.body;
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+
+      // Create new student
+      const newStudent = await storage.createUser({
+        id: Date.now().toString(),
+        firstName,
+        lastName,
+        email,
+        phone: phone || null,
+        role: 'student',
+        profileImageUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${firstName}%20${lastName}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      res.status(201).json(newStudent);
+    } catch (error) {
+      console.error("Error creating student:", error);
+      res.status(500).json({ message: "Failed to create student" });
+    }
+  });
+
   // Endpoint for managing mentor commission rates
   app.post('/api/admin/mentor/:mentorId/commission', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
     try {
