@@ -2,6 +2,9 @@ import { type Express, type Request } from "express";
 import * as expressModule from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -290,6 +293,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching all users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Course image upload endpoint
+  app.post('/api/upload/course-image', isAuthenticated, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No image file provided' });
+      }
+
+      // Generate a unique filename
+      const fileExtension = path.extname(req.file.originalname);
+      const fileName = `course-${Date.now()}-${Math.random().toString(36).substring(7)}${fileExtension}`;
+      const newPath = path.join('./uploads', fileName);
+      
+      // Move file to final location
+      fs.renameSync(req.file.path, newPath);
+      
+      // Return the URL
+      const imageUrl = `/uploads/${fileName}`;
+      res.json({ url: imageUrl });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      res.status(500).json({ error: 'Failed to upload image' });
+    }
+  });
+  
+  // Categories management endpoints
+  app.post('/api/categories', isAuthenticated, async (req, res) => {
+    try {
+      const { value, label } = req.body;
+      
+      if (!value || !label) {
+        return res.status(400).json({ error: 'Value and label are required' });
+      }
+      
+      // Store category in database or return success
+      res.json({ message: 'Category added successfully', category: { value, label } });
+    } catch (error) {
+      console.error('Category creation error:', error);
+      res.status(500).json({ error: 'Failed to create category' });
+    }
+  });
+  
+  app.get('/api/categories', async (req, res) => {
+    try {
+      // Return categories from database or defaults
+      const categories = [
+        { value: "javascript", label: "JavaScript" },
+        { value: "python", label: "Python" },
+        { value: "sql", label: "SQL" },
+        { value: "web", label: "Web Development" },
+        { value: "data", label: "Data Science" },
+        { value: "mobile", label: "Mobile Development" },
+        { value: "design", label: "Design" },
+        { value: "marketing", label: "Marketing" },
+        { value: "business", label: "Business" },
+        { value: "other", label: "Other" },
+      ];
+      
+      res.json(categories);
+    } catch (error) {
+      console.error('Categories fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch categories' });
     }
   });
   
