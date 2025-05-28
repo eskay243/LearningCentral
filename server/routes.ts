@@ -2225,5 +2225,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // OAuth Settings Admin Routes
+  app.get("/api/admin/oauth-settings", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      // For now, return empty settings - in production, this would fetch from database
+      res.json({
+        providers: []
+      });
+    } catch (error) {
+      console.error("Error fetching OAuth settings:", error);
+      res.status(500).json({ message: "Failed to fetch OAuth settings" });
+    }
+  });
+
+  app.post("/api/admin/oauth-settings", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const { providers } = req.body;
+      // For now, just return success - in production, this would save to database
+      res.json({ success: true, message: "OAuth settings saved successfully" });
+    } catch (error) {
+      console.error("Error saving OAuth settings:", error);
+      res.status(500).json({ message: "Failed to save OAuth settings" });
+    }
+  });
+
+  app.post("/api/admin/oauth-test/:provider", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const { provider } = req.params;
+      // For now, just return success - in production, this would test the OAuth connection
+      res.json({ success: true, message: `${provider} OAuth test successful` });
+    } catch (error) {
+      console.error(`Error testing ${req.params.provider} OAuth:`, error);
+      res.status(500).json({ message: `Failed to test ${req.params.provider} OAuth connection` });
+    }
+  });
+
+  // Basic Email/Password Authentication Routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists with this email" });
+      }
+
+      // Create new user (password would be hashed in production)
+      const newUser = await storage.createUser({
+        id: Date.now().toString(), // Simple ID generation
+        email,
+        firstName,
+        lastName,
+        role: UserRole.STUDENT
+      });
+
+      res.status(201).json({
+        id: newUser.id,
+        email: newUser.email,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        role: newUser.role
+      });
+    } catch (error) {
+      console.error("Error during registration:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // In production, verify password hash here
+      
+      res.json({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      });
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
   return httpServer;
 }

@@ -23,6 +23,7 @@ import Profile from "@/pages/Profile";
 import UserManagement from "@/pages/UserManagement";
 import Login from "@/pages/Login";
 import AdminSetup from "@/pages/AdminSetup";
+import AdminOAuthSettings from "@/pages/AdminOAuthSettings";
 import PaymentCallback from "@/pages/PaymentCallback";
 import PaymentPage from "@/pages/PaymentPage";
 import BankTransferInstructions from "@/pages/BankTransferInstructions";
@@ -59,6 +60,7 @@ function Router() {
         <Route path="/users" component={UserManagement} />
         <Route path="/login" component={Login} />
         <Route path="/admin-setup" component={AdminSetup} />
+        <Route path="/admin/oauth-settings" component={AdminOAuthSettings} />
         <Route path="/payment-callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
         <Route path="/interactive-learning" component={InteractiveLearning} />
