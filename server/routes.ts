@@ -2534,7 +2534,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const courseId = parseInt(req.params.courseId);
       const userId = req.user.claims.sub;
       
-      const enrollment = await storage.getUserEnrollment(userId, courseId);
+      // Check if user is enrolled by looking at the enrollments table
+      const [enrollment] = await db
+        .select()
+        .from(courseEnrollments)
+        .where(
+          and(
+            eq(courseEnrollments.courseId, courseId),
+            eq(courseEnrollments.userId, userId)
+          )
+        );
       
       res.json({
         isEnrolled: !!enrollment,

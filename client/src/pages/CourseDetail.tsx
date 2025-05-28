@@ -450,7 +450,7 @@ export default function CourseDetail() {
                     
                     {isAdmin && (
                       <div className="text-center pt-4">
-                        <Button variant="outline" onClick={() => setLocation(`/create-course?edit=${id}`)}>
+                        <Button variant="outline" onClick={() => setLocation(`/courses/${id}/edit`)}>
                           <PlusIcon className="h-4 w-4 mr-2" />
                           Add Module or Lesson
                         </Button>
