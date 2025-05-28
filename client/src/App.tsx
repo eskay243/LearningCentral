@@ -76,8 +76,8 @@ function Router() {
         <Route path="/certificate/verify" component={CertificateVerification} />
         <Route path="/certificate/admin" component={CertificateAdmin} />
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
-        <Route path="/code-companion" component={CodeCompanion} />
-        <Route path="/code-companion/chat" component={CodeCompanionChat} />
+        <Route path="/code-companion" component={CodeCompanionChat} />
+        <Route path="/code-companion/old" component={CodeCompanion} />
         <Route path="/courses/:id/preview" component={CoursePreview} />
         <Route path="/courses/:id/view" component={CourseView} />
         <Route path="/demo-users" component={DemoUsers} />

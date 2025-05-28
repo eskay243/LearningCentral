@@ -66,10 +66,30 @@ export default function CodeCompanionChat() {
   const { user } = useAuth();
 
   const quickActions = [
-    { icon: Code2, label: "Debug Code", color: "bg-red-50 text-red-700 border-red-200" },
-    { icon: Lightbulb, label: "Explain Concept", color: "bg-yellow-50 text-yellow-700 border-yellow-200" },
-    { icon: Bug, label: "Code Review", color: "bg-blue-50 text-blue-700 border-blue-200" },
-    { icon: BookOpen, label: "Best Practices", color: "bg-green-50 text-green-700 border-green-200" },
+    { 
+      icon: Code2, 
+      label: "Debug Code", 
+      color: "bg-red-50 text-red-700 border-red-200",
+      prompt: "I have a bug in my code. Can you help me debug it? Here's my code:"
+    },
+    { 
+      icon: Lightbulb, 
+      label: "Explain Concept", 
+      color: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      prompt: "Can you explain this programming concept to me:"
+    },
+    { 
+      icon: Bug, 
+      label: "Code Review", 
+      color: "bg-blue-50 text-blue-700 border-blue-200",
+      prompt: "Can you review my code and suggest improvements? Here's my code:"
+    },
+    { 
+      icon: BookOpen, 
+      label: "Best Practices", 
+      color: "bg-green-50 text-green-700 border-green-200",
+      prompt: "What are the best practices for"
+    },
   ];
 
   const languages = ["javascript", "python", "react", "typescript", "java", "css"];
@@ -143,6 +163,10 @@ export default function CodeCompanionChat() {
     setConversations(prev => [newConversation, ...prev]);
     setActiveConversation(newId);
     setMessages([]);
+  };
+
+  const handleQuickAction = (action: typeof quickActions[0]) => {
+    setInputMessage(action.prompt);
   };
 
   const formatTime = (date: Date) => {
@@ -232,6 +256,7 @@ export default function CodeCompanionChat() {
             {quickActions.map((action, index) => (
               <button
                 key={index}
+                onClick={() => handleQuickAction(action)}
                 className={`p-2 rounded-lg border text-xs font-medium transition-all hover:shadow-sm ${action.color}`}
               >
                 <action.icon className="h-4 w-4 mx-auto mb-1" />
