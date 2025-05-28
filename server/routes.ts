@@ -478,7 +478,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contentType: req.body.contentType || "text",
         isPreview: req.body.isPreview || false,
         orderIndex: req.body.orderIndex || 0,
-        published: true
+        published: true,
+        duration: req.body.duration || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        videoUrl: req.body.videoUrl || null,
+        videoPoster: req.body.videoPoster || null,
+        videoProgress: null,
+        completionCriteria: req.body.completionCriteria || null,
+        estimatedTime: req.body.estimatedTime || null,
+        difficulty: req.body.difficulty || "beginner",
+        prerequisites: req.body.prerequisites || null,
+        drm: req.body.drm || null,
+        videoProvider: req.body.videoProvider || null,
+        isLive: req.body.isLive || false,
+        scheduledAt: req.body.scheduledAt || null,
+        notes: req.body.notes || null,
+        requiresAuth: req.body.requiresAuth || false
       };
       
       const lesson = await storage.createLesson(lessonData);
@@ -1304,7 +1320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.claims.sub;
       // Using getUserMessages instead of getMessagesForUser which doesn't exist
-      const messages = await storage.getUserMessages(userId);
+      const messages = await storage.getUserMessages(userId.toString());
       res.json(messages);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -2119,7 +2135,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: "pending",
         paymentMethod: "bank-transfer",
         paymentAmount: course.price,
-        paymentReference: reference
+        paymentReference: reference,
+        completedAt: null,
+        paymentProvider: "bank-transfer",
+        certificateId: null
       };
       
       const enrollment = await storage.enrollUserInCourse(enrollmentData);
