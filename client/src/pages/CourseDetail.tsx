@@ -1126,6 +1126,54 @@ const CourseDetail = () => {
                     </div>
                   ))}
                 </div>
+                {isAdmin && (
+                  <div className="mt-6 text-center">
+                    <Dialog open={mentorDialogOpen} onOpenChange={setMentorDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline">
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Assign More Mentors
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Assign Mentor to Course</DialogTitle>
+                          <DialogDescription>
+                            Select a mentor to help guide students in this course.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="mentor-select">Select Mentor</Label>
+                            <Select value={selectedMentorId} onValueChange={setSelectedMentorId}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose a mentor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableMentors?.map((mentor: any) => (
+                                  <SelectItem key={mentor.id} value={mentor.id}>
+                                    {mentor.firstName} {mentor.lastName} ({mentor.email})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setMentorDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handleAssignMentor}
+                            disabled={assignMentorMutation.isPending}
+                          >
+                            {assignMentorMutation.isPending ? "Assigning..." : "Assign Mentor"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
               ) : (
                 <div className="text-center py-8 border rounded-lg">
                   <div className="text-5xl mb-2">👨‍🏫</div>
