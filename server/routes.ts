@@ -2471,6 +2471,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get Course Mentors (assigned mentors for a specific course)
+  app.get("/api/courses/:courseId/mentors", async (req: Request, res: Response) => {
+    const { courseId } = req.params;
+    
+    try {
+      const mentors = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        email: users.email,
+        profileImageUrl: users.profileImageUrl,
+        role: courseMentors.role,
+        assignedAt: courseMentors.assignedAt
+      })
+      .from(courseMentors)
+      .innerJoin(users, eq(courseMentors.mentorId, users.id))
+      .where(eq(courseMentors.courseId, parseInt(courseId)));
+      
+      res.json(mentors);
+    } catch (error) {
+      console.error('Error fetching course mentors:', error);
+      res.status(500).json({ message: 'Failed to fetch course mentors' });
+    }
+  });
+
   // Get Available Mentors for Assignment
   app.get("/api/mentors/available", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
     try {
