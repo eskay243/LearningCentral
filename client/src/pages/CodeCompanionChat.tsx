@@ -21,7 +21,9 @@ import {
   Bot,
   Clock,
   BookmarkIcon,
-  FileText
+  FileText,
+  Trash2,
+  X
 } from "lucide-react";
 
 interface Message {
@@ -172,6 +174,29 @@ export default function CodeCompanionChat() {
     setMessages([]);
   };
 
+  const deleteConversation = (conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent clicking the conversation itself
+    
+    // Remove the conversation from the list
+    setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+    
+    // If we're deleting the active conversation, switch to another one or clear
+    if (activeConversation === conversationId) {
+      const remainingConversations = conversations.filter(conv => conv.id !== conversationId);
+      if (remainingConversations.length > 0) {
+        setActiveConversation(remainingConversations[0].id);
+      } else {
+        setActiveConversation("");
+        setMessages([]);
+      }
+    }
+
+    toast({
+      title: "Chat deleted",
+      description: "The conversation has been removed.",
+    });
+  };
+
   const handleQuickAction = (action: typeof quickActions[0]) => {
     setInputMessage(action.prompt);
   };
@@ -238,34 +263,47 @@ export default function CodeCompanionChat() {
               </div>
               <div className="space-y-1">
                 {conversations.map((conv) => (
-                  <button
+                  <div
                     key={conv.id}
-                    onClick={() => setActiveConversation(conv.id)}
-                    className={`w-full text-left p-3 rounded-lg transition-all hover:bg-gray-50 ${
+                    className={`relative group rounded-lg transition-all ${
                       activeConversation === conv.id 
                         ? 'bg-purple-50 border border-purple-200 shadow-sm' 
                         : 'hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex items-start space-x-3">
-                      <span className="text-lg flex-shrink-0 mt-0.5">{conv.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900 truncate">
-                          {conv.title}
+                    <button
+                      onClick={() => setActiveConversation(conv.id)}
+                      className="w-full text-left p-3 rounded-lg"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <span className="text-lg flex-shrink-0 mt-0.5">{conv.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {conv.title}
+                          </div>
+                          {conv.lastMessage && (
+                            <div className="text-xs text-gray-500 truncate mt-1">
+                              {conv.lastMessage}
+                            </div>
+                          )}
+                          {conv.timestamp && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              {formatTime(conv.timestamp)}
+                            </div>
+                          )}
                         </div>
-                        {conv.lastMessage && (
-                          <div className="text-xs text-gray-500 truncate mt-1">
-                            {conv.lastMessage}
-                          </div>
-                        )}
-                        {conv.timestamp && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            {formatTime(conv.timestamp)}
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                    
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => deleteConversation(conv.id, e)}
+                      className="absolute top-2 right-2 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-600 text-gray-400 transition-all"
+                      title="Delete conversation"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
