@@ -22,10 +22,13 @@ import { formatDate, formatTimeFromNow, getInitials } from "@/lib/utils";
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
 
-  const { data: student, isLoading } = useQuery({
+  const { data: student, isLoading, error } = useQuery({
     queryKey: [`/api/admin/students/${id}`],
     enabled: !!id,
   });
+
+  // Debug logging
+  console.log("Student Profile Debug:", { id, student, isLoading, error });
 
   if (isLoading) {
     return (
