@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation } from "wouter";
 import { z } from "zod";
@@ -44,9 +44,14 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const CreateCourse = () => {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { user, isLoading } = useAuth();
+  
+  // Extract course ID from URL for edit mode
+  const pathSegments = location.split('/');
+  const courseId = pathSegments[2] && pathSegments[3] === 'edit' ? pathSegments[2] : null;
+  const isEditMode = courseId !== null;
   const [activeTab, setActiveTab] = useState("basic");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -67,6 +72,12 @@ const CreateCourse = () => {
   ]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch existing course data if in edit mode
+  const { data: existingCourse } = useQuery({
+    queryKey: [`/api/courses/${courseId}`],
+    enabled: isEditMode && !!courseId,
+  });
+
   // Initialize the form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -80,6 +91,24 @@ const CreateCourse = () => {
       tags: undefined,
     },
   });
+
+  // Update form when existing course data loads
+  useEffect(() => {
+    if (existingCourse && isEditMode) {
+      form.reset({
+        title: existingCourse.title || "",
+        description: existingCourse.description || "",
+        thumbnail: existingCourse.thumbnail || "",
+        price: existingCourse.price?.toString() || "0",
+        isPublished: existingCourse.status === 'published',
+        category: existingCourse.category || "",
+        tags: existingCourse.tags?.join(", ") || "",
+      });
+      if (existingCourse.thumbnail) {
+        setUploadedImage(existingCourse.thumbnail);
+      }
+    }
+  }, [existingCourse, isEditMode, form]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

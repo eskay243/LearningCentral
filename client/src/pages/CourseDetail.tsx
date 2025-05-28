@@ -215,7 +215,7 @@ export default function CourseDetail() {
     
     // If already enrolled, go to course content
     if (enrollmentStatus?.isEnrolled) {
-      setLocation(`/course/${id}/learn`);
+      setLocation(`/courses/${id}/view`);
       return;
     }
     
