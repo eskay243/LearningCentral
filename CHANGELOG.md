@@ -1,5 +1,28 @@
 # Codelab Educare Learning Management System - Changelog
 
+## [v1.0.1] - 2025-05-28
+
+### Student Management System Enhancements
+- ✅ **Complete CRUD Operations**: Implemented full Create, Read, Update, Delete functionality for student management
+- ✅ **Manual Student Onboarding**: Added "Add Student" feature allowing administrators to manually register students
+- ✅ **Student Profile Pages**: Created comprehensive student profile pages with progress tracking and activity summaries
+- ✅ **Functional Action Buttons**: Made Message and View buttons operational in the Students page
+- ✅ **Enhanced Navigation**: Added proper routing for student profile pages and messaging features
+- ✅ **Error Resolution**: Fixed critical date formatting and array handling errors that were causing page crashes
+- ✅ **Improved UI**: Added elegant dropdown menus for student actions with confirmation dialogs for safe operations
+
+### Bug Fixes
+- 🐛 Fixed "Invalid time value" errors in date formatting utilities
+- 🐛 Resolved undefined array slicing errors in Students page
+- 🐛 Added proper null checking for student course data
+- 🐛 Improved error handling for invalid date values across the application
+
+### Technical Improvements
+- 🔧 Enhanced date formatting functions with proper validation
+- 🔧 Added comprehensive student data validation
+- 🔧 Implemented safe array operations throughout the codebase
+- 🔧 Improved component error boundaries and loading states
+
 ## [v1.0.0] - 2025-05-20
 
 ### Core Features

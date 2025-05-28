@@ -2243,6 +2243,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual student data (admin only)
+  app.get("/api/admin/students/:id", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const student = await storage.getUser(id);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      // Get additional student data like enrollments and progress
+      const enrollments = await storage.getEnrolledCourses(id);
+      const studentCourses = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const course = await storage.getCourse(enrollment.courseId);
+          return course ? {
+            ...course,
+            progress: enrollment.progress,
+            status: enrollment.progress >= 100 ? 'completed' : 'in-progress'
+          } : null;
+        })
+      );
+
+      const enrichedStudent = {
+        ...student,
+        totalCourses: enrollments.length,
+        completedCourses: enrollments.filter(e => e.progress >= 100).length,
+        progress: enrollments.length > 0 ? Math.round(enrollments.reduce((acc, e) => acc + e.progress, 0) / enrollments.length) : 0,
+        courses: studentCourses.filter(c => c !== null),
+        lastActive: student.updatedAt || student.createdAt,
+        status: 'active'
+      };
+
+      res.json(enrichedStudent);
+    } catch (error) {
+      console.error("Error fetching student:", error);
+      res.status(500).json({ message: "Failed to fetch student" });
+    }
+  });
+
   // Endpoint for managing mentor commission rates
   app.post('/api/admin/mentor/:mentorId/commission', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
     try {
