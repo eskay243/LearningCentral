@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   BookOpen, 
   Users, 
@@ -26,6 +28,15 @@ export default function Login() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -35,6 +46,47 @@ export default function Login() {
 
   const handleLogin = () => {
     window.location.href = "/api/login";
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const endpoint = isSignup ? "/api/auth/register" : "/api/auth/login";
+      const response = await apiRequest("POST", endpoint, formData);
+      
+      if (response.ok) {
+        const user = await response.json();
+        toast({
+          title: isSignup ? "Account created!" : "Welcome back!",
+          description: isSignup ? "Your account has been created successfully." : "You've been logged in successfully.",
+        });
+        navigate("/dashboard");
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Authentication failed",
+          description: error.message || "Please check your credentials and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Connection error",
+        description: "Unable to connect to the server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
   const stats = [
@@ -62,10 +114,17 @@ export default function Login() {
             
             {/* Title */}
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Let's Sign You In
+              {isSignup ? "Create Account" : "Let's Sign You In"}
             </h2>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Don't have an account?{" "}
+              {isSignup ? "Already have an account? " : "Don't have an account? "}
+              <button 
+                onClick={() => setIsSignup(!isSignup)}
+                className="font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400"
+              >
+                {isSignup ? "Sign in" : "Sign up"}
+              </button>
+              {" • "}
               <a href="/demo-users" className="font-medium text-purple-600 hover:text-purple-500 dark:text-purple-400">
                 Try demo
               </a>
@@ -73,11 +132,53 @@ export default function Login() {
           </div>
 
           <div className="mt-8">
-            <form className="space-y-6">
-              {/* Username/Email Field */}
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {/* Name Fields for Signup */}
+              {isSignup && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      First Name
+                    </Label>
+                    <div className="mt-1">
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        autoComplete="given-name"
+                        placeholder="John"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
+                        required={isSignup}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Last Name
+                    </Label>
+                    <div className="mt-1">
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        type="text"
+                        autoComplete="family-name"
+                        placeholder="Doe"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
+                        required={isSignup}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Email Field */}
               <div>
                 <Label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Username or Email
+                  Email Address
                 </Label>
                 <div className="mt-1">
                   <Input
@@ -86,8 +187,10 @@ export default function Login() {
                     type="email"
                     autoComplete="email"
                     placeholder="hello.user@email.co"
-                    className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white opacity-50"
-                    disabled
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="block w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
+                    required
                   />
                 </div>
               </div>
@@ -102,15 +205,16 @@ export default function Login() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    className="block w-full px-3 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white opacity-50"
-                    disabled
+                    autoComplete={isSignup ? "new-password" : "current-password"}
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className="block w-full px-3 py-3 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-800 dark:text-white"
+                    required
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center opacity-50"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     onClick={() => setShowPassword(!showPassword)}
-                    disabled
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-gray-400" />
@@ -141,14 +245,14 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Login Button (disabled) */}
+              {/* Login/Signup Button */}
               <div>
                 <Button
-                  type="button"
-                  className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 opacity-50 cursor-not-allowed"
-                  disabled
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Login
+                  {isLoading ? "Please wait..." : (isSignup ? "Create Account" : "Sign In")}
                 </Button>
               </div>
 
