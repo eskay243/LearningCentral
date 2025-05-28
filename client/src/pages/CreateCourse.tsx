@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation } from "wouter";
 import { z } from "zod";
@@ -7,6 +7,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import useAuth from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   Form,
@@ -26,6 +27,8 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Upload, X, Edit2 } from "lucide-react";
 
 // Define the form schema
 const formSchema = z.object({
@@ -46,6 +49,23 @@ const CreateCourse = () => {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("basic");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [categories, setCategories] = useState([
+    { value: "javascript", label: "JavaScript" },
+    { value: "python", label: "Python" },
+    { value: "sql", label: "SQL" },
+    { value: "web", label: "Web Development" },
+    { value: "data", label: "Data Science" },
+    { value: "mobile", label: "Mobile Development" },
+    { value: "design", label: "Design" },
+    { value: "marketing", label: "Marketing" },
+    { value: "business", label: "Business" },
+    { value: "other", label: "Other" },
+  ]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize the form
   const form = useForm<FormValues>({
@@ -61,10 +81,108 @@ const CreateCourse = () => {
     },
   });
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file (JPG, PNG, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/upload/course-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+
+      const data = await response.json();
+      setUploadedImage(data.url);
+      form.setValue('thumbnail', data.url);
+      
+      toast({
+        title: "Image uploaded successfully!",
+        description: "Your course image has been uploaded.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategory.trim()) return;
+    
+    try {
+      setIsAddingCategory(true);
+      const categoryValue = newCategory.toLowerCase().replace(/\s+/g, '-');
+      const categoryLabel = newCategory.trim();
+      
+      // Add to local state
+      const newCategoryItem = { value: categoryValue, label: categoryLabel };
+      setCategories(prev => [...prev, newCategoryItem]);
+      
+      // Save to backend
+      await apiRequest("POST", "/api/categories", {
+        value: categoryValue,
+        label: categoryLabel
+      });
+      
+      setNewCategory("");
+      toast({
+        title: "Category added!",
+        description: `"${categoryLabel}" has been added to the categories.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to add category",
+        description: "Could not add the new category. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingCategory(false);
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     try {
       setIsSubmitting(true);
-      const response = await apiRequest("POST", "/api/courses", values);
+      
+      // Use uploaded image if available
+      const finalValues = {
+        ...values,
+        thumbnail: uploadedImage || values.thumbnail
+      };
+      
+      const response = await apiRequest("POST", "/api/courses", finalValues);
       
       if (!response.ok) {
         const error = await response.json();
@@ -94,18 +212,7 @@ const CreateCourse = () => {
     }
   };
 
-  const categories = [
-    { value: "javascript", label: "JavaScript" },
-    { value: "python", label: "Python" },
-    { value: "sql", label: "SQL" },
-    { value: "web", label: "Web Development" },
-    { value: "data", label: "Data Science" },
-    { value: "mobile", label: "Mobile Development" },
-    { value: "design", label: "Design" },
-    { value: "marketing", label: "Marketing" },
-    { value: "business", label: "Business" },
-    { value: "other", label: "Other" },
-  ];
+
 
   return (
     <div className="container py-6 max-w-4xl">
@@ -175,7 +282,44 @@ const CreateCourse = () => {
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
+                      <FormLabel className="flex items-center justify-between">
+                        Category
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button type="button" variant="ghost" size="sm" className="h-auto p-1 text-purple-600 hover:text-purple-700">
+                              <Plus className="h-4 w-4 mr-1" />
+                              Add New
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Add New Category</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="newCategory">Category Name</Label>
+                                <Input
+                                  id="newCategory"
+                                  value={newCategory}
+                                  onChange={(e) => setNewCategory(e.target.value)}
+                                  placeholder="e.g. Machine Learning"
+                                />
+                              </div>
+                              <div className="flex justify-end space-x-2">
+                                <DialogTrigger asChild>
+                                  <Button variant="outline">Cancel</Button>
+                                </DialogTrigger>
+                                <Button 
+                                  onClick={handleAddCategory}
+                                  disabled={isAddingCategory || !newCategory.trim()}
+                                >
+                                  {isAddingCategory ? "Adding..." : "Add Category"}
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -226,15 +370,67 @@ const CreateCourse = () => {
                   name="thumbnail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Thumbnail URL</FormLabel>
+                      <FormLabel>Course Image</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="https://example.com/image.jpg"
-                          {...field}
-                        />
+                        <div className="space-y-4">
+                          {/* Image Preview */}
+                          {(uploadedImage || field.value) && (
+                            <div className="relative inline-block">
+                              <img
+                                src={uploadedImage || field.value}
+                                alt="Course thumbnail"
+                                className="w-32 h-20 object-cover rounded-lg border"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                                onClick={() => {
+                                  setUploadedImage(null);
+                                  field.onChange("");
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* Upload Section */}
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={isUploading}
+                              className="flex-1"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {isUploading ? "Uploading..." : "Upload Image"}
+                            </Button>
+                            
+                            <div className="flex-1">
+                              <Input
+                                placeholder="Or paste image URL"
+                                value={field.value || ""}
+                                onChange={field.onChange}
+                                disabled={!!uploadedImage}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Hidden File Input */}
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </div>
                       </FormControl>
                       <FormDescription>
-                        URL to your course thumbnail image
+                        Upload an image or provide a URL for your course thumbnail (max 5MB)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
