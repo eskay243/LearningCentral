@@ -90,6 +90,17 @@ const CourseDetail = () => {
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
   const [lessonDialogOpen, setLessonDialogOpen] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState<number | null>(null);
+  const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false);
+  const [mentorDialogOpen, setMentorDialogOpen] = useState(false);
+  
+  const [newAnnouncement, setNewAnnouncement] = useState({
+    title: "",
+    content: "",
+    type: "general",
+    priority: "normal"
+  });
+  
+  const [selectedMentorId, setSelectedMentorId] = useState("");
   const [newModule, setNewModule] = useState({ title: "", description: "" });
   const [newLesson, setNewLesson] = useState({
     title: "",
