@@ -331,12 +331,44 @@ export default function CodeCompanionChat() {
         <div className="flex-1 overflow-y-auto p-6">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <div className="bg-purple-100 rounded-full p-6 mb-6 animate-pulse">
-                <div className="relative">
-                  <Bot className="h-12 w-12 text-purple-600 animate-bounce" />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="relative mb-6">
+                {/* Robot Body */}
+                <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl p-8 shadow-lg border-2 border-purple-300 animate-pulse">
+                  {/* Robot Head */}
+                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl w-16 h-12 mx-auto mb-4 relative shadow-md">
+                    {/* Eyes */}
+                    <div className="absolute top-3 left-3 w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                    <div className="absolute top-3 left-3 w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="absolute top-3 right-3 w-2 h-2 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
+                    <div className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full"></div>
+                    
+                    {/* Antenna */}
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-1 h-3 bg-purple-400 rounded-full"></div>
+                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  </div>
+                  
+                  {/* Robot Chest Panel */}
+                  <div className="bg-purple-400 rounded-lg w-12 h-8 mx-auto mb-2 relative">
+                    <div className="absolute top-2 left-2 w-2 h-1 bg-green-400 rounded animate-pulse"></div>
+                    <div className="absolute top-2 right-2 w-2 h-1 bg-yellow-400 rounded animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-1 bg-blue-400 rounded"></div>
+                  </div>
+                  
+                  {/* Robot Arms */}
+                  <div className="absolute top-8 -left-3 w-4 h-8 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="absolute top-8 -right-3 w-4 h-8 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.7s' }}></div>
                 </div>
+                
+                {/* Status Indicator */}
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-400 rounded-full animate-ping"></div>
+                <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+                
+                {/* Floating Particles */}
+                <div className="absolute -top-4 left-4 w-1 h-1 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute -bottom-2 right-6 w-1 h-1 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '1.5s' }}></div>
+                <div className="absolute top-2 -left-2 w-1 h-1 bg-yellow-400 rounded-full animate-bounce" style={{ animationDelay: '2s' }}></div>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 How can I help you code today?
