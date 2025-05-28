@@ -384,6 +384,28 @@ const Students = () => {
                               <Button size="sm">
                                 View
                               </Button>
+                              {isAdmin && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setEditingStudent(student)}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem 
+                                      onClick={() => setStudentToDelete(student)}
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -396,6 +418,106 @@ const Students = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Student Dialog */}
+      {editingStudent && (
+        <Dialog open={!!editingStudent} onOpenChange={() => setEditingStudent(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Student</DialogTitle>
+              <DialogDescription>
+                Update the student's information below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="firstName" className="text-right">
+                  First Name
+                </label>
+                <Input
+                  id="firstName"
+                  defaultValue={editingStudent.firstName}
+                  className="col-span-3"
+                  onChange={(e) => setEditingStudent({...editingStudent, firstName: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="lastName" className="text-right">
+                  Last Name
+                </label>
+                <Input
+                  id="lastName"
+                  defaultValue={editingStudent.lastName}
+                  className="col-span-3"
+                  onChange={(e) => setEditingStudent({...editingStudent, lastName: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="email" className="text-right">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  defaultValue={editingStudent.email}
+                  className="col-span-3"
+                  onChange={(e) => setEditingStudent({...editingStudent, email: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label htmlFor="phone" className="text-right">
+                  Phone
+                </label>
+                <Input
+                  id="phone"
+                  defaultValue={editingStudent.phone || ''}
+                  className="col-span-3"
+                  onChange={(e) => setEditingStudent({...editingStudent, phone: e.target.value})}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingStudent(null)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => updateStudentMutation.mutate(editingStudent)}
+                disabled={updateStudentMutation.isPending}
+              >
+                {updateStudentMutation.isPending ? "Updating..." : "Update Student"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Student Confirmation */}
+      {studentToDelete && (
+        <AlertDialog open={!!studentToDelete} onOpenChange={() => setStudentToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete{" "}
+                <strong>{studentToDelete.firstName} {studentToDelete.lastName}</strong>{" "}
+                and remove all their data from the system.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setStudentToDelete(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteStudentMutation.mutate(studentToDelete.id)}
+                disabled={deleteStudentMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deleteStudentMutation.isPending ? "Deleting..." : "Delete Student"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };
