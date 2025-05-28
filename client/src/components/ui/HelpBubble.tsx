@@ -68,11 +68,15 @@ export const HelpBubble: React.FC<HelpBubbleProps> = ({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button
-          className="help-bubble-trigger outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary rounded-full bg-primary text-primary-foreground transition-transform hover:scale-110 active:scale-95 flex items-center justify-center"
-          style={{ width, height }}
+          className="help-bubble-trigger outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary rounded-full bg-primary text-primary-foreground transition-all duration-300 hover:scale-110 active:scale-95 flex items-center justify-center animate-pulse shadow-lg hover:shadow-xl"
+          style={{ 
+            width, 
+            height,
+            animation: 'breathe 2s ease-in-out infinite'
+          }}
           onClick={() => setIsOpen(!isOpen)}
         >
-          <span className="text-lg font-bold">?</span>
+          <span className="text-sm font-bold">?</span>
         </button>
       </PopoverTrigger>
       <PopoverContent
