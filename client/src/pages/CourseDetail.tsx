@@ -1090,25 +1090,39 @@ const CourseDetail = () => {
               ) : mentors && mentors.length > 0 ? (
                 <div className="space-y-6">
                   {mentors.map((mentor: any) => (
-                    <div key={mentor.id} className="flex gap-4 items-start">
-                      <div className="h-16 w-16 rounded-full overflow-hidden bg-gray-200">
-                        {mentor.profileImageUrl ? (
-                          <img 
-                            src={mentor.profileImageUrl} 
-                            alt={mentor.name} 
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-full w-full flex items-center justify-center text-gray-400">
-                            <UsersIcon className="h-8 w-8" />
-                          </div>
-                        )}
+                    <div key={mentor.id} className="flex gap-4 items-start justify-between">
+                      <div className="flex gap-4 items-start">
+                        <div className="h-16 w-16 rounded-full overflow-hidden bg-gray-200">
+                          {mentor.profileImageUrl ? (
+                            <img 
+                              src={mentor.profileImageUrl} 
+                              alt={mentor.name} 
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-gray-400">
+                              <UsersIcon className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-lg">{mentor.name}</h3>
+                          <p className="text-gray-500 mb-1">{mentor.email}</p>
+                          <p className="text-gray-500 mb-2">Instructor</p>
+                          <p>{mentor.bio || "No bio provided"}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium text-lg">{mentor.name}</h3>
-                        <p className="text-gray-500 mb-2">Instructor</p>
-                        <p>{mentor.bio || "No bio provided"}</p>
-                      </div>
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeMentorMutation.mutate(mentor.id)}
+                          disabled={removeMentorMutation.isPending}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          {removeMentorMutation.isPending ? "Removing..." : "Remove"}
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
