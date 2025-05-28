@@ -449,10 +449,14 @@ export default function CourseDetail() {
                     ))}
                     
                     {isAdmin && (
-                      <div className="text-center pt-4">
-                        <Button variant="outline" onClick={() => setLocation(`/courses/${id}/edit`)}>
+                      <div className="text-center pt-4 space-x-2">
+                        <Button variant="outline" onClick={() => setLocation(`/courses/${id}/curriculum`)}>
                           <PlusIcon className="h-4 w-4 mr-2" />
-                          Add Module or Lesson
+                          Add Module
+                        </Button>
+                        <Button variant="outline" onClick={() => setLocation(`/courses/${id}/lessons/new`)}>
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Add Lesson
                         </Button>
                       </div>
                     )}

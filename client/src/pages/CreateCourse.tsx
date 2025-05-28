@@ -211,10 +211,11 @@ const CreateCourse = () => {
     try {
       setIsSubmitting(true);
       
-      // Use uploaded image if available
+      // Use uploaded image if available and process tags
       const finalValues = {
         ...values,
-        thumbnail: uploadedImage || values.thumbnail
+        thumbnail: uploadedImage || values.thumbnail,
+        tags: values.tags ? values.tags.split(",").map(tag => tag.trim()).filter(tag => tag.length > 0) : []
       };
       
       const url = isEditMode ? `/api/courses/${courseId}` : "/api/courses";
