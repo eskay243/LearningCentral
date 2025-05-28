@@ -38,6 +38,7 @@ import CertificateAdmin from "@/pages/CertificateAdmin";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import CodeCompanion from "@/pages/CodeCompanion";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
+import StudentProfile from "@/pages/StudentProfile";
 import DemoUsers from "@/pages/DemoUsers";
 
 function Router() {
@@ -58,6 +59,7 @@ function Router() {
         <Route path="/create-course" component={CreateCourse} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/students" component={Students} />
+        <Route path="/student-profile/:id" component={StudentProfile} />
         <Route path="/assessments" component={Assessments} />
         <Route path="/messages" component={Messages} />
         <Route path="/analytics" component={Analytics} />

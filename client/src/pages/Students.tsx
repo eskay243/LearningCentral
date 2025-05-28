@@ -377,11 +377,19 @@ const Students = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" size="sm" className="whitespace-nowrap">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="whitespace-nowrap"
+                                onClick={() => window.location.href = `/messages?student=${student.id}`}
+                              >
                                 <i className="ri-message-line mr-1"></i>
                                 Message
                               </Button>
-                              <Button size="sm">
+                              <Button 
+                                size="sm"
+                                onClick={() => window.location.href = `/student-profile/${student.id}`}
+                              >
                                 View
                               </Button>
                               {isAdmin && (
