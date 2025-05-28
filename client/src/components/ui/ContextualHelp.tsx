@@ -58,11 +58,11 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
   const displayCharacterId = characterId || helpPreferences.characterPreference;
   
   return (
-    <div className={`contextual-help ${className}`}>
+    <div className={`contextual-help fixed bottom-4 right-4 z-50 ${className}`}>
       <HelpBubble
         content={formattedContent}
         characterId={displayCharacterId}
-        position={position}
+        position="left"
         size={size}
       />
     </div>

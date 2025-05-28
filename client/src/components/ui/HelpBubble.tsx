@@ -32,18 +32,18 @@ export const HelpBubble: React.FC<HelpBubbleProps> = ({
   // Map size to actual dimensions
   const sizeMap = {
     sm: {
-      width: 60,
-      height: 60,
+      width: 40,
+      height: 40,
       bubbleWidth: 200,
     },
     md: {
-      width: 80, 
-      height: 80,
+      width: 50, 
+      height: 50,
       bubbleWidth: 280,
     },
     lg: {
-      width: 100,
-      height: 100,
+      width: 60,
+      height: 60,
       bubbleWidth: 350,
     },
   };
