@@ -18,7 +18,10 @@ import {
   MessageSquare,
   ChevronLeft,
   ChevronRight,
-  Bot
+  Bot,
+  Clock,
+  BookmarkIcon,
+  FileText
 } from "lucide-react";
 
 interface Message {
@@ -265,6 +268,65 @@ export default function CodeCompanionChat() {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Collapsed Sidebar Icons */}
+        {sidebarCollapsed && (
+          <div className="flex-1 flex flex-col items-center py-4 space-y-4">
+            {/* New Chat Icon */}
+            <button
+              onClick={startNewChat}
+              className="p-3 rounded-lg bg-gray-900 hover:bg-gray-800 text-white transition-colors"
+              title="New Chat"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+
+            {/* Quick Action Icons */}
+            <div className="space-y-2">
+              {quickActions.map((action, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleQuickAction(action)}
+                  className="p-2 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                  title={action.label}
+                >
+                  <action.icon className="h-4 w-4 text-gray-600" />
+                </button>
+              ))}
+            </div>
+
+            {/* Additional Feature Icons */}
+            <div className="space-y-2 pt-4 border-t border-gray-200">
+              <button
+                className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Code History"
+              >
+                <Clock className="h-4 w-4 text-gray-500" />
+              </button>
+              
+              <button
+                className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Saved Snippets"
+              >
+                <BookmarkIcon className="h-4 w-4 text-gray-500" />
+              </button>
+              
+              <button
+                className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Templates"
+              >
+                <FileText className="h-4 w-4 text-gray-500" />
+              </button>
+              
+              <button
+                className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4 text-gray-500" />
+              </button>
             </div>
           </div>
         )}
