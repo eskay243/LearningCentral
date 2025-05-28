@@ -1,43 +1,38 @@
-import { useState, useEffect } from "react";
-import { useParams, useLocation } from "wouter";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { PlayIcon, BookOpenIcon, UsersIcon, ClockIcon, PlusIcon, BellIcon, CalendarIcon, TrashIcon } from "lucide-react";
-
-interface Course {
-  id: number;
-  title: string;
-  description: string;
-  thumbnail: string;
-  price: number;
-  isPublished: boolean;
-  category: string;
-  tags: string[];
-  enrollmentCount?: number;
-  mentors?: { id: string; name: string }[];
-  modules?: any[];
-}
+import { useParams, useLocation } from "wouter";
+import { 
+  UsersIcon, 
+  ClockIcon, 
+  PlayIcon, 
+  BookOpenIcon, 
+  BellIcon,
+  PlusIcon,
+  CalendarIcon,
+  EditIcon
+} from "lucide-react";
 
 export default function CourseDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
-  
-  // State for dialogs and forms
-  const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false);
+
+  // Dialog states
   const [mentorDialogOpen, setMentorDialogOpen] = useState(false);
+  const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false);
   const [selectedMentorId, setSelectedMentorId] = useState("");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
@@ -45,6 +40,7 @@ export default function CourseDetail() {
   // Check if user is admin
   const isAdmin = user?.role === 'admin';
 
+  // Fetch course data
   const { data: course, isLoading } = useQuery({
     queryKey: [`/api/courses/${id}`],
     enabled: !!id,
@@ -74,21 +70,21 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
-  // Mutations
+  // Create announcement mutation
   const createAnnouncementMutation = useMutation({
     mutationFn: async (data: { title: string; content: string }) => {
       const res = await apiRequest("POST", `/api/courses/${id}/announcements`, data);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "announcements"] });
-      setAnnouncementDialogOpen(false);
-      setAnnouncementTitle("");
-      setAnnouncementContent("");
       toast({
         title: "Success",
         description: "Announcement created successfully!",
       });
+      setAnnouncementDialogOpen(false);
+      setAnnouncementTitle("");
+      setAnnouncementContent("");
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/announcements`] });
     },
     onError: (error: any) => {
       toast({
@@ -99,19 +95,20 @@ export default function CourseDetail() {
     },
   });
 
+  // Assign mentor mutation
   const assignMentorMutation = useMutation({
     mutationFn: async (mentorId: string) => {
       const res = await apiRequest("POST", `/api/courses/${id}/mentors`, { mentorId });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "mentors"] });
-      setMentorDialogOpen(false);
-      setSelectedMentorId("");
       toast({
         title: "Success",
         description: "Mentor assigned successfully!",
       });
+      setMentorDialogOpen(false);
+      setSelectedMentorId("");
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/mentors`] });
     },
     onError: (error: any) => {
       toast({
@@ -122,17 +119,18 @@ export default function CourseDetail() {
     },
   });
 
+  // Remove mentor mutation
   const removeMentorMutation = useMutation({
     mutationFn: async (mentorId: string) => {
       const res = await apiRequest("DELETE", `/api/courses/${id}/mentors/${mentorId}`);
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/courses", id, "mentors"] });
       toast({
         title: "Success",
         description: "Mentor removed successfully!",
       });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/mentors`] });
     },
     onError: (error: any) => {
       toast({
@@ -142,33 +140,6 @@ export default function CourseDetail() {
       });
     },
   });
-
-  const handleCreateAnnouncement = () => {
-    if (!announcementTitle || !announcementContent) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    createAnnouncementMutation.mutate({
-      title: announcementTitle,
-      content: announcementContent,
-    });
-  };
-
-  const handleAssignMentor = () => {
-    if (!selectedMentorId) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a mentor",
-        variant: "destructive",
-      });
-      return;
-    }
-    assignMentorMutation.mutate(selectedMentorId);
-  };
 
   // Enrollment mutation
   const enrollMutation = useMutation({
@@ -198,6 +169,33 @@ export default function CourseDetail() {
     },
   });
 
+  const handleCreateAnnouncement = () => {
+    if (!announcementTitle.trim() || !announcementContent.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    createAnnouncementMutation.mutate({
+      title: announcementTitle,
+      content: announcementContent,
+    });
+  };
+
+  const handleAssignMentor = () => {
+    if (!selectedMentorId) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a mentor",
+        variant: "destructive",
+      });
+      return;
+    }
+    assignMentorMutation.mutate(selectedMentorId);
+  };
+
   const handleEnroll = () => {
     if (!isAuthenticated) {
       toast({
@@ -205,7 +203,7 @@ export default function CourseDetail() {
         description: "Please log in to enroll in this course",
         variant: "destructive",
       });
-      setLocation("/auth");
+      setLocation("/login");
       return;
     }
     enrollMutation.mutate();
@@ -214,7 +212,7 @@ export default function CourseDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       </div>
     );
   }
@@ -223,11 +221,8 @@ export default function CourseDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Course Not Found</h1>
-          <p className="text-gray-600 mb-4">The course you're looking for doesn't exist.</p>
-          <Button onClick={() => setLocation("/courses")}>
-            Back to Courses
-          </Button>
+          <h2 className="text-2xl font-bold mb-2">Course not found</h2>
+          <p className="text-gray-600">The course you're looking for doesn't exist.</p>
         </div>
       </div>
     );
@@ -276,9 +271,9 @@ export default function CourseDetail() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setLocation(`/courses/${id}/edit`)}
-                      className="mr-2"
+                      onClick={() => setLocation(`/create-course?edit=${id}`)}
                     >
+                      <EditIcon className="h-4 w-4 mr-2" />
                       Edit Course
                     </Button>
                     <Dialog open={announcementDialogOpen} onOpenChange={setAnnouncementDialogOpen}>
@@ -382,7 +377,7 @@ export default function CourseDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {modules && modules.length > 0 ? (
+                {modules && Array.isArray(modules) && modules.length > 0 ? (
                   <div className="space-y-6">
                     {modules.map((module: any, moduleIndex: number) => (
                       <div key={module.id} className="border rounded-lg p-4">
@@ -396,9 +391,9 @@ export default function CourseDetail() {
                           </div>
                         </div>
                         
-                        {module.lessons && module.lessons.length > 0 ? (
+                        {module.lessons && Array.isArray(module.lessons) && module.lessons.length > 0 ? (
                           <div className="ml-11 space-y-2">
-                            {module.lessons.map((lesson: any, lessonIndex: number) => (
+                            {module.lessons.map((lesson: any) => (
                               <div key={lesson.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
                                 <BookOpenIcon className="h-4 w-4 text-gray-400 mr-3" />
                                 <div className="flex-1">
@@ -431,7 +426,7 @@ export default function CourseDetail() {
                     
                     {isAdmin && (
                       <div className="text-center pt-4">
-                        <Button variant="outline" onClick={() => setLocation(`/courses/${id}/edit`)}>
+                        <Button variant="outline" onClick={() => setLocation(`/create-course?edit=${id}`)}>
                           <PlusIcon className="h-4 w-4 mr-2" />
                           Add Module or Lesson
                         </Button>
@@ -448,7 +443,7 @@ export default function CourseDetail() {
                         : "This course doesn't have a curriculum yet"}
                     </p>
                     {isAdmin && (
-                      <Button onClick={() => setLocation(`/courses/${id}/edit`)}>
+                      <Button onClick={() => setLocation(`/create-course?edit=${id}`)}>
                         <PlusIcon className="h-4 w-4 mr-2" />
                         Create Curriculum
                       </Button>
@@ -470,10 +465,10 @@ export default function CourseDetail() {
               <CardContent>
                 {isMentorsLoading ? (
                   <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
                     <p className="mt-2 text-gray-500">Loading mentor information...</p>
                   </div>
-                ) : mentors && mentors.length > 0 ? (
+                ) : mentors && Array.isArray(mentors) && mentors.length > 0 ? (
                   <div className="space-y-6">
                     {mentors.map((mentor: any) => (
                       <div key={mentor.id} className="flex gap-4 items-start justify-between">
@@ -482,7 +477,7 @@ export default function CourseDetail() {
                             {mentor.profileImageUrl ? (
                               <img 
                                 src={mentor.profileImageUrl} 
-                                alt={mentor.name} 
+                                alt={`${mentor.firstName} ${mentor.lastName}`} 
                                 className="h-full w-full object-cover"
                               />
                             ) : (
@@ -495,7 +490,7 @@ export default function CourseDetail() {
                             <h3 className="font-medium text-lg">{mentor.firstName} {mentor.lastName}</h3>
                             <p className="text-gray-500 mb-1">{mentor.email}</p>
                             <p className="text-gray-500 mb-2">Course Mentor</p>
-                            <p>{mentor.bio || "No bio provided"}</p>
+                            <p>{mentor.bio || "Experienced instructor dedicated to helping students succeed"}</p>
                           </div>
                         </div>
                         {isAdmin && (
@@ -535,7 +530,7 @@ export default function CourseDetail() {
                                     <SelectValue placeholder="Choose a mentor" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {availableMentors?.map((mentor: any) => (
+                                    {availableMentors && Array.isArray(availableMentors) && availableMentors.map((mentor: any) => (
                                       <SelectItem key={mentor.id} value={mentor.id}>
                                         {mentor.firstName} {mentor.lastName} ({mentor.email})
                                       </SelectItem>
@@ -592,7 +587,7 @@ export default function CourseDetail() {
                                   <SelectValue placeholder="Choose a mentor" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {availableMentors?.map((mentor: any) => (
+                                  {availableMentors && Array.isArray(availableMentors) && availableMentors.map((mentor: any) => (
                                     <SelectItem key={mentor.id} value={mentor.id}>
                                       {mentor.firstName} {mentor.lastName} ({mentor.email})
                                     </SelectItem>
@@ -630,7 +625,7 @@ export default function CourseDetail() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {announcements && announcements.length > 0 ? (
+                {announcements && Array.isArray(announcements) && announcements.length > 0 ? (
                   <div className="space-y-4">
                     {announcements.map((announcement: any) => (
                       <div key={announcement.id} className="border rounded-lg p-4">
@@ -672,7 +667,9 @@ export default function CourseDetail() {
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
-                  <p className="text-gray-600">No reviews available yet.</p>
+                  <div className="text-5xl mb-2">⭐</div>
+                  <h3 className="text-lg font-medium mb-1">No reviews yet</h3>
+                  <p className="text-gray-600">Be the first to review this course after enrollment!</p>
                 </div>
               </CardContent>
             </Card>
