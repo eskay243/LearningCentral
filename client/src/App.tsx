@@ -77,6 +77,7 @@ function Router() {
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route path="/code-companion" component={CodeCompanion} />
         <Route path="/courses/:id/preview" component={CoursePreview} />
+        <Route path="/courses/:id/view" component={CourseView} />
         <Route path="/demo-users" component={DemoUsers} />
         <Route component={NotFound} />
       </Switch>

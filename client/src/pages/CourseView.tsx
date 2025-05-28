@@ -1,71 +1,53 @@
 import { useState, useEffect } from "react";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useParams, Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import useAuth from "@/hooks/useAuth";
-import { Course, Module, Lesson, User } from "@/types";
-import { formatDate, formatDuration, formatCurrency, getInitials } from "@/lib/utils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { 
+  PlayCircle, 
+  CheckCircle, 
+  Lock, 
+  BookOpen, 
+  Clock,
+  ArrowLeft,
+  ArrowRight
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const CourseView = () => {
-  const params = useParams<{ id: string }>();
-  const courseId = parseInt(params.id);
-  const { user, isMentor, isAdmin } = useAuth();
-  const [currentTab, setCurrentTab] = useState("content");
+export default function CourseView() {
+  const { id } = useParams();
+  const [, setLocation] = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [currentModuleId, setCurrentModuleId] = useState<number | null>(null);
   const [currentLessonId, setCurrentLessonId] = useState<number | null>(null);
-  const { toast } = useToast();
 
   // Fetch course data
-  const { 
-    data: course, 
-    isLoading: isCourseLoading 
-  } = useQuery<Course>({
-    queryKey: [`/api/courses/${courseId}`],
-    enabled: !!courseId,
+  const { data: course, isLoading: courseLoading } = useQuery({
+    queryKey: [`/api/courses/${id}`],
+    enabled: !!id,
   });
 
-  // Fetch modules for this course
-  const { 
-    data: modules, 
-    isLoading: isModulesLoading 
-  } = useQuery<Module[]>({
-    queryKey: [`/api/courses/${courseId}/modules`],
-    enabled: !!courseId,
+  // Check enrollment
+  const { data: enrollment } = useQuery({
+    queryKey: [`/api/courses/${id}/enrollment`],
+    enabled: !!id && isAuthenticated,
+  });
+
+  // Fetch modules
+  const { data: modules } = useQuery({
+    queryKey: [`/api/courses/${id}/modules`],
+    enabled: !!id,
   });
 
   // Fetch lessons for current module
-  const { 
-    data: lessons, 
-    isLoading: isLessonsLoading 
-  } = useQuery<Lesson[]>({
+  const { data: lessons } = useQuery({
     queryKey: [`/api/modules/${currentModuleId}/lessons`],
     enabled: !!currentModuleId,
-  });
-
-  // Fetch course mentors
-  const { 
-    data: mentors, 
-    isLoading: isMentorsLoading 
-  } = useQuery<User[]>({
-    queryKey: [`/api/courses/${courseId}/mentors`],
-    enabled: !!courseId,
-  });
-
-  // Fetch enrollment status if user is a student
-  const { 
-    data: enrollment, 
-    isLoading: isEnrollmentLoading 
-  } = useQuery({
-    queryKey: [`/api/courses/${courseId}/enrollment`],
-    enabled: !!courseId && !!user && !isMentor && !isAdmin,
   });
 
   // Set the first module as current when modules are loaded
@@ -82,459 +64,207 @@ const CourseView = () => {
     }
   }, [lessons, currentLessonId]);
 
-  const handleEnroll = async () => {
-    if (!user) {
-      window.location.href = "/api/login";
-      return;
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setLocation("/login");
     }
+  }, [isAuthenticated, setLocation]);
 
-    try {
-      await apiRequest("POST", "/api/enrollments", {
-        courseId,
-        paymentStatus: course?.price ? "pending" : "free",
-      });
-      
-      // Invalidate enrollment query to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/enrollment`] });
-      
+  // Check if enrolled
+  useEffect(() => {
+    if (!enrollment && !courseLoading && course) {
       toast({
-        title: "Successfully enrolled",
-        description: course?.price ? "Please complete the payment to access all materials." : "You now have full access to the course.",
-      });
-      
-      if (course?.price) {
-        // Redirect to payment page if course is paid
-        // window.location.href = `/checkout?courseId=${courseId}`;
-      }
-    } catch (error) {
-      toast({
-        title: "Enrollment failed",
-        description: "There was an error enrolling in this course. Please try again.",
+        title: "Access Denied",
+        description: "You need to enroll in this course to access the content.",
         variant: "destructive",
       });
+      setLocation(`/courses/${id}`);
     }
-  };
+  }, [enrollment, courseLoading, course, id, setLocation, toast]);
 
-  const updateLessonProgress = async (lessonId: number, progress: number) => {
-    try {
-      await apiRequest("POST", `/api/lessons/${lessonId}/progress`, {
-        progress,
-        status: progress >= 100 ? "completed" : "in_progress",
-      });
-      
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}/enrollment`] });
-    } catch (error) {
-      console.error("Error updating lesson progress:", error);
-    }
-  };
+  const currentLesson = lessons?.find(lesson => lesson.id === currentLessonId);
+  const currentModule = modules?.find(module => module.id === currentModuleId);
 
-  if (isCourseLoading) {
+  if (courseLoading) {
     return (
-      <div className="p-4 md:p-6 flex justify-center items-center h-[calc(100vh-10rem)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
       </div>
     );
   }
 
-  if (!course) {
-    return (
-      <div className="p-4 md:p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <h1 className="text-xl font-bold text-gray-900 mb-4">Course Not Found</h1>
-            <p className="text-gray-600">The course you're looking for doesn't exist or has been removed.</p>
-            <Button className="mt-6" asChild>
-              <Link href="/courses">Back to Courses</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!course || !enrollment) {
+    return null;
   }
 
-  const isEnrolled = enrollment && enrollment.id;
-  const isPaid = isEnrolled && (enrollment.paymentStatus === "paid" || enrollment.paymentStatus === "free");
+  const progressPercentage = enrollment?.progress || 0;
 
   return (
-    <div className="p-4 md:p-6">
-      {/* Course Header */}
-      <div className="bg-white rounded-lg overflow-hidden shadow mb-6">
-        <div className="h-48 md:h-64 bg-gray-200 relative">
-          {course.thumbnail ? (
-            <img 
-              src={course.thumbnail} 
-              alt={course.title} 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-              <h2 className="text-2xl font-bold">{course.title}</h2>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLocation("/dashboard")}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <h1 className="text-xl font-semibold text-gray-900">{course.title}</h1>
             </div>
-          )}
-          
-          {/* Status Badge */}
-          {(isMentor || isAdmin) && (
-            <div className="absolute top-4 right-4">
-              <Badge variant={course.isPublished ? "success" : "secondary"} className="text-sm px-3 py-1">
-                {course.isPublished ? "Published" : "Draft"}
-              </Badge>
-            </div>
-          )}
-        </div>
-        
-        <div className="p-6">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-            <div className="flex-grow">
-              <h1 className="text-2xl font-bold text-dark-800 mb-2">{course.title}</h1>
-              <p className="text-gray-600 mb-4">{course.description}</p>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                {course.category && (
-                  <Badge variant="outline" className="text-sm">
-                    {course.category}
-                  </Badge>
-                )}
-                {course.tags && course.tags.map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-sm">
-                    {tag}
-                  </Badge>
-                ))}
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">
+                Progress: {Math.round(progressPercentage)}%
               </div>
-              
-              {/* Course stats */}
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-500">
-                <div className="flex items-center">
-                  <i className="ri-user-line mr-1"></i>
-                  <span>{enrollment?.totalStudents || 0} students</span>
-                </div>
-                <div className="flex items-center">
-                  <i className="ri-book-open-line mr-1"></i>
-                  <span>{modules?.length || 0} modules</span>
-                </div>
-                <div className="flex items-center">
-                  <i className="ri-time-line mr-1"></i>
-                  <span>{enrollment?.totalDuration ? formatDuration(enrollment.totalDuration) : "N/A"}</span>
-                </div>
-                <div className="flex items-center">
-                  <i className="ri-calendar-line mr-1"></i>
-                  <span>Last updated: {formatDate(course.updatedAt)}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="md:w-72 w-full rounded-lg border border-gray-200 p-4">
-              {course.price > 0 ? (
-                <div className="text-2xl font-bold text-dark-800 mb-3">
-                  {formatCurrency(course.price)}
-                </div>
-              ) : (
-                <div className="text-lg font-medium text-green-600 mb-3">
-                  Free Course
-                </div>
-              )}
-              
-              {isEnrolled ? (
-                <div className="space-y-4">
-                  {enrollment.progress < 100 ? (
-                    <>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Your progress</span>
-                          <span className="font-medium">{Math.round(enrollment.progress)}%</span>
-                        </div>
-                        <Progress value={enrollment.progress} className="h-2" />
-                      </div>
-                      <Button className="w-full" asChild>
-                        <Link href={`/courses/${courseId}/learn`}>
-                          Continue Learning
-                        </Link>
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-center text-green-600 font-medium mb-2">
-                        Course Completed
-                      </div>
-                      {enrollment.certificateId ? (
-                        <Button variant="outline" className="w-full">
-                          View Certificate
-                        </Button>
-                      ) : (
-                        <Button className="w-full">
-                          Get Certificate
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-              ) : (
-                <Button 
-                  className="w-full" 
-                  onClick={handleEnroll}
-                >
-                  {course.price > 0 ? "Enroll Now" : "Start Learning"}
-                </Button>
-              )}
-              
-              {/* Mentors section */}
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-gray-500 mb-3">Instructors:</h3>
-                <div className="space-y-3">
-                  {isMentorsLoading ? (
-                    <div className="animate-pulse h-8 bg-gray-200 rounded"></div>
-                  ) : mentors && mentors.length > 0 ? (
-                    mentors.map(mentor => (
-                      <div key={mentor.id} className="flex items-center">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={mentor.profileImageUrl} />
-                          <AvatarFallback>
-                            {getInitials(`${mentor.firstName} ${mentor.lastName}`)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="ml-2 text-sm">
-                          {mentor.firstName} {mentor.lastName}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-500">No instructors assigned</div>
-                  )}
-                </div>
-              </div>
+              <Progress value={progressPercentage} className="w-32" />
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Course Content Tabs */}
-      <Tabs value={currentTab} onValueChange={setCurrentTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="exercises">Exercises</TabsTrigger>
-          <TabsTrigger value="discussions">Discussions</TabsTrigger>
-          <TabsTrigger value="announcements">Announcements</TabsTrigger>
-          <TabsTrigger value="reviews">Reviews</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="content" className="space-y-4">
-          {/* Course modules & lessons */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold">Course Content</h2>
-            </div>
-            
-            {isModulesLoading ? (
-              <div className="p-6 animate-pulse space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : !modules || modules.length === 0 ? (
-              <div className="p-6 text-center">
-                <p className="text-gray-500">No content available for this course yet.</p>
-                {(isMentor || isAdmin) && (
-                  <div className="flex flex-col gap-2 mt-4">
-                    <Button>
-                      Add Content
-                    </Button>
-                    <Link href={`/courses/${courseId}/exercises`}>
-                      <Button variant="outline" className="w-full">
-                        Manage Interactive Exercises
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {modules.map((module, moduleIndex) => (
-                  <div key={module.id} className="p-4">
-                    <div 
-                      className="flex justify-between items-center cursor-pointer"
-                      onClick={() => setCurrentModuleId(module.id === currentModuleId ? null : module.id)}
-                    >
-                      <div>
-                        <h3 className="text-md font-medium">
-                          Module {moduleIndex + 1}: {module.title}
-                        </h3>
-                        {module.description && (
-                          <p className="text-sm text-gray-500 mt-1">{module.description}</p>
-                        )}
-                      </div>
-                      <i className={`ri-arrow-${currentModuleId === module.id ? 'up' : 'down'}-s-line text-xl`}></i>
-                    </div>
-                    
-                    {currentModuleId === module.id && (
-                      <div className="mt-4 ml-4 space-y-2">
-                        {isLessonsLoading ? (
-                          <div className="animate-pulse space-y-3">
-                            {[...Array(3)].map((_, i) => (
-                              <div key={i} className="h-6 bg-gray-200 rounded"></div>
-                            ))}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar - Course Content */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Course Content</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="space-y-2">
+                  {modules?.map((module: any, moduleIndex: number) => (
+                    <div key={module.id}>
+                      <div
+                        className={`p-3 cursor-pointer hover:bg-gray-50 border-l-4 ${
+                          currentModuleId === module.id 
+                            ? 'border-purple-600 bg-purple-50' 
+                            : 'border-transparent'
+                        }`}
+                        onClick={() => setCurrentModuleId(module.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-sm">{module.title}</h4>
+                            <p className="text-xs text-gray-500">Module {moduleIndex + 1}</p>
                           </div>
-                        ) : !lessons || lessons.length === 0 ? (
-                          <p className="text-sm text-gray-500">No lessons in this module</p>
-                        ) : (
-                          lessons.map((lesson, lessonIndex) => (
-                            <div 
-                              key={lesson.id} 
-                              className={`flex justify-between items-center p-2 rounded hover:bg-gray-50 ${currentLessonId === lesson.id ? 'bg-gray-50' : ''}`}
+                          <BookOpen className="h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+                      
+                      {/* Show lessons for current module */}
+                      {currentModuleId === module.id && lessons && (
+                        <div className="ml-4 border-l border-gray-200">
+                          {lessons.map((lesson: any, lessonIndex: number) => (
+                            <div
+                              key={lesson.id}
+                              className={`p-2 cursor-pointer hover:bg-gray-50 ${
+                                currentLessonId === lesson.id 
+                                  ? 'bg-purple-50 text-purple-900' 
+                                  : ''
+                              }`}
+                              onClick={() => setCurrentLessonId(lesson.id)}
                             >
-                              <div className="flex items-center">
-                                <div className="w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 text-xs mr-3">
-                                  {lessonIndex + 1}
-                                </div>
-                                <span className="text-sm">
-                                  {lesson.title}
-                                  {lesson.isLive && (
-                                    <Badge variant="secondary" className="ml-2 text-xs">LIVE</Badge>
-                                  )}
-                                </span>
-                              </div>
-                              <div className="flex items-center text-sm text-gray-500">
-                                {lesson.duration && (
-                                  <span className="mr-3">{formatDuration(lesson.duration)}</span>
-                                )}
-                                <Button 
-                                  size="sm" 
-                                  variant={isPaid ? "default" : "outline"}
-                                  onClick={() => {
-                                    if (!isPaid) {
-                                      toast({
-                                        title: "Content locked",
-                                        description: "Please enroll in this course to access the content.",
-                                        variant: "destructive",
-                                      });
-                                      return;
-                                    }
-                                    setCurrentLessonId(lesson.id);
-                                  }}
-                                  disabled={!isPaid && !isMentor && !isAdmin}
-                                >
-                                  {isPaid || isMentor || isAdmin ? "View" : "Locked"}
-                                </Button>
+                              <div className="flex items-center space-x-2">
+                                <PlayCircle className="h-3 w-3" />
+                                <span className="text-xs">{lesson.title}</span>
                               </div>
                             </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="discussions">
-          <Card>
-            <CardHeader>
-              <CardTitle>Course Discussions</CardTitle>
-              <CardDescription>
-                Engage with fellow students and instructors
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-8">
-                <p className="text-gray-500">Discussion feature coming soon!</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="announcements">
-          <Card>
-            <CardHeader>
-              <CardTitle>Course Announcements</CardTitle>
-              <CardDescription>
-                Important updates from your instructors
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-8">
-                <p className="text-gray-500">No announcements yet</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="exercises">
-          <Card>
-            <CardHeader>
-              <CardTitle>Interactive Coding Exercises</CardTitle>
-              <CardDescription>
-                Practice your skills with hands-on coding exercises
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isModulesLoading ? (
-                <div className="animate-pulse space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Exercises list */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {modules && modules.length > 0 ? (
-                      <div className="space-y-4 col-span-2">
-                        {modules.map((module) => (
-                          <div key={module.id} className="border rounded-lg p-4">
-                            <h3 className="font-medium text-lg mb-2">{module.title}</h3>
-                            <div className="space-y-2">
-                              <Link href={`/courses/${courseId}/exercises?moduleId=${module.id}`}>
-                                <Button variant="outline" className="w-full justify-between">
-                                  View Module Exercises
-                                  <i className="ri-arrow-right-line"></i>
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="lg:col-span-3">
+            {currentLesson ? (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{currentLesson.title}</CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {currentModule?.title}
+                      </p>
+                    </div>
+                    <Badge variant="secondary">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {currentLesson.duration || '10'} min
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Video Player */}
+                  {currentLesson.videoUrl && (
+                    <div className="mb-6">
+                      <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
+                        <video
+                          controls
+                          className="w-full h-full rounded-lg"
+                          src={currentLesson.videoUrl}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Lesson Content */}
+                  <div className="prose max-w-none">
+                    {currentLesson.content ? (
+                      <div dangerouslySetInnerHTML={{ __html: currentLesson.content }} />
                     ) : (
-                      <div className="col-span-2 text-center p-8">
-                        <p className="text-gray-500 mb-4">No exercises available for this course yet.</p>
-                        {(isMentor || isAdmin) && (
-                          <Link href={`/courses/${courseId}/exercises`}>
-                            <Button>Create Exercises</Button>
-                          </Link>
-                        )}
+                      <div className="text-center py-12 text-gray-500">
+                        <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Lesson content will be available soon.</p>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="reviews">
-          <Card>
-            <CardHeader>
-              <CardTitle>Student Reviews</CardTitle>
-              <CardDescription>
-                See what others think about this course
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-8">
-                <p className="text-gray-500">No reviews yet</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+                  {/* Navigation */}
+                  <div className="flex justify-between items-center mt-8 pt-6 border-t">
+                    <Button variant="outline">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Previous Lesson
+                    </Button>
+                    <Button>
+                      Next Lesson
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Welcome to {course.title}
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Select a module from the sidebar to start learning.
+                  </p>
+                  {modules && modules.length === 0 && (
+                    <div className="text-center text-gray-500">
+                      <p>Course content is being prepared. Check back soon!</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default CourseView;
+}
