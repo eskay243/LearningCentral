@@ -46,6 +46,12 @@ export default function CourseDetail() {
     enabled: !!id,
   });
 
+  // Check enrollment status
+  const { data: enrollmentStatus } = useQuery({
+    queryKey: [`/api/courses/${id}/enrollment-status`],
+    enabled: !!id && isAuthenticated,
+  });
+
   // Fetch mentors for this course
   const { data: mentors, isLoading: isMentorsLoading } = useQuery({
     queryKey: [`/api/courses/${id}/mentors`],
@@ -206,8 +212,18 @@ export default function CourseDetail() {
       setLocation("/login");
       return;
     }
+    
+    // If already enrolled, go to course content
+    if (enrollmentStatus?.isEnrolled) {
+      setLocation(`/course/${id}/learn`);
+      return;
+    }
+    
     enrollMutation.mutate();
   };
+
+  // Check if user is enrolled
+  const isEnrolled = enrollmentStatus?.isEnrolled || false;
 
   if (isLoading) {
     return (
@@ -244,7 +260,6 @@ export default function CourseDetail() {
             <div className="absolute inset-0 bg-black bg-opacity-40"></div>
             <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
               <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-              <p className="text-gray-200 text-lg">{course.description}</p>
             </div>
           </div>
           
@@ -271,7 +286,7 @@ export default function CourseDetail() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setLocation(`/create-course?edit=${id}`)}
+                      onClick={() => setLocation(`/courses/${id}/edit`)}
                     >
                       <EditIcon className="h-4 w-4 mr-2" />
                       Edit Course
@@ -333,7 +348,11 @@ export default function CourseDetail() {
                   disabled={enrollMutation.isPending}
                 >
                   <PlayIcon className="h-5 w-5 mr-2" />
-                  {enrollMutation.isPending ? "Enrolling..." : "Enroll Now"}
+                  {enrollMutation.isPending 
+                    ? "Processing..." 
+                    : isEnrolled 
+                      ? "Continue Learning" 
+                      : "Enroll Now"}
                 </Button>
               </div>
             </div>
@@ -409,7 +428,12 @@ export default function CourseDetail() {
                                   </div>
                                 </div>
                                 {isAdmin && (
-                                  <Button variant="ghost" size="sm" className="text-xs">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="text-xs"
+                                    onClick={() => setLocation(`/courses/${id}/lessons/${lesson.id}/edit`)}
+                                  >
                                     Edit
                                   </Button>
                                 )}

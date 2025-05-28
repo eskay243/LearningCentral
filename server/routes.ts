@@ -2528,6 +2528,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remove Mentor from Course
+  // Check enrollment status
+  app.get("/api/courses/:courseId/enrollment-status", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const userId = req.user.claims.sub;
+      
+      const enrollment = await storage.getUserEnrollment(userId, courseId);
+      
+      res.json({
+        isEnrolled: !!enrollment,
+        enrollment: enrollment
+      });
+    } catch (error) {
+      console.error("Error checking enrollment status:", error);
+      res.status(500).json({ message: "Failed to check enrollment status" });
+    }
+  });
+
   app.delete("/api/courses/:courseId/mentors/:mentorId", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
     const { courseId, mentorId } = req.params;
     
