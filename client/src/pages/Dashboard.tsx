@@ -377,6 +377,19 @@ const Dashboard = () => {
         </div>
         
         <div className="mt-4 sm:mt-0 flex gap-3">
+          {/* Admin Actions */}
+          {isAdmin && (
+            <AddStudentDialog 
+              trigger={
+                <Button className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Student
+                </Button>
+              }
+            />
+          )}
           <div className="text-right">
             <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200">
               {formatDate(new Date(), false)}
