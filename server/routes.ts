@@ -2,6 +2,13 @@ import { type Express, type Request } from "express";
 import * as expressModule from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { 
+  announcements,
+  users,
+  courseMentors
+} from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";

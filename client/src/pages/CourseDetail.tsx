@@ -1121,12 +1121,50 @@ const CourseDetail = () => {
                       : "This course doesn't have any mentors assigned yet"}
                   </p>
                   {isAdmin && (
-                    <Button onClick={() => {
-                      toast({
-                        title: "Feature Coming Soon",
-                        description: "Mentor assignment will be available in the next update.",
-                      });
-                    }}>Assign Mentors</Button>
+                    <Dialog open={mentorDialogOpen} onOpenChange={setMentorDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <PlusIcon className="h-4 w-4 mr-2" />
+                          Assign Mentors
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Assign Mentor to Course</DialogTitle>
+                          <DialogDescription>
+                            Select a mentor to help guide students in this course.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="mentor-select">Select Mentor</Label>
+                            <Select value={selectedMentorId} onValueChange={setSelectedMentorId}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Choose a mentor" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableMentors?.map((mentor: any) => (
+                                  <SelectItem key={mentor.id} value={mentor.id}>
+                                    {mentor.firstName} {mentor.lastName} ({mentor.email})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setMentorDialogOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button 
+                            onClick={handleAssignMentor}
+                            disabled={assignMentorMutation.isPending}
+                          >
+                            {assignMentorMutation.isPending ? "Assigning..." : "Assign Mentor"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </div>
               )}
