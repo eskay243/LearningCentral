@@ -349,14 +349,14 @@ const Students = () => {
                               <span className="text-green-600">{student.completedCourses} completed</span>
                             </div>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {student.courses.slice(0, 2).map((course: any) => (
+                              {(student.courses || []).slice(0, 2).map((course: any) => (
                                 <Badge key={course.id} variant="outline" className="text-xs">
                                   {course.title.length > 15 ? course.title.substring(0, 15) + '...' : course.title}
                                 </Badge>
                               ))}
-                              {student.courses.length > 2 && (
+                              {(student.courses || []).length > 2 && (
                                 <Badge variant="outline" className="text-xs">
-                                  +{student.courses.length - 2} more
+                                  +{(student.courses || []).length - 2} more
                                 </Badge>
                               )}
                             </div>
