@@ -369,10 +369,10 @@ const Students = () => {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {formatTimeFromNow(student.lastActive)}
+                              {student.lastActive ? formatTimeFromNow(student.lastActive) : 'Never'}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {formatDate(student.lastActive, true)}
+                              {student.lastActive ? formatDate(student.lastActive, true) : 'No activity'}
                             </div>
                           </TableCell>
                           <TableCell>

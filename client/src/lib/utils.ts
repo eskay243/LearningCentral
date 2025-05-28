@@ -7,7 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date, includeTime = false): string {
+  if (!date) return "N/A";
+  
   const dateObj = typeof date === "string" ? new Date(date) : date;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return "Invalid date";
+  }
   
   if (isToday(dateObj)) {
     return includeTime 
@@ -27,7 +34,15 @@ export function formatDate(date: string | Date, includeTime = false): string {
 }
 
 export function formatTimeFromNow(date: string | Date): string {
+  if (!date) return "Never";
+  
   const dateObj = typeof date === "string" ? new Date(date) : date;
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    return "Invalid date";
+  }
+  
   return formatDistanceToNow(dateObj, { addSuffix: true });
 }
 
