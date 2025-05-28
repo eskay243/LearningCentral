@@ -225,10 +225,6 @@ export default function CourseDetail() {
 
   // Check if user is enrolled - handle both data structures
   const isEnrolled = enrollmentStatus?.isEnrolled === true;
-  
-  // Debug logging
-  console.log('Enrollment Status:', enrollmentStatus);
-  console.log('Is Enrolled:', isEnrolled);
 
   if (isLoading) {
     return (
@@ -348,7 +344,7 @@ export default function CourseDetail() {
                 )}
                 <Button 
                   size="lg" 
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className={isEnrolled ? "bg-green-600 hover:bg-green-700" : "bg-purple-600 hover:bg-purple-700"}
                   onClick={handleEnroll}
                   disabled={enrollMutation.isPending}
                 >
@@ -357,7 +353,7 @@ export default function CourseDetail() {
                     ? "Processing..." 
                     : isEnrolled 
                       ? "Continue Learning" 
-                      : "Enroll Now"}
+                      : "Start Learning"}
                 </Button>
               </div>
             </div>
