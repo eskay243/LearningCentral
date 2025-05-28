@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,14 +9,25 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Filter, MoreVertical, Edit, Trash2, Users } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { formatDate, getInitials, formatTimeFromNow } from "@/lib/utils";
+import { AddStudentDialog } from "@/components/admin/AddStudentDialog";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const Students = () => {
   const { user, isMentor, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [courseFilter, setCourseFilter] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
+  const [editingStudent, setEditingStudent] = useState<any>(null);
+  const [studentToDelete, setStudentToDelete] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch students
   const { data: students, isLoading } = useQuery({
@@ -30,6 +41,51 @@ const Students = () => {
     enabled: !!user && (isMentor || isAdmin),
   });
 
+  // Delete student mutation
+  const deleteStudentMutation = useMutation({
+    mutationFn: async (studentId: string) => {
+      await apiRequest("DELETE", `/api/admin/students/${studentId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/students"] });
+      toast({
+        title: "Success",
+        description: "Student deleted successfully",
+      });
+      setStudentToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete student",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update student mutation
+  const updateStudentMutation = useMutation({
+    mutationFn: async (data: { id: string; firstName: string; lastName: string; email: string; phone?: string }) => {
+      const response = await apiRequest("PUT", `/api/admin/students/${data.id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/students"] });
+      toast({
+        title: "Success",
+        description: "Student updated successfully",
+      });
+      setEditingStudent(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update student",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filterStudents = (students: any[]) => {
     if (!students) return [];
     
@@ -40,7 +96,7 @@ const Students = () => {
         student.email?.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .filter(student => 
-        courseFilter === "all" || student.courses.some((course: any) => course.id.toString() === courseFilter)
+        courseFilter === "all" || (student.courses && student.courses.some((course: any) => course.id.toString() === courseFilter))
       )
       .filter(student => {
         if (activeTab === "all") return true;
@@ -125,14 +181,30 @@ const Students = () => {
 
   return (
     <div className="p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark-800">Students</h1>
-        <p className="mt-1 text-gray-500">
-          {isMentor 
-            ? "Manage and monitor your students' progress"
-            : "View and manage all students in the platform"
-          }
-        </p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-dark-800">Students</h1>
+          <p className="mt-1 text-gray-500">
+            {isMentor 
+              ? "Manage and monitor your students' progress"
+              : "View and manage all students in the platform"
+            }
+          </p>
+        </div>
+        
+        {/* Admin Actions */}
+        {isAdmin && (
+          <div className="mt-4 sm:mt-0">
+            <AddStudentDialog 
+              trigger={
+                <Button className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg">
+                  <Plus className="w-4 h-4" />
+                  Add Student
+                </Button>
+              }
+            />
+          </div>
+        )}
       </div>
       
       {/* Stats Cards */}

@@ -2201,6 +2201,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update student (admin only)
+  app.put("/api/admin/students/:id", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { firstName, lastName, email, phone } = req.body;
+
+      const updatedStudent = await storage.updateUser(id, {
+        firstName,
+        lastName,
+        email,
+        phone: phone || null,
+        updatedAt: new Date(),
+      });
+
+      if (!updatedStudent) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      res.json(updatedStudent);
+    } catch (error) {
+      console.error("Error updating student:", error);
+      res.status(500).json({ message: "Failed to update student" });
+    }
+  });
+
+  // Delete student (admin only)
+  app.delete("/api/admin/students/:id", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const deleted = await storage.deleteUser(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      res.json({ message: "Student deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      res.status(500).json({ message: "Failed to delete student" });
+    }
+  });
+
   // Endpoint for managing mentor commission rates
   app.post('/api/admin/mentor/:mentorId/commission', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
     try {
