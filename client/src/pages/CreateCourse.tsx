@@ -113,6 +113,7 @@ const CreateCourse = () => {
       const response = await fetch('/api/upload/course-image', {
         method: 'POST',
         body: formData,
+        credentials: 'include', // Include session cookies for authentication
       });
 
       if (!response.ok) {
