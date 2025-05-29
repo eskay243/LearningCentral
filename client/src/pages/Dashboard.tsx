@@ -763,7 +763,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       {/* Header with Dropdown Navigation */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             {getViewTitle()}
@@ -775,10 +775,13 @@ export default function Dashboard() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Home className="h-4 w-4" />
+            <Button 
+              size="lg" 
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 gap-2 min-w-[200px]"
+            >
+              <Home className="h-5 w-5" />
               Dashboard Menu
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
