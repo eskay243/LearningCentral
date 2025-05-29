@@ -1,63 +1,492 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import StatsCard from "@/components/dashboard/StatsCard";
-import UpcomingClasses from "@/components/dashboard/UpcomingClasses";
-import StudentProgress from "@/components/dashboard/StudentProgress";
-import RecentActivity from "@/components/dashboard/RecentActivity";
-import CourseCard from "@/components/dashboard/CourseCard";
-import ExerciseProgressTracker from "@/components/dashboard/ExerciseProgressTracker";
-import MentorExerciseStatsCard from "@/components/dashboard/MentorExerciseStatsCard";
-import { StatsCardItem, UpcomingClass, StudentProgressItem, RecentActivityItem, CourseCardItem } from "@/types";
-import { apiRequest } from "@/lib/queryClient";
-import { formatDate, getFullName } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { 
+  DollarSign, 
+  Users, 
+  BookOpen, 
+  GraduationCap, 
+  TrendingUp, 
+  TrendingDown,
+  Eye,
+  Clock,
+  Award,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  PiggyBank,
+  CreditCard,
+  FileText,
+  UserCheck
+} from "lucide-react";
+import { formatCurrency, formatDate, formatNumber } from "@/lib/utils";
 import useAuth from "@/hooks/useAuth";
-import { ContextualHelp, WithContextualHelp } from "@/components/ui/ContextualHelp";
-import { AddStudentDialog } from "@/components/admin/AddStudentDialog";
+
+// Interface definitions for dashboard data
+interface AdminDashboardStats {
+  revenue: {
+    platformEarnings: number;
+    mentorPayouts: number;
+    pendingPayouts: number;
+    monthlyGrowth: number;
+  };
+  users: {
+    totalUsers: number;
+    totalStudents: number;
+    totalMentors: number;
+    activeUsers: number;
+    newUsersThisMonth: number;
+  };
+  content: {
+    totalCourses: number;
+    totalLessons: number;
+    activeCourses: number;
+    pendingCourses: number;
+  };
+  enrollments: {
+    totalEnrollments: number;
+    completedCourses: number;
+    averageProgress: number;
+  };
+  withdrawalRequests: {
+    pending: number;
+    totalAmount: number;
+    requests: WithdrawalRequest[];
+  };
+}
+
+interface WithdrawalRequest {
+  id: number;
+  mentorId: string;
+  mentorName: string;
+  amount: number;
+  requestDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+  bankDetails?: string;
+}
+
+interface CourseOverview {
+  id: number;
+  title: string;
+  status: 'active' | 'pending' | 'draft';
+  enrollments: number;
+  revenue: number;
+  mentorName: string;
+  lastUpdated: string;
+}
 
 const Dashboard = () => {
-  const { user, isLoading: isAuthLoading, isMentor, isAdmin } = useAuth();
-  const [statsCards, setStatsCards] = useState<StatsCardItem[]>([]);
-  const [upcomingClasses, setUpcomingClasses] = useState<UpcomingClass[]>([]);
-  const [students, setStudents] = useState<StudentProgressItem[]>([]);
-  const [activities, setActivities] = useState<RecentActivityItem[]>([]);
-  const [courses, setCourses] = useState<CourseCardItem[]>([]);
+  const { user, isLoading: isAuthLoading, isAdmin } = useAuth();
 
-  // Define LiveSession type
-  interface LiveSession {
-    id: number;
-    startTime: string;
-    lesson?: {
-      title: string;
-      duration: number;
-    };
-    module?: {
-      title: string;
-    };
-    course?: {
-      category: string;
-    };
-    enrolledCount?: number;
-  }
-
-  // Fetch upcoming live sessions
-  const { data: liveSessions, isLoading: isSessionsLoading } = useQuery<LiveSession[]>({
-    queryKey: ["/api/live-sessions"],
-    enabled: !isAuthLoading && !!user
+  // Fetch comprehensive admin dashboard data
+  const { data: dashboardStats, isLoading: isStatsLoading } = useQuery<AdminDashboardStats>({
+    queryKey: ["/api/admin/dashboard-stats"],
+    enabled: !isAuthLoading && !!user && isAdmin,
   });
 
-  // Define a type for the analytics stats
-  interface DashboardStats {
-    totalStudents?: number;
-    totalCourses?: number;
-    totalEarnings?: number;
-    hoursThisWeek?: number;
-    totalEnrollments?: number;
-    completedCourses?: number;
-    averageProgress?: number;
-    recentActivity?: RecentActivityItem[];
+  const { data: courseOverview, isLoading: isCoursesLoading } = useQuery<CourseOverview[]>({
+    queryKey: ["/api/admin/course-overview"],
+    enabled: !isAuthLoading && !!user && isAdmin,
+  });
+
+  // Handle approval/rejection of withdrawal requests
+  const handleWithdrawalAction = async (requestId: number, action: 'approve' | 'reject') => {
+    // Implementation for withdrawal actions
+    console.log(`${action} withdrawal request ${requestId}`);
+  };
+
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h2>
+          <p className="text-gray-600 dark:text-gray-400">You need admin privileges to access this dashboard.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cream-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Comprehensive platform management and analytics
+            </p>
+          </div>
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Last updated: {new Date().toLocaleDateString()}
+          </div>
+        </div>
+
+        {/* Dashboard Tabs */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="revenue">Revenue</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Key Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Platform Earnings */}
+              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90">Platform Earnings</CardTitle>
+                  <DollarSign className="h-4 w-4 opacity-90" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(dashboardStats?.revenue?.platformEarnings || 0, 'NGN')}
+                  </div>
+                  <p className="text-xs opacity-80 mt-1">
+                    <TrendingUp className="inline h-3 w-3 mr-1" />
+                    +{dashboardStats?.revenue?.monthlyGrowth || 0}% from last month
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Total Users */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatNumber(dashboardStats?.users?.totalUsers || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    +{dashboardStats?.users?.newUsersThisMonth || 0} this month
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Total Courses */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Courses</CardTitle>
+                  <BookOpen className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatNumber(dashboardStats?.content?.totalCourses || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {dashboardStats?.content?.activeCourses || 0} active
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Total Enrollments */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Enrollments</CardTitle>
+                  <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatNumber(dashboardStats?.enrollments?.totalEnrollments || 0)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {dashboardStats?.enrollments?.averageProgress || 0}% avg progress
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* User Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserCheck className="h-5 w-5" />
+                    User Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Students</span>
+                    <span className="font-semibold">{dashboardStats?.users?.totalStudents || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Mentors</span>
+                    <span className="font-semibold">{dashboardStats?.users?.totalMentors || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Active Users</span>
+                    <span className="font-semibold">{dashboardStats?.users?.activeUsers || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Content Overview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Content Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total Lessons</span>
+                    <span className="font-semibold">{dashboardStats?.content?.totalLessons || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Active Courses</span>
+                    <span className="font-semibold text-green-600">{dashboardStats?.content?.activeCourses || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Pending Courses</span>
+                    <span className="font-semibold text-orange-600">{dashboardStats?.content?.pendingCourses || 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Withdrawal Requests */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Withdrawal Requests
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Pending</span>
+                    <Badge variant="destructive">{dashboardStats?.withdrawalRequests?.pending || 0}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Total Amount</span>
+                    <span className="font-semibold">
+                      {formatCurrency(dashboardStats?.withdrawalRequests?.totalAmount || 0, 'NGN')}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Revenue Tab */}
+          <TabsContent value="revenue" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Platform Earnings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PiggyBank className="h-5 w-5" />
+                    Platform Earnings
+                  </CardTitle>
+                  <CardDescription>Total revenue generated by the platform</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {formatCurrency(dashboardStats?.revenue?.platformEarnings || 0, 'NGN')}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Monthly Growth: +{dashboardStats?.revenue?.monthlyGrowth || 0}%
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Mentor Payouts */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Mentor Payouts
+                  </CardTitle>
+                  <CardDescription>Total amount paid to mentors</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600">
+                    {formatCurrency(dashboardStats?.revenue?.mentorPayouts || 0, 'NGN')}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Distributed to {dashboardStats?.users?.totalMentors || 0} mentors
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Pending Payouts */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Pending Payouts
+                  </CardTitle>
+                  <CardDescription>Amount awaiting distribution</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-orange-600">
+                    {formatCurrency(dashboardStats?.revenue?.pendingPayouts || 0, 'NGN')}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {dashboardStats?.withdrawalRequests?.pending || 0} pending requests
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Total Students</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboardStats?.users?.totalStudents || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Total Mentors</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboardStats?.users?.totalMentors || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active Users</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{dashboardStats?.users?.activeUsers || 0}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>New This Month</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">+{dashboardStats?.users?.newUsersThisMonth || 0}</div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Courses Tab */}
+          <TabsContent value="courses" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Overview</CardTitle>
+                <CardDescription>Manage and monitor all courses on the platform</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {courseOverview?.map((course) => (
+                    <div key={course.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{course.title}</h3>
+                        <p className="text-sm text-muted-foreground">By {course.mentorName}</p>
+                        <p className="text-xs text-muted-foreground">Last updated: {formatDate(course.lastUpdated)}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Badge variant={course.status === 'active' ? 'default' : course.status === 'pending' ? 'secondary' : 'outline'}>
+                          {course.status}
+                        </Badge>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">{course.enrollments} enrollments</p>
+                          <p className="text-xs text-muted-foreground">{formatCurrency(course.revenue, 'NGN')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )) || (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No courses available
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Withdrawals Tab */}
+          <TabsContent value="withdrawals" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Withdrawal Requests</CardTitle>
+                <CardDescription>Manage mentor withdrawal requests</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {dashboardStats?.withdrawalRequests?.requests?.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{request.mentorName}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Amount: {formatCurrency(request.amount, 'NGN')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Requested: {formatDate(request.requestDate)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={
+                          request.status === 'pending' ? 'secondary' : 
+                          request.status === 'approved' ? 'default' : 'destructive'
+                        }>
+                          {request.status}
+                        </Badge>
+                        {request.status === 'pending' && (
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              onClick={() => handleWithdrawalAction(request.id, 'approve')}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleWithdrawalAction(request.id, 'reject')}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )) || (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No withdrawal requests
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
 
   // Fetch stats based on user role
   const { data: stats, isLoading: isStatsLoading } = useQuery<DashboardStats>({
