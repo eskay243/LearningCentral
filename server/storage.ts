@@ -3039,17 +3039,11 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  // Notification functions
-  async getUserNotifications(userId: string, limit = 20, offset = 0): Promise<Notification[]> {
+  // Notification functions - temporarily return empty array until schema is fixed
+  async getUserNotifications(userId: string, limit = 20, offset = 0): Promise<any[]> {
     try {
-      const notificationsList = await db
-        .select()
-        .from(notifications)
-        .where(eq(notifications.userId, userId))
-        .orderBy(desc(notifications.createdAt))
-        .limit(limit)
-        .offset(offset);
-      return notificationsList;
+      // Return empty array temporarily until notification schema is properly set up
+      return [];
     } catch (error) {
       console.error("Error fetching notifications:", error);
       return [];

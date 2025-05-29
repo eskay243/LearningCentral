@@ -499,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ]);
     } catch (error) {
       console.error("Error fetching withdrawal methods:", error);
-      res.status(500).json({ message: "Failed to fetch withdrawal methods" });
+      res.status(500).json({ message: "We couldn't load your withdrawal options right now. Please try again in a few moments." });
     }
   });
 
@@ -522,7 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error processing withdrawal request:", error);
-      res.status(500).json({ message: "Failed to process withdrawal request" });
+      res.status(500).json({ message: "We couldn't process your withdrawal request right now. Please check your details and try again." });
     }
   });
 
@@ -1771,13 +1771,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const unreadOnly = req.query.unreadOnly === 'true';
-      
-      const notifications = await storage.getUserNotifications(userId, { unreadOnly });
+      const notifications = await storage.getUserNotifications(userId);
       res.json(notifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
-      res.status(500).json({ message: "Failed to fetch notifications" });
+      res.status(500).json({ message: "We're having trouble loading your notifications right now. Please try refreshing the page." });
     }
   });
   

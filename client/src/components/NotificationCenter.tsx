@@ -60,9 +60,14 @@ export function NotificationCenter() {
   const queryClient = useQueryClient();
 
   // Fetch notifications
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+  const { data: notifications = [], isLoading, error } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: false,
+    onError: () => {
+      // Show a user-friendly error message
+      console.log("Unable to load notifications at the moment. Please try again later.");
+    }
   });
 
   // Mark notification as read mutation
