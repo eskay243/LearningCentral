@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
@@ -19,7 +18,15 @@ import {
   AlertCircle,
   Eye,
   UserCheck,
-  Calendar
+  Calendar,
+  GraduationCap,
+  PlayCircle,
+  BarChart3,
+  Wallet,
+  Settings,
+  FileText,
+  Target,
+  Activity
 } from 'lucide-react';
 
 // Types for admin dashboard data
@@ -78,31 +85,30 @@ interface CourseOverview {
 export default function DashboardFixed() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const isMentor = user?.role === 'mentor';
-  const isStudent = user?.role === 'student';
+  const [activeSection, setActiveSection] = useState('overview');
 
-  // Fetch admin dashboard statistics - with error handling
+  // Fetch admin dashboard statistics
   const { data: dashboardStats, isLoading: isStatsLoading, error: statsError } = useQuery<AdminDashboardStats>({
     queryKey: ["/api/admin/dashboard-stats"],
     enabled: isAdmin && !isAuthLoading,
     retry: false
   });
 
-  // Fetch course overview for admin - with error handling
+  // Fetch course overview for admin
   const { data: courseOverview, isLoading: isCoursesLoading, error: coursesError } = useQuery<CourseOverview[]>({
     queryKey: ["/api/admin/course-overview"],
     enabled: isAdmin && !isAuthLoading,
     retry: false
   });
 
-  // Fetch all users for admin dashboard Users tab - use same endpoint as UserManagement
+  // Fetch all users for admin dashboard
   const { data: allUsers = [], isLoading: isUsersLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/users"],
     enabled: isAdmin && !isAuthLoading,
     retry: false
   });
 
-  // Also fetch students data to supplement user information
+  // Fetch students data
   const { data: studentsData = [] } = useQuery({
     queryKey: ["/api/admin/students"],
     enabled: isAdmin && !isAuthLoading,
@@ -192,23 +198,136 @@ export default function DashboardFixed() {
     );
   }
 
+  // Navigation menu structure
+  const navigationSections = [
+    {
+      title: "Overview",
+      key: "overview",
+      icon: <BarChart3 className="h-5 w-5" />,
+      items: []
+    },
+    {
+      title: "Revenue Management",
+      key: "revenue",
+      icon: <DollarSign className="h-5 w-5" />,
+      items: [
+        { key: "platform-earnings", title: "Platform Earnings", icon: <CreditCard className="h-4 w-4" /> },
+        { key: "mentor-payouts", title: "Mentor Payouts", icon: <Wallet className="h-4 w-4" /> },
+        { key: "withdrawal-requests", title: "Withdrawal Requests", icon: <AlertCircle className="h-4 w-4" /> }
+      ]
+    },
+    {
+      title: "User Management",
+      key: "users",
+      icon: <Users className="h-5 w-5" />,
+      items: [
+        { key: "all-users", title: "All Users", icon: <Users className="h-4 w-4" /> },
+        { key: "students", title: "Students", icon: <GraduationCap className="h-4 w-4" /> },
+        { key: "mentors", title: "Mentors", icon: <Award className="h-4 w-4" /> },
+        { key: "user-activity", title: "User Activity", icon: <Activity className="h-4 w-4" /> }
+      ]
+    },
+    {
+      title: "Content Management",
+      key: "content",
+      icon: <BookOpen className="h-5 w-5" />,
+      items: [
+        { key: "courses", title: "Courses", icon: <BookOpen className="h-4 w-4" /> },
+        { key: "lessons", title: "Lessons", icon: <PlayCircle className="h-4 w-4" /> },
+        { key: "enrollments", title: "Enrollments", icon: <UserCheck className="h-4 w-4" /> },
+        { key: "course-status", title: "Course Status", icon: <CheckCircle className="h-4 w-4" /> }
+      ]
+    }
+  ];
+
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Admin Dashboard
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your learning platform with comprehensive insights and controls
-        </p>
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Sidebar Navigation */}
+      <div className="w-80 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            Admin Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Platform Management Center
+          </p>
+        </div>
+        
+        <div className="p-4 space-y-2">
+          {navigationSections.map((section) => (
+            <div key={section.key} className="space-y-1">
+              <Button
+                variant={activeSection === section.key ? "secondary" : "ghost"}
+                className="w-full justify-start h-10 text-left"
+                onClick={() => setActiveSection(section.key)}
+              >
+                {section.icon}
+                <span className="ml-3">{section.title}</span>
+              </Button>
+              
+              {section.items.length > 0 && activeSection === section.key && (
+                <div className="ml-8 space-y-1">
+                  {section.items.map((item) => (
+                    <Button
+                      key={item.key}
+                      variant={activeSection === item.key ? "secondary" : "ghost"}
+                      size="sm"
+                      className="w-full justify-start h-8"
+                      onClick={() => setActiveSection(item.key)}
+                    >
+                      {item.icon}
+                      <span className="ml-2 text-sm">{item.title}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="courses">Courses</TabsTrigger>
-        </TabsList>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">{renderContent()}</div>
+      </div>
+    </div>
+  );
+
+  function renderContent() {
+    switch (activeSection) {
+      case 'overview':
+        return renderOverview();
+      case 'platform-earnings':
+        return renderPlatformEarnings();
+      case 'mentor-payouts':
+        return renderMentorPayouts();
+      case 'withdrawal-requests':
+        return renderWithdrawalRequests();
+      case 'all-users':
+        return renderAllUsers();
+      case 'students':
+        return renderStudents();
+      case 'mentors':
+        return renderMentors();
+      case 'user-activity':
+        return renderUserActivity();
+      case 'courses':
+        return renderCourses();
+      case 'lessons':
+        return renderLessons();
+      case 'enrollments':
+        return renderEnrollments();
+      case 'course-status':
+        return renderCourseStatus();
+      default:
+        return renderOverview();
+    }
+  }
+
+  function renderOverview() {
+    return (
+      <div className="space-y-8">{/* Overview Tab */}
+        <div className="space-y-6">
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
