@@ -40,6 +40,7 @@ import CodeCompanion from "@/pages/CodeCompanion";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
 import StudentProfile from "@/pages/StudentProfile";
 import DemoUsers from "@/pages/DemoUsers";
+import CustomizableDashboard from "@/pages/CustomizableDashboard";
 
 function Router() {
   return (
@@ -47,6 +48,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/dashboard" component={Dashboard} />
+        <Route path="/dashboard/customizable" component={CustomizableDashboard} />
         <Route path="/courses" component={Courses} />
         <Route path="/courses/:id" component={CourseDetail} />
         <Route path="/courses/:id/edit" component={CreateCourse} />

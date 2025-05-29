@@ -622,3 +622,91 @@ export type InsertConversationParticipant = z.infer<typeof insertConversationPar
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type InsertCourseAnnouncement = z.infer<typeof insertCourseAnnouncementSchema>;
+
+// Notification Priority Levels
+export const NotificationPriority = {
+  LOW: "low",
+  MEDIUM: "medium", 
+  HIGH: "high",
+  URGENT: "urgent",
+} as const;
+
+// Notification Types
+export const NotificationType = {
+  SYSTEM: "system",
+  COURSE: "course",
+  ASSIGNMENT: "assignment",
+  PAYMENT: "payment",
+  ENROLLMENT: "enrollment",
+  MENTOR: "mentor",
+  ACHIEVEMENT: "achievement",
+  REMINDER: "reminder",
+  SECURITY: "security",
+} as const;
+
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: varchar("type", { length: 50 }).notNull().default(NotificationType.SYSTEM),
+  priority: varchar("priority", { length: 20 }).notNull().default(NotificationPriority.MEDIUM),
+  isRead: boolean("is_read").default(false),
+  isArchived: boolean("is_archived").default(false),
+  actionUrl: varchar("action_url", { length: 500 }),
+  actionText: varchar("action_text", { length: 100 }),
+  metadata: jsonb("metadata"), // Additional data like courseId, enrollmentId, etc.
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  readAt: timestamp("read_at"),
+});
+
+// Notification Preferences table
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  emailNotifications: boolean("email_notifications").default(true),
+  pushNotifications: boolean("push_notifications").default(true),
+  courseUpdates: boolean("course_updates").default(true),
+  assignmentReminders: boolean("assignment_reminders").default(true),
+  paymentAlerts: boolean("payment_alerts").default(true),
+  systemNotifications: boolean("system_notifications").default(true),
+  securityAlerts: boolean("security_alerts").default(true),
+  marketingEmails: boolean("marketing_emails").default(false),
+  quietHoursStart: varchar("quiet_hours_start", { length: 5 }), // Format: "22:00"
+  quietHoursEnd: varchar("quiet_hours_end", { length: 5 }), // Format: "08:00"
+  timezone: varchar("timezone", { length: 50 }).default("UTC"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Notification Templates table
+export const notificationTemplates = pgTable("notification_templates", {
+  id: serial("id").primaryKey(),
+  templateKey: varchar("template_key", { length: 100 }).notNull().unique(),
+  type: varchar("type", { length: 50 }).notNull(),
+  priority: varchar("priority", { length: 20 }).notNull().default(NotificationPriority.MEDIUM),
+  title: varchar("title", { length: 255 }).notNull(),
+  messageTemplate: text("message_template").notNull(),
+  actionText: varchar("action_text", { length: 100 }),
+  actionUrlTemplate: varchar("action_url_template", { length: 500 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Export notification types
+export type Notification = typeof notifications.$inferSelect;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type NotificationTemplate = typeof notificationTemplates.$inferSelect;
+
+// Create insert schemas for notifications
+export const insertNotificationSchema = createInsertSchema(notifications);
+export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreferences);
+export const insertNotificationTemplateSchema = createInsertSchema(notificationTemplates);
+
+// Create insert types for notifications
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
+export type InsertNotificationTemplate = z.infer<typeof insertNotificationTemplateSchema>;

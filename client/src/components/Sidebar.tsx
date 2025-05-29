@@ -93,6 +93,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span className="truncate">Dashboard</span>
           </Link>
           
+          <Link href="/dashboard/customizable" className={menuItemClass("/dashboard/customizable")}>
+            <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Custom Dashboard</span>
+          </Link>
+          
           <Link href="/courses" className={menuItemClass("/courses")}>
             <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">My Courses</span>
