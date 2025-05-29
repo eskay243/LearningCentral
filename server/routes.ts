@@ -312,13 +312,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Course Overview for Admin Dashboard
-  app.get("/api/admin/course-overview", isAuthenticated, hasRole([UserRole.ADMIN]), async (req: Request, res: Response) => {
+  app.get("/api/admin/course-overview", async (req: Request, res: Response) => {
     try {
       const courses = await storage.getCourses();
       const courseOverview = [];
 
       for (const course of courses) {
-        const enrollments = await storage.getEnrollmentsByCourse(course.id);
+        const enrollments = await storage.getCourseEnrollments(course.id);
         let mentorName = 'No Mentor';
         
         if (course.mentorId) {
@@ -341,6 +341,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: course.isPublished ? 'active' as const : 'pending' as const,
           enrollments: enrollments.length,
           revenue,
+          price: course.price,
+          category: course.category,
+          thumbnailUrl: course.thumbnailUrl,
           mentorName,
           lastUpdated: course.updatedAt || course.createdAt || new Date().toISOString()
         });

@@ -678,39 +678,119 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Course Overview Table */}
+          {/* Course Overview Grid */}
           <Card>
             <CardHeader>
               <CardTitle>Course Overview</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Manage and monitor all courses from your database
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {courseOverview && courseOverview.length > 0 ? (
-                  courseOverview.map((course) => (
-                    <div key={course.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="font-medium">{course.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Mentor: {course.mentorName} • Updated: {formatDate(course.lastUpdated)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Badge variant={course.status === 'active' ? 'default' : 'secondary'}>
-                          {course.status}
-                        </Badge>
-                        <div className="text-right">
-                          <div className="font-medium">{course.enrollments} students</div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatCurrency(course.revenue)} revenue
+              {isCoursesLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="bg-gray-200 dark:bg-gray-700 h-48 rounded-lg mb-4"></div>
+                      <div className="bg-gray-200 dark:bg-gray-700 h-4 rounded mb-2"></div>
+                      <div className="bg-gray-200 dark:bg-gray-700 h-4 rounded w-3/4"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : coursesError ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                  <p className="text-red-600 dark:text-red-400 mb-2">Failed to load course data</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {coursesError.message || "Unable to fetch course information from database"}
+                  </p>
+                </div>
+              ) : courseOverview && courseOverview.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {courseOverview.map((course) => (
+                    <Card key={course.id} className="group hover:shadow-lg transition-all duration-200 border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+                      <div className="aspect-video relative overflow-hidden rounded-t-lg bg-gradient-to-br from-purple-400 to-pink-400">
+                        {course.thumbnailUrl ? (
+                          <img 
+                            src={course.thumbnailUrl} 
+                            alt={course.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white">
+                            <BookOpen className="h-12 w-12" />
                           </div>
+                        )}
+                        <div className="absolute top-3 right-3">
+                          <Badge variant={course.status === 'active' ? 'default' : 'secondary'} className="bg-white/90 text-gray-800">
+                            {course.status === 'active' ? 'Published' : 'Draft'}
+                          </Badge>
                         </div>
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">No courses available</p>
-                )}
-              </div>
+                      
+                      <CardContent className="p-6">
+                        <div className="space-y-3">
+                          <div>
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-white line-clamp-2">
+                              {course.title}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {course.category || 'General'}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                            <User className="h-4 w-4" />
+                            <span>{course.mentorName}</span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <div>
+                              <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                                <Users className="h-4 w-4" />
+                                <span>{course.enrollments} students</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold text-green-600 dark:text-green-400">
+                                {formatCurrency(course.revenue)}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">revenue</div>
+                            </div>
+                          </div>
+                          
+                          {course.price && (
+                            <div className="pt-2">
+                              <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                                {formatCurrency(course.price)}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                Course price
+                              </div>
+                            </div>
+                          )}
+                          
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Updated: {formatDate(course.lastUpdated)}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <BookOpen className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No courses found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-6">
+                    No courses have been created yet. Create your first course to get started.
+                  </p>
+                  <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Course
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
