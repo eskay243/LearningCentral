@@ -3009,5 +3009,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register notification routes
+  registerNotificationRoutes(app);
+
   return httpServer;
 }
