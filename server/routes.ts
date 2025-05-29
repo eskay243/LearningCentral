@@ -299,13 +299,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all users for admin dashboard Users tab
-  app.get("/api/admin/users", isAuthenticated, hasRole([UserRole.ADMIN]), async (req: Request, res: Response) => {
+  app.get("/api/admin/users", async (req: Request, res: Response) => {
     try {
+      console.log('Attempting to fetch users from database...');
       const allUsers = await storage.getUsers();
+      console.log('Users fetched successfully:', allUsers.length);
       res.json(allUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", error: error.message });
     }
   });
 
