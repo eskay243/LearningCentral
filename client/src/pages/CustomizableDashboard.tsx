@@ -198,12 +198,14 @@ function renderWidgetContent(type: string, data: any) {
       return (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold">85%</span>
+            <span className="text-lg font-semibold">
+              {data?.dashboardStats?.users?.totalStudents || data?.students?.length || 0}
+            </span>
             <Star className="h-4 w-4 text-yellow-600" />
           </div>
-          <p className="text-sm text-muted-foreground">Avg. Performance</p>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-yellow-600 h-2 rounded-full w-[85%]"></div>
+          <p className="text-sm text-muted-foreground">Total Students</p>
+          <div className="text-xs text-muted-foreground">
+            {Math.round(((data?.dashboardStats?.enrollments?.averageProgress || 0) * 100) / 100)}% avg progress
           </div>
         </div>
       );
@@ -229,9 +231,9 @@ function renderWidgetContent(type: string, data: any) {
             <span className="text-sm">Recent Activity</span>
           </div>
           <div className="space-y-1 text-xs text-muted-foreground">
-            <div>• New course enrollment</div>
-            <div>• Assignment submitted</div>
-            <div>• Quiz completed</div>
+            <div>• {data?.dashboardStats?.users?.newUsersThisMonth || 0} new users this month</div>
+            <div>• {data?.dashboardStats?.content?.totalCourses || 0} courses available</div>
+            <div>• {data?.dashboardStats?.enrollments?.totalEnrollments || 0} total enrollments</div>
           </div>
         </div>
       );
@@ -377,7 +379,7 @@ export default function CustomizableDashboard() {
     })
   );
 
-  // Fetch dashboard data
+  // Fetch dashboard data - exactly same as main dashboard
   const { data: dashboardStats } = useQuery({
     queryKey: ["/api/admin/dashboard-stats"],
   });
@@ -390,10 +392,15 @@ export default function CustomizableDashboard() {
     queryKey: ["/api/admin/course-overview"],
   });
 
+  const { data: students } = useQuery({
+    queryKey: ["/api/admin/students"],
+  });
+
   const data = {
     dashboardStats,
     users,
     courseOverview,
+    students,
     revenue: dashboardStats?.revenue,
   };
 
