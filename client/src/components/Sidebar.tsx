@@ -93,6 +93,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span className="truncate">Dashboard</span>
           </Link>
           
+          {isMentor && (
+            <Link href="/mentor-dashboard" className={menuItemClass("/mentor-dashboard")}>
+              <DollarSign className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate">My Earnings</span>
+            </Link>
+          )}
+          
           <Link href="/dashboard/customizable" className={menuItemClass("/dashboard/customizable")}>
             <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Custom Dashboard</span>
@@ -162,12 +169,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-primary rounded-full">5</span>
           </Link>
           
-          {(isAdmin || isMentor) && (
-            <Link href="/earnings" className={menuItemClass("/earnings")}>
-              <DollarSign className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">Earnings</span>
-            </Link>
-          )}
+
           
           <Link href="/certificates" className={menuItemClass("/certificates")}>
             <Award className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
