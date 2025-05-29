@@ -418,6 +418,20 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omi
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type InsertSystemSettings = typeof systemSettings.$inferInsert;
 
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default("info"), // info, warning, success, error
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  isRead: boolean("read").notNull().default(false),
+  actionUrl: text("link_url"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const notificationSettings = pgTable("notification_settings", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
@@ -598,6 +612,8 @@ export type ConversationParticipant = typeof conversationParticipants.$inferSele
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type MessageReaction = typeof messageReactions.$inferSelect;
 export type CourseAnnouncement = typeof courseAnnouncements.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type NotificationSetting = typeof notificationSettings.$inferSelect;
 
 // Create insert schemas
 export const insertConversationSchema = createInsertSchema(conversations);
@@ -605,6 +621,8 @@ export const insertConversationParticipantSchema = createInsertSchema(conversati
 export const insertChatMessageSchema = createInsertSchema(chatMessages);
 export const insertMessageReactionSchema = createInsertSchema(messageReactions);
 export const insertCourseAnnouncementSchema = createInsertSchema(courseAnnouncements);
+export const insertNotificationSchema = createInsertSchema(notifications);
+export const insertNotificationSettingSchema = createInsertSchema(notificationSettings);
 
 // Create insert types
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
@@ -612,3 +630,5 @@ export type InsertConversationParticipant = z.infer<typeof insertConversationPar
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type InsertCourseAnnouncement = z.infer<typeof insertCourseAnnouncementSchema>;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type InsertNotificationSetting = z.infer<typeof insertNotificationSettingSchema>;

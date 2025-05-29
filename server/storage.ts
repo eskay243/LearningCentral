@@ -22,6 +22,7 @@ import {
   affiliateCommissions,
   courseDiscussions,
   discussionReplies,
+  notifications,
   notificationSettings,
   codingExercises,
   exerciseProgress,
@@ -67,11 +68,15 @@ import {
   type ChatMessage,
   type MessageReaction,
   type CourseAnnouncement,
+  type Notification,
+  type NotificationSetting,
   type InsertConversation,
   type InsertConversationParticipant,
   type InsertChatMessage,
   type InsertMessageReaction,
   type InsertCourseAnnouncement,
+  type InsertNotification,
+  type InsertNotificationSetting,
   UserRole,
 } from "@shared/schema";
 import { db } from "./db";
