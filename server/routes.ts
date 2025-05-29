@@ -424,6 +424,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register Code Companion routes
   registerCodeCompanionRoutes(app);
 
+  // Mentor-specific earnings endpoints
+  app.get("/api/mentor/earnings", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+    try {
+      const mentorId = req.user.id;
+      
+      // Get mentor's courses and calculate earnings
+      const mentorCourses = await storage.getCoursesByMentor(mentorId);
+      const enrollments = await storage.getAllEnrollments();
+      
+      let totalEarnings = 0;
+      let thisMonthEarnings = 0;
+      
+      const currentDate = new Date();
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      
+      for (const course of mentorCourses) {
+        const courseEnrollments = enrollments.filter(e => e.courseId === course.id);
+        const courseEarnings = courseEnrollments.length * (course.price || 0) * 0.37; // 37% commission
+        totalEarnings += courseEarnings;
+        
+        // Calculate this month's earnings
+        const thisMonthEnrollments = courseEnrollments.filter(e => 
+          e.enrolledAt && new Date(e.enrolledAt) >= startOfMonth
+        );
+        thisMonthEarnings += thisMonthEnrollments.length * (course.price || 0) * 0.37;
+      }
+      
+      res.json({
+        totalEarnings,
+        thisMonthEarnings,
+        pendingPayouts: totalEarnings * 0.3, // Assume 30% is pending
+        withdrawnFunds: totalEarnings * 0.7, // Assume 70% has been withdrawn
+        commissionRate: 37,
+        courseCount: mentorCourses.length,
+        totalEnrollments: enrollments.filter(e => 
+          mentorCourses.some(c => c.id === e.courseId)
+        ).length
+      });
+    } catch (error) {
+      console.error("Error fetching mentor earnings:", error);
+      res.status(500).json({ message: "Failed to fetch mentor earnings" });
+    }
+  });
+
+  app.get("/api/mentor/withdrawal-methods", isAuthenticated, hasRole(['mentor', 'admin']), async (req: Request, res: Response) => {
+    try {
+      res.json([
+        {
+          id: "bank_transfer",
+          name: "Bank Transfer",
+          description: "Direct transfer to your Nigerian bank account",
+          processingTime: "1-3 business days",
+          minimumAmount: 5000,
+          fees: "₦50 per transaction"
+        },
+        {
+          id: "paystack_transfer",
+          name: "Paystack Transfer",
+          description: "Transfer via Paystack to your bank account",
+          processingTime: "Instant",
+          minimumAmount: 1000,
+          fees: "₦25 per transaction"
+        },
+        {
+          id: "mobile_money",
+          name: "Mobile Money",
+          description: "Transfer to your mobile money account",
+          processingTime: "Instant",
+          minimumAmount: 500,
+          fees: "₦20 per transaction"
+        }
+      ]);
+    } catch (error) {
+      console.error("Error fetching withdrawal methods:", error);
+      res.status(500).json({ message: "Failed to fetch withdrawal methods" });
+    }
+  });
+
+  app.post("/api/mentor/withdrawal-request", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+    try {
+      const { amount, method, accountDetails } = req.body;
+      const mentorId = req.user.id;
+      
+      // In a real implementation, you would:
+      // 1. Validate the withdrawal request
+      // 2. Check available balance
+      // 3. Create a withdrawal record
+      // 4. Process the payment via the selected method
+      
+      res.json({
+        success: true,
+        message: "Withdrawal request submitted successfully",
+        transactionId: `WD_${Date.now()}`,
+        expectedDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+      });
+    } catch (error) {
+      console.error("Error processing withdrawal request:", error);
+      res.status(500).json({ message: "Failed to process withdrawal request" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

@@ -88,6 +88,12 @@
 - Coupon/discount management
 - Course ratings and reviews
 
+#### Mentor Earnings Management
+- My Earnings Dashboard with 37% commission rate on course fees
+- Funds withdrawn tracking and pending payouts management
+- Multiple withdrawal methods (bank transfer and other payment options)
+- Comprehensive financial history and earning statements
+
 ### Technical Implementation
 
 #### Frontend
