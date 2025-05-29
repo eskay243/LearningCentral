@@ -47,25 +47,25 @@ export default function MentorDashboard() {
   // Debug authentication status
   console.log("MentorDashboard - Auth Status:", { user, isAuthenticated, isMentor, authLoading });
 
-  // Redirect if not authenticated
-  if (!authLoading && !isAuthenticated) {
-    navigate("/login");
-    return null;
-  }
-
-  // Redirect if not a mentor
-  if (!authLoading && isAuthenticated && !isMentor) {
-    navigate("/dashboard");
-    return null;
-  }
-
   // Show loading while authenticating
-  if (authLoading) {
+  if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
+  }
+
+  // Redirect if not authenticated
+  if (!isAuthenticated) {
+    navigate("/login");
+    return null;
+  }
+
+  // Redirect if not a mentor (check user.role directly)
+  if (user.role !== "mentor") {
+    navigate("/dashboard");
+    return null;
   }
 
   const { data: earnings, isLoading: earningsLoading } = useQuery({
