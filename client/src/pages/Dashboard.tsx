@@ -186,12 +186,12 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="relative z-10">
                 <div className="text-3xl font-bold mb-1">
-                  {formatCurrency(dashboardStats?.revenue.platformEarnings || 0)}
+                  {formatCurrency(displayStats.revenue.platformEarnings)}
                 </div>
                 <div className="flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
                   <p className="text-xs text-white/80">
-                    +{dashboardStats?.revenue.monthlyGrowth || 0}% from last month
+                    +{displayStats.revenue.monthlyGrowth}% from last month
                   </p>
                 </div>
               </CardContent>
@@ -208,12 +208,12 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="relative z-10">
                 <div className="text-3xl font-bold mb-1">
-                  {dashboardStats?.users.totalUsers || 0}
+                  {displayStats.users.totalUsers}
                 </div>
                 <div className="flex items-center gap-1">
                   <UserPlus className="h-3 w-3" />
                   <p className="text-xs text-white/80">
-                    {dashboardStats?.users.newUsersThisMonth || 0} new this month
+                    {displayStats.users.newUsersThisMonth} new this month
                   </p>
                 </div>
               </CardContent>
@@ -611,6 +611,7 @@ export default function Dashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
