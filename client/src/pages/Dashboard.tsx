@@ -95,6 +95,7 @@ interface CourseOverview {
 export default function Dashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const isMentor = user?.role === 'mentor';
   const [activeView, setActiveView] = useState('overview');
 
   // Fetch admin dashboard statistics
@@ -122,6 +123,13 @@ export default function Dashboard() {
   const { data: studentsData = [] } = useQuery({
     queryKey: ["/api/admin/students"],
     enabled: isAdmin && !isAuthLoading,
+    retry: false
+  });
+
+  // Fetch mentor earnings data for mentors
+  const { data: mentorEarnings, isLoading: isEarningsLoading } = useQuery({
+    queryKey: ["/api/mentor/earnings"],
+    enabled: isMentor && !isAuthLoading,
     retry: false
   });
 
@@ -180,6 +188,120 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  // Show mentor dashboard for mentors
+  if (isMentor && !isAdmin) {
+    return (
+      <div className="container mx-auto p-6 space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Mentor Dashboard</h1>
+            <p className="text-muted-foreground">Track your earnings and student progress</p>
+          </div>
+        </div>
+
+        {/* Mentor Earnings Overview */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(mentorEarnings?.totalEarnings || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                All-time earnings
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">This Month</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(mentorEarnings?.thisMonthEarnings || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Current month earnings
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {mentorEarnings?.totalEnrollments || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Students enrolled
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Commission Rate</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {mentorEarnings?.commissionRate || 37}%
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Per course sale
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Withdrawal Options
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Available balance: {formatCurrency(mentorEarnings?.availableBalance || 0)}
+              </p>
+              <Button className="w-full">
+                Request Withdrawal
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Performance Insights
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                View detailed analytics of your courses and student engagement
+              </p>
+              <Button variant="outline" className="w-full">
+                View Analytics
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
