@@ -529,7 +529,7 @@ export default function Dashboard() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Recent Courses</h3>
               {courseOverview && courseOverview.length > 0 ? (
-                courseOverview.slice(0, 3).map((course) => (
+                courseOverview.slice(0, 5).map((course) => (
                   <Card key={course.id} className="hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <div className="flex items-center justify-between">
