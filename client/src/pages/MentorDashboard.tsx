@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,9 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Banknote
+  Banknote,
+  Edit,
+  Eye
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -38,11 +40,174 @@ const withdrawalSchema = z.object({
 
 type WithdrawalForm = z.infer<typeof withdrawalSchema>;
 
+const courseEditSchema = z.object({
+  title: z.string().min(1, "Course title is required"),
+  description: z.string().min(1, "Course description is required"),
+  price: z.number().min(0, "Price must be a positive number"),
+  category: z.string().min(1, "Category is required"),
+  published: z.boolean(),
+});
+
+type CourseEditForm = z.infer<typeof courseEditSchema>;
+
+function EditCourseForm({ course }: { course: any }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const form = useForm<CourseEditForm>({
+    resolver: zodResolver(courseEditSchema),
+    defaultValues: {
+      title: course?.title || "",
+      description: course?.description || "",
+      price: course?.price || 0,
+      category: course?.category || "",
+      published: course?.published || false,
+    },
+  });
+
+  const editCourseMutation = useMutation({
+    mutationFn: async (data: CourseEditForm) => {
+      const response = await apiRequest("PUT", `/api/courses/${course.id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Course Updated",
+        description: "Your course has been updated successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update course",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: CourseEditForm) => {
+    editCourseMutation.mutate(data);
+  };
+
+  if (!course) return null;
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Course Title</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter course title" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Enter course description" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Price (NGN)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="0" 
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="web-development">Web Development</SelectItem>
+                  <SelectItem value="mobile-development">Mobile Development</SelectItem>
+                  <SelectItem value="data-science">Data Science</SelectItem>
+                  <SelectItem value="machine-learning">Machine Learning</SelectItem>
+                  <SelectItem value="cybersecurity">Cybersecurity</SelectItem>
+                  <SelectItem value="devops">DevOps</SelectItem>
+                  <SelectItem value="ui-ux">UI/UX Design</SelectItem>
+                  <SelectItem value="programming">Programming</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex items-center space-x-2">
+          <FormField
+            control={form.control}
+            name="published"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4"
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Published</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end space-x-2 pt-4">
+          <Button type="submit" disabled={editCourseMutation.isPending}>
+            {editCourseMutation.isPending ? "Updating..." : "Update Course"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+
 export default function MentorDashboard() {
   const { toast } = useToast();
   const { user, isAuthenticated, isMentor, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
 
   // Simple loading state
   if (authLoading) {
@@ -363,9 +528,39 @@ export default function MentorDashboard() {
                             {formatCurrency((course.price || 0) * 0.37)}
                           </span>
                         </div>
-                        <Badge variant={course.published ? "default" : "secondary"} className="w-full justify-center">
+                        <Badge variant={course.published ? "default" : "secondary"} className="w-full justify-center mb-3">
                           {course.published ? "Published" : "Draft"}
                         </Badge>
+                        <div className="flex gap-2 pt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => navigate(`/course/${course.id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="flex-1"
+                                onClick={() => setEditingCourse(course)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Edit Course</DialogTitle>
+                              </DialogHeader>
+                              <EditCourseForm course={editingCourse} />
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
