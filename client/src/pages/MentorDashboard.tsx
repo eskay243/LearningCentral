@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useLocation } from "wouter";
 
 const withdrawalSchema = z.object({
   amount: z.number().min(500, "Minimum withdrawal amount is ₦500"),
@@ -38,7 +40,33 @@ type WithdrawalForm = z.infer<typeof withdrawalSchema>;
 
 export default function MentorDashboard() {
   const { toast } = useToast();
+  const { user, isAuthenticated, isMentor, isLoading: authLoading } = useAuth();
+  const [, navigate] = useLocation();
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
+
+  // Debug authentication status
+  console.log("MentorDashboard - Auth Status:", { user, isAuthenticated, isMentor, authLoading });
+
+  // Redirect if not authenticated
+  if (!authLoading && !isAuthenticated) {
+    navigate("/login");
+    return null;
+  }
+
+  // Redirect if not a mentor
+  if (!authLoading && isAuthenticated && !isMentor) {
+    navigate("/dashboard");
+    return null;
+  }
+
+  // Show loading while authenticating
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const { data: earnings, isLoading: earningsLoading } = useQuery({
     queryKey: ["/api/mentor/earnings"],
