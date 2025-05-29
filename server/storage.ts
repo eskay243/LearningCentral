@@ -3040,15 +3040,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Notification functions
-  async getUserNotifications(userId: string, limit = 20, offset = 0): Promise<any[]> {
+  async getUserNotifications(userId: string, limit = 20, offset = 0): Promise<Notification[]> {
     try {
-      return await db
+      const notificationsList = await db
         .select()
         .from(notifications)
         .where(eq(notifications.userId, userId))
         .orderBy(desc(notifications.createdAt))
         .limit(limit)
         .offset(offset);
+      return notificationsList;
     } catch (error) {
       console.error("Error fetching notifications:", error);
       return [];
