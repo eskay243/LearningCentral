@@ -144,7 +144,7 @@ function renderWidgetContent(type: string, data: any) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-green-600">
-              ₦{data?.revenue?.platformEarnings?.toLocaleString() || "0"}
+              ₦{data?.dashboardStats?.revenue?.platformEarnings?.toLocaleString() || "0"}
             </span>
             <TrendingUp className="h-4 w-4 text-green-600" />
           </div>
@@ -157,7 +157,7 @@ function renderWidgetContent(type: string, data: any) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-blue-600">
-              {data?.users?.length || 0}
+              {data?.dashboardStats?.userMetrics?.totalUsers || data?.users?.length || 0}
             </span>
             <Users className="h-4 w-4 text-blue-600" />
           </div>
@@ -170,7 +170,7 @@ function renderWidgetContent(type: string, data: any) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-2xl font-bold text-purple-600">
-              {data?.courseOverview?.length || 0}
+              {data?.dashboardStats?.contentMetrics?.totalCourses || data?.courseOverview?.length || 0}
             </span>
             <BookOpen className="h-4 w-4 text-purple-600" />
           </div>
@@ -183,13 +183,13 @@ function renderWidgetContent(type: string, data: any) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-lg font-semibold">
-              {data?.dashboardStats?.totalEnrollments || 0}
+              {data?.dashboardStats?.contentMetrics?.totalEnrollments || 0}
             </span>
             <UserPlus className="h-4 w-4 text-green-600" />
           </div>
-          <p className="text-sm text-muted-foreground">Recent Enrollments</p>
+          <p className="text-sm text-muted-foreground">Total Enrollments</p>
           <div className="text-xs text-muted-foreground">
-            {data?.dashboardStats?.newEnrollmentsThisWeek || 0} this week
+            {data?.dashboardStats?.userMetrics?.newUsersThisWeek || 0} new this week
           </div>
         </div>
       );
@@ -213,7 +213,7 @@ function renderWidgetContent(type: string, data: any) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-lg font-semibold">
-              {data?.users?.filter(u => u.role === 'mentor')?.length || 0}
+              {data?.dashboardStats?.userMetrics?.mentors || 0}
             </span>
             <GraduationCap className="h-4 w-4 text-indigo-600" />
           </div>
@@ -255,13 +255,13 @@ function renderWidgetContent(type: string, data: any) {
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
               <div className="text-lg font-semibold text-green-600">
-                ₦{data?.revenue?.platformEarnings?.toLocaleString() || "0"}
+                ₦{data?.dashboardStats?.revenue?.platformEarnings?.toLocaleString() || "0"}
               </div>
               <div className="text-xs text-muted-foreground">Earnings</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-semibold text-blue-600">
-                ₦{data?.revenue?.mentorPayouts?.toLocaleString() || "0"}
+                ₦{data?.dashboardStats?.revenue?.mentorEarnings?.toLocaleString() || "0"}
               </div>
               <div className="text-xs text-muted-foreground">Payouts</div>
             </div>
