@@ -97,7 +97,7 @@ export default function Dashboard() {
   });
 
   // Fetch all users for admin dashboard Users tab - use same endpoint as UserManagement
-  const { data: allUsers = [], isLoading: isUsersLoading } = useQuery({
+  const { data: allUsers = [], isLoading: isUsersLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     enabled: isAdmin && !isAuthLoading,
     retry: false
