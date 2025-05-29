@@ -23,7 +23,17 @@ export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
 
   const { data: student, isLoading, error } = useQuery({
-    queryKey: [`/api/admin/students/${id}`],
+    queryKey: ["/api/admin/students", id],
+    queryFn: async () => {
+      if (!id) throw new Error("No student ID provided");
+      const response = await fetch(`/api/admin/students/${id}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch student: ${response.statusText}`);
+      }
+      return response.json();
+    },
     enabled: !!id,
   });
 
