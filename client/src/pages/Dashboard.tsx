@@ -133,13 +133,54 @@ export default function Dashboard() {
     );
   }
 
-  // For demo purposes, use mock data when authentication fails
-  const displayStats = dashboardStats || {
-    revenue: { platformEarnings: 125000, mentorPayouts: 85000, pendingPayouts: 15000, monthlyGrowth: 12 },
-    users: { totalUsers: 1250, totalStudents: 1100, totalMentors: 45, activeUsers: 890, newUsersThisMonth: 180 },
-    content: { totalCourses: 32, totalLessons: 485, activeCourses: 28, pendingCourses: 4 },
-    enrollments: { totalEnrollments: 3200, completedCourses: 1890, averageProgress: 68 },
-    withdrawalRequests: { pending: 3, totalAmount: 15000, requests: [] }
+  // Calculate real user statistics from fetched user data
+  const calculateUserStats = () => {
+    if (!usersData || !Array.isArray(usersData)) {
+      return {
+        totalUsers: 0,
+        totalStudents: 0,
+        totalMentors: 0,
+        activeUsers: 0,
+        newUsersThisMonth: 0
+      };
+    }
+
+    const totalUsers = usersData.length;
+    const totalStudents = usersData.filter(u => u.role === 'student').length;
+    const totalMentors = usersData.filter(u => u.role === 'mentor').length;
+    
+    // Calculate active users (users updated within last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const activeUsers = usersData.filter(u => 
+      u.updatedAt && new Date(u.updatedAt) > thirtyDaysAgo
+    ).length;
+    
+    // Calculate new users this month
+    const firstOfMonth = new Date();
+    firstOfMonth.setDate(1);
+    const newUsersThisMonth = usersData.filter(u => 
+      u.createdAt && new Date(u.createdAt) >= firstOfMonth
+    ).length;
+
+    return {
+      totalUsers,
+      totalStudents,
+      totalMentors,
+      activeUsers,
+      newUsersThisMonth
+    };
+  };
+
+  const realUserStats = calculateUserStats();
+
+  // Use real user data when available, fallback to API stats for other data
+  const displayStats = {
+    revenue: dashboardStats?.revenue || { platformEarnings: 0, mentorPayouts: 0, pendingPayouts: 0, monthlyGrowth: 0 },
+    users: realUserStats,
+    content: dashboardStats?.content || { totalCourses: 0, totalLessons: 0, activeCourses: 0, pendingCourses: 0 },
+    enrollments: dashboardStats?.enrollments || { totalEnrollments: 0, completedCourses: 0, averageProgress: 0 },
+    withdrawalRequests: dashboardStats?.withdrawalRequests || { pending: 0, totalAmount: 0, requests: [] }
   };
 
   const displayCourses = courseOverview || [
