@@ -12,13 +12,36 @@ export function useAuth() {
     isError, 
     error,
     refetch
-  } = useQuery<User>({
+  } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/auth/user", {
+          credentials: "include",
+        });
+        
+        if (res.status === 401) {
+          return null; // Not authenticated
+        }
+        
+        if (!res.ok) {
+          throw new Error(`Authentication failed: ${res.status}`);
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Auth query error:", error);
+        return null;
+      }
+    },
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
+
+  // Add debug logging
+  console.log("useAuth - Query state:", { user, isLoading, isError, error });
 
   useEffect(() => {
     if (redirectToLogin) {
