@@ -343,50 +343,255 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                User Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span>Students</span>
-                <Badge>{displayStats.users.totalStudents}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Mentors</span>
-                <Badge variant="secondary">{displayStats.users.totalMentors}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Active Users</span>
-                <Badge variant="outline">{displayStats.users.activeUsers}</Badge>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Revenue Management Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <DollarSign className="h-6 w-6 text-purple-600" />
+            Revenue Management
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Total Platform Earnings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">
+                  {formatCurrency(displayStats.revenue.platformEarnings)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Commission from course sales
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Mentor Payouts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-600">
+                  {formatCurrency(displayStats.revenue.mentorPayouts)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Total paid to mentors
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-600">
+                  {formatCurrency(displayStats.revenue.pendingPayouts)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Awaiting mentor payments
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
+        {/* User Management Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Users className="h-6 w-6 text-blue-600" />
+            User Management
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Total Users</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{displayStats.users.totalUsers}</div>
+                <p className="text-xs text-muted-foreground">All registered users</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Students</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{displayStats.users.totalStudents}</div>
+                <p className="text-xs text-muted-foreground">Learning on platform</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Mentors</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{displayStats.users.totalMentors}</div>
+                <p className="text-xs text-muted-foreground">Teaching courses</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Active Users</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-purple-600">{displayStats.users.activeUsers}</div>
+                <p className="text-xs text-muted-foreground">Currently engaged</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Users */}
+          {isUsersLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Users</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {allUsers.slice(0, 5).map((user: any) => (
+                    <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{user.email}</p>
+                          <Badge variant={user.role === 'admin' ? 'destructive' : user.role === 'mentor' ? 'default' : 'secondary'} className="text-xs">
+                            {user.role}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {user.createdAt ? formatDate(user.createdAt) : 'N/A'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Content Management Section */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="h-6 w-6 text-green-600" />
+            Content Management
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Total Courses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{displayStats.content.totalCourses}</div>
+                <p className="text-xs text-muted-foreground">All courses created</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Active Courses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{displayStats.content.activeCourses}</div>
+                <p className="text-xs text-muted-foreground">Published and available</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Pending Courses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">{displayStats.content.pendingCourses}</div>
+                <p className="text-xs text-muted-foreground">Awaiting approval</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Total Lessons</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{displayStats.content.totalLessons}</div>
+                <p className="text-xs text-muted-foreground">Learning content</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Recent Courses */}
+          {isCoursesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Recent Courses</h3>
+              {courseOverview && courseOverview.length > 0 ? (
+                courseOverview.slice(0, 3).map((course) => (
+                  <Card key={course.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">{course.title}</CardTitle>
+                        <Badge variant={course.status === 'active' ? 'default' : course.status === 'pending' ? 'secondary' : 'outline'}>
+                          {course.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Enrollments</p>
+                          <p className="font-bold">{course.enrollments}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Revenue</p>
+                          <p className="font-bold">{formatCurrency(course.revenue)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Mentor</p>
+                          <p className="font-medium">{course.mentorName}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Last Updated</p>
+                          <p className="font-medium">{formatDate(course.lastUpdated)}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Courses Found</h3>
+                    <p className="text-muted-foreground">Start by creating your first course.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Enrollment Statistics */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                Content Status
-              </CardTitle>
+              <CardTitle>Enrollment Statistics</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span>Active Courses</span>
-                <Badge>{displayStats.content.activeCourses}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Pending Courses</span>
-                <Badge variant="secondary">{displayStats.content.pendingCourses}</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span>Total Lessons</span>
-                <Badge variant="outline">{displayStats.content.totalLessons}</Badge>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <div className="text-2xl font-bold">{displayStats.enrollments.totalEnrollments}</div>
+                  <p className="text-sm text-muted-foreground">Total Enrollments</p>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{displayStats.enrollments.completedCourses}</div>
+                  <p className="text-sm text-muted-foreground">Completed Courses</p>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold">{displayStats.enrollments.averageProgress}%</div>
+                  <p className="text-sm text-muted-foreground">Average Progress</p>
+                </div>
               </div>
             </CardContent>
           </Card>
