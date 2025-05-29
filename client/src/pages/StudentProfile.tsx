@@ -23,22 +23,27 @@ export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
 
   const { data: student, isLoading, error } = useQuery({
-    queryKey: ["/api/admin/students", id],
-    queryFn: async () => {
-      if (!id) throw new Error("No student ID provided");
-      const response = await fetch(`/api/admin/students/${id}`, {
-        credentials: 'include'
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch student: ${response.statusText}`);
-      }
-      return response.json();
-    },
+    queryKey: [`/api/admin/students/${id}`],
     enabled: !!id,
   });
 
   // Debug logging
   console.log("Student Profile Debug:", { id, student, isLoading, error });
+
+  if (error) {
+    console.error("Student Profile Error:", error);
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Student Profile</h2>
+          <p className="text-gray-600">{error.message}</p>
+          <Button onClick={() => window.history.back()} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
