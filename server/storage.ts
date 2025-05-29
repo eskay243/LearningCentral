@@ -110,6 +110,8 @@ export interface IStorage {
   getCourses(options?: { published?: boolean }): Promise<Course[]>;
   getCoursesByMentor(mentorId: string): Promise<Course[]>;
   getEnrolledCourses(userId: string): Promise<CourseEnrollment[]>;
+  getCourseEnrollments(courseId: number): Promise<CourseEnrollment[]>;
+  getAllEnrollments(): Promise<CourseEnrollment[]>;
   
   // Module & Lesson operations
   createModule(moduleData: Omit<Module, "id">): Promise<Module>;
@@ -2098,6 +2100,19 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(courseEnrollments.enrolledAt));
     } catch (error) {
       console.error("Error fetching all enrollments:", error);
+      return [];
+    }
+  }
+
+  async getCourseEnrollments(courseId: number): Promise<CourseEnrollment[]> {
+    try {
+      return await db
+        .select()
+        .from(courseEnrollments)
+        .where(eq(courseEnrollments.courseId, courseId))
+        .orderBy(desc(courseEnrollments.enrolledAt));
+    } catch (error) {
+      console.error("Error fetching course enrollments:", error);
       return [];
     }
   }
