@@ -23,10 +23,10 @@ export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
 
   const { data: student, isLoading, error } = useQuery({
-    queryKey: [`/api/admin/students/${id}`],
+    queryKey: ["/api/admin/students", id],
     enabled: !!id,
-    retry: 3,
-    retryDelay: 1000,
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   // Debug logging

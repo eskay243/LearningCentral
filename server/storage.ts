@@ -278,6 +278,7 @@ export interface IStorage {
   getUsers(role?: string): Promise<User[]>;
   createUser(user: UpsertUser): Promise<User>;
   updateUser(id: string, userData: Partial<UpsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   upsertUser(userData: UpsertUser): Promise<User>;
   
   // System settings operations
@@ -1207,6 +1208,18 @@ export class DatabaseStorage implements IStorage {
       return user;
     } catch (error) {
       console.error("Error updating user:", error);
+      throw error;
+    }
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(users)
+        .where(eq(users.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error("Error deleting user:", error);
       throw error;
     }
   }
