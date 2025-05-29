@@ -95,9 +95,16 @@ export default function Dashboard() {
     retry: false
   });
 
-  // Fetch all users for admin dashboard Users tab
-  const { data: allUsers, isLoading: isUsersLoading } = useQuery({
+  // Fetch all users for admin dashboard Users tab - use same endpoint as UserManagement
+  const { data: allUsers = [], isLoading: isUsersLoading } = useQuery({
     queryKey: ["/api/admin/users"],
+    enabled: isAdmin && !isAuthLoading,
+    retry: false
+  });
+
+  // Also fetch students data to supplement user information
+  const { data: studentsData = [] } = useQuery({
+    queryKey: ["/api/admin/students"],
     enabled: isAdmin && !isAuthLoading,
     retry: false
   });
@@ -432,7 +439,7 @@ export default function Dashboard() {
                 <Users className="h-5 w-5 text-white" />
               </CardHeader>
               <CardContent className="relative z-10">
-                <div className="text-3xl font-bold">{dashboardStats?.users.totalUsers || (allUsers?.length || 0)}</div>
+                <div className="text-3xl font-bold">{allUsers?.length || dashboardStats?.users.totalUsers || 0}</div>
                 <p className="text-xs text-white/80">All registered users</p>
               </CardContent>
             </Card>
@@ -444,7 +451,7 @@ export default function Dashboard() {
                 <UserCheck className="h-5 w-5 text-white" />
               </CardHeader>
               <CardContent className="relative z-10">
-                <div className="text-3xl font-bold">{dashboardStats?.users.totalStudents || (allUsers?.filter(u => u.role === 'student').length || 0)}</div>
+                <div className="text-3xl font-bold">{allUsers?.filter(u => u.role === 'student').length || dashboardStats?.users.totalStudents || 0}</div>
                 <p className="text-xs text-white/80">Active learners</p>
               </CardContent>
             </Card>
@@ -456,7 +463,7 @@ export default function Dashboard() {
                 <Award className="h-5 w-5 text-white" />
               </CardHeader>
               <CardContent className="relative z-10">
-                <div className="text-3xl font-bold">{dashboardStats?.users.totalMentors || (allUsers?.filter(u => u.role === 'mentor').length || 0)}</div>
+                <div className="text-3xl font-bold">{allUsers?.filter(u => u.role === 'mentor').length || dashboardStats?.users.totalMentors || 0}</div>
                 <p className="text-xs text-white/80">Course instructors</p>
               </CardContent>
             </Card>
@@ -502,50 +509,84 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {allUsers.map((user: any) => (
-                        <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-medium text-sm">
-                                {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'U'}
+                      {allUsers.map((user: any) => {
+                        // Find corresponding student data for additional metrics
+                        const studentData = studentsData?.find((s: any) => s.id === user.id || s.email === user.email);
+                        
+                        return (
+                          <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-medium text-sm">
+                                  {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'U'}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                                    {user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'No name'}
+                                  </p>
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">ID: {user.id}</p>
+                                  {user.bio && (
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 truncate max-w-xs">
+                                      {user.bio}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
+                            </td>
+                            <td className="py-3 px-4">
                               <div>
-                                <p className="font-medium text-gray-900 dark:text-gray-100">
-                                  {user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'No name'}
-                                </p>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">ID: {user.id}</p>
+                                <span className="text-gray-900 dark:text-gray-100">{user.email || 'No email'}</span>
+                                {user.commissionRate && user.role === 'mentor' && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Commission: {user.commissionRate}%
+                                  </p>
+                                )}
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-gray-900 dark:text-gray-100">{user.email || 'No email'}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge 
-                              variant={user.role === 'admin' ? 'destructive' : user.role === 'mentor' ? 'default' : 'secondary'}
-                              className="capitalize"
-                            >
-                              {user.role || 'student'}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge variant={user.isActive !== false ? 'default' : 'secondary'}>
-                              {user.isActive !== false ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-gray-600 dark:text-gray-400">
-                              {user.createdAt ? formatDate(user.createdAt) : 'Unknown'}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-gray-600 dark:text-gray-400">
-                              {user.lastActiveAt ? formatDate(user.lastActiveAt) : 
-                               user.updatedAt ? formatDate(user.updatedAt) : 'Never'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge 
+                                variant={user.role === 'admin' ? 'destructive' : user.role === 'mentor' ? 'default' : 'secondary'}
+                                className="capitalize"
+                              >
+                                {user.role || 'student'}
+                              </Badge>
+                              {studentData && studentData.totalCourses && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {studentData.totalCourses} courses
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge variant={user.isActive !== false ? 'default' : 'secondary'}>
+                                {user.isActive !== false ? 'Active' : 'Inactive'}
+                              </Badge>
+                              {studentData && studentData.progress && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {studentData.progress}% progress
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-gray-600 dark:text-gray-400">
+                                {user.createdAt ? formatDate(user.createdAt) : 'Unknown'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div>
+                                <span className="text-gray-600 dark:text-gray-400">
+                                  {user.lastActiveAt ? formatDate(user.lastActiveAt) : 
+                                   user.updatedAt ? formatDate(user.updatedAt) : 'Never'}
+                                </span>
+                                {studentData && studentData.lastLogin && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    Login: {formatDate(studentData.lastLogin)}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
