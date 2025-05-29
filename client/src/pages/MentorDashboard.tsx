@@ -46,9 +46,10 @@ export default function MentorDashboard() {
 
   // Debug authentication status
   console.log("MentorDashboard - Auth Status:", { user, isAuthenticated, isMentor, authLoading });
+  console.log("MentorDashboard - User role check:", user?.role, user?.role === "mentor");
 
   // Show loading while authenticating
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -56,15 +57,14 @@ export default function MentorDashboard() {
     );
   }
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    navigate("/login");
-    return null;
-  }
-
-  // Redirect if not a mentor (check user.role directly)
-  if (user.role !== "mentor") {
+  // If user data is available and user is mentor, show dashboard
+  if (user && user.role === "mentor") {
+    // Continue to render dashboard
+  } else if (user && user.role !== "mentor") {
     navigate("/dashboard");
+    return null;
+  } else if (!user) {
+    navigate("/login");
     return null;
   }
 
