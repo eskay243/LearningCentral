@@ -23,7 +23,6 @@ import {
   courseDiscussions,
   discussionReplies,
   notificationSettings,
-  notifications,
   codingExercises,
   exerciseProgress,
   systemSettings,
