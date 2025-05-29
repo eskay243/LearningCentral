@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
+import { type User } from '@shared/schema';
 import { 
   DollarSign, 
   Users, 
