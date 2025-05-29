@@ -721,12 +721,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userId = req.user.id || (req.user.claims && req.user.claims.sub);
         const userRole = req.user.role || (req.user.claims && req.user.claims.role);
         
-        if (userId && userRole === UserRole.MENTOR) {
-          await storage.assignMentorToCourse({
-            courseId: course.id,
-            mentorId: userId,
-            commission: 80  // Default commission for course creator
-          });
+        console.log('Course creation - User ID:', userId, 'User Role:', userRole);
+        
+        if (userId && (userRole === 'mentor' || userRole === UserRole.MENTOR)) {
+          console.log('Assigning mentor to course:', { courseId: course.id, mentorId: userId });
+          try {
+            await storage.assignMentorToCourse({
+              courseId: course.id,
+              mentorId: userId,
+              commission: 37  // Default commission for course creator (37%)
+            });
+            console.log('Mentor assignment successful');
+          } catch (error) {
+            console.error('Error assigning mentor to course:', error);
+          }
         }
       }
       
