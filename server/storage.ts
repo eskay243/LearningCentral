@@ -84,6 +84,7 @@ import { nanoid } from "nanoid";
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
+  getUsers(): Promise<User[]>;
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(userData: any): Promise<User>;
@@ -1221,6 +1222,16 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting user:", error);
       throw error;
+    }
+  }
+
+  async getUsers(): Promise<User[]> {
+    try {
+      const userList = await db.select().from(users);
+      return userList;
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      return [];
     }
   }
 
