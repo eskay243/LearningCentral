@@ -424,40 +424,139 @@ export default function Dashboard() {
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Total Users</CardTitle>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-xl">
+              <div className="absolute bottom-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+              <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/90">Total Users</CardTitle>
+                <Users className="h-5 w-5 text-white" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats?.users.totalUsers || 0}</div>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold">{dashboardStats?.users.totalUsers || (allUsers?.length || 0)}</div>
+                <p className="text-xs text-white/80">All registered users</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Students</CardTitle>
+            
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-xl">
+              <div className="absolute bottom-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+              <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/90">Students</CardTitle>
+                <UserCheck className="h-5 w-5 text-white" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats?.users.totalStudents || 0}</div>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold">{dashboardStats?.users.totalStudents || (allUsers?.filter(u => u.role === 'student').length || 0)}</div>
+                <p className="text-xs text-white/80">Active learners</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Mentors</CardTitle>
+            
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-xl">
+              <div className="absolute bottom-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+              <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/90">Mentors</CardTitle>
+                <Award className="h-5 w-5 text-white" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats?.users.totalMentors || 0}</div>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold">{dashboardStats?.users.totalMentors || (allUsers?.filter(u => u.role === 'mentor').length || 0)}</div>
+                <p className="text-xs text-white/80">Course instructors</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Active Users</CardTitle>
+            
+            <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-xl">
+              <div className="absolute bottom-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+              <CardHeader className="relative z-10 flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white/90">Admins</CardTitle>
+                <Building2 className="h-5 w-5 text-white" />
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardStats?.users.activeUsers || 0}</div>
+              <CardContent className="relative z-10">
+                <div className="text-3xl font-bold">{allUsers?.filter(u => u.role === 'admin').length || 0}</div>
+                <p className="text-xs text-white/80">System administrators</p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Users Table */}
+          <Card className="border-0 shadow-xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                All Users
+                {isUsersLoading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isUsersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                </div>
+              ) : allUsers && allUsers.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
+                        <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">User</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Email</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Role</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Joined</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Last Active</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allUsers.map((user: any) => (
+                        <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white font-medium text-sm">
+                                {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || 'U'}
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900 dark:text-gray-100">
+                                  {user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'No name'}
+                                </p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">ID: {user.id}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-900 dark:text-gray-100">{user.email || 'No email'}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge 
+                              variant={user.role === 'admin' ? 'destructive' : user.role === 'mentor' ? 'default' : 'secondary'}
+                              className="capitalize"
+                            >
+                              {user.role || 'student'}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant={user.isActive !== false ? 'default' : 'secondary'}>
+                              {user.isActive !== false ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {user.createdAt ? formatDate(user.createdAt) : 'Unknown'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {user.lastActiveAt ? formatDate(user.lastActiveAt) : 
+                               user.updatedAt ? formatDate(user.updatedAt) : 'Never'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">No users found in the database</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Courses Tab */}
