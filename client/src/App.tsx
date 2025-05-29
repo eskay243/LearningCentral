@@ -82,6 +82,7 @@ function Router() {
         <Route path="/code-companion/old" component={CodeCompanion} />
         <Route path="/courses/:id/preview" component={CoursePreview} />
         <Route path="/courses/:id/view" component={CourseView} />
+        <Route path="/student-profile/:id" component={StudentProfile} />
         <Route path="/demo-users" component={DemoUsers} />
         <Route component={NotFound} />
       </Switch>
