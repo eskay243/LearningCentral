@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelpBubbleProvider } from "./contexts/HelpBubbleContext";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
-import AdminDashboard from "@/pages/AdminDashboard";
+import Dashboard from "@/pages/Dashboard";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
 import CourseView from "@/pages/CourseView";
@@ -45,8 +45,8 @@ function Router() {
   return (
     <Layout>
       <Switch>
-        <Route path="/" component={AdminDashboard} />
-        <Route path="/dashboard" component={AdminDashboard} />
+        <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
         <Route path="/courses" component={Courses} />
         <Route path="/courses/:id" component={CourseDetail} />
         <Route path="/courses/:id/edit" component={CreateCourse} />
