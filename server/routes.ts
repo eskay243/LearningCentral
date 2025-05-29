@@ -301,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all users for admin dashboard Users tab
   app.get("/api/admin/users", isAuthenticated, hasRole([UserRole.ADMIN]), async (req: Request, res: Response) => {
     try {
-      const allUsers = await storage.getAllUsers();
+      const allUsers = await storage.getUsers();
       res.json(allUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
