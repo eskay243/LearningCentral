@@ -95,6 +95,13 @@ export default function Dashboard() {
     retry: false
   });
 
+  // Fetch all users for admin dashboard Users tab
+  const { data: allUsers, isLoading: isUsersLoading } = useQuery({
+    queryKey: ["/api/admin/users"],
+    enabled: isAdmin && !isAuthLoading,
+    retry: false
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -286,7 +293,7 @@ export default function Dashboard() {
                     <span className="font-medium">Students</span>
                   </div>
                   <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                    {dashboardStats?.users.totalStudents || 0}
+                    {dashboardStats?.users.totalStudents || displayStats.users.totalStudents}
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-white/60 dark:bg-gray-800/60 rounded-2xl backdrop-blur-sm">
