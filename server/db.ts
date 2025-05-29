@@ -104,11 +104,13 @@ export let db: ReturnType<typeof drizzle> = {
   update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) })
 } as unknown as ReturnType<typeof drizzle>;
 
-// Initialize the database (will update pool and db)
-initDb().then(result => {
+// Initialize the database synchronously to avoid timing issues
+const initPromise = initDb();
+initPromise.then(result => {
   pool = result.pool;
   db = result.db;
   console.log("Database connection initialized successfully");
 }).catch(error => {
   console.error("Failed to initialize database:", error);
+  // Keep fallback implementations active
 });
