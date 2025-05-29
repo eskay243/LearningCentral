@@ -2005,6 +2005,30 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to grade assignment");
     }
   }
+
+  async getCoursesByMentor(mentorId: string): Promise<Course[]> {
+    try {
+      // Get all course-mentor assignments for this mentor
+      const mentorAssignments = await db
+        .select()
+        .from(courseMentors)
+        .where(eq(courseMentors.mentorId, mentorId));
+
+      // Get the actual courses
+      const courseIds = mentorAssignments.map(assignment => assignment.courseId);
+      if (courseIds.length === 0) return [];
+
+      const courses = await db
+        .select()
+        .from(coursesTable)
+        .where(inArray(coursesTable.id, courseIds));
+
+      return courses;
+    } catch (error) {
+      console.error("Error fetching courses by mentor:", error);
+      return [];
+    }
+  }
   
   // Course Management
   async createCourse(courseData: Omit<Course, "id" | "createdAt" | "updatedAt">): Promise<Course> {
