@@ -2660,10 +2660,7 @@ export class DatabaseStorage implements IStorage {
       const { limit, offset } = options;
       
       const announcements = await db
-        .select({
-          announcement: courseAnnouncements,
-          creator: users
-        })
+        .select()
         .from(courseAnnouncements)
         .leftJoin(users, eq(courseAnnouncements.createdBy, users.id))
         .where(eq(courseAnnouncements.courseId, courseId))
@@ -2672,8 +2669,8 @@ export class DatabaseStorage implements IStorage {
         .offset(offset);
       
       return announcements.map(row => ({
-        ...row.announcement,
-        creator: row.creator
+        ...row.course_announcements,
+        creator: row.users
       }));
     } catch (error) {
       console.error("Error fetching course announcements:", error);

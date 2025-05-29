@@ -13,6 +13,7 @@ import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { registerNotificationRoutes } from "./notificationRoutes";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
