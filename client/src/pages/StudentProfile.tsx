@@ -25,11 +25,22 @@ export default function StudentProfile() {
   const { data: student, isLoading, error } = useQuery({
     queryKey: [`/api/admin/students/${id}`],
     enabled: !!id,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Debug logging
-  console.log("Student Profile Debug:", { id, student, isLoading, error });
+  console.log("Student Profile Debug:", { 
+    id, 
+    student, 
+    studentType: typeof student,
+    isLoading, 
+    error, 
+    queryKey: `/api/admin/students/${id}`,
+    studentKeys: student ? Object.keys(student) : 'no student data'
+  });
 
+  // Show error state
   if (error) {
     console.error("Student Profile Error:", error);
     return (
@@ -39,6 +50,171 @@ export default function StudentProfile() {
           <p className="text-gray-600">{error.message}</p>
           <Button onClick={() => window.history.back()} className="mt-4">
             Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show data when available (even if still loading)
+  if (student) {
+    const safeStudent = student || {};
+    const studentName = (safeStudent.firstName && safeStudent.lastName) 
+      ? `${safeStudent.firstName} ${safeStudent.lastName}`
+      : safeStudent.email || 'Unknown Student';
+
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Students
+            </Button>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Student Profile
+            </h1>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Student Info Card */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="text-center">
+              <Avatar className="w-24 h-24 mx-auto mb-4">
+                <AvatarImage src={safeStudent.profileImageUrl || undefined} />
+                <AvatarFallback className="text-lg">
+                  {getInitials(studentName)}
+                </AvatarFallback>
+              </Avatar>
+              <CardTitle className="text-xl">{studentName}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{safeStudent.email || 'No email'}</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  Joined {formatDate(safeStudent.createdAt) || 'Unknown'}
+                </span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <Badge variant="secondary">
+                  {safeStudent.status || 'Active'}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Course Progress */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Learning Progress</CardTitle>
+              <CardDescription>Student's course enrollment and progress overview</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {safeStudent.totalCourses || 0}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Courses</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {safeStudent.completedCourses || 0}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Completed</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {safeStudent.progress || 0}%
+                  </div>
+                  <div className="text-sm text-muted-foreground">Avg Progress</div>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-semibold">Enrolled Courses</h4>
+                {safeStudent.courses && safeStudent.courses.length > 0 ? (
+                  safeStudent.courses.map((course: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div>
+                        <div className="font-medium">{course.title || 'Unknown Course'}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Status: {course.status || 'In Progress'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">{course.progress || 0}%</div>
+                        <Progress value={course.progress || 0} className="w-20" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No courses enrolled yet</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Activity Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Last Active</p>
+                  <p className="text-xl font-semibold">
+                    {formatTimeFromNow(safeStudent.lastActive) || 'Unknown'}
+                  </p>
+                </div>
+                <Clock className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Study Time</p>
+                  <p className="text-xl font-semibold">
+                    {safeStudent.totalStudyTime || '0h'}
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Assignments</p>
+                  <p className="text-xl font-semibold">
+                    {safeStudent.assignmentsCompleted || 0}
+                  </p>
+                </div>
+                <Award className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Actions */}
+        <div className="flex space-x-4">
+          <Button>
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Send Message
+          </Button>
+          <Button variant="outline">
+            Edit Profile
           </Button>
         </div>
       </div>
