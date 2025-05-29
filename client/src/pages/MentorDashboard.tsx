@@ -230,7 +230,7 @@ export default function MentorDashboard() {
   });
 
   const { data: courses } = useQuery({
-    queryKey: ["/api/courses"],
+    queryKey: ["/api/mentor/courses"],
   });
 
   const withdrawalForm = useForm<WithdrawalForm>({

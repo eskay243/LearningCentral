@@ -526,6 +526,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/mentor/courses", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Get courses where the user is assigned as a mentor
+      const mentorCourses = await storage.getCoursesByMentor(userId);
+      
+      res.json(mentorCourses);
+    } catch (error) {
+      console.error('Error fetching mentor courses:', error);
+      res.status(500).json({ message: 'Failed to fetch mentor courses' });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
