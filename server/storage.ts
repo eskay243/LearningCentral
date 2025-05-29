@@ -313,6 +313,7 @@ export interface IStorage {
   enrollUserInCourse(userId: string, courseId: number, paymentData?: any): Promise<any>;
   getUserEnrollments(userId: string): Promise<any[]>;
   getCourseEnrollments(courseId: number): Promise<any[]>;
+  getAllEnrollments(): Promise<any[]>;
   updateEnrollmentProgress(userId: string, courseId: number, progress: number): Promise<any>;
   getEnrollmentDetails(userId: string, courseId: number): Promise<any>;
 
@@ -2085,6 +2086,18 @@ export class DatabaseStorage implements IStorage {
       return coursesWithMentor.map(row => row.course);
     } catch (error) {
       console.error("Error fetching mentor courses:", error);
+      return [];
+    }
+  }
+
+  async getAllEnrollments(): Promise<CourseEnrollment[]> {
+    try {
+      return await db
+        .select()
+        .from(courseEnrollments)
+        .orderBy(desc(courseEnrollments.enrolledAt));
+    } catch (error) {
+      console.error("Error fetching all enrollments:", error);
       return [];
     }
   }

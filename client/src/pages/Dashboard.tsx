@@ -135,7 +135,7 @@ export default function Dashboard() {
 
   // Calculate real user statistics from fetched user data
   const calculateUserStats = () => {
-    if (!usersData || !Array.isArray(usersData)) {
+    if (!allUsers || !Array.isArray(allUsers)) {
       return {
         totalUsers: 0,
         totalStudents: 0,
@@ -145,21 +145,21 @@ export default function Dashboard() {
       };
     }
 
-    const totalUsers = usersData.length;
-    const totalStudents = usersData.filter(u => u.role === 'student').length;
-    const totalMentors = usersData.filter(u => u.role === 'mentor').length;
+    const totalUsers = allUsers.length;
+    const totalStudents = allUsers.filter(u => u.role === 'student').length;
+    const totalMentors = allUsers.filter(u => u.role === 'mentor').length;
     
     // Calculate active users (users updated within last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const activeUsers = usersData.filter(u => 
+    const activeUsers = allUsers.filter(u => 
       u.updatedAt && new Date(u.updatedAt) > thirtyDaysAgo
     ).length;
     
     // Calculate new users this month
     const firstOfMonth = new Date();
     firstOfMonth.setDate(1);
-    const newUsersThisMonth = usersData.filter(u => 
+    const newUsersThisMonth = allUsers.filter(u => 
       u.createdAt && new Date(u.createdAt) >= firstOfMonth
     ).length;
 
