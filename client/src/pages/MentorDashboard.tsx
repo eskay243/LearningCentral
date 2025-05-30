@@ -231,9 +231,11 @@ export default function MentorDashboard() {
 
   const { data: courses, isLoading: coursesLoading, error: coursesError } = useQuery({
     queryKey: ["/api/mentor/courses"],
+    enabled: !!user, // Only run query when user is authenticated
   });
 
   console.log('Mentor courses data:', { courses, coursesLoading, coursesError });
+  console.log('User auth state:', { user: !!user, userId: user?.id });
 
   const withdrawalForm = useForm<WithdrawalForm>({
     resolver: zodResolver(withdrawalSchema),
