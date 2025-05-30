@@ -2105,13 +2105,14 @@ export class DatabaseStorage implements IStorage {
 
   async getCoursesByMentor(mentorId: string): Promise<Course[]> {
     try {
+      // Use courseMentors table (course_mentors in database) instead of mentorCourses
       const coursesWithMentor = await db
         .select({
           course: courses
         })
-        .from(mentorCourses)
-        .innerJoin(courses, eq(mentorCourses.courseId, courses.id))
-        .where(eq(mentorCourses.mentorId, mentorId));
+        .from(courseMentors)
+        .innerJoin(courses, eq(courseMentors.courseId, courses.id))
+        .where(eq(courseMentors.mentorId, mentorId));
       
       return coursesWithMentor.map(row => row.course);
     } catch (error) {
