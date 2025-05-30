@@ -229,9 +229,11 @@ export default function MentorDashboard() {
     queryKey: ["/api/mentor/withdrawal-methods"],
   });
 
-  const { data: courses } = useQuery({
+  const { data: courses, isLoading: coursesLoading, error: coursesError } = useQuery({
     queryKey: ["/api/mentor/courses"],
   });
+
+  console.log('Mentor courses data:', { courses, coursesLoading, coursesError });
 
   const withdrawalForm = useForm<WithdrawalForm>({
     resolver: zodResolver(withdrawalSchema),
