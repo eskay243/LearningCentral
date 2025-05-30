@@ -235,7 +235,8 @@ export default function MentorDashboard() {
   });
 
   console.log('Mentor courses data:', { courses, coursesLoading, coursesError });
-  console.log('User auth state:', { user: !!user, userId: user?.id });
+  console.log('User auth state:', { user: !!user, userId: user?.id, enabled: !!user });
+  console.log('Full user object:', user);
 
   const withdrawalForm = useForm<WithdrawalForm>({
     resolver: zodResolver(withdrawalSchema),
