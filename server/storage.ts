@@ -2668,9 +2668,9 @@ export class DatabaseStorage implements IStorage {
       const announcements = await db
         .select()
         .from(courseAnnouncements)
-        .leftJoin(users, eq(courseAnnouncements.createdBy, users.id))
+        .leftJoin(users, eq(courseAnnouncements.authorId, users.id))
         .where(eq(courseAnnouncements.courseId, courseId))
-        .orderBy(desc(courseAnnouncements.createdAt))
+        .orderBy(desc(courseAnnouncements.publishedAt))
         .limit(limit)
         .offset(offset);
       
