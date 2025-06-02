@@ -98,7 +98,9 @@ export default function AdminDashboard() {
   const { data: courseOverview, isLoading: isCoursesLoading, error: coursesError } = useQuery<CourseOverview[]>({
     queryKey: ["/api/admin/course-overview"],
     enabled: isAdmin && !isAuthLoading,
-    retry: false
+    retry: false,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0  // Don't cache the response
   });
 
   // Fetch all users for admin dashboard
