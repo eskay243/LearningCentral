@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,14 +13,31 @@ import { CheckCircle, Clock, Users, Plus, Search, Filter, MoreVertical } from "l
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const Assessments = () => {
   const { user, isMentor, isAdmin, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("quizzes");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourse, setFilterCourse] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createType, setCreateType] = useState("");
+  const [quizForm, setQuizForm] = useState({
+    title: "",
+    description: "",
+    lessonId: "",
+    timeLimit: 30,
+    totalPoints: 100
+  });
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: "",
+    description: "",
+    instructions: "",
+    dueDate: "",
+    totalPoints: 100
+  });
 
   // Fetch quizzes
   const { data: quizzes = [], isLoading: isQuizzesLoading } = useQuery({
@@ -67,24 +84,92 @@ const Assessments = () => {
     return matchesSearch && matchesCourse;
   });
 
+  // Mutations for creating assessments
+  const createQuizMutation = useMutation({
+    mutationFn: async (quizData: any) => {
+      const response = await apiRequest("POST", "/api/quizzes", quizData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/quizzes`] });
+      toast({
+        title: "Quiz Created",
+        description: "Your quiz has been created successfully!",
+      });
+      setShowCreateDialog(false);
+      setQuizForm({
+        title: "",
+        description: "",
+        lessonId: "",
+        timeLimit: 30,
+        totalPoints: 100
+      });
+      setActiveTab("quizzes");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to create quiz. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: async (assignmentData: any) => {
+      const response = await apiRequest("POST", "/api/assignments", assignmentData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/assignments`] });
+      toast({
+        title: "Assignment Created",
+        description: "Your assignment has been created successfully!",
+      });
+      setShowCreateDialog(false);
+      setAssignmentForm({
+        title: "",
+        description: "",
+        instructions: "",
+        dueDate: "",
+        totalPoints: 100
+      });
+      setActiveTab("assignments");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to create assignment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateQuiz = () => {
-    toast({
-      title: "Quiz Creation",
-      description: "Opening quiz creation interface...",
+    if (!quizForm.title || !quizForm.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createQuizMutation.mutate({
+      ...quizForm,
+      lessonId: parseInt(quizForm.lessonId) || 1, // Default to lesson 1 if not specified
     });
-    setShowCreateDialog(false);
-    // For now, switch to the quizzes tab and show a helpful message
-    setActiveTab("quizzes");
   };
 
   const handleCreateAssignment = () => {
-    toast({
-      title: "Assignment Creation", 
-      description: "Opening assignment creation interface...",
-    });
-    setShowCreateDialog(false);
-    // For now, switch to the assignments tab and show a helpful message
-    setActiveTab("assignments");
+    if (!assignmentForm.title || !assignmentForm.description) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    createAssignmentMutation.mutate(assignmentForm);
   };
 
   const handleEditQuiz = (quizId: number) => {
@@ -120,7 +205,12 @@ const Assessments = () => {
         </div>
         
         {(isMentor || isAdmin) && (
-          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <Dialog open={showCreateDialog} onOpenChange={(open) => {
+            setShowCreateDialog(open);
+            if (!open) {
+              setCreateType('');
+            }
+          }}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="w-4 h-4 mr-2" />
@@ -129,25 +219,166 @@ const Assessments = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Create New Assessment</DialogTitle>
+                <DialogTitle>
+                  {createType ? `Create ${createType === 'quiz' ? 'Quiz' : 'Assignment'}` : 'Create New Assessment'}
+                </DialogTitle>
                 <DialogDescription>
-                  Choose the type of assessment you want to create.
+                  {createType ? 'Fill in the details below' : 'Choose the type of assessment you want to create.'}
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <Button onClick={handleCreateQuiz} className="justify-start h-auto p-4">
-                  <div className="text-left">
-                    <div className="font-medium">Quiz</div>
-                    <div className="text-sm text-gray-500">Multiple choice questions with automatic grading</div>
+
+              {!createType ? (
+                <div className="grid gap-4 py-4">
+                  <Button onClick={() => setCreateType('quiz')} className="justify-start h-auto p-4">
+                    <div className="text-left">
+                      <div className="font-medium">Quiz</div>
+                      <div className="text-sm text-gray-500">Multiple choice questions with automatic grading</div>
+                    </div>
+                  </Button>
+                  <Button onClick={() => setCreateType('assignment')} variant="outline" className="justify-start h-auto p-4">
+                    <div className="text-left">
+                      <div className="font-medium">Assignment</div>
+                      <div className="text-sm text-gray-500">Project-based assessment requiring manual grading</div>
+                    </div>
+                  </Button>
+                </div>
+              ) : createType === 'quiz' ? (
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quiz-title">Title *</Label>
+                    <Input
+                      id="quiz-title"
+                      value={quizForm.title}
+                      onChange={(e) => setQuizForm({...quizForm, title: e.target.value})}
+                      placeholder="Enter quiz title"
+                    />
                   </div>
-                </Button>
-                <Button onClick={handleCreateAssignment} variant="outline" className="justify-start h-auto p-4">
-                  <div className="text-left">
-                    <div className="font-medium">Assignment</div>
-                    <div className="text-sm text-gray-500">Project-based assessment requiring manual grading</div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quiz-description">Description *</Label>
+                    <Textarea
+                      id="quiz-description"
+                      value={quizForm.description}
+                      onChange={(e) => setQuizForm({...quizForm, description: e.target.value})}
+                      placeholder="Enter quiz description"
+                    />
                   </div>
-                </Button>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quiz-lesson">Lesson ID</Label>
+                    <Input
+                      id="quiz-lesson"
+                      type="number"
+                      value={quizForm.lessonId}
+                      onChange={(e) => setQuizForm({...quizForm, lessonId: e.target.value})}
+                      placeholder="Enter lesson ID (optional)"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="quiz-time">Time Limit (minutes)</Label>
+                      <Input
+                        id="quiz-time"
+                        type="number"
+                        value={quizForm.timeLimit}
+                        onChange={(e) => setQuizForm({...quizForm, timeLimit: parseInt(e.target.value) || 30})}
+                        placeholder="30"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="quiz-points">Total Points</Label>
+                      <Input
+                        id="quiz-points"
+                        type="number"
+                        value={quizForm.totalPoints}
+                        onChange={(e) => setQuizForm({...quizForm, totalPoints: parseInt(e.target.value) || 100})}
+                        placeholder="100"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      onClick={() => setCreateType('')}
+                      variant="outline" 
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleCreateQuiz}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      disabled={createQuizMutation.isPending}
+                    >
+                      {createQuizMutation.isPending ? "Creating..." : "Create Quiz"}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="assignment-title">Title *</Label>
+                    <Input
+                      id="assignment-title"
+                      value={assignmentForm.title}
+                      onChange={(e) => setAssignmentForm({...assignmentForm, title: e.target.value})}
+                      placeholder="Enter assignment title"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="assignment-description">Description *</Label>
+                    <Textarea
+                      id="assignment-description"
+                      value={assignmentForm.description}
+                      onChange={(e) => setAssignmentForm({...assignmentForm, description: e.target.value})}
+                      placeholder="Enter assignment description"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="assignment-instructions">Instructions</Label>
+                    <Textarea
+                      id="assignment-instructions"
+                      value={assignmentForm.instructions}
+                      onChange={(e) => setAssignmentForm({...assignmentForm, instructions: e.target.value})}
+                      placeholder="Enter detailed instructions"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="assignment-due">Due Date</Label>
+                      <Input
+                        id="assignment-due"
+                        type="date"
+                        value={assignmentForm.dueDate}
+                        onChange={(e) => setAssignmentForm({...assignmentForm, dueDate: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="assignment-points">Total Points</Label>
+                      <Input
+                        id="assignment-points"
+                        type="number"
+                        value={assignmentForm.totalPoints}
+                        onChange={(e) => setAssignmentForm({...assignmentForm, totalPoints: parseInt(e.target.value) || 100})}
+                        placeholder="100"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button 
+                      onClick={() => setCreateType('')}
+                      variant="outline" 
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      onClick={handleCreateAssignment}
+                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      disabled={createAssignmentMutation.isPending}
+                    >
+                      {createAssignmentMutation.isPending ? "Creating..." : "Create Assignment"}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         )}
