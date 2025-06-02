@@ -2665,7 +2665,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const { limit, offset } = options;
       
-      const announcements = await db
+      const announcementRows = await db
         .select()
         .from(announcements)
         .leftJoin(users, eq(announcements.createdBy, users.id))
@@ -2674,7 +2674,7 @@ export class DatabaseStorage implements IStorage {
         .limit(limit)
         .offset(offset);
       
-      return announcements.map(row => ({
+      return announcementRows.map(row => ({
         ...row.announcements,
         creator: row.users
       }));
