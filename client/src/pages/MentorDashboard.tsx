@@ -711,6 +711,7 @@ export default function MentorDashboard() {
                           <Badge variant={course.isPublished ? "default" : "secondary"} className="w-full justify-center mb-3">
                             {course.isPublished ? "Published" : "Draft"}
                           </Badge>
+                        </div>
                         <div className="flex gap-2 pt-2">
                           <Button 
                             variant="outline" 
@@ -741,9 +742,8 @@ export default function MentorDashboard() {
                             </DialogContent>
                           </Dialog>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               )}
