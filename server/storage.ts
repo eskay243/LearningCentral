@@ -2667,15 +2667,15 @@ export class DatabaseStorage implements IStorage {
       
       const announcements = await db
         .select()
-        .from(courseAnnouncements)
-        .leftJoin(users, eq(courseAnnouncements.authorId, users.id))
-        .where(eq(courseAnnouncements.courseId, courseId))
-        .orderBy(desc(courseAnnouncements.publishedAt))
+        .from(announcements)
+        .leftJoin(users, eq(announcements.createdBy, users.id))
+        .where(eq(announcements.courseId, courseId))
+        .orderBy(desc(announcements.createdAt))
         .limit(limit)
         .offset(offset);
       
       return announcements.map(row => ({
-        ...row.course_announcements,
+        ...row.announcements,
         creator: row.users
       }));
     } catch (error) {
