@@ -2374,6 +2374,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerAnalyticsRoutes(app);
 
   // Create HTTP server
+  // Course Discussion Routes
+  app.get("/api/courses/:courseId/discussions", async (req: Request, res: Response) => {
+    try {
+      const { courseId } = req.params;
+      const discussions = await storage.getCourseDiscussions(parseInt(courseId));
+      res.json(discussions);
+    } catch (error) {
+      console.error("Error fetching course discussions:", error);
+      res.status(500).json({ message: "Failed to fetch discussions" });
+    }
+  });
+
+  app.post("/api/courses/:courseId/discussions", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { courseId } = req.params;
+      const { title, content } = req.body;
+      const userId = req.user?.id || req.user?.claims?.sub;
+
+      if (!userId) {
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+
+      const discussion = await storage.createCourseDiscussion({
+        courseId: parseInt(courseId),
+        userId,
+        title,
+        content,
+        isAnnouncement: false
+      });
+
+      res.status(201).json(discussion);
+    } catch (error) {
+      console.error("Error creating course discussion:", error);
+      res.status(500).json({ message: "Failed to create discussion" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time messaging

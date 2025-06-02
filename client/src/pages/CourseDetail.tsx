@@ -367,6 +367,7 @@ export default function CourseDetail() {
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+            <TabsTrigger value="discussion">Discussion</TabsTrigger>
             <TabsTrigger value="mentors">Mentors</TabsTrigger>
             <TabsTrigger value="announcements">Announcements</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
@@ -481,6 +482,36 @@ export default function CourseDetail() {
                     )}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="discussion">
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Discussion</CardTitle>
+                <CardDescription>
+                  Engage with fellow students and instructors
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.959 8.959 0 01-4.906-1.524A11.956 11.956 0 002.001 18c0-1.01.327-1.93.876-2.68A8.998 8.998 0 013 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">Join the Discussion</h3>
+                  <p className="text-gray-600 mb-4">
+                    Connect with your classmates and instructors in dedicated discussion forums
+                  </p>
+                  <Button 
+                    onClick={() => setLocation(`/courses/${id}/discussion`)}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Open Discussion Forum
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
