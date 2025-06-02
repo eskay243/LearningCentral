@@ -42,6 +42,7 @@ import StudentProfile from "@/pages/StudentProfile";
 import DemoUsers from "@/pages/DemoUsers";
 import CustomizableDashboard from "@/pages/CustomizableDashboard";
 import MentorDashboard from "@/pages/MentorDashboard";
+import CourseDiscussion from "@/pages/CourseDiscussion";
 
 function Router() {
   return (
@@ -55,6 +56,7 @@ function Router() {
         <Route path="/courses/:id/edit" component={CreateCourse} />
         <Route path="/courses/:id/exercises" component={CourseExercises} />
         <Route path="/courses/:id/view" component={CourseView} />
+        <Route path="/courses/:id/discussion" component={CourseDiscussion} />
         <Route path="/courses/:id/curriculum" component={CourseCurriculum} />
         <Route path="/courses/:courseId/lessons/:lessonId/edit" component={LessonEditor} />
         <Route path="/courses/:id/payment" component={PaymentPage} />

@@ -3322,6 +3322,63 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Course Discussion methods
+  async getCourseDiscussions(courseId: number): Promise<any[]> {
+    try {
+      const discussions = await db
+        .select({
+          discussion: courseDiscussions,
+          user: {
+            id: users.id,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role
+          }
+        })
+        .from(courseDiscussions)
+        .leftJoin(users, eq(courseDiscussions.userId, users.id))
+        .where(eq(courseDiscussions.courseId, courseId))
+        .orderBy(desc(courseDiscussions.createdAt));
+
+      return discussions.map(row => ({
+        ...row.discussion,
+        userName: row.user ? `${row.user.firstName || ''} ${row.user.lastName || ''}`.trim() : 'Anonymous',
+        userRole: row.user?.role || 'student'
+      }));
+    } catch (error) {
+      console.error("Error fetching course discussions:", error);
+      return [];
+    }
+  }
+
+  async createCourseDiscussion(discussionData: any): Promise<any> {
+    try {
+      const [discussion] = await db
+        .insert(courseDiscussions)
+        .values({
+          courseId: discussionData.courseId,
+          userId: discussionData.userId,
+          title: discussionData.title,
+          content: discussionData.content,
+          isAnnouncement: discussionData.isAnnouncement || false,
+          createdAt: new Date()
+        })
+        .returning();
+
+      // Get user info to return with the discussion
+      const user = await this.getUser(discussionData.userId);
+      
+      return {
+        ...discussion,
+        userName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Anonymous',
+        userRole: user?.role || 'student'
+      };
+    } catch (error) {
+      console.error("Error creating course discussion:", error);
+      throw new Error("Failed to create discussion");
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
