@@ -342,7 +342,7 @@ export default function MentorDashboard() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {withdrawalMethods?.map((method: any) => (
+                          {Array.isArray(withdrawalMethods) && withdrawalMethods.map((method: any) => (
                             <SelectItem key={method.id} value={method.id}>
                               {method.name} - {method.fees}
                             </SelectItem>
@@ -491,21 +491,27 @@ export default function MentorDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {withdrawalMethods?.map((method: any) => (
-                  <div key={method.id} className="border rounded-lg p-3">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium">{method.name}</h4>
-                      <Badge variant="outline">{method.fees}</Badge>
+                {Array.isArray(withdrawalMethods) && withdrawalMethods.length > 0 ? (
+                  withdrawalMethods.map((method: any) => (
+                    <div key={method.id} className="border rounded-lg p-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium">{method.name || 'Payment Method'}</h4>
+                        <Badge variant="outline">{method.fees || 'No fees'}</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        {method.description || 'No description available'}
+                      </p>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>Min: {formatCurrency(method.minimumAmount || 0)}</span>
+                        <span>{method.processingTime || 'N/A'}</span>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                      {method.description}
-                    </p>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Min: {formatCurrency(method.minimumAmount)}</span>
-                      <span>{method.processingTime}</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600">No withdrawal methods available</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </div>
@@ -517,25 +523,38 @@ export default function MentorDashboard() {
               <CardTitle>My Courses</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {courses?.map((course: any) => (
-                  <Card key={course.id} className="border">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold mb-2">{course.title}</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Price:</span>
-                          <span className="font-medium">{formatCurrency(course.price || 0)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Your Earnings:</span>
-                          <span className="font-medium text-green-600">
-                            {formatCurrency((course.price || 0) * 0.37)}
-                          </span>
-                        </div>
-                        <Badge variant={course.published ? "default" : "secondary"} className="w-full justify-center mb-3">
-                          {course.published ? "Published" : "Draft"}
-                        </Badge>
+              {coursesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : coursesError ? (
+                <div className="text-center py-8">
+                  <p className="text-red-600">Error loading courses</p>
+                </div>
+              ) : !courses || !Array.isArray(courses) || courses.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No courses assigned yet</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {courses.map((course: any) => (
+                    <Card key={course.id} className="border">
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold mb-2">{course.title || 'Untitled Course'}</h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Price:</span>
+                            <span className="font-medium">{formatCurrency(course.price || 0)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Your Earnings:</span>
+                            <span className="font-medium text-green-600">
+                              {formatCurrency((course.price || 0) * 0.37)}
+                            </span>
+                          </div>
+                          <Badge variant={course.isPublished ? "default" : "secondary"} className="w-full justify-center mb-3">
+                            {course.isPublished ? "Published" : "Draft"}
+                          </Badge>
                         <div className="flex gap-2 pt-2">
                           <Button 
                             variant="outline" 
@@ -569,8 +588,9 @@ export default function MentorDashboard() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
