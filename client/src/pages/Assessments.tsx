@@ -36,7 +36,8 @@ const Assessments = () => {
     description: "",
     instructions: "",
     dueDate: "",
-    totalPoints: 100
+    totalPoints: 100,
+    lessonId: 1 // Default to lesson 1
   });
 
   // Fetch quizzes
