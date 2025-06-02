@@ -67,12 +67,34 @@ const Assessments = () => {
     return matchesSearch && matchesCourse;
   });
 
-  const handleCreateAssessment = () => {
-    toast({
-      title: "Assessment Creation",
-      description: "Assessment creation dialog will be implemented here.",
-    });
+  const handleCreateQuiz = () => {
+    // Navigate to quiz creation page
+    window.location.href = "/assessment-dashboard";
     setShowCreateDialog(false);
+  };
+
+  const handleCreateAssignment = () => {
+    // Navigate to assignment creation page
+    window.location.href = "/assessment-dashboard";
+    setShowCreateDialog(false);
+  };
+
+  const handleEditQuiz = (quizId: number) => {
+    window.location.href = `/quiz/${quizId}/edit`;
+  };
+
+  const handleViewResults = (quizId: number) => {
+    window.location.href = `/quiz/${quizId}/results`;
+  };
+
+  const handleDeleteQuiz = (quizId: number) => {
+    if (confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
+      // Implement delete functionality
+      toast({
+        title: "Quiz Deleted",
+        description: "The quiz has been successfully deleted.",
+      });
+    }
   };
 
   return (
@@ -99,13 +121,13 @@ const Assessments = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
-                <Button onClick={handleCreateAssessment} className="justify-start h-auto p-4">
+                <Button onClick={handleCreateQuiz} className="justify-start h-auto p-4">
                   <div className="text-left">
                     <div className="font-medium">Quiz</div>
                     <div className="text-sm text-gray-500">Multiple choice questions with automatic grading</div>
                   </div>
                 </Button>
-                <Button onClick={handleCreateAssessment} variant="outline" className="justify-start h-auto p-4">
+                <Button onClick={handleCreateAssignment} variant="outline" className="justify-start h-auto p-4">
                   <div className="text-left">
                     <div className="font-medium">Assignment</div>
                     <div className="text-sm text-gray-500">Project-based assessment requiring manual grading</div>
@@ -120,13 +142,15 @@ const Assessments = () => {
       {/* Filters & Controls */}
       <div className="mb-6 flex flex-col md:flex-row gap-4 items-end md:items-center">
         <div className="flex-grow">
-          <Input
-            placeholder="Search assessments..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm"
-            icon={<Search className="w-4 h-4" />}
-          />
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search assessments..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
         
         <div className="flex gap-2">
@@ -199,9 +223,9 @@ const Assessments = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit Quiz</DropdownMenuItem>
-                          <DropdownMenuItem>View Results</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditQuiz(quiz.id)}>Edit Quiz</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewResults(quiz.id)}>View Results</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteQuiz(quiz.id)}>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
