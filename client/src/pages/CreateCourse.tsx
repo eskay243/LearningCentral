@@ -230,8 +230,8 @@ const CreateCourse = () => {
       const courseData = await response.json();
       
       toast({
-        title: `Course ${isEditMode ? 'updated' : 'created'} successfully!`,
-        description: isEditMode ? "Your course changes have been saved." : "You can now add modules and lessons to your course.",
+        title: isEditMode ? "Your course looks amazing! ✨" : "Congratulations! Your course is ready! 🎉",
+        description: isEditMode ? "All your changes have been saved. Students will see the updates immediately." : "You've created something special! Now you can start adding modules and lessons to help students learn.",
       });
       
       // Invalidate and refetch
@@ -244,8 +244,8 @@ const CreateCourse = () => {
       navigate(`/courses/${courseData.id || courseId}`);
     } catch (error: any) {
       toast({
-        title: `Failed to ${isEditMode ? 'update' : 'create'} course`,
-        description: error.message,
+        title: isEditMode ? "Couldn't save your changes" : "Course creation hit a snag",
+        description: "Something went wrong on our end. Please check your details and try again in a moment.",
         variant: "destructive",
       });
     } finally {

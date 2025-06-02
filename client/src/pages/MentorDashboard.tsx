@@ -81,15 +81,15 @@ function EditCourseForm({ course }: { course: any }) {
     },
     onSuccess: () => {
       toast({
-        title: "Course Updated",
-        description: "Your course has been updated successfully.",
+        title: "Great work! 🎉",
+        description: "Your course changes have been saved. Students will see the updated content right away.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/mentor/courses"] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Update Failed",
-        description: error.message,
+        title: "Oops! Something went wrong",
+        description: "We couldn't save your changes right now. Please try again in a moment.",
         variant: "destructive",
       });
     },
@@ -411,8 +411,8 @@ export default function MentorDashboard() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Withdrawal Request Submitted",
-        description: `Your withdrawal request for ₦${withdrawalForm.getValues().amount.toLocaleString()} has been submitted successfully.`,
+        title: "Money's on the way! 💰",
+        description: `Your ₦${withdrawalForm.getValues().amount.toLocaleString()} withdrawal request is being processed. We'll notify you once it's complete.`,
       });
       setWithdrawalDialogOpen(false);
       withdrawalForm.reset();
@@ -420,8 +420,8 @@ export default function MentorDashboard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Withdrawal Failed",
-        description: error.message || "Failed to process withdrawal request",
+        title: "Having trouble with your withdrawal",
+        description: "We couldn't process your request right now. Please check your details and try again.",
         variant: "destructive",
       });
     },

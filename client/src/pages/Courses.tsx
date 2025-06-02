@@ -58,15 +58,15 @@ function Courses() {
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/courses?published=true"] });
       toast({
-        title: "Success",
-        description: "Course deleted successfully",
+        title: "Course removed successfully",
+        description: "The course and all its content have been permanently deleted. Students will no longer see it.",
       });
       setCourseToDelete(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete course",
+        title: "Couldn't delete the course",
+        description: "Something prevented us from removing this course. You might not have permission to delete it.",
         variant: "destructive",
       });
     },

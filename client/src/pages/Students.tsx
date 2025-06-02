@@ -49,15 +49,15 @@ const Students = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/students"] });
       toast({
-        title: "Success",
-        description: "Student deleted successfully",
+        title: "Student account removed",
+        description: "The student has been permanently removed from the system along with all their data.",
       });
       setStudentToDelete(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete student",
+        title: "Couldn't remove student",
+        description: "Something prevented us from deleting this student account. Please check your permissions and try again.",
         variant: "destructive",
       });
     },
