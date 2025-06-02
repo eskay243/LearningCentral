@@ -37,8 +37,10 @@ export default function CourseDetail() {
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
 
-  // Check if user is admin
+  // Check if user is admin or mentor
   const isAdmin = user?.role === 'admin';
+  const isMentor = user?.role === 'mentor';
+  const canEdit = isAdmin || isMentor;
 
   // Fetch course data
   const { data: course, isLoading } = useQuery({
@@ -282,12 +284,12 @@ export default function CourseDetail() {
                 ₦{course.price?.toLocaleString()}
               </div>
               <div className="flex gap-2">
-                {isAdmin && (
+                {canEdit && (
                   <>
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setLocation(`/courses/${id}/edit`)}
+                      onClick={() => setLocation(`/create-course?edit=${id}`)}
                     >
                       <EditIcon className="h-4 w-4 mr-2" />
                       Edit Course
