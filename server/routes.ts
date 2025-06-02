@@ -790,14 +790,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Publish/Unpublish course
-  app.put('/api/courses/:id/publish', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+  // Publish/Unpublish course (admin only)
+  app.put('/api/courses/:id/publish', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const courseId = parseInt(req.params.id);
       const { isPublished } = req.body;
       
       if (isNaN(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
+      }
+
+      // Only allow admins to actually publish/unpublish
+      if (req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "Only administrators can publish courses" });
       }
       
       // Check if course exists
