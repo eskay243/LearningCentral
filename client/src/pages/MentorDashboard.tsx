@@ -54,6 +54,8 @@ function EditCourseForm({ course }: { course: any }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  console.log('EditCourseForm received course:', course);
+  
   const form = useForm<CourseEditForm>({
     resolver: zodResolver(courseEditSchema),
     defaultValues: {
@@ -384,9 +386,13 @@ export default function MentorDashboard() {
     enabled: !!user, // Only run query when user is authenticated
   });
 
-  console.log('Mentor courses data:', { courses, coursesLoading, coursesError });
-  console.log('User auth state:', { user: !!user, userId: user?.id, enabled: !!user });
-  console.log('Full user object:', user);
+  console.log('Mentor courses debug:', { 
+    courses, 
+    coursesCount: Array.isArray(courses) ? courses.length : 0, 
+    coursesLoading, 
+    coursesError: coursesError?.message,
+    firstCourse: Array.isArray(courses) ? courses[0] : null 
+  });
 
   const withdrawalForm = useForm<WithdrawalForm>({
     resolver: zodResolver(withdrawalSchema),
