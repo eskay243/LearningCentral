@@ -25,7 +25,8 @@ import {
   AlertCircle,
   Banknote,
   Edit,
-  Eye
+  Eye,
+  Plus
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -675,8 +676,15 @@ export default function MentorDashboard() {
 
         <TabsContent value="courses" className="space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>My Courses</CardTitle>
+              <Button 
+                onClick={() => navigate('/create-course')}
+                className="bg-primary hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Course
+              </Button>
             </CardHeader>
             <CardContent>
               {coursesLoading ? (
