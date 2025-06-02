@@ -1843,6 +1843,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async deleteAssignment(assignmentId: number): Promise<void> {
+    try {
+      await db
+        .delete(assignments)
+        .where(eq(assignments.id, assignmentId));
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      throw new Error("Failed to delete assignment");
+    }
+  }
+
   async getAssignments(options?: { courseId?: number, moduleId?: number, lessonId?: number }): Promise<Assignment[]> {
     try {
       let query = db.select().from(assignments);

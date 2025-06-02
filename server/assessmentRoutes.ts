@@ -224,6 +224,17 @@ export function registerAssessmentRoutes(app: Express) {
       res.status(500).json({ message: "Failed to update assignment" });
     }
   });
+
+  app.delete('/api/assignments/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const assignmentId = Number(req.params.id);
+      await storage.deleteAssignment(assignmentId);
+      res.status(200).json({ message: "Assignment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      res.status(500).json({ message: "Failed to delete assignment" });
+    }
+  });
   
   app.post('/api/assignment-submissions', isAuthenticated, async (req: any, res) => {
     try {

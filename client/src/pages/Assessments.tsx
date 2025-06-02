@@ -223,6 +223,48 @@ const Assessments = () => {
     }
   };
 
+  // Delete assignment mutation
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (assignmentId: number) => {
+      const response = await apiRequest("DELETE", `/api/assignments/${assignmentId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/assignments`] });
+      toast({
+        title: "Assignment Deleted",
+        description: "The assignment has been successfully deleted.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete assignment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditAssignment = (assignmentId: number) => {
+    toast({
+      title: "Edit Assignment",
+      description: "Assignment editing feature will be available soon. This would open the assignment editor.",
+    });
+  };
+
+  const handleViewAssignmentSubmissions = (assignmentId: number) => {
+    toast({
+      title: "Assignment Submissions",
+      description: "Submissions viewing feature will be available soon. This would show student submissions.",
+    });
+  };
+
+  const handleDeleteAssignment = (assignmentId: number) => {
+    if (confirm("Are you sure you want to delete this assignment? This action cannot be undone.")) {
+      deleteAssignmentMutation.mutate(assignmentId);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
@@ -573,9 +615,9 @@ const Assessments = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit Assignment</DropdownMenuItem>
-                          <DropdownMenuItem>View Submissions</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditAssignment(assignment.id)}>Edit Assignment</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewAssignmentSubmissions(assignment.id)}>View Submissions</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteAssignment(assignment.id)}>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
