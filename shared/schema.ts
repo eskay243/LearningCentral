@@ -507,6 +507,127 @@ export const exerciseProgress = pgTable("exercise_progress", {
   timeSpent: integer("time_spent"), // in seconds
 });
 
+// Assessment System Tables
+
+// Assessments table - parent table for all assessments (quizzes, assignments)
+export const assessments = pgTable("assessments", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  moduleId: integer("module_id").references(() => modules.id),
+  lessonId: integer("lesson_id").references(() => lessons.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  type: text("type").notNull(), // quiz, assignment, coding_challenge
+  instructions: text("instructions"),
+  timeLimit: integer("time_limit"), // in minutes
+  attempts: integer("attempts").default(1), // number of allowed attempts
+  dueDate: timestamp("due_date"),
+  isPublished: boolean("is_published").default(false),
+  passingScore: real("passing_score").default(70), // percentage
+  weight: real("weight").default(1), // weight in final grade
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Quiz Questions table
+export const assessmentQuestions = pgTable("assessment_questions", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id").notNull().references(() => assessments.id),
+  questionText: text("question_text").notNull(),
+  questionType: text("question_type").notNull(), // multiple_choice, true_false, short_answer, code, essay
+  options: jsonb("options"), // for multiple choice questions
+  correctAnswer: text("correct_answer"), // for auto-graded questions
+  points: real("points").default(1),
+  explanation: text("explanation"), // shown after submission
+  orderIndex: integer("order_index").default(0),
+  metadata: jsonb("metadata"), // for storing additional question data
+});
+
+// Student Assessment Attempts table
+export const assessmentAttempts = pgTable("assessment_attempts", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id").notNull().references(() => assessments.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  attemptNumber: integer("attempt_number").default(1),
+  startedAt: timestamp("started_at").defaultNow(),
+  submittedAt: timestamp("submitted_at"),
+  timeSpent: integer("time_spent"), // in seconds
+  score: real("score"), // calculated score
+  maxScore: real("max_score"), // total possible points
+  percentage: real("percentage"), // score percentage
+  status: text("status").default("in_progress"), // in_progress, submitted, graded, late
+  feedback: text("feedback"), // mentor feedback
+  gradedBy: varchar("graded_by").references(() => users.id),
+  gradedAt: timestamp("graded_at"),
+});
+
+// Student Answers table
+export const assessmentAnswers = pgTable("assessment_answers", {
+  id: serial("id").primaryKey(),
+  attemptId: integer("attempt_id").notNull().references(() => assessmentAttempts.id),
+  questionId: integer("question_id").notNull().references(() => assessmentQuestions.id),
+  answer: text("answer"), // student's answer
+  isCorrect: boolean("is_correct"), // for auto-graded questions
+  pointsEarned: real("points_earned").default(0),
+  feedback: text("feedback"), // question-specific feedback
+});
+
+// Assessment Submissions table (for file uploads, projects, etc.)
+export const assessmentSubmissions = pgTable("assessment_submissions", {
+  id: serial("id").primaryKey(),
+  attemptId: integer("attempt_id").notNull().references(() => assessmentAttempts.id),
+  submissionText: text("submission_text"),
+  submissionFiles: jsonb("submission_files"), // array of file metadata
+  submissionUrl: text("submission_url"), // for web-based submissions
+  codeSubmission: text("code_submission"), // for coding assignments
+  language: text("language"), // programming language
+  isLate: boolean("is_late").default(false),
+  plagiarismScore: real("plagiarism_score"), // if plagiarism detection is enabled
+});
+
+// Rubrics table for detailed grading criteria
+export const rubrics = pgTable("rubrics", {
+  id: serial("id").primaryKey(),
+  assessmentId: integer("assessment_id").notNull().references(() => assessments.id),
+  criteria: text("criteria").notNull(),
+  description: text("description"),
+  maxPoints: real("max_points").notNull(),
+  orderIndex: integer("order_index").default(0),
+});
+
+// Rubric Scores table
+export const rubricScores = pgTable("rubric_scores", {
+  id: serial("id").primaryKey(),
+  attemptId: integer("attempt_id").notNull().references(() => assessmentAttempts.id),
+  rubricId: integer("rubric_id").notNull().references(() => rubrics.id),
+  pointsEarned: real("points_earned").notNull(),
+  feedback: text("feedback"),
+});
+
+// Grade Categories table
+export const gradeCategories = pgTable("grade_categories", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  name: text("name").notNull(),
+  weight: real("weight").notNull(), // percentage of final grade
+  description: text("description"),
+});
+
+// Final Grades table
+export const courseGrades = pgTable("course_grades", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  currentGrade: real("current_grade"), // current percentage
+  finalGrade: real("final_grade"), // final locked grade
+  letterGrade: text("letter_grade"), // A, B, C, etc.
+  isComplete: boolean("is_complete").default(false),
+  completedAt: timestamp("completed_at"),
+  certificateIssued: boolean("certificate_issued").default(false),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+});
+
 // Create Zod schemas for insert operations
 export const insertUserSchema = createInsertSchema(users);
 export const insertCourseSchema = createInsertSchema(courses);
@@ -523,6 +644,12 @@ export const insertCodingExerciseSchema = createInsertSchema(codingExercises);
 export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress);
 export const insertAnnouncementSchema = createInsertSchema(announcements);
 export const insertCourseMentorSchema = createInsertSchema(courseMentors);
+export const insertAssessmentSchema = createInsertSchema(assessments);
+export const insertAssessmentQuestionSchema = createInsertSchema(assessmentQuestions);
+export const insertAssessmentAttemptSchema = createInsertSchema(assessmentAttempts);
+export const insertAssessmentAnswerSchema = createInsertSchema(assessmentAnswers);
+export const insertRubricSchema = createInsertSchema(rubrics);
+export const insertGradeCategorySchema = createInsertSchema(gradeCategories);
 
 // Type definitions for the schema
 export type UpsertUser = typeof users.$inferInsert;
@@ -553,6 +680,17 @@ export type NotificationSetting = typeof notificationSettings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CodingExercise = typeof codingExercises.$inferSelect;
 export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
+
+// Assessment System Types
+export type Assessment = typeof assessments.$inferSelect;
+export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
+export type AssessmentAttempt = typeof assessmentAttempts.$inferSelect;
+export type AssessmentAnswer = typeof assessmentAnswers.$inferSelect;
+export type AssessmentSubmission = typeof assessmentSubmissions.$inferSelect;
+export type Rubric = typeof rubrics.$inferSelect;
+export type RubricScore = typeof rubricScores.$inferSelect;
+export type GradeCategory = typeof gradeCategories.$inferSelect;
+export type CourseGrade = typeof courseGrades.$inferSelect;
 
 // Messaging and communication
 export const conversations = pgTable("conversations", {
@@ -612,8 +750,7 @@ export type ConversationParticipant = typeof conversationParticipants.$inferSele
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type MessageReaction = typeof messageReactions.$inferSelect;
 export type CourseAnnouncement = typeof courseAnnouncements.$inferSelect;
-export type Notification = typeof notifications.$inferSelect;
-export type NotificationSetting = typeof notificationSettings.$inferSelect;
+// Remove duplicate types - already declared above
 
 // Create insert schemas
 export const insertConversationSchema = createInsertSchema(conversations);

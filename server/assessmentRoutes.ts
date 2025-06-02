@@ -324,4 +324,284 @@ export function registerAssessmentRoutes(app: Express) {
       res.status(500).json({ message: "Failed to fetch mentor assignments" });
     }
   });
+
+  // Advanced Assessment Routes
+  app.get('/api/assessments', async (req, res) => {
+    try {
+      const { courseId, type, difficulty } = req.query;
+      const assessments = await storage.getAssessments({
+        courseId: courseId ? Number(courseId) : undefined,
+        type: type as string,
+        difficulty: difficulty as string
+      });
+      res.json(assessments);
+    } catch (error) {
+      console.error("Error fetching assessments:", error);
+      res.status(500).json({ message: "Failed to fetch assessments" });
+    }
+  });
+
+  app.get('/api/assessments/:id', async (req, res) => {
+    try {
+      const assessment = await storage.getAssessment(Number(req.params.id));
+      if (!assessment) {
+        return res.status(404).json({ message: "Assessment not found" });
+      }
+      res.json(assessment);
+    } catch (error) {
+      console.error("Error fetching assessment:", error);
+      res.status(500).json({ message: "Failed to fetch assessment" });
+    }
+  });
+
+  app.post('/api/assessments', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+    try {
+      const assessmentData = {
+        ...req.body,
+        createdBy: req.user.claims.sub
+      };
+      const assessment = await storage.createAssessment(assessmentData);
+      res.status(201).json(assessment);
+    } catch (error) {
+      console.error("Error creating assessment:", error);
+      res.status(500).json({ message: "Failed to create assessment" });
+    }
+  });
+
+  app.put('/api/assessments/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const assessmentId = Number(req.params.id);
+      const assessmentData = req.body;
+      const assessment = await storage.updateAssessment(assessmentId, assessmentData);
+      res.json(assessment);
+    } catch (error) {
+      console.error("Error updating assessment:", error);
+      res.status(500).json({ message: "Failed to update assessment" });
+    }
+  });
+
+  app.get('/api/assessments/:id/questions', async (req, res) => {
+    try {
+      const assessmentId = Number(req.params.id);
+      const questions = await storage.getAssessmentQuestions(assessmentId);
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching assessment questions:", error);
+      res.status(500).json({ message: "Failed to fetch assessment questions" });
+    }
+  });
+
+  app.post('/api/assessment-questions', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const questionData = req.body;
+      const question = await storage.addAssessmentQuestion(questionData);
+      res.status(201).json(question);
+    } catch (error) {
+      console.error("Error adding assessment question:", error);
+      res.status(500).json({ message: "Failed to add assessment question" });
+    }
+  });
+
+  app.put('/api/assessment-questions/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const questionId = Number(req.params.id);
+      const questionData = req.body;
+      const question = await storage.updateAssessmentQuestion(questionId, questionData);
+      res.json(question);
+    } catch (error) {
+      console.error("Error updating assessment question:", error);
+      res.status(500).json({ message: "Failed to update assessment question" });
+    }
+  });
+
+  app.delete('/api/assessment-questions/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const questionId = Number(req.params.id);
+      await storage.deleteAssessmentQuestion(questionId);
+      res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting assessment question:", error);
+      res.status(500).json({ message: "Failed to delete assessment question" });
+    }
+  });
+
+  app.post('/api/assessment-attempts', isAuthenticated, async (req: any, res) => {
+    try {
+      const attemptData = {
+        ...req.body,
+        userId: req.user.claims.sub
+      };
+      const attempt = await storage.startAssessmentAttempt(attemptData);
+      res.status(201).json(attempt);
+    } catch (error) {
+      console.error("Error starting assessment attempt:", error);
+      res.status(500).json({ message: "Failed to start assessment attempt" });
+    }
+  });
+
+  app.put('/api/assessment-attempts/:id/submit', isAuthenticated, async (req: any, res) => {
+    try {
+      const attemptId = Number(req.params.id);
+      const { answers, submissionData } = req.body;
+      const userId = req.user.claims.sub;
+      
+      const result = await storage.submitAssessmentAttempt(attemptId, answers, submissionData, userId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error submitting assessment attempt:", error);
+      res.status(500).json({ message: "Failed to submit assessment attempt" });
+    }
+  });
+
+  app.get('/api/assessments/:id/attempts', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const assessmentId = Number(req.params.id);
+      const attempts = await storage.getAssessmentAttempts(assessmentId);
+      res.json(attempts);
+    } catch (error) {
+      console.error("Error fetching assessment attempts:", error);
+      res.status(500).json({ message: "Failed to fetch assessment attempts" });
+    }
+  });
+
+  app.get('/api/users/:userId/assessment-attempts', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const userToView = req.params.userId;
+      const userRole = req.user.claims.role;
+      
+      if (userToView !== currentUserId && 
+          userRole !== UserRole.ADMIN && 
+          userRole !== UserRole.MENTOR) {
+        return res.status(403).json({ message: "You can only view your own assessment attempts" });
+      }
+      
+      const assessmentId = req.query.assessmentId ? Number(req.query.assessmentId) : undefined;
+      const attempts = await storage.getUserAssessmentAttempts(userToView, assessmentId);
+      res.json(attempts);
+    } catch (error) {
+      console.error("Error fetching user assessment attempts:", error);
+      res.status(500).json({ message: "Failed to fetch user assessment attempts" });
+    }
+  });
+
+  app.post('/api/assessment-attempts/:id/grade', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+    try {
+      const attemptId = Number(req.params.id);
+      const { scores, feedback, overrideScore } = req.body;
+      const gradedBy = req.user.claims.sub;
+      
+      const result = await storage.gradeAssessmentAttempt(attemptId, scores, feedback, overrideScore, gradedBy);
+      res.json(result);
+    } catch (error) {
+      console.error("Error grading assessment attempt:", error);
+      res.status(500).json({ message: "Failed to grade assessment attempt" });
+    }
+  });
+
+  // Rubric Management Routes
+  app.get('/api/rubrics', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const { assessmentId } = req.query;
+      const rubrics = await storage.getRubrics(assessmentId ? Number(assessmentId) : undefined);
+      res.json(rubrics);
+    } catch (error) {
+      console.error("Error fetching rubrics:", error);
+      res.status(500).json({ message: "Failed to fetch rubrics" });
+    }
+  });
+
+  app.post('/api/rubrics', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+    try {
+      const rubricData = {
+        ...req.body,
+        createdBy: req.user.claims.sub
+      };
+      const rubric = await storage.createRubric(rubricData);
+      res.status(201).json(rubric);
+    } catch (error) {
+      console.error("Error creating rubric:", error);
+      res.status(500).json({ message: "Failed to create rubric" });
+    }
+  });
+
+  app.put('/api/rubrics/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const rubricId = Number(req.params.id);
+      const rubricData = req.body;
+      const rubric = await storage.updateRubric(rubricId, rubricData);
+      res.json(rubric);
+    } catch (error) {
+      console.error("Error updating rubric:", error);
+      res.status(500).json({ message: "Failed to update rubric" });
+    }
+  });
+
+  // Grade Category Management
+  app.get('/api/courses/:courseId/grade-categories', async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const categories = await storage.getGradeCategories(courseId);
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching grade categories:", error);
+      res.status(500).json({ message: "Failed to fetch grade categories" });
+    }
+  });
+
+  app.post('/api/grade-categories', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const categoryData = req.body;
+      const category = await storage.createGradeCategory(categoryData);
+      res.status(201).json(category);
+    } catch (error) {
+      console.error("Error creating grade category:", error);
+      res.status(500).json({ message: "Failed to create grade category" });
+    }
+  });
+
+  app.put('/api/grade-categories/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const categoryId = Number(req.params.id);
+      const categoryData = req.body;
+      const category = await storage.updateGradeCategory(categoryId, categoryData);
+      res.json(category);
+    } catch (error) {
+      console.error("Error updating grade category:", error);
+      res.status(500).json({ message: "Failed to update grade category" });
+    }
+  });
+
+  // Course Grade Overview
+  app.get('/api/courses/:courseId/grades', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const courseId = Number(req.params.courseId);
+      const grades = await storage.getCourseGrades(courseId);
+      res.json(grades);
+    } catch (error) {
+      console.error("Error fetching course grades:", error);
+      res.status(500).json({ message: "Failed to fetch course grades" });
+    }
+  });
+
+  app.get('/api/users/:userId/grades', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const userToView = req.params.userId;
+      const userRole = req.user.claims.role;
+      
+      if (userToView !== currentUserId && 
+          userRole !== UserRole.ADMIN && 
+          userRole !== UserRole.MENTOR) {
+        return res.status(403).json({ message: "You can only view your own grades" });
+      }
+      
+      const courseId = req.query.courseId ? Number(req.query.courseId) : undefined;
+      const grades = await storage.getUserGrades(userToView, courseId);
+      res.json(grades);
+    } catch (error) {
+      console.error("Error fetching user grades:", error);
+      res.status(500).json({ message: "Failed to fetch user grades" });
+    }
+  });
 }
