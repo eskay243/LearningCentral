@@ -1,162 +1,119 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, Eye, FileText, Check, Clock, AlertTriangle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle, Clock, Users, Plus, Search, Filter, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { formatDate } from "@/lib/utils";
-import QuizCreator from "@/components/quiz/QuizCreator";
-import QuizTaker from "@/components/quiz/QuizTaker";
-import AssignmentSubmission from "@/components/assessment/AssignmentSubmission";
-import AssignmentGrading from "@/components/assessment/AssignmentGrading";
 
 const Assessments = () => {
-  const { user, isMentor, isAdmin } = useAuth();
+  const { user, isMentor, isAdmin, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("quizzes");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourse, setFilterCourse] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Fetch quizzes
-  const { data: quizzes, isLoading: isQuizzesLoading } = useQuery({
+  const { data: quizzes = [], isLoading: isQuizzesLoading } = useQuery({
     queryKey: [isMentor ? `/api/mentors/${user?.id}/quizzes` : "/api/quizzes"],
     enabled: !!user && (isMentor || isAdmin),
   });
 
   // Fetch assignments
-  const { data: assignments, isLoading: isAssignmentsLoading } = useQuery({
+  const { data: assignments = [], isLoading: isAssignmentsLoading } = useQuery({
     queryKey: [isMentor ? `/api/mentors/${user?.id}/assignments` : "/api/assignments"],
     enabled: !!user && (isMentor || isAdmin),
   });
 
   // Fetch courses for filter dropdown
-  const { data: courses, isLoading: isCoursesLoading } = useQuery({
+  const { data: courses = [] } = useQuery({
     queryKey: ["/api/courses"],
-    enabled: !!user && (isMentor || isAdmin),
+    enabled: !!user,
   });
 
-  // Mock data for development
-  const mockQuizzes = [
-    {
-      id: 1,
-      title: "JavaScript Fundamentals Quiz",
-      course: { id: 1, title: "Advanced JavaScript Concepts" },
-      module: { id: 1, title: "Module 1: Fundamentals" },
-      lesson: { id: 1, title: "Introduction to JavaScript" },
-      questionCount: 15,
-      passingScore: 70,
-      attempts: 45,
-      avgScore: 82,
-      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 2,
-      title: "Python Syntax Quiz",
-      course: { id: 2, title: "Python for Beginners" },
-      module: { id: 4, title: "Module 1: Getting Started" },
-      lesson: { id: 10, title: "Python Syntax Basics" },
-      questionCount: 10,
-      passingScore: 60,
-      attempts: 32,
-      avgScore: 75,
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 3,
-      title: "SQL Joins Assessment",
-      course: { id: 3, title: "SQL for Data Science" },
-      module: { id: 7, title: "Module 2: Advanced Queries" },
-      lesson: { id: 15, title: "Understanding SQL Joins" },
-      questionCount: 8,
-      passingScore: 75,
-      attempts: 18,
-      avgScore: 79,
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
+  // Early return if still loading auth
+  if (authLoading) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        </div>
+      </div>
+    );
+  }
 
-  const mockAssignments = [
-    {
-      id: 1,
-      title: "Create a JavaScript Calculator",
-      course: { id: 1, title: "Advanced JavaScript Concepts" },
-      module: { id: 2, title: "Module 2: DOM Manipulation" },
-      lesson: { id: 5, title: "Working with the DOM" },
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      submissions: 12,
-      pending: 3,
-      graded: 9,
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 2,
-      title: "Build a Python Data Analysis Tool",
-      course: { id: 2, title: "Python for Beginners" },
-      module: { id: 5, title: "Module 2: Data Structures" },
-      lesson: { id: 12, title: "Lists and Dictionaries" },
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      submissions: 8,
-      pending: 8,
-      graded: 0,
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: 3,
-      title: "Design a Database Schema",
-      course: { id: 3, title: "SQL for Data Science" },
-      module: { id: 8, title: "Module 3: Database Design" },
-      lesson: { id: 18, title: "Normalization and Relationships" },
-      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      submissions: 5,
-      pending: 5,
-      graded: 0,
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
+  // Filter quizzes based on search and course filter
+  const filteredQuizzes = quizzes.filter((quiz: any) => {
+    if (!quiz?.title) return false;
+    const matchesSearch = quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCourse = filterCourse === "all" || quiz.lessonId?.toString() === filterCourse;
+    return matchesSearch && matchesCourse;
+  });
 
-  const mockCourses = [
-    { id: 1, title: "Advanced JavaScript Concepts" },
-    { id: 2, title: "Python for Beginners" },
-    { id: 3, title: "SQL for Data Science" },
-  ];
+  // Filter assignments based on search and course filter
+  const filteredAssignments = assignments.filter((assignment: any) => {
+    if (!assignment?.title) return false;
+    const matchesSearch = assignment.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCourse = filterCourse === "all" || assignment.courseId?.toString() === filterCourse;
+    return matchesSearch && matchesCourse;
+  });
 
-  // Filter quizzes based on search and course filter with proper null checks
-  const filteredQuizzes = (quizzes || [])
-    .filter((quiz) => {
-      if (!quiz || !quiz.title) return false;
-      return quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
-    })
-    .filter((quiz) => filterCourse === "all" || quiz.lessonId?.toString() === filterCourse);
-
-  // Filter assignments based on search and course filter with proper null checks
-  const filteredAssignments = (assignments || [])
-    .filter((assignment) => {
-      if (!assignment || !assignment.title) return false;
-      return assignment.title.toLowerCase().includes(searchTerm.toLowerCase());
-    })
-    .filter((assignment) => filterCourse === "all" || assignment.courseId?.toString() === filterCourse);
+  const handleCreateAssessment = () => {
+    toast({
+      title: "Assessment Creation",
+      description: "Assessment creation dialog will be implemented here.",
+    });
+    setShowCreateDialog(false);
+  };
 
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-dark-800">Assessments</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assessments</h1>
           <p className="mt-1 text-gray-500">Create and manage quizzes and assignments for your courses</p>
         </div>
         
         {(isMentor || isAdmin) && (
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <i className="ri-add-line mr-2"></i>
-            Create Assessment
-          </Button>
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Assessment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Create New Assessment</DialogTitle>
+                <DialogDescription>
+                  Choose the type of assessment you want to create.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <Button onClick={handleCreateAssessment} className="justify-start h-auto p-4">
+                  <div className="text-left">
+                    <div className="font-medium">Quiz</div>
+                    <div className="text-sm text-gray-500">Multiple choice questions with automatic grading</div>
+                  </div>
+                </Button>
+                <Button onClick={handleCreateAssessment} variant="outline" className="justify-start h-auto p-4">
+                  <div className="text-left">
+                    <div className="font-medium">Assignment</div>
+                    <div className="text-sm text-gray-500">Project-based assessment requiring manual grading</div>
+                  </div>
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 
@@ -168,20 +125,18 @@ const Assessments = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
+            icon={<Search className="w-4 h-4" />}
           />
         </div>
         
-        <div className="flex flex-wrap gap-2">
-          <Select 
-            value={filterCourse}
-            onValueChange={setFilterCourse}
-          >
-            <SelectTrigger className="w-[220px]">
+        <div className="flex gap-2">
+          <Select value={filterCourse} onValueChange={setFilterCourse}>
+            <SelectTrigger className="max-w-xs">
               <SelectValue placeholder="Filter by course" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
-              {(courses || mockCourses).map((course) => (
+              {courses.map((course: any) => (
                 <SelectItem key={course.id} value={course.id.toString()}>
                   {course.title}
                 </SelectItem>
@@ -191,333 +146,173 @@ const Assessments = () => {
         </div>
       </div>
 
-      {/* Tabs for Quiz and Assignment sections */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
-          <TabsTrigger value="assignments">Assignments</TabsTrigger>
+      {/* Assessment Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="quizzes">
+            Quizzes ({filteredQuizzes.length})
+          </TabsTrigger>
+          <TabsTrigger value="assignments">
+            Assignments ({filteredAssignments.length})
+          </TabsTrigger>
         </TabsList>
 
-        {/* Quizzes Tab */}
-        <TabsContent value="quizzes">
-          <Card>
-            <CardContent className="p-0">
-              {isQuizzesLoading ? (
-                <div className="h-96 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-                </div>
-              ) : filteredQuizzes.length === 0 ? (
-                <div className="p-6 text-center">
-                  <p className="text-gray-500">No quizzes found matching your criteria</p>
-                  {(isMentor || isAdmin) && (
-                    <Button 
-                      className="mt-4"
-                      onClick={() => {
-                        setShowCreateDialog(true); 
-                        setActiveTab("quizzes");
-                      }}
-                    >
-                      Create Your First Quiz
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="overflow-x-auto -mx-6 px-6">
-                  <Table className="min-w-[900px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Quiz Title</TableHead>
-                        <TableHead>Course</TableHead>
-                        <TableHead>Questions</TableHead>
-                        <TableHead>Passing Score</TableHead>
-                        <TableHead>Attempts</TableHead>
-                        <TableHead>Avg. Score</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredQuizzes.map((quiz) => (
-                        <TableRow key={quiz.id}>
-                          <TableCell className="font-medium">{quiz.title}</TableCell>
-                          <TableCell>
-                            <div className="max-w-[150px]">
-                              <p className="truncate">{quiz.course.title}</p>
-                              <p className="text-xs text-gray-500 truncate">{quiz.lesson.title}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{quiz.questionCount}</TableCell>
-                          <TableCell>{quiz.passingScore}%</TableCell>
-                          <TableCell>{quiz.attempts}</TableCell>
-                          <TableCell>
-                            <Badge variant={quiz.avgScore >= quiz.passingScore ? "success" : "destructive"}>
-                              {quiz.avgScore}%
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(quiz.createdAt)}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" size="sm" className="whitespace-nowrap">
-                                Edit
-                              </Button>
-                              <Button size="sm" className="whitespace-nowrap">
-                                View Results
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="quizzes" className="space-y-4">
+          {isQuizzesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            </div>
+          ) : filteredQuizzes.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CheckCircle className="w-12 h-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No quizzes found</h3>
+                <p className="text-gray-500 text-center mb-4">
+                  {searchTerm || filterCourse !== "all" 
+                    ? "No quizzes match your current filters." 
+                    : "Start by creating your first quiz to assess student knowledge."}
+                </p>
+                {(isMentor || isAdmin) && (
+                  <Button onClick={() => setShowCreateDialog(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Quiz
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredQuizzes.map((quiz: any) => (
+                <Card key={quiz.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{quiz.title}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {quiz.description || "No description provided"}
+                        </CardDescription>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Edit Quiz</DropdownMenuItem>
+                          <DropdownMenuItem>View Results</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {quiz.timeLimit ? `${quiz.timeLimit} min` : "No limit"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {quiz.attempted || 0} attempts
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Badge variant={quiz.isPublished ? "default" : "secondary"}>
+                        {quiz.isPublished ? "Published" : "Draft"}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        {quiz.questions?.length || 0} questions
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
-        {/* Assignments Tab */}
-        <TabsContent value="assignments">
-          <Card>
-            <CardContent className="p-0">
-              {isAssignmentsLoading ? (
-                <div className="h-96 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-                </div>
-              ) : filteredAssignments.length === 0 ? (
-                <div className="p-6 text-center">
-                  <p className="text-gray-500">No assignments found matching your criteria</p>
-                  {(isMentor || isAdmin) && (
-                    <Button 
-                      className="mt-4"
-                      onClick={() => {
-                        setShowCreateDialog(true);
-                        setActiveTab("assignments");
-                      }}
-                    >
-                      Create Your First Assignment
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="overflow-x-auto -mx-6 px-6">
-                  <Table className="min-w-[900px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Assignment Title</TableHead>
-                        <TableHead>Course</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Submissions</TableHead>
-                        <TableHead>Pending</TableHead>
-                        <TableHead>Graded</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredAssignments.map((assignment) => (
-                        <TableRow key={assignment.id}>
-                          <TableCell className="font-medium">{assignment.title}</TableCell>
-                          <TableCell>
-                            <div className="max-w-[150px]">
-                              <p className="truncate">{assignment.course.title}</p>
-                              <p className="text-xs text-gray-500 truncate">{assignment.lesson.title}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatDate(assignment.dueDate)}</TableCell>
-                          <TableCell>{assignment.submissions}</TableCell>
-                          <TableCell>
-                            <Badge variant={assignment.pending > 0 ? "secondary" : "outline"}>
-                              {assignment.pending}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{assignment.graded}</TableCell>
-                          <TableCell>{formatDate(assignment.createdAt)}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" size="sm" className="whitespace-nowrap">
-                                Edit
-                              </Button>
-                              <Button size="sm" className="whitespace-nowrap">
-                                Review
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="assignments" className="space-y-4">
+          {isAssignmentsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            </div>
+          ) : filteredAssignments.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <CheckCircle className="w-12 h-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No assignments found</h3>
+                <p className="text-gray-500 text-center mb-4">
+                  {searchTerm || filterCourse !== "all" 
+                    ? "No assignments match your current filters." 
+                    : "Start by creating your first assignment to give students practical projects."}
+                </p>
+                {(isMentor || isAdmin) && (
+                  <Button onClick={() => setShowCreateDialog(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Assignment
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredAssignments.map((assignment: any) => (
+                <Card key={assignment.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{assignment.title}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {assignment.description || "No description provided"}
+                        </CardDescription>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Edit Assignment</DropdownMenuItem>
+                          <DropdownMenuItem>View Submissions</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : "No due date"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {assignment.submitted || 0} submissions
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <Badge variant={assignment.isPublished ? "default" : "secondary"}>
+                        {assignment.isPublished ? "Published" : "Draft"}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        {assignment.maxPoints || 0} points
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
-
-      {/* Create Assessment Dialog */}
-      {(isMentor || isAdmin) && (
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Create New Assessment</DialogTitle>
-              <DialogDescription>
-                Add a new quiz or assignment to your course
-              </DialogDescription>
-            </DialogHeader>
-
-            <Tabs defaultValue="quiz" className="mt-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="quiz">Quiz</TabsTrigger>
-                <TabsTrigger value="assignment">Assignment</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="quiz" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Quiz Title</label>
-                    <Input placeholder="Enter quiz title" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Course</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select course" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(courses || mockCourses).map((course) => (
-                          <SelectItem key={course.id} value={course.id.toString()}>
-                            {course.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Module</label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select module" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mod1">Module 1: Fundamentals</SelectItem>
-                          <SelectItem value="mod2">Module 2: Advanced Topics</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Lesson</label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select lesson" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="lesson1">Introduction to JavaScript</SelectItem>
-                          <SelectItem value="lesson2">Variables and Data Types</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Description</label>
-                    <Textarea placeholder="Enter quiz description" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Passing Score (%)</label>
-                      <Input type="number" min="0" max="100" defaultValue="70" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Time Limit (minutes)</label>
-                      <Input type="number" min="0" defaultValue="30" />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="assignment" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Assignment Title</label>
-                    <Input placeholder="Enter assignment title" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Course</label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select course" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(courses || mockCourses).map((course) => (
-                          <SelectItem key={course.id} value={course.id.toString()}>
-                            {course.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Module</label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select module" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mod1">Module 1: Fundamentals</SelectItem>
-                          <SelectItem value="mod2">Module 2: Advanced Topics</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Lesson</label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select lesson" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="lesson1">Introduction to JavaScript</SelectItem>
-                          <SelectItem value="lesson2">Variables and Data Types</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Description & Instructions</label>
-                    <Textarea placeholder="Enter detailed assignment instructions" className="min-h-32" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Due Date</label>
-                      <Input type="date" />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Maximum Points</label>
-                      <Input type="number" min="0" defaultValue="100" />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
-              <Button>Create Assessment</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };
