@@ -383,7 +383,7 @@ export default function MentorDashboard() {
 
   const { data: courses, isLoading: coursesLoading, error: coursesError } = useQuery({
     queryKey: ["/api/mentor/courses"],
-    enabled: !!user, // Only run query when user is authenticated
+    enabled: !!user && user.role === 'mentor', // Only run query when user is authenticated and is a mentor
   });
 
   console.log('Mentor courses debug:', { 
