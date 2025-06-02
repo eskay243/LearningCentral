@@ -53,7 +53,7 @@ type CourseEditForm = z.infer<typeof courseEditSchema>;
 function EditCourseForm({ course }: { course: any }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
+  
   const form = useForm<CourseEditForm>({
     resolver: zodResolver(courseEditSchema),
     defaultValues: {
@@ -61,13 +61,19 @@ function EditCourseForm({ course }: { course: any }) {
       description: course?.description || "",
       price: course?.price || 0,
       category: course?.category || "",
-      published: course?.published || false,
+      published: course?.isPublished || false,
     },
   });
 
-  const editCourseMutation = useMutation({
+  const updateCourseMutation = useMutation({
     mutationFn: async (data: CourseEditForm) => {
-      const response = await apiRequest("PUT", `/api/courses/${course.id}`, data);
+      const response = await apiRequest("PUT", `/api/courses/${course.id}`, {
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        isPublished: data.published,
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -75,22 +81,24 @@ function EditCourseForm({ course }: { course: any }) {
         title: "Course Updated",
         description: "Your course has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/mentor/courses"] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Update Failed",
-        description: error.message || "Failed to update course",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
   const onSubmit = (data: CourseEditForm) => {
-    editCourseMutation.mutate(data);
+    updateCourseMutation.mutate(data);
   };
 
-  if (!course) return null;
+  if (!course) {
+    return <div>No course selected</div>;
+  }
 
   return (
     <Form {...form}>
@@ -116,25 +124,162 @@ function EditCourseForm({ course }: { course: any }) {
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="Enter course description" {...field} />
+                <Textarea 
+                  placeholder="Enter course description" 
+                  className="min-h-[100px]"
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Price (₦)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="programming">Programming</SelectItem>
+                    <SelectItem value="web-development">Web Development</SelectItem>
+                    <SelectItem value="mobile-development">Mobile Development</SelectItem>
+                    <SelectItem value="data-science">Data Science</SelectItem>
+                    <SelectItem value="machine-learning">Machine Learning</SelectItem>
+                    <SelectItem value="cybersecurity">Cybersecurity</SelectItem>
+                    <SelectItem value="cloud-computing">Cloud Computing</SelectItem>
+                    <SelectItem value="ui-ux-design">UI/UX Design</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
-          name="price"
+          name="published"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Publish Course</FormLabel>
+                <div className="text-sm text-muted-foreground">
+                  Make this course visible to students
+                </div>
+              </div>
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4"
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-3 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => form.reset()}
+          >
+            Reset
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={updateCourseMutation.isPending}
+            className="min-w-[100px]"
+          >
+            {updateCourseMutation.isPending ? "Updating..." : "Update Course"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
+
+function WithdrawalForm({ withdrawalMethods }: { withdrawalMethods: any[] }) {
+  const { toast } = useToast();
+  
+  const form = useForm<WithdrawalForm>({
+    resolver: zodResolver(withdrawalSchema),
+    defaultValues: {
+      amount: 0,
+      method: "",
+      accountDetails: "",
+    },
+  });
+
+  const withdrawalMutation = useMutation({
+    mutationFn: async (data: WithdrawalForm) => {
+      const response = await apiRequest("POST", "/api/mentor/withdrawal-request", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Withdrawal Request Submitted",
+        description: "Your withdrawal request has been submitted successfully.",
+      });
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Withdrawal Failed", 
+        description: error.message || "Failed to submit withdrawal request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: WithdrawalForm) => {
+    withdrawalMutation.mutate(data);
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Price (NGN)</FormLabel>
+              <FormLabel>Withdrawal Amount (₦)</FormLabel>
               <FormControl>
                 <Input 
                   type="number" 
-                  placeholder="0" 
+                  placeholder="Enter amount"
                   {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
                 />
               </FormControl>
               <FormMessage />
@@ -144,25 +289,30 @@ function EditCourseForm({ course }: { course: any }) {
 
         <FormField
           control={form.control}
-          name="category"
+          name="method"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
+              <FormLabel>Withdrawal Method</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Select withdrawal method" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="web-development">Web Development</SelectItem>
-                  <SelectItem value="mobile-development">Mobile Development</SelectItem>
-                  <SelectItem value="data-science">Data Science</SelectItem>
-                  <SelectItem value="machine-learning">Machine Learning</SelectItem>
-                  <SelectItem value="cybersecurity">Cybersecurity</SelectItem>
-                  <SelectItem value="devops">DevOps</SelectItem>
-                  <SelectItem value="ui-ux">UI/UX Design</SelectItem>
-                  <SelectItem value="programming">Programming</SelectItem>
+                  {withdrawalMethods && withdrawalMethods.length > 0 ? (
+                    withdrawalMethods.map((method: any) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name} - {method.fees}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="bank-transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="paystack">Paystack</SelectItem>
+                      <SelectItem value="flutterwave">Flutterwave</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -170,31 +320,31 @@ function EditCourseForm({ course }: { course: any }) {
           )}
         />
 
-        <div className="flex items-center space-x-2">
-          <FormField
-            control={form.control}
-            name="published"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <input
-                    type="checkbox"
-                    checked={field.value}
-                    onChange={field.onChange}
-                    className="h-4 w-4"
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel>Published</FormLabel>
-                </div>
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="accountDetails"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Account Details</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Enter your account details (bank name, account number, account name, etc.)"
+                  className="min-h-[80px]"
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button type="submit" disabled={editCourseMutation.isPending}>
-            {editCourseMutation.isPending ? "Updating..." : "Update Course"}
+        <div className="flex justify-end gap-3 pt-4">
+          <Button 
+            type="submit" 
+            disabled={withdrawalMutation.isPending}
+            className="min-w-[120px]"
+          >
+            {withdrawalMutation.isPending ? "Submitting..." : "Submit Request"}
           </Button>
         </div>
       </form>
