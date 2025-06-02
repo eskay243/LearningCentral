@@ -790,6 +790,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Publish/Unpublish course
+  app.put('/api/courses/:id/publish', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const { isPublished } = req.body;
+      
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Check if course exists
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Update course publish status
+      const updatedCourse = await storage.updateCourse(courseId, { isPublished });
+      
+      res.json({ 
+        message: isPublished ? "Course published successfully" : "Course unpublished successfully",
+        isPublished: updatedCourse.isPublished
+      });
+    } catch (error) {
+      console.error("Error updating course publish status:", error);
+      res.status(500).json({ message: "Failed to update course status" });
+    }
+  });
+
   app.delete('/api/courses/:id', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);

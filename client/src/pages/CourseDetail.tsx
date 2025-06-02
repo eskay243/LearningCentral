@@ -36,6 +36,7 @@ export default function CourseDetail() {
   const [selectedMentorId, setSelectedMentorId] = useState("");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
+  const [previewMode, setPreviewMode] = useState(false);
 
   // Check if user is admin or mentor
   const isAdmin = user?.role === 'admin';
@@ -149,6 +150,31 @@ export default function CourseDetail() {
     },
   });
 
+  // Publish/Unpublish course mutation
+  const publishMutation = useMutation({
+    mutationFn: async (isPublished: boolean) => {
+      const res = await apiRequest("PUT", `/api/courses/${id}/publish`, { isPublished });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: data.isPublished ? "Course published successfully! 🎉" : "Course unpublished",
+        description: data.isPublished 
+          ? "Students can now enroll and access this course." 
+          : "Course is now hidden from students until you publish it again.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Couldn't update course status",
+        description: "Something went wrong while updating the course. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Enrollment mutation
   const enrollMutation = useMutation({
     mutationFn: async () => {
@@ -250,6 +276,78 @@ export default function CourseDetail() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Admin Preview Banner */}
+        {isAdmin && !course?.isPublished && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-700 font-medium">Course Preview Mode</p>
+                  <p className="text-sm text-yellow-600 mt-1">This course is not published yet. Students cannot see or enroll in this course.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setPreviewMode(!previewMode)}
+                >
+                  {previewMode ? "Exit Preview" : "Student View"}
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => publishMutation.mutate(true)}
+                  disabled={publishMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {publishMutation.isPending ? "Publishing..." : "Publish Course"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Published Course Admin Controls */}
+        {isAdmin && course?.isPublished && (
+          <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-r-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-green-700 font-medium">Course Published</p>
+                  <p className="text-sm text-green-600 mt-1">This course is live and students can enroll.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setPreviewMode(!previewMode)}
+                >
+                  {previewMode ? "Exit Preview" : "Student View"}
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => publishMutation.mutate(false)}
+                  disabled={publishMutation.isPending}
+                >
+                  {publishMutation.isPending ? "Unpublishing..." : "Unpublish"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Course Header */}
         <div className="bg-white rounded-lg shadow-sm mb-8 overflow-hidden">
           <div className="relative h-64 bg-gradient-to-r from-purple-600 to-blue-600">
@@ -284,7 +382,7 @@ export default function CourseDetail() {
                 ₦{course.price?.toLocaleString()}
               </div>
               <div className="flex gap-2">
-                {canEdit && (
+                {canEdit && !previewMode && (
                   <>
                     <Button 
                       variant="outline" 
