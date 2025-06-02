@@ -19,6 +19,7 @@ import Schedule from "@/pages/Schedule";
 import Students from "@/pages/Students";
 import Assessments from "@/pages/Assessments";
 import AssessmentDashboard from "@/pages/AssessmentDashboard";
+import QuizTaking from "@/pages/QuizTaking";
 import Messages from "@/pages/Messages";
 import Analytics from "@/pages/Analytics";
 import Earnings from "@/pages/Earnings";
@@ -68,6 +69,7 @@ function Router() {
         <Route path="/student-profile/:id" component={StudentProfile} />
         <Route path="/assessments" component={Assessments} />
         <Route path="/assessment-dashboard" component={AssessmentDashboard} />
+        <Route path="/quiz/:id" component={QuizTaking} />
         <Route path="/messages" component={Messages} />
         <Route path="/analytics" component={Analytics} />
         <Route path="/earnings" component={Earnings} />
