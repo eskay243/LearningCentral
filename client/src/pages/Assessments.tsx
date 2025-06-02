@@ -333,10 +333,10 @@ const Assessments = () => {
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>
-                  {createType ? `Create ${createType === 'quiz' ? 'Quiz' : 'Assignment'}` : 'Create New Assessment'}
+                  {editingAssignment ? 'Edit Assignment' : createType ? `Create ${createType === 'quiz' ? 'Quiz' : 'Assignment'}` : 'Create New Assessment'}
                 </DialogTitle>
                 <DialogDescription>
-                  {createType ? 'Fill in the details below' : 'Choose the type of assessment you want to create.'}
+                  {editingAssignment ? 'Update the assignment details below' : createType ? 'Fill in the details below' : 'Choose the type of assessment you want to create.'}
                 </DialogDescription>
               </DialogHeader>
 
@@ -487,7 +487,10 @@ const Assessments = () => {
                       className="flex-1 bg-green-600 hover:bg-green-700"
                       disabled={createAssignmentMutation.isPending}
                     >
-                      {createAssignmentMutation.isPending ? "Creating..." : "Create Assignment"}
+                      {editingAssignment 
+                        ? (updateAssignmentMutation.isPending ? "Updating..." : "Update Assignment")
+                        : (createAssignmentMutation.isPending ? "Creating..." : "Create Assignment")
+                      }
                     </Button>
                   </div>
                 </div>
