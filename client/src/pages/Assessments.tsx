@@ -169,30 +169,56 @@ const Assessments = () => {
       });
       return;
     }
-    createAssignmentMutation.mutate(assignmentForm);
+    
+    const assignmentData = {
+      ...assignmentForm,
+      dueDate: assignmentForm.dueDate ? new Date(assignmentForm.dueDate) : null,
+    };
+    
+    createAssignmentMutation.mutate(assignmentData);
   };
 
+  // Delete quiz mutation
+  const deleteQuizMutation = useMutation({
+    mutationFn: async (quizId: number) => {
+      const response = await apiRequest("DELETE", `/api/quizzes/${quizId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/quizzes`] });
+      toast({
+        title: "Quiz Deleted",
+        description: "The quiz has been successfully deleted.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete quiz. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEditQuiz = (quizId: number) => {
+    // For now, show a message - this would navigate to an edit page
     toast({
       title: "Edit Quiz",
-      description: `Opening editor for quiz ID ${quizId}...`,
+      description: "Quiz editing feature will be available soon. This would open the quiz editor.",
     });
   };
 
   const handleViewResults = (quizId: number) => {
+    // For now, show a message - this would navigate to results page
     toast({
       title: "Quiz Results",
-      description: `Viewing results for quiz ID ${quizId}...`,
+      description: "Results viewing feature will be available soon. This would show detailed analytics.",
     });
   };
 
   const handleDeleteQuiz = (quizId: number) => {
     if (confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
-      toast({
-        title: "Quiz Deleted",
-        description: "The quiz has been successfully deleted.",
-        variant: "destructive",
-      });
+      deleteQuizMutation.mutate(quizId);
     }
   };
 
