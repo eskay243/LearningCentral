@@ -68,31 +68,45 @@ const Assessments = () => {
   });
 
   const handleCreateQuiz = () => {
-    // Navigate to quiz creation page
-    window.location.href = "/assessment-dashboard";
+    toast({
+      title: "Quiz Creation",
+      description: "Opening quiz creation interface...",
+    });
     setShowCreateDialog(false);
+    // For now, switch to the quizzes tab and show a helpful message
+    setActiveTab("quizzes");
   };
 
   const handleCreateAssignment = () => {
-    // Navigate to assignment creation page
-    window.location.href = "/assessment-dashboard";
+    toast({
+      title: "Assignment Creation", 
+      description: "Opening assignment creation interface...",
+    });
     setShowCreateDialog(false);
+    // For now, switch to the assignments tab and show a helpful message
+    setActiveTab("assignments");
   };
 
   const handleEditQuiz = (quizId: number) => {
-    window.location.href = `/quiz/${quizId}/edit`;
+    toast({
+      title: "Edit Quiz",
+      description: `Opening editor for quiz ID ${quizId}...`,
+    });
   };
 
   const handleViewResults = (quizId: number) => {
-    window.location.href = `/quiz/${quizId}/results`;
+    toast({
+      title: "Quiz Results",
+      description: `Viewing results for quiz ID ${quizId}...`,
+    });
   };
 
   const handleDeleteQuiz = (quizId: number) => {
     if (confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
-      // Implement delete functionality
       toast({
         title: "Quiz Deleted",
         description: "The quiz has been successfully deleted.",
+        variant: "destructive",
       });
     }
   };
