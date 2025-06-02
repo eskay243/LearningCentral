@@ -199,6 +199,12 @@ export function registerAssessmentRoutes(app: Express) {
   app.post('/api/assignments', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const assignmentData = req.body;
+      
+      // Convert dueDate string to Date object if provided
+      if (assignmentData.dueDate && typeof assignmentData.dueDate === 'string') {
+        assignmentData.dueDate = new Date(assignmentData.dueDate);
+      }
+      
       const assignment = await storage.createAssignment(assignmentData);
       res.status(201).json(assignment);
     } catch (error) {
