@@ -574,9 +574,9 @@ const CreateCourse = () => {
                   {isSubmitting ? (
                     <>
                       <span className="animate-spin mr-2">⟳</span> 
-                      Creating...
+                      {isEditMode ? "Updating..." : "Creating..."}
                     </>
-                  ) : "Create Course"}
+                  ) : (isEditMode ? "Update Course" : "Create Course")}
                 </Button>
               </div>
             </form>
