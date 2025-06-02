@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 const Assessments = () => {
   const { user, isMentor, isAdmin, isLoading: authLoading } = useAuth();
@@ -24,6 +25,7 @@ const Assessments = () => {
   const [filterCourse, setFilterCourse] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createType, setCreateType] = useState("");
+  const [editingAssignment, setEditingAssignment] = useState<number | null>(null);
   const [quizForm, setQuizForm] = useState({
     title: "",
     description: "",
@@ -176,7 +178,11 @@ const Assessments = () => {
       dueDate: assignmentForm.dueDate ? new Date(assignmentForm.dueDate) : null,
     };
     
-    createAssignmentMutation.mutate(assignmentData);
+    if (editingAssignment) {
+      updateAssignmentMutation.mutate({ id: editingAssignment, data: assignmentData });
+    } else {
+      createAssignmentMutation.mutate(assignmentData);
+    }
   };
 
   // Delete quiz mutation
@@ -223,6 +229,38 @@ const Assessments = () => {
     }
   };
 
+  // Update assignment mutation
+  const updateAssignmentMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest("PUT", `/api/assignments/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/assignments`] });
+      toast({
+        title: "Assignment Updated",
+        description: "The assignment has been successfully updated.",
+      });
+      setShowCreateDialog(false);
+      setEditingAssignment(null);
+      setAssignmentForm({
+        title: "",
+        description: "",
+        instructions: "",
+        dueDate: "",
+        totalPoints: 100,
+        lessonId: 1
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to update assignment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete assignment mutation
   const deleteAssignmentMutation = useMutation({
     mutationFn: async (assignmentId: number) => {
@@ -246,17 +284,23 @@ const Assessments = () => {
   });
 
   const handleEditAssignment = (assignmentId: number) => {
-    toast({
-      title: "Edit Assignment",
-      description: "Assignment editing feature will be available soon. This would open the assignment editor.",
-    });
+    const assignment = filteredAssignments.find((a: any) => a.id === assignmentId);
+    if (assignment) {
+      setAssignmentForm({
+        title: assignment.title,
+        description: assignment.description || "",
+        instructions: assignment.instructions || "",
+        dueDate: assignment.dueDate ? new Date(assignment.dueDate).toISOString().split('T')[0] : "",
+        totalPoints: assignment.totalPoints,
+        lessonId: assignment.lessonId
+      });
+      setEditingAssignment(assignmentId);
+      setShowCreateDialog(true);
+    }
   };
 
   const handleViewAssignmentSubmissions = (assignmentId: number) => {
-    toast({
-      title: "Assignment Submissions",
-      description: "Submissions viewing feature will be available soon. This would show student submissions.",
-    });
+    window.location.href = `/assignment-submissions/${assignmentId}`;
   };
 
   const handleDeleteAssignment = (assignmentId: number) => {
