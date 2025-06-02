@@ -289,7 +289,7 @@ export default function CourseDetail() {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setLocation(`/create-course?edit=${id}`)}
+                      onClick={() => setLocation(`/courses/${id}/edit`)}
                     >
                       <EditIcon className="h-4 w-4 mr-2" />
                       Edit Course
