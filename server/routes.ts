@@ -14,6 +14,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { registerNotificationRoutes } from "./notificationRoutes";
+import { registerAssessmentRoutes } from "./assessmentRoutes";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -75,7 +76,6 @@ import { z } from "zod";
 import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
-import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 import { registerCodeCompanionRoutes } from "./codeCompanionRoutes";
@@ -3104,6 +3104,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register notification routes
   registerNotificationRoutes(app);
+  
+  // Register assessment routes
+  registerAssessmentRoutes(app);
 
   return httpServer;
 }
