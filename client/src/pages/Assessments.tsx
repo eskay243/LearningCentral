@@ -577,18 +577,20 @@ const Assessments = () => {
                           {quiz.description || "No description provided"}
                         </CardDescription>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditQuiz(quiz.id)}>Edit Quiz</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleViewResults(quiz.id)}>View Results</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteQuiz(quiz.id)}>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {(isMentor || isAdmin) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditQuiz(quiz.id)}>Edit Quiz</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewResults(quiz.id)}>View Results</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteQuiz(quiz.id)}>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -613,6 +615,20 @@ const Assessments = () => {
                         {quiz.questions?.length || 0} questions
                       </span>
                     </div>
+                    
+                    {/* Student action buttons */}
+                    {!isMentor && !isAdmin && quiz.isPublished && (
+                      <div className="mt-4 pt-3 border-t">
+                        <Button 
+                          onClick={() => window.location.href = `/quiz/${quiz.id}`}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          size="sm"
+                        >
+                          <Play className="w-4 h-4 mr-2" />
+                          Take Quiz
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
