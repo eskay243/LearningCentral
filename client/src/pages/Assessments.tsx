@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Clock, Users, Plus, Search, Filter, MoreVertical } from "lucide-react";
+import { CheckCircle, Clock, Users, Plus, Search, Filter, MoreVertical, Play, Upload } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -671,18 +671,20 @@ const Assessments = () => {
                           {assignment.description || "No description provided"}
                         </CardDescription>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditAssignment(assignment.id)}>Edit Assignment</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleViewAssignmentSubmissions(assignment.id)}>View Submissions</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteAssignment(assignment.id)}>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {(isMentor || isAdmin) && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditAssignment(assignment.id)}>Edit Assignment</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewAssignmentSubmissions(assignment.id)}>View Submissions</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteAssignment(assignment.id)}>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -707,6 +709,20 @@ const Assessments = () => {
                         {assignment.maxPoints || 0} points
                       </span>
                     </div>
+                    
+                    {/* Student action buttons */}
+                    {!isMentor && !isAdmin && assignment.isPublished && (
+                      <div className="mt-4 pt-3 border-t">
+                        <Button 
+                          onClick={() => window.location.href = `/assignment/${assignment.id}/submissions`}
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          size="sm"
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Submit Assignment
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
