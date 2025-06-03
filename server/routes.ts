@@ -2626,6 +2626,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
 
+      // For demo student, provide sample assignment data
+      if (userId === "demo-oyinkonsola-789") {
+        const sampleAssignments = [
+          {
+            id: 1,
+            title: "Build a Todo App",
+            courseTitle: "Full Stack Web Development",
+            dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'pending' as const,
+            score: undefined
+          },
+          {
+            id: 2,
+            title: "Create REST API",
+            courseTitle: "Full Stack Web Development",
+            dueDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'pending' as const,
+            score: undefined
+          },
+          {
+            id: 3,
+            title: "Java Calculator Project",
+            courseTitle: "Java Programming Fundamentals",
+            dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'graded' as const,
+            score: 85
+          }
+        ];
+        return res.json(sampleAssignments);
+      }
+
       const enrollments = await storage.getStudentEnrollments(userId);
       const allAssignments = [];
       
@@ -2665,6 +2696,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
 
+      // For demo student, provide sample quiz data
+      if (userId === "demo-oyinkonsola-789") {
+        const sampleQuizzes = [
+          {
+            id: 1,
+            title: "JavaScript Fundamentals",
+            courseTitle: "Full Stack Web Development",
+            completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+            score: 92,
+            passed: true
+          },
+          {
+            id: 2,
+            title: "React Components Quiz",
+            courseTitle: "Full Stack Web Development",
+            completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            score: 78,
+            passed: true
+          },
+          {
+            id: 3,
+            title: "Java Basics Assessment",
+            courseTitle: "Java Programming Fundamentals",
+            completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+            score: 85,
+            passed: true
+          }
+        ];
+        return res.json(sampleQuizzes);
+      }
+
       const enrollments = await storage.getStudentEnrollments(userId);
       const allQuizzes = [];
       
@@ -2701,6 +2763,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.session?.userId;
       if (!userId) {
         return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // For demo student, provide sample recent activity data
+      if (userId === "demo-oyinkonsola-789") {
+        const sampleActivities = [
+          {
+            id: 1,
+            type: 'lesson_completed',
+            title: "React Hooks Introduction",
+            courseTitle: "Full Stack Web Development",
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 2,
+            type: 'quiz_taken',
+            title: "JavaScript Fundamentals",
+            courseTitle: "Full Stack Web Development",
+            timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 3,
+            type: 'assignment_submitted',
+            title: "Java Calculator Project",
+            courseTitle: "Java Programming Fundamentals",
+            timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 4,
+            type: 'lesson_completed',
+            title: "Java Variables and Data Types",
+            courseTitle: "Java Programming Fundamentals",
+            timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 5,
+            type: 'quiz_taken',
+            title: "React Components Quiz",
+            courseTitle: "Full Stack Web Development",
+            timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ];
+        return res.json(sampleActivities);
       }
 
       const enrollments = await storage.getStudentEnrollments(userId);
