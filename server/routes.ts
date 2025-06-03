@@ -122,12 +122,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
+      console.log('Login attempt:', { email, password: password ? 'provided' : 'missing' });
       
       // For demo users, check against demo password
       if (password === 'Password1234') {
+        console.log('Password matches demo password, looking up user...');
         const user = await storage.getUserByEmail(email);
+        console.log('User lookup result:', user ? 'found' : 'not found');
+        
         if (user) {
           (req.session as any).userId = user.id;
+          console.log('Login successful for user:', user.id);
           res.json({
             id: user.id,
             email: user.email,
@@ -139,8 +144,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      console.log('Login failed: invalid credentials');
       res.status(401).json({ message: "Invalid email or password" });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(500).json({ message: "Login failed" });
     }
   });

@@ -50,23 +50,6 @@ import MentorDashboard from "@/pages/MentorDashboard";
 import CourseDiscussion from "@/pages/CourseDiscussion";
 
 function Router() {
-  const { user, isLoading, isAuthenticated } = useAuth();
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-      </div>
-    );
-  }
-
-  // Show auth page if not authenticated
-  if (!isAuthenticated) {
-    return <AuthPage />;
-  }
-
-  // Show authenticated routes
   return (
     <Layout>
       <Switch>
@@ -98,6 +81,7 @@ function Router() {
         <Route path="/profile" component={Profile} />
         <Route path="/users" component={UserManagement} />
         <Route path="/login" component={Login} />
+        <Route path="/auth" component={AuthPage} />
         <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/admin/oauth-settings" component={AdminOAuthSettings} />
         <Route path="/payment-callback" component={PaymentCallback} />
