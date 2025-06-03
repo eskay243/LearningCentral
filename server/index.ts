@@ -2,8 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
-import { setupSimpleAuth } from "./simpleAuth";
-import { seedDemoUsers } from "./seedUsers";
 
 const app = express();
 app.use(express.json());
@@ -43,13 +41,7 @@ app.use((req, res, next) => {
   let server;
   
   try {
-    // Setup traditional authentication system
-    setupSimpleAuth(app);
-    
     server = await registerRoutes(app);
-    
-    // Seed demo users after database connection is established
-    await seedDemoUsers();
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;

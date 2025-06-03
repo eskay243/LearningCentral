@@ -13,7 +13,7 @@ interface HeaderProps {
 }
 
 const Header = ({ toggleSidebar }: HeaderProps) => {
-  const { user, isAuthenticated, logoutMutation } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -32,11 +32,6 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
 
   const handleProfileClick = () => {
     setShowProfileMenu(!showProfileMenu);
-  };
-
-  const handleLogout = () => {
-    logoutMutation.mutate();
-    setShowProfileMenu(false);
   };
 
   return (

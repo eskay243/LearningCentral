@@ -4,8 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelpBubbleProvider } from "./contexts/HelpBubbleContext";
-import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
@@ -29,7 +27,7 @@ import Earnings from "@/pages/Earnings";
 import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import UserManagement from "@/pages/UserManagement";
-import AuthPage from "@/pages/AuthPage";
+import Login from "@/pages/Login";
 import AdminSetup from "@/pages/AdminSetup";
 import AdminOAuthSettings from "@/pages/AdminOAuthSettings";
 import PaymentCallback from "@/pages/PaymentCallback";
@@ -50,28 +48,6 @@ import MentorDashboard from "@/pages/MentorDashboard";
 import CourseDiscussion from "@/pages/CourseDiscussion";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-cream-50 dark:from-gray-900 dark:to-gray-800">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/auth" component={AuthPage} />
-        <Route path="/admin-setup" component={AdminSetup} />
-        <Route>
-          <AuthPage />
-        </Route>
-      </Switch>
-    );
-  }
-
   return (
     <Layout>
       <Switch>

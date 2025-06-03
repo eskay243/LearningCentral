@@ -1,308 +1,278 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, BookOpen, Users, Award, Code2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { Loader2, GraduationCap } from "lucide-react";
+
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
-  
-  const [loginForm, setLoginForm] = useState({
-    email: "",
-    password: ""
-  });
-  
-  const [registerForm, setRegisterForm] = useState({
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: ""
+  const { toast } = useToast();
+  const [loginForm, setLoginForm] = useState<LoginData>({ email: "", password: "" });
+  const [registerForm, setRegisterForm] = useState<RegisterData>({ 
+    email: "", 
+    password: "", 
+    firstName: "", 
+    lastName: "" 
   });
 
-  // Redirect if user is already logged in
-  if (user && !isLoading) {
-    setLocation("/");
-    return null;
-  }
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginData) => {
+      const response = await apiRequest("POST", "/api/login", credentials);
+      return response.json();
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${user.firstName}!`,
+      });
+      setLocation("/");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (userData: RegisterData) => {
+      const response = await apiRequest("POST", "/api/register", userData);
+      return response.json();
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Registration Successful",
+        description: `Welcome to Codelab Educare, ${user.firstName}!`,
+      });
+      setLocation("/");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Registration failed. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!loginForm.email || !loginForm.password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
     loginMutation.mutate(loginForm);
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!registerForm.email || !registerForm.password || !registerForm.firstName || !registerForm.lastName) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
     registerMutation.mutate(registerForm);
   };
 
-  const demoCredentials = [
+  const demoUsers = [
     { email: "israel.alabi@codelabeducare.com", role: "Mentor", name: "Israel Alabi" },
     { email: "abdul.mohammed@codelabeducare.com", role: "Mentor", name: "Abdul Mohammed" },
     { email: "mercy.nathaniel@codelabeducare.com", role: "Mentor", name: "Mercy Nathaniel" },
     { email: "oyinkonsola.ojobo@codelabeducare.com", role: "Student", name: "Oyinkonsola Ojobo" },
     { email: "queen.joseph@codelabeducare.com", role: "Student", name: "Queen Joseph" },
-    { email: "ummi.lawal@codelabeducare.com", role: "Admin", name: "Ummi Lawal" }
+    { email: "ummi.lawal@codelabeducare.com", role: "Admin", name: "Ummi Lawal" },
   ];
 
-  const quickLogin = (email: string) => {
+  const fillDemoUser = (email: string) => {
     setLoginForm({ email, password: "Password1234" });
-    loginMutation.mutate({ email, password: "Password1234" });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-cream-50 dark:from-gray-900 dark:to-gray-800">
-        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-purple-50 to-cream-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Left Side - Authentication Forms */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Welcome to Codelab Educare
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Your journey to coding excellence starts here
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
+        {/* Hero Section */}
+        <div className="space-y-6">
+          <div className="flex items-center space-x-2">
+            <GraduationCap className="h-8 w-8 text-purple-600" />
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Codelab Educare</h1>
           </div>
-
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sign In</CardTitle>
-                  <CardDescription>
-                    Enter your credentials to access your account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="your.email@example.com"
-                        value={loginForm.email}
-                        onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="Enter your password"
-                        value={loginForm.password}
-                        onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-purple-600 hover:bg-purple-700"
-                      disabled={loginMutation.isPending}
-                    >
-                      {loginMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Signing in...
-                        </>
-                      ) : (
-                        "Sign In"
-                      )}
-                    </Button>
-                  </form>
-
-                  {/* Demo Users Quick Login */}
-                  <div className="mt-6 pt-4 border-t">
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      Demo accounts for testing:
-                    </p>
-                    <div className="space-y-2">
-                      {demoCredentials.map((demo) => (
-                        <Button
-                          key={demo.email}
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start text-left"
-                          onClick={() => quickLogin(demo.email)}
-                          disabled={loginMutation.isPending}
-                        >
-                          <span className="font-medium">{demo.name}</span>
-                          <span className="ml-auto text-xs text-gray-500">
-                            {demo.role}
-                          </span>
-                        </Button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      All demo accounts use password: "Password1234"
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="register">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
-                  <CardDescription>
-                    Join our learning community today
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="first-name">First Name</Label>
-                        <Input
-                          id="first-name"
-                          placeholder="John"
-                          value={registerForm.firstName}
-                          onChange={(e) => setRegisterForm(prev => ({ ...prev, firstName: e.target.value }))}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="last-name">Last Name</Label>
-                        <Input
-                          id="last-name"
-                          placeholder="Doe"
-                          value={registerForm.lastName}
-                          onChange={(e) => setRegisterForm(prev => ({ ...prev, lastName: e.target.value }))}
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="register-email">Email</Label>
-                      <Input
-                        id="register-email"
-                        type="email"
-                        placeholder="your.email@example.com"
-                        value={registerForm.email}
-                        onChange={(e) => setRegisterForm(prev => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="register-password">Password</Label>
-                      <Input
-                        id="register-password"
-                        type="password"
-                        placeholder="Create a strong password"
-                        value={registerForm.password}
-                        onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-purple-600 hover:bg-purple-700"
-                      disabled={registerMutation.isPending}
-                    >
-                      {registerMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creating account...
-                        </>
-                      ) : (
-                        "Create Account"
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-
-      {/* Right Side - Hero Section */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-gradient-to-br from-purple-600 to-purple-800 text-white p-12">
-        <div className="max-w-lg text-center space-y-8">
+          
           <div className="space-y-4">
-            <h2 className="text-4xl font-bold">
-              Master Coding Skills
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-white">
+              Learn to Code with Expert Mentors
             </h2>
-            <p className="text-xl text-purple-100">
-              Join thousands of students learning to code with interactive lessons, 
-              real-world projects, and expert mentorship.
+            <p className="text-lg text-gray-600 dark:text-gray-300">
+              Join our comprehensive learning management system designed for technical education. 
+              Get hands-on experience with interactive coding exercises, personalized mentorship, 
+              and structured learning paths.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <BookOpen className="h-6 w-6" />
-              </div>
-              <h3 className="font-semibold">Interactive Courses</h3>
-              <p className="text-sm text-purple-100">
-                Learn with hands-on coding exercises
-              </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <div className="text-2xl font-bold text-purple-600">500+</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Active Students</div>
             </div>
-
-            <div className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6" />
-              </div>
-              <h3 className="font-semibold">Expert Mentors</h3>
-              <p className="text-sm text-purple-100">
-                Get guidance from industry professionals
-              </p>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <div className="text-2xl font-bold text-purple-600">50+</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Expert Mentors</div>
             </div>
-
-            <div className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <Award className="h-6 w-6" />
-              </div>
-              <h3 className="font-semibold">Certificates</h3>
-              <p className="text-sm text-purple-100">
-                Earn verified certificates upon completion
-              </p>
-            </div>
-
-            <div className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <Code2 className="h-6 w-6" />
-              </div>
-              <h3 className="font-semibold">Real Projects</h3>
-              <p className="text-sm text-purple-100">
-                Build portfolio-worthy applications
-              </p>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+              <div className="text-2xl font-bold text-purple-600">95%</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Success Rate</div>
             </div>
           </div>
 
-          <div className="pt-4">
-            <p className="text-purple-100">
-              Start your coding journey today and transform your career
-            </p>
+          {/* Demo Users */}
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Demo Users (Password: Password1234)</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              {demoUsers.map((user) => (
+                <button
+                  key={user.email}
+                  onClick={() => fillDemoUser(user.email)}
+                  className="flex justify-between items-center p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded border text-left"
+                >
+                  <span className="font-medium">{user.name}</span>
+                  <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">
+                    {user.role}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Auth Forms */}
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Welcome to Codelab Educare</CardTitle>
+            <CardDescription>
+              Sign in to your account or create a new one to get started
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Register</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login" className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={loginForm.email}
+                      onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={loginForm.password}
+                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                    {loginMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Sign In
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="register" className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        placeholder="First name"
+                        value={registerForm.firstName}
+                        onChange={(e) => setRegisterForm({ ...registerForm, firstName: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        placeholder="Last name"
+                        value={registerForm.lastName}
+                        onChange={(e) => setRegisterForm({ ...registerForm, lastName: e.target.value })}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="registerEmail">Email</Label>
+                    <Input
+                      id="registerEmail"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={registerForm.email}
+                      onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="registerPassword">Password</Label>
+                    <Input
+                      id="registerPassword"
+                      type="password"
+                      placeholder="Create a password"
+                      value={registerForm.password}
+                      onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                    {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Create Account
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
