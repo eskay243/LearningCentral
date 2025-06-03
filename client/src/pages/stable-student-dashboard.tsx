@@ -51,6 +51,7 @@ interface RecentActivity {
 
 export default function StableStudentDashboard() {
   const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
 
   // Fetch real data from backend APIs
   const { data: enrolledCourses = [], isLoading: coursesLoading } = useQuery<Course[]>({
@@ -309,7 +310,7 @@ export default function StableStudentDashboard() {
                             size="sm" 
                             variant="outline" 
                             className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-                            onClick={() => window.location.href = `/courses/${course.id}`}
+                            onClick={() => setLocation(`/courses/${course.id}`)}
                           >
                             View Details
                           </Button>
@@ -321,7 +322,7 @@ export default function StableStudentDashboard() {
                     <div className="text-center pt-4">
                       <Button 
                         variant="outline" 
-                        onClick={() => window.location.href = '/courses'}
+                        onClick={() => setLocation('/courses')}
                         className="w-full"
                       >
                         View All {availableCourses.length} Available Courses
