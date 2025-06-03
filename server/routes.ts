@@ -15,6 +15,7 @@ import path from "path";
 import fs from "fs";
 import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
+import { requireAuth, requireRole } from "./simpleAuth";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
