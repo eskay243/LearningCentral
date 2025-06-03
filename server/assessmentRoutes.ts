@@ -101,14 +101,61 @@ export function registerAssessmentRoutes(app: Express) {
     }
   });
   
-  app.post('/api/quiz-attempts', isAuthenticated, async (req: any, res) => {
+  // Start a new quiz attempt
+  app.post('/api/quiz-attempts/start', isAuthenticated, async (req: any, res) => {
     try {
-      const attemptData = {
-        ...req.body,
-        userId: req.user.claims.sub
-      };
-      const attempt = await storage.submitQuizAttempt(attemptData);
+      const { quizId } = req.body;
+      const userId = req.user.claims.sub;
+      
+      // Check if user has already started an attempt for this quiz
+      const existingAttempt = await storage.getActiveQuizAttempt(userId, quizId);
+      if (existingAttempt) {
+        return res.json(existingAttempt);
+      }
+      
+      // Create new attempt
+      const attempt = await storage.startQuizAttempt(userId, quizId);
       res.status(201).json(attempt);
+    } catch (error) {
+      console.error("Error starting quiz attempt:", error);
+      res.status(500).json({ message: "Failed to start quiz attempt" });
+    }
+  });
+
+  // Save individual answer during quiz attempt
+  app.post('/api/quiz-attempts/save-answer', isAuthenticated, async (req: any, res) => {
+    try {
+      const { attemptId, questionId, answer } = req.body;
+      const userId = req.user.claims.sub;
+      
+      // Verify the attempt belongs to the user
+      const attempt = await storage.getQuizAttemptById(attemptId);
+      if (!attempt || attempt.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized access to quiz attempt" });
+      }
+      
+      await storage.saveQuizAnswer(attemptId, questionId, answer);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving quiz answer:", error);
+      res.status(500).json({ message: "Failed to save answer" });
+    }
+  });
+
+  // Submit complete quiz attempt
+  app.post('/api/quiz-attempts/submit', isAuthenticated, async (req: any, res) => {
+    try {
+      const { attemptId, answers } = req.body;
+      const userId = req.user.claims.sub;
+      
+      // Verify the attempt belongs to the user
+      const attempt = await storage.getQuizAttemptById(attemptId);
+      if (!attempt || attempt.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized access to quiz attempt" });
+      }
+      
+      const result = await storage.submitQuizAttempt(attemptId, answers);
+      res.json(result);
     } catch (error) {
       console.error("Error submitting quiz attempt:", error);
       res.status(500).json({ message: "Failed to submit quiz attempt" });

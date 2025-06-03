@@ -1825,6 +1825,187 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // New quiz attempt methods for quiz-taking system
+  async startQuizAttempt(userId: string, quizId: number): Promise<any> {
+    try {
+      // Get quiz info to determine max score
+      const quiz = await this.getQuiz(quizId);
+      const questions = await this.getQuizQuestions(quizId);
+      const maxScore = questions.reduce((sum, q) => sum + (q.points || 1), 0);
+
+      const [attempt] = await db
+        .insert(quizAttempts)
+        .values({
+          quizId,
+          userId,
+          score: 0,
+          maxScore,
+          percentage: 0,
+          answers: [],
+          startedAt: new Date(),
+          status: 'in_progress'
+        })
+        .returning();
+      
+      return attempt;
+    } catch (error) {
+      console.error("Error starting quiz attempt:", error);
+      throw new Error("Failed to start quiz attempt");
+    }
+  }
+
+  async getActiveQuizAttempt(userId: string, quizId: number): Promise<any> {
+    try {
+      const [attempt] = await db
+        .select()
+        .from(quizAttempts)
+        .where(
+          and(
+            eq(quizAttempts.userId, userId),
+            eq(quizAttempts.quizId, quizId),
+            eq(quizAttempts.status, 'in_progress')
+          )
+        );
+      
+      return attempt;
+    } catch (error) {
+      console.error("Error getting active quiz attempt:", error);
+      return null;
+    }
+  }
+
+  async getQuizAttemptById(attemptId: number): Promise<any> {
+    try {
+      const [attempt] = await db
+        .select()
+        .from(quizAttempts)
+        .where(eq(quizAttempts.id, attemptId));
+      
+      return attempt;
+    } catch (error) {
+      console.error("Error getting quiz attempt by ID:", error);
+      return null;
+    }
+  }
+
+  async saveQuizAnswer(attemptId: number, questionId: number, answer: string): Promise<void> {
+    try {
+      // Get current attempt
+      const attempt = await this.getQuizAttemptById(attemptId);
+      if (!attempt) {
+        throw new Error("Quiz attempt not found");
+      }
+
+      // Parse existing answers or initialize
+      let answers = Array.isArray(attempt.answers) ? attempt.answers : [];
+      
+      // Find existing answer for this question or create new one
+      const existingIndex = answers.findIndex((a: any) => a.questionId === questionId);
+      const answerData = { questionId, answer, timestamp: new Date().toISOString() };
+      
+      if (existingIndex >= 0) {
+        answers[existingIndex] = answerData;
+      } else {
+        answers.push(answerData);
+      }
+
+      // Update attempt with new answers
+      await db
+        .update(quizAttempts)
+        .set({ answers })
+        .where(eq(quizAttempts.id, attemptId));
+        
+    } catch (error) {
+      console.error("Error saving quiz answer:", error);
+      throw new Error("Failed to save answer");
+    }
+  }
+
+  async submitQuizAttempt(attemptId: number, answers: Record<number, string>): Promise<any> {
+    try {
+      // Get attempt and quiz data
+      const attempt = await this.getQuizAttemptById(attemptId);
+      if (!attempt) {
+        throw new Error("Quiz attempt not found");
+      }
+
+      const questions = await this.getQuizQuestions(attempt.quizId);
+      
+      // Calculate score based on automatic grading
+      let totalScore = 0;
+      const gradedAnswers = [];
+
+      for (const question of questions) {
+        const userAnswer = answers[question.id];
+        const points = question.points || 1;
+        let earnedPoints = 0;
+        let isCorrect = false;
+
+        if (userAnswer && question.correctAnswer) {
+          // Automatic grading for objective questions
+          switch (question.questionType) {
+            case 'multiple_choice':
+            case 'true_false':
+              isCorrect = userAnswer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim();
+              earnedPoints = isCorrect ? points : 0;
+              break;
+            
+            case 'short_answer':
+              // Simple string comparison for short answers
+              const normalizedUser = userAnswer.toLowerCase().trim();
+              const normalizedCorrect = question.correctAnswer.toLowerCase().trim();
+              isCorrect = normalizedUser === normalizedCorrect;
+              earnedPoints = isCorrect ? points : 0;
+              break;
+              
+            default:
+              // Essay and other subjective questions need manual grading
+              earnedPoints = 0;
+              isCorrect = false;
+          }
+        }
+
+        totalScore += earnedPoints;
+        gradedAnswers.push({
+          questionId: question.id,
+          answer: userAnswer || '',
+          isCorrect,
+          pointsEarned: earnedPoints,
+          maxPoints: points
+        });
+      }
+
+      const percentage = attempt.maxScore > 0 ? (totalScore / attempt.maxScore) * 100 : 0;
+      const completedAt = new Date();
+      
+      // Calculate time spent
+      const startTime = new Date(attempt.startedAt);
+      const timeSpent = Math.floor((completedAt.getTime() - startTime.getTime()) / 1000);
+
+      // Update attempt with final results
+      const [updatedAttempt] = await db
+        .update(quizAttempts)
+        .set({
+          score: totalScore,
+          percentage: Math.round(percentage * 100) / 100,
+          completedAt,
+          timeSpent,
+          status: 'completed',
+          answers: gradedAnswers
+        })
+        .where(eq(quizAttempts.id, attemptId))
+        .returning();
+
+      return {
+        ...updatedAttempt,
+        gradedAnswers
+      };
+    } catch (error) {
+      console.error("Error submitting quiz attempt:", error);
+      throw new Error("Failed to submit quiz attempt");
+    }
+  }
+
   // Assignment operations
   async createAssignment(assignmentData: Omit<Assignment, "id">): Promise<Assignment> {
     try {

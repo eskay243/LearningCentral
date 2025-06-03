@@ -21,6 +21,8 @@ import Assessments from "@/pages/Assessments";
 import AssessmentDashboard from "@/pages/AssessmentDashboard";
 import QuizTaking from "@/pages/QuizTaking";
 import AssignmentSubmissions from "@/pages/AssignmentSubmissions";
+import AssignmentSubmission from "@/pages/AssignmentSubmission";
+import QuizResults from "@/pages/QuizResults";
 import Messages from "@/pages/Messages";
 import Analytics from "@/pages/Analytics";
 import Earnings from "@/pages/Earnings";
