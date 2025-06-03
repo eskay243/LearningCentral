@@ -2509,6 +2509,233 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Student Dashboard API Endpoints
+  app.get("/api/student/enrolled-courses", async (req: any, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const enrollments = await storage.getStudentEnrollments(userId);
+      
+      const coursesWithProgress = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const course = await storage.getCourse(enrollment.courseId);
+          if (!course) return null;
+          
+          // Calculate progress based on completed lessons
+          const modules = await storage.getModulesByCourse(course.id);
+          let totalLessons = 0;
+          let completedLessons = 0;
+          
+          for (const module of modules) {
+            const lessons = await storage.getLessonsByModule(module.id);
+            totalLessons += lessons.length;
+            
+            for (const lesson of lessons) {
+              const progress = await storage.getLessonProgress(userId, lesson.id);
+              if (progress && progress.completed) {
+                completedLessons++;
+              }
+            }
+          }
+          
+          const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+          
+          // Find next lesson
+          let nextLesson = null;
+          for (const module of modules) {
+            const lessons = await storage.getLessonsByModule(module.id);
+            for (const lesson of lessons) {
+              const progress = await storage.getLessonProgress(userId, lesson.id);
+              if (!progress || !progress.completed) {
+                nextLesson = {
+                  id: lesson.id,
+                  title: lesson.title,
+                  moduleTitle: module.title
+                };
+                break;
+              }
+            }
+            if (nextLesson) break;
+          }
+          
+          return {
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            coverImage: course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80',
+            progress: progressPercentage,
+            instructor: 'Instructor Name',
+            totalLessons,
+            completedLessons,
+            nextLesson
+          };
+        })
+      );
+      
+      res.json(coursesWithProgress.filter(course => course !== null));
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error);
+      res.status(500).json({ message: "Failed to fetch enrolled courses" });
+    }
+  });
+
+  app.get("/api/student/assignments", async (req: any, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const enrollments = await storage.getStudentEnrollments(userId);
+      const allAssignments = [];
+      
+      for (const enrollment of enrollments) {
+        const course = await storage.getCourse(enrollment.courseId);
+        if (!course) continue;
+        
+        const assignments = await storage.getAssignmentsByCourse(enrollment.courseId);
+        
+        for (const assignment of assignments) {
+          const submission = await storage.getAssignmentSubmission(assignment.id, userId);
+          
+          allAssignments.push({
+            id: assignment.id,
+            title: assignment.title,
+            courseTitle: course.title,
+            dueDate: assignment.dueDate,
+            status: submission ? 
+              (submission.grade !== null ? 'graded' : 'submitted') : 
+              'pending',
+            score: submission?.grade || undefined
+          });
+        }
+      }
+      
+      res.json(allAssignments);
+    } catch (error) {
+      console.error("Error fetching student assignments:", error);
+      res.status(500).json({ message: "Failed to fetch assignments" });
+    }
+  });
+
+  app.get("/api/student/quizzes", async (req: any, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const enrollments = await storage.getStudentEnrollments(userId);
+      const allQuizzes = [];
+      
+      for (const enrollment of enrollments) {
+        const course = await storage.getCourse(enrollment.courseId);
+        if (!course) continue;
+        
+        const quizzes = await storage.getQuizzesByCourse(enrollment.courseId);
+        
+        for (const quiz of quizzes) {
+          const attempts = await storage.getQuizAttempts(userId, quiz.id);
+          const latestAttempt = attempts.length > 0 ? attempts[attempts.length - 1] : null;
+          
+          allQuizzes.push({
+            id: quiz.id,
+            title: quiz.title,
+            courseTitle: course.title,
+            completedAt: latestAttempt?.completedAt || undefined,
+            score: latestAttempt?.score || undefined,
+            passed: latestAttempt?.isPassed || undefined
+          });
+        }
+      }
+      
+      res.json(allQuizzes);
+    } catch (error) {
+      console.error("Error fetching student quizzes:", error);
+      res.status(500).json({ message: "Failed to fetch quizzes" });
+    }
+  });
+
+  app.get("/api/student/recent-activity", async (req: any, res: Response) => {
+    try {
+      const userId = req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const enrollments = await storage.getStudentEnrollments(userId);
+      const activities = [];
+      
+      // Get recent lesson completions
+      for (const enrollment of enrollments) {
+        const course = await storage.getCourse(enrollment.courseId);
+        if (!course) continue;
+        
+        const modules = await storage.getModulesByCourse(course.id);
+        for (const module of modules) {
+          const lessons = await storage.getLessonsByModule(module.id);
+          for (const lesson of lessons) {
+            const progress = await storage.getLessonProgress(userId, lesson.id);
+            if (progress && progress.completed && progress.completedAt) {
+              activities.push({
+                id: `lesson-${lesson.id}`,
+                type: 'lesson_completed',
+                title: lesson.title,
+                courseTitle: course.title,
+                timestamp: progress.completedAt
+              });
+            }
+          }
+        }
+        
+        // Get recent quiz attempts
+        const quizzes = await storage.getQuizzesByCourse(course.id);
+        for (const quiz of quizzes) {
+          const attempts = await storage.getQuizAttempts(userId, quiz.id);
+          for (const attempt of attempts) {
+            if (attempt.completedAt) {
+              activities.push({
+                id: `quiz-${attempt.id}`,
+                type: 'quiz_taken',
+                title: quiz.title,
+                courseTitle: course.title,
+                timestamp: attempt.completedAt
+              });
+            }
+          }
+        }
+        
+        // Get recent assignment submissions
+        const assignments = await storage.getAssignmentsByCourse(course.id);
+        for (const assignment of assignments) {
+          const submission = await storage.getAssignmentSubmission(assignment.id, userId);
+          if (submission && submission.submittedAt) {
+            activities.push({
+              id: `assignment-${submission.id}`,
+              type: 'assignment_submitted',
+              title: assignment.title,
+              courseTitle: course.title,
+              timestamp: submission.submittedAt
+            });
+          }
+        }
+      }
+      
+      // Sort by timestamp (most recent first) and limit to 10
+      const sortedActivities = activities
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 10);
+      
+      res.json(sortedActivities);
+    } catch (error) {
+      console.error("Error fetching recent activity:", error);
+      res.status(500).json({ message: "Failed to fetch recent activity" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time messaging
