@@ -26,6 +26,7 @@ const Assessments = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createType, setCreateType] = useState("");
   const [editingAssignment, setEditingAssignment] = useState<number | null>(null);
+  const [editingQuiz, setEditingQuiz] = useState<number | null>(null);
   const [quizForm, setQuizForm] = useState({
     title: "",
     description: "",
@@ -118,6 +119,45 @@ const Assessments = () => {
     },
   });
 
+  // Update quiz mutation
+  const updateQuizMutation = useMutation({
+    mutationFn: async ({ quizId, quizData }: { quizId: number; quizData: any }) => {
+      const response = await apiRequest("PUT", `/api/quizzes/${quizId}`, quizData);
+      return response.json();
+    },
+    onSuccess: (updatedQuiz, { quizId }) => {
+      // Update the quiz in the cache immediately
+      const queryKey = isMentor ? [`/api/mentors/${user?.id}/quizzes`] : ["/api/quizzes"];
+      queryClient.setQueryData(queryKey, (oldData: any[]) => {
+        return oldData ? oldData.map((quiz: any) => 
+          quiz.id === quizId ? { ...quiz, ...updatedQuiz } : quiz
+        ) : [];
+      });
+      
+      setShowCreateDialog(false);
+      setEditingQuiz(null);
+      setQuizForm({
+        title: "",
+        description: "",
+        lessonId: "",
+        timeLimit: 30,
+        totalPoints: 100
+      });
+      
+      toast({
+        title: "Quiz Updated",
+        description: "The quiz has been successfully updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to update quiz. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createAssignmentMutation = useMutation({
     mutationFn: async (assignmentData: any) => {
       const response = await apiRequest("POST", "/api/assignments", assignmentData);
@@ -157,10 +197,19 @@ const Assessments = () => {
       });
       return;
     }
-    createQuizMutation.mutate({
+
+    const quizData = {
       ...quizForm,
       lessonId: parseInt(quizForm.lessonId) || 1, // Default to lesson 1 if not specified
-    });
+    };
+
+    if (editingQuiz) {
+      // Update existing quiz
+      updateQuizMutation.mutate({ quizId: editingQuiz, quizData });
+    } else {
+      // Create new quiz
+      createQuizMutation.mutate(quizData);
+    }
   };
 
   const handleCreateAssignment = () => {
@@ -213,11 +262,19 @@ const Assessments = () => {
   });
 
   const handleEditQuiz = (quizId: number) => {
-    // For now, show a message - this would navigate to an edit page
-    toast({
-      title: "Edit Quiz",
-      description: "Quiz editing feature will be available soon. This would open the quiz editor.",
-    });
+    const quiz = filteredQuizzes.find((q: any) => q.id === quizId);
+    if (quiz) {
+      setQuizForm({
+        title: quiz.title,
+        description: quiz.description || "",
+        lessonId: quiz.lessonId?.toString() || "1",
+        timeLimit: quiz.timeLimit || 30,
+        totalPoints: quiz.totalPoints || 100
+      });
+      setEditingQuiz(quizId);
+      setCreateType('quiz');
+      setShowCreateDialog(true);
+    }
   };
 
   const handleViewResults = (quizId: number) => {
@@ -428,9 +485,11 @@ const Assessments = () => {
                     <Button 
                       onClick={handleCreateQuiz}
                       className="flex-1 bg-blue-600 hover:bg-blue-700"
-                      disabled={createQuizMutation.isPending}
+                      disabled={createQuizMutation.isPending || updateQuizMutation.isPending}
                     >
-                      {createQuizMutation.isPending ? "Creating..." : "Create Quiz"}
+                      {createQuizMutation.isPending || updateQuizMutation.isPending 
+                        ? (editingQuiz ? "Updating..." : "Creating...") 
+                        : (editingQuiz ? "Update Quiz" : "Create Quiz")}
                     </Button>
                   </div>
                 </div>
