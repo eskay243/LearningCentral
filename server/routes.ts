@@ -1086,7 +1086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/courses/:id/enroll', isAuthenticated, async (req, res) => {
+  app.post('/api/courses/:id/enroll', async (req: any, res: Response) => {
     try {
       const courseId = parseInt(req.params.id);
       
@@ -1094,16 +1094,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid course ID" });
       }
       
-      // Ensure user is authenticated
-      if (!req.user) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      // Get user ID from either the user object directly or from claims
-      const userId = req.user.id || (req.user.claims && req.user.claims.sub);
-      
+      // Use session-based authentication like other student endpoints
+      const userId = req.session?.userId;
       if (!userId) {
-        return res.status(400).json({ message: "Invalid user data" });
+        return res.status(401).json({ message: "Authentication required" });
       }
       
       // Check if user is already enrolled
