@@ -51,26 +51,34 @@ interface RecentActivity {
 }
 
 export default function StudentDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
-  const { data: enrolledCourses, isLoading: coursesLoading } = useQuery<Course[]>({
+  const { data: enrolledCourses, isLoading: coursesLoading, error: coursesError } = useQuery<Course[]>({
     queryKey: ['/api/student/enrolled-courses'],
-    enabled: !!user,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
-  const { data: assignments, isLoading: assignmentsLoading } = useQuery<Assignment[]>({
+  const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError } = useQuery<Assignment[]>({
     queryKey: ['/api/student/assignments'],
-    enabled: !!user,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 10,
   });
 
-  const { data: quizzes, isLoading: quizzesLoading } = useQuery<Quiz[]>({
+  const { data: quizzes, isLoading: quizzesLoading, error: quizzesError } = useQuery<Quiz[]>({
     queryKey: ['/api/student/quizzes'],
-    enabled: !!user,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 10,
   });
 
-  const { data: recentActivity, isLoading: activityLoading } = useQuery<RecentActivity[]>({
+  const { data: recentActivity, isLoading: activityLoading, error: activityError } = useQuery<RecentActivity[]>({
     queryKey: ['/api/student/recent-activity'],
-    enabled: !!user,
+    enabled: !!user && !authLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 10,
   });
 
   const pendingAssignments = assignments?.filter(a => a.status === 'pending') || [];
@@ -82,6 +90,25 @@ export default function StudentDashboard() {
   const averageScore = quizzes?.length ? 
     Math.round(quizzes.reduce((sum, quiz) => sum + (quiz.score || 0), 0) / quizzes.length) : 0;
 
+  // Show loading only if auth is loading or user is not authenticated yet
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cream-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show content loading state separately
   if (coursesLoading || assignmentsLoading || quizzesLoading || activityLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cream-50 p-6">

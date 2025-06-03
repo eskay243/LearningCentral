@@ -36,12 +36,12 @@ export function useAuth() {
     },
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false,
   });
 
-  // Add debug logging
-  console.log("useAuth - Query state:", { user, isLoading, isError, error });
+
 
   useEffect(() => {
     if (redirectToLogin) {
