@@ -13,10 +13,10 @@ export function useAuth() {
     error,
     refetch
   } = useQuery<User | null>({
-    queryKey: ["/api/auth/user"],
+    queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/auth/user", {
+        const res = await fetch("/api/user", {
           credentials: "include",
         });
         

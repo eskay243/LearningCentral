@@ -28,6 +28,8 @@ import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import UserManagement from "@/pages/UserManagement";
 import Login from "@/pages/Login";
+import AuthPage from "@/pages/AuthPage";
+import useAuth from "@/hooks/useAuth";
 import AdminSetup from "@/pages/AdminSetup";
 import AdminOAuthSettings from "@/pages/AdminOAuthSettings";
 import PaymentCallback from "@/pages/PaymentCallback";
@@ -48,6 +50,23 @@ import MentorDashboard from "@/pages/MentorDashboard";
 import CourseDiscussion from "@/pages/CourseDiscussion";
 
 function Router() {
+  const { user, isLoading, isAuthenticated } = useAuth();
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
+
+  // Show auth page if not authenticated
+  if (!isAuthenticated) {
+    return <AuthPage />;
+  }
+
+  // Show authenticated routes
   return (
     <Layout>
       <Switch>
