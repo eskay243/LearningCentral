@@ -3,12 +3,30 @@ import { storage } from "./storage";
 import { UserRole } from "@shared/schema";
 
 // Simple authentication middleware for demo/session-based auth
-const isAuthenticated = (req: any, res: any, next: any) => {
-  if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+const isAuthenticated = async (req: any, res: any, next: any) => {
+  try {
+    console.log("Assessment auth check - Session:", req.session);
+    console.log("Assessment auth check - Session userId:", req.session?.userId);
+    
+    const userId = req.session?.userId;
+    if (!userId) {
+      console.log("Authentication failed: No session userId");
+      return res.status(401).json({ message: "Unauthorized: Not authenticated" });
+    }
+
+    const user = await storage.getUserById(userId);
+    if (!user) {
+      console.log("Authentication failed: User not found for ID:", userId);
+      return res.status(401).json({ message: "Unauthorized: Not authenticated" });
+    }
+
+    console.log("Assessment auth successful for user:", user.id);
+    req.user = user;
     return next();
+  } catch (error) {
+    console.error("Authentication error:", error);
+    return res.status(401).json({ message: "Unauthorized: Not authenticated" });
   }
-  console.log("Authentication failed: User not authenticated");
-  return res.status(401).json({ message: "Unauthorized: Not authenticated" });
 };
 
 const hasRole = (roles: UserRole[]) => {
