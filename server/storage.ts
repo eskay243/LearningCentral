@@ -2221,6 +2221,38 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getUserAssignmentSubmission(userId: string, assignmentId: number): Promise<any> {
+    try {
+      const [submission] = await db
+        .select()
+        .from(assignmentSubmissions)
+        .where(
+          and(
+            eq(assignmentSubmissions.userId, userId),
+            eq(assignmentSubmissions.assignmentId, assignmentId)
+          )
+        );
+      return submission;
+    } catch (error) {
+      console.error("Error fetching user assignment submission:", error);
+      return null;
+    }
+  }
+
+  async updateAssignmentSubmission(submissionId: number, submissionData: Partial<any>): Promise<any> {
+    try {
+      const [updatedSubmission] = await db
+        .update(assignmentSubmissions)
+        .set(submissionData)
+        .where(eq(assignmentSubmissions.id, submissionId))
+        .returning();
+      return updatedSubmission;
+    } catch (error) {
+      console.error("Error updating assignment submission:", error);
+      throw new Error("Failed to update assignment submission");
+    }
+  }
+
   async gradeAssignment(submissionId: number, grade: number, feedback: string, gradedBy: string): Promise<AssignmentSubmission> {
     try {
       const [gradedSubmission] = await db

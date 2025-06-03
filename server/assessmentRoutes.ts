@@ -161,6 +161,158 @@ export function registerAssessmentRoutes(app: Express) {
       res.status(500).json({ message: "Failed to submit quiz attempt" });
     }
   });
+
+  // Get quiz attempt results
+  app.get('/api/quiz-attempts/:attemptId/results', isAuthenticated, async (req: any, res) => {
+    try {
+      const attemptId = Number(req.params.attemptId);
+      const userId = req.user.claims.sub;
+      
+      // Get the attempt and verify ownership
+      const attempt = await storage.getQuizAttemptById(attemptId);
+      if (!attempt || attempt.userId !== userId) {
+        return res.status(403).json({ message: "Unauthorized access to quiz results" });
+      }
+      
+      // Get quiz details
+      const quiz = await storage.getQuiz(attempt.quizId);
+      if (!quiz) {
+        return res.status(404).json({ message: "Quiz not found" });
+      }
+      
+      // Get questions for detailed results
+      const questions = await storage.getQuizQuestions(attempt.quizId);
+      
+      // Build detailed results with question text and explanations
+      const gradedAnswers = attempt.answers.map((answer: any) => {
+        const question = questions.find(q => q.id === answer.questionId);
+        return {
+          ...answer,
+          questionText: question?.question || 'Question not found',
+          correctAnswer: question?.correctAnswer || '',
+          explanation: question?.explanation || ''
+        };
+      });
+      
+      const result = {
+        ...attempt,
+        quiz,
+        gradedAnswers
+      };
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching quiz results:", error);
+      res.status(500).json({ message: "Failed to fetch quiz results" });
+    }
+  });
+
+  // Get assignment for submission
+  app.get('/api/assignments/:assignmentId', isAuthenticated, async (req, res) => {
+    try {
+      const assignmentId = Number(req.params.assignmentId);
+      const assignment = await storage.getAssignment(assignmentId);
+      
+      if (!assignment) {
+        return res.status(404).json({ message: "Assignment not found" });
+      }
+      
+      res.json(assignment);
+    } catch (error) {
+      console.error("Error fetching assignment:", error);
+      res.status(500).json({ message: "Failed to fetch assignment" });
+    }
+  });
+
+  // Get user's existing submission for an assignment
+  app.get('/api/assignments/:assignmentId/my-submission', isAuthenticated, async (req: any, res) => {
+    try {
+      const assignmentId = Number(req.params.assignmentId);
+      const userId = req.user.claims.sub;
+      
+      const submission = await storage.getUserAssignmentSubmission(userId, assignmentId);
+      
+      if (!submission) {
+        return res.status(404).json({ message: "No submission found" });
+      }
+      
+      res.json(submission);
+    } catch (error) {
+      console.error("Error fetching user submission:", error);
+      res.status(500).json({ message: "Failed to fetch submission" });
+    }
+  });
+
+  // Submit assignment (with file upload)
+  app.post('/api/assignment-submissions', isAuthenticated, async (req: any, res) => {
+    try {
+      const { assignmentId, submissionText, status } = req.body;
+      const userId = req.user.claims.sub;
+      
+      // Handle file uploads if present
+      const files = req.files || [];
+      
+      const submissionData = {
+        assignmentId: Number(assignmentId),
+        userId,
+        submissionText: submissionText || '',
+        submissionFiles: files.map((file: any) => ({
+          name: file.originalname,
+          size: file.size,
+          path: file.path,
+          mimetype: file.mimetype
+        })),
+        status: status || 'submitted',
+        submittedAt: new Date()
+      };
+      
+      const submission = await storage.createAssignmentSubmission(submissionData);
+      res.status(201).json(submission);
+    } catch (error) {
+      console.error("Error submitting assignment:", error);
+      res.status(500).json({ message: "Failed to submit assignment" });
+    }
+  });
+
+  // Save assignment draft
+  app.post('/api/assignment-submissions/draft', isAuthenticated, async (req: any, res) => {
+    try {
+      const { assignmentId, submissionText } = req.body;
+      const userId = req.user.claims.sub;
+      
+      // Handle file uploads if present
+      const files = req.files || [];
+      
+      const submissionData = {
+        assignmentId: Number(assignmentId),
+        userId,
+        submissionText: submissionText || '',
+        submissionFiles: files.map((file: any) => ({
+          name: file.originalname,
+          size: file.size,
+          path: file.path,
+          mimetype: file.mimetype
+        })),
+        status: 'draft',
+        submittedAt: null
+      };
+      
+      // Check if draft already exists
+      const existingSubmission = await storage.getUserAssignmentSubmission(userId, Number(assignmentId));
+      
+      let submission;
+      if (existingSubmission && existingSubmission.status === 'draft') {
+        submission = await storage.updateAssignmentSubmission(existingSubmission.id, submissionData);
+      } else {
+        submission = await storage.createAssignmentSubmission(submissionData);
+      }
+      
+      res.json(submission);
+    } catch (error) {
+      console.error("Error saving assignment draft:", error);
+      res.status(500).json({ message: "Failed to save draft" });
+    }
+  });
   
   app.get('/api/quizzes/:id/attempts', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
