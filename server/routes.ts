@@ -2524,8 +2524,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalLessons += lessons.length;
             
             for (const lesson of lessons) {
-              const progress = await storage.getLessonProgress(userId, lesson.id);
-              if (progress && progress.completed) {
+              const progress = await storage.getLessonProgress(lesson.id, userId);
+              if (progress && progress.status === 'completed') {
                 completedLessons++;
               }
             }
@@ -2538,8 +2538,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const module of modules) {
             const lessons = await storage.getLessonsByModule(module.id);
             for (const lesson of lessons) {
-              const progress = await storage.getLessonProgress(userId, lesson.id);
-              if (!progress || !progress.completed) {
+              const progress = await storage.getLessonProgress(lesson.id, userId);
+              if (!progress || progress.status !== 'completed') {
                 nextLesson = {
                   id: lesson.id,
                   title: lesson.title,
