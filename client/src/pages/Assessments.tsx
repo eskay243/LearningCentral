@@ -96,8 +96,9 @@ const Assessments = () => {
       const response = await apiRequest("POST", "/api/quizzes", quizData);
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/quizzes`] });
+    onSuccess: (newQuiz) => {
+      // Force refetch the data instead of just invalidating cache
+      queryClient.refetchQueries({ queryKey: [`/api/mentors/${user?.id}/quizzes`] });
       toast({
         title: "Quiz Created",
         description: "Your quiz has been created successfully!",
