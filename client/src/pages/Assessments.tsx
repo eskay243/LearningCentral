@@ -192,7 +192,11 @@ const Assessments = () => {
       return response;
     },
     onSuccess: () => {
+      // Invalidate both possible query keys
       queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/quizzes`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quizzes"] });
+      // Force refetch
+      queryClient.refetchQueries({ queryKey: [isMentor ? `/api/mentors/${user?.id}/quizzes` : "/api/quizzes"] });
       toast({
         title: "Quiz Deleted",
         description: "The quiz has been successfully deleted.",
@@ -268,7 +272,11 @@ const Assessments = () => {
       return response;
     },
     onSuccess: () => {
+      // Invalidate both possible query keys
       queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/assignments`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
+      // Force refetch
+      queryClient.refetchQueries({ queryKey: [isMentor ? `/api/mentors/${user?.id}/assignments` : "/api/assignments"] });
       toast({
         title: "Assignment Deleted",
         description: "The assignment has been successfully deleted.",
