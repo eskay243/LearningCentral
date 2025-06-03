@@ -2505,42 +2505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      // For demo student, provide sample course data
-      if (userId === "demo-oyinkonsola-789") {
-        const sampleCourses = [
-          {
-            id: 1,
-            title: "Full Stack Web Development",
-            description: "Learn modern web development with React, Node.js, and databases",
-            coverImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80",
-            progress: 65,
-            instructor: "Sarah Johnson",
-            totalLessons: 24,
-            completedLessons: 16,
-            nextLesson: {
-              id: 17,
-              title: "Database Integration",
-              moduleTitle: "Backend Development"
-            }
-          },
-          {
-            id: 2,
-            title: "Java Programming Fundamentals",
-            description: "Master Java programming from basics to advanced concepts",
-            coverImage: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1769&q=80",
-            progress: 40,
-            instructor: "David Chen",
-            totalLessons: 18,
-            completedLessons: 7,
-            nextLesson: {
-              id: 8,
-              title: "Object-Oriented Programming",
-              moduleTitle: "Core Concepts"
-            }
-          }
-        ];
-        return res.json(sampleCourses);
-      }
+      // Get actual enrolled courses from database
 
       const enrollments = await storage.getStudentEnrollments(userId);
       
