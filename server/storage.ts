@@ -1686,13 +1686,15 @@ export class DatabaseStorage implements IStorage {
           passingScore: quizzes.passingScore,
           lesson: {
             id: lessons.id,
-            courseId: lessons.courseId,
-            title: lessons.title
+            moduleId: lessons.moduleId,
+            title: lessons.title,
+            courseId: modules.courseId
           }
         })
         .from(quizzes)
         .innerJoin(lessons, eq(quizzes.lessonId, lessons.id))
-        .where(inArray(lessons.courseId, courseIds));
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(inArray(modules.courseId, courseIds));
       
       return allQuizzes;
     } catch (error) {
@@ -1914,7 +1916,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAssignmentsByMentor(mentorId: string): Promise<Assignment[]> {
+  async getAssignmentsByMentor(mentorId: string): Promise<any[]> {
     try {
       // Get courses taught by this mentor
       const mentorCourseList = await db
@@ -1928,12 +1930,26 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      // Get all assignments from these courses
-      const allAssignments = [];
-      for (const courseId of courseIds) {
-        const assignments = await this.getAssignments({ courseId });
-        allAssignments.push(...assignments);
-      }
+      // Get all assignments from these courses with lesson relationship data
+      const allAssignments = await db
+        .select({
+          id: assignments.id,
+          lessonId: assignments.lessonId,
+          title: assignments.title,
+          description: assignments.description,
+          dueDate: assignments.dueDate,
+          rubric: assignments.rubric,
+          lesson: {
+            id: lessons.id,
+            moduleId: lessons.moduleId,
+            title: lessons.title,
+            courseId: modules.courseId
+          }
+        })
+        .from(assignments)
+        .innerJoin(lessons, eq(assignments.lessonId, lessons.id))
+        .innerJoin(modules, eq(lessons.moduleId, modules.id))
+        .where(inArray(modules.courseId, courseIds));
       
       return allAssignments;
     } catch (error) {
