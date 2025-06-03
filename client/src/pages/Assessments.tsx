@@ -76,7 +76,8 @@ const Assessments = () => {
   const filteredQuizzes = quizzes.filter((quiz: any) => {
     if (!quiz?.title) return false;
     const matchesSearch = quiz.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCourse = filterCourse === "all" || quiz.lessonId?.toString() === filterCourse;
+    // For course filtering, we need to check if the quiz's lesson belongs to the selected course
+    const matchesCourse = filterCourse === "all" || quiz.lesson?.courseId?.toString() === filterCourse;
     return matchesSearch && matchesCourse;
   });
 
@@ -84,7 +85,8 @@ const Assessments = () => {
   const filteredAssignments = assignments.filter((assignment: any) => {
     if (!assignment?.title) return false;
     const matchesSearch = assignment.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCourse = filterCourse === "all" || assignment.courseId?.toString() === filterCourse;
+    // For course filtering, we need to check if the assignment's lesson belongs to the selected course
+    const matchesCourse = filterCourse === "all" || assignment.lesson?.courseId?.toString() === filterCourse;
     return matchesSearch && matchesCourse;
   });
 

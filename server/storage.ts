@@ -1662,7 +1662,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getQuizzesByMentor(mentorId: string): Promise<Quiz[]> {
+  async getQuizzesByMentor(mentorId: string): Promise<any[]> {
     try {
       // Get courses taught by this mentor
       const mentorCourseList = await db
@@ -1676,12 +1676,23 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      // Get all quizzes from these courses
-      const allQuizzes = [];
-      for (const courseId of courseIds) {
-        const quizzes = await this.getQuizzes({ courseId });
-        allQuizzes.push(...quizzes);
-      }
+      // Get all quizzes from these courses with lesson relationship data
+      const allQuizzes = await db
+        .select({
+          id: quizzes.id,
+          lessonId: quizzes.lessonId,
+          title: quizzes.title,
+          description: quizzes.description,
+          passingScore: quizzes.passingScore,
+          lesson: {
+            id: lessons.id,
+            courseId: lessons.courseId,
+            title: lessons.title
+          }
+        })
+        .from(quizzes)
+        .innerJoin(lessons, eq(quizzes.lessonId, lessons.id))
+        .where(inArray(lessons.courseId, courseIds));
       
       return allQuizzes;
     } catch (error) {
