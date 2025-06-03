@@ -191,12 +191,13 @@ const Assessments = () => {
       const response = await apiRequest("DELETE", `/api/quizzes/${quizId}`);
       return response;
     },
-    onSuccess: () => {
-      // Invalidate both possible query keys
-      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/quizzes`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/quizzes"] });
-      // Force refetch
-      queryClient.refetchQueries({ queryKey: [isMentor ? `/api/mentors/${user?.id}/quizzes` : "/api/quizzes"] });
+    onSuccess: (data, quizId) => {
+      // Remove the deleted quiz from the cache immediately
+      const queryKey = isMentor ? [`/api/mentors/${user?.id}/quizzes`] : ["/api/quizzes"];
+      queryClient.setQueryData(queryKey, (oldData: any[]) => {
+        return oldData ? oldData.filter((quiz: any) => quiz.id !== quizId) : [];
+      });
+      
       toast({
         title: "Quiz Deleted",
         description: "The quiz has been successfully deleted.",
@@ -271,12 +272,13 @@ const Assessments = () => {
       const response = await apiRequest("DELETE", `/api/assignments/${assignmentId}`);
       return response;
     },
-    onSuccess: () => {
-      // Invalidate both possible query keys
-      queryClient.invalidateQueries({ queryKey: [`/api/mentors/${user?.id}/assignments`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
-      // Force refetch
-      queryClient.refetchQueries({ queryKey: [isMentor ? `/api/mentors/${user?.id}/assignments` : "/api/assignments"] });
+    onSuccess: (data, assignmentId) => {
+      // Remove the deleted assignment from the cache immediately
+      const queryKey = isMentor ? [`/api/mentors/${user?.id}/assignments`] : ["/api/assignments"];
+      queryClient.setQueryData(queryKey, (oldData: any[]) => {
+        return oldData ? oldData.filter((assignment: any) => assignment.id !== assignmentId) : [];
+      });
+      
       toast({
         title: "Assignment Deleted",
         description: "The assignment has been successfully deleted.",
