@@ -345,6 +345,29 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // User authentication methods
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: any): Promise<User> {
+    const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        id: userId,
+        email: userData.email,
+        password: userData.password,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: userData.role || 'student'
+      })
+      .returning();
+    return user;
+  }
+
   // System Settings operations
   async getSystemSetting(key: string): Promise<SystemSettings | undefined> {
     const [setting] = await db

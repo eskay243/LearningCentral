@@ -71,7 +71,7 @@ const mockData = {
     }
   }))
 };
-import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
+import { setupSimpleAuth, requireAuth, requireRole } from "./simpleAuth";
 import { z } from "zod";
 import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
@@ -365,20 +365,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   // Setup authentication middleware first
   try {
-    await setupAuth(app);
+    setupSimpleAuth(app);
   } catch (error) {
     console.error("Error setting up authentication:", error);
     // Continue without auth for development purposes
   }
   
   // Now add the role-switching endpoint (after auth is set up)
-  app.get("/api/switch-user-role/:role", isAuthenticated, async (req, res) => {
+  app.get("/api/switch-user-role/:role", requireAuth, async (req: any, res) => {
     try {
-      if (!req.user || !req.user.claims?.sub) {
+      const userId = req.session?.userId;
+      if (!userId) {
         return res.status(401).json({ message: "You must be logged in to switch roles" });
       }
-
-      const userId = req.user.claims.sub;
       const { role } = req.params;
       
       // Validate role parameter
