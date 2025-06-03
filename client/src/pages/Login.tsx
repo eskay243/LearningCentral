@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   BookOpen, 
   Users, 
@@ -44,8 +44,41 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      // Demo login with admin credentials
+      const response = await apiRequest("POST", "/api/login", {
+        email: "admin@codelabeducare.com",
+        password: "Password1234"
+      });
+      
+      if (response.ok) {
+        const user = await response.json();
+        // Invalidate the auth cache to refresh user state
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        toast({
+          title: "Welcome back!",
+          description: "You've been logged in successfully.",
+        });
+        navigate("/dashboard");
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Authentication failed",
+          description: error.message || "Please check your credentials and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Connection error",
+        description: "Unable to connect to the server. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,14 +86,19 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const endpoint = isSignup ? "/api/auth/register" : "/api/auth/login";
-      const response = await apiRequest("POST", endpoint, formData);
+      const endpoint = "/api/login";
+      const response = await apiRequest("POST", endpoint, {
+        email: formData.email,
+        password: formData.password
+      });
       
       if (response.ok) {
         const user = await response.json();
+        // Invalidate the auth cache to refresh user state
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
         toast({
-          title: isSignup ? "Account created!" : "Welcome back!",
-          description: isSignup ? "Your account has been created successfully." : "You've been logged in successfully.",
+          title: "Welcome back!",
+          description: "You've been logged in successfully.",
         });
         navigate("/dashboard");
       } else {
