@@ -425,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerCodeCompanionRoutes(app);
 
   // Mentor-specific earnings endpoints
-  app.get("/api/mentor/earnings", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+  app.get("/api/mentor/earnings", requireAuth, requireRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
       const mentorId = req.user.id;
       
@@ -468,7 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/mentor/withdrawal-methods", isAuthenticated, hasRole(['mentor', 'admin']), async (req: Request, res: Response) => {
+  app.get("/api/mentor/withdrawal-methods", requireAuth, requireRole(['mentor', 'admin']), async (req: Request, res: Response) => {
     try {
       res.json([
         {
@@ -502,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/mentor/withdrawal-request", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+  app.post("/api/mentor/withdrawal-request", requireAuth, requireRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
       const { amount, method, accountDetails } = req.body;
       const mentorId = req.user.id;
@@ -525,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/mentor/courses", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+  app.get("/api/mentor/courses", requireAuth, requireRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
       const userId = req.user.claims.sub;
       console.log('Fetching mentor courses for user:', userId);
@@ -542,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', requireAuth, async (req: any, res) => {
     try {
       // User should now include both database user and claims
       if (req.user && req.user.id) {
@@ -570,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Setup admin user - this endpoint will make the currently logged in user an admin
-  app.post('/api/setup-admin', isAuthenticated, async (req: any, res) => {
+  app.post('/api/setup-admin', requireAuth, async (req: any, res) => {
     try {
       // Get user ID from either the user object directly or from claims
       const userId = req.user.id || (req.user.claims && req.user.claims.sub);
@@ -596,7 +596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Admin routes
-  app.get('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+  app.get('/api/admin/users', requireAuth, requireRole(UserRole.ADMIN), async (req, res) => {
     try {
       const users = await storage.getUsersByRole();
       res.json(users);
@@ -607,7 +607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Course image upload endpoint
-  app.post('/api/upload/course-image', isAuthenticated, upload.single('image'), async (req: any, res) => {
+  app.post('/api/upload/course-image', requireAuth, upload.single('image'), async (req: any, res) => {
     try {
       console.log('Upload request received:', req.file);
       console.log('Request body:', req.body);
@@ -628,7 +628,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Categories management endpoints
-  app.post('/api/categories', isAuthenticated, async (req, res) => {
+  app.post('/api/categories', requireAuth, async (req, res) => {
     try {
       const { value, label } = req.body;
       
@@ -702,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/courses', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/courses', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const courseData = {
         title: req.body.title,
@@ -746,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/courses/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.put('/api/courses/:id', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
       if (isNaN(courseId)) {
@@ -790,7 +790,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Publish/Unpublish course (admin only)
-  app.put('/api/courses/:id/publish', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.put('/api/courses/:id/publish', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const courseId = parseInt(req.params.id);
       const { isPublished } = req.body;
@@ -823,7 +823,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/courses/:id', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+  app.delete('/api/courses/:id', requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
       if (isNaN(courseId)) {
@@ -874,7 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/modules', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/modules', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const moduleData = {
         courseId: req.body.courseId,
@@ -907,7 +907,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/lessons', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/lessons', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const lessonData = {
         moduleId: req.body.moduleId,
@@ -946,7 +946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Course Enrollment Routes
   // Get all enrolled courses for the current user
-  app.get('/api/user/enrollments', isAuthenticated, async (req, res) => {
+  app.get('/api/user/enrollments', requireAuth, async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -993,7 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get enrollment for a specific course
-  app.get('/api/courses/:id/enrollment', isAuthenticated, async (req, res) => {
+  app.get('/api/courses/:id/enrollment', requireAuth, async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
       
@@ -1021,7 +1021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/courses/:id/enroll', isAuthenticated, async (req, res) => {
+  app.post('/api/courses/:id/enroll', requireAuth, async (req, res) => {
     try {
       const courseId = parseInt(req.params.id);
       
@@ -1085,7 +1085,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Handle file uploads for user creation
-  app.post('/api/admin/users', isAuthenticated, hasRole(UserRole.ADMIN), upload.single('profileImage'), async (req, res) => {
+  app.post('/api/admin/users', requireAuth, requireRole(UserRole.ADMIN), upload.single('profileImage'), async (req, res) => {
     try {
       const { email, password, firstName, lastName, role, bio, commissionRate } = req.body;
       
@@ -1137,7 +1137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/admin/users/:id', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+  app.patch('/api/admin/users/:id', requireAuth, requireRole(UserRole.ADMIN), async (req, res) => {
     try {
       const { id } = req.params;
       const { commissionRate, ...userData } = req.body;
@@ -1163,7 +1163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User routes
-  app.get('/api/users/:id', isAuthenticated, async (req, res) => {
+  app.get('/api/users/:id', requireAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.params.id);
       if (!user) {
@@ -1176,7 +1176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/users/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/users/:id', requireAuth, async (req: any, res) => {
     try {
       // Only allow users to update their own profile, or admins to update any profile
       const userId = req.user.claims.sub;
@@ -1230,7 +1230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/courses', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/courses', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const course = await storage.createCourse(req.body);
       
@@ -1257,7 +1257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/courses/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/courses/:id', requireAuth, async (req: any, res) => {
     try {
       const courseId = parseInt(req.params.id);
       const userId = req.user.claims.sub;
@@ -1293,7 +1293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/modules', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/modules', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const module = await storage.createModule(req.body);
       res.status(201).json(module);
@@ -1315,7 +1315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/lessons', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/lessons', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const lesson = await storage.createLesson(req.body);
       res.status(201).json(lesson);
@@ -1326,7 +1326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Live session routes
-  app.get('/api/live-sessions', isAuthenticated, async (req: any, res) => {
+  app.get('/api/live-sessions', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -1365,7 +1365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/live-sessions', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/live-sessions', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const session = await storage.createLiveSession(req.body);
       res.status(201).json(session);
@@ -1376,7 +1376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get single live session by ID
-  app.get('/api/live-sessions/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/live-sessions/:id', requireAuth, async (req: any, res) => {
     try {
       const sessionId = parseInt(req.params.id);
       const session = await storage.getLiveSession(sessionId);
@@ -1405,7 +1405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Record attendance for a live session
-  app.post('/api/live-sessions/:id/attendance', isAuthenticated, async (req: any, res) => {
+  app.post('/api/live-sessions/:id/attendance', requireAuth, async (req: any, res) => {
     try {
       const sessionId = parseInt(req.params.id);
       const userId = req.user.claims.sub;
@@ -1434,7 +1434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Roll call system routes
   
   // Initiate a roll call for a live session
-  app.post('/api/live-sessions/:id/roll-call', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.post('/api/live-sessions/:id/roll-call', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const sessionId = parseInt(req.params.id);
       const initiatedBy = req.user.claims.sub;
@@ -1461,7 +1461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Respond to a roll call
-  app.post('/api/roll-calls/:id/respond', isAuthenticated, async (req: any, res) => {
+  app.post('/api/roll-calls/:id/respond', requireAuth, async (req: any, res) => {
     try {
       const rollCallId = parseInt(req.params.id);
       const userId = req.user.claims.sub;
@@ -1482,7 +1482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get roll call responses
-  app.get('/api/roll-calls/:id/responses', isAuthenticated, async (req: any, res) => {
+  app.get('/api/roll-calls/:id/responses', requireAuth, async (req: any, res) => {
     try {
       const rollCallId = parseInt(req.params.id);
       
@@ -1497,7 +1497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // End a roll call
-  app.post('/api/roll-calls/:id/end', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.post('/api/roll-calls/:id/end', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const rollCallId = parseInt(req.params.id);
       
@@ -1514,7 +1514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session notes routes
   
   // Update session notes
-  app.patch('/api/live-sessions/:id/notes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.patch('/api/live-sessions/:id/notes', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const sessionId = parseInt(req.params.id);
       const { notes } = req.body;
@@ -1534,7 +1534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Update attendance notes (for a specific student)
-  app.patch('/api/attendance/:id/notes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.patch('/api/attendance/:id/notes', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const attendanceId = parseInt(req.params.id);
       const { notes, participationLevel } = req.body;
@@ -1554,7 +1554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Submit session feedback (from student)
-  app.post('/api/attendance/:id/feedback', isAuthenticated, async (req: any, res) => {
+  app.post('/api/attendance/:id/feedback', requireAuth, async (req: any, res) => {
     try {
       const attendanceId = parseInt(req.params.id);
       const { feedback } = req.body;
@@ -1574,7 +1574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Enrollment routes
-  app.post('/api/enrollments', isAuthenticated, async (req: any, res) => {
+  app.post('/api/enrollments', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -1596,7 +1596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/enrollments', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/enrollments', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const enrollments = await storage.getEnrolledCourses(userId);
@@ -1608,7 +1608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Lesson progress routes
-  app.post('/api/lessons/:lessonId/progress', isAuthenticated, async (req: any, res) => {
+  app.post('/api/lessons/:lessonId/progress', requireAuth, async (req: any, res) => {
     try {
       const lessonId = parseInt(req.params.lessonId);
       const userId = req.user.claims.sub;
@@ -1622,7 +1622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Quiz routes
-  app.post('/api/quizzes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/quizzes', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const quiz = await storage.createQuiz(req.body);
       res.status(201).json(quiz);
@@ -1643,7 +1643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/quiz-questions', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/quiz-questions', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const question = await storage.addQuizQuestion(req.body);
       res.status(201).json(question);
@@ -1664,7 +1664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/quiz-attempts', isAuthenticated, async (req: any, res) => {
+  app.post('/api/quiz-attempts', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -1681,7 +1681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assignment routes
-  app.post('/api/assignments', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.post('/api/assignments', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const assignment = await storage.createAssignment(req.body);
       res.status(201).json(assignment);
@@ -1702,7 +1702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/assignment-submissions', isAuthenticated, async (req: any, res) => {
+  app.post('/api/assignment-submissions', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -1719,7 +1719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/assignment-submissions/:id/grade', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.post('/api/assignment-submissions/:id/grade', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const submissionId = parseInt(req.params.id);
       const gradedBy = req.user.claims.sub;
@@ -1739,7 +1739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes
-  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.post('/api/messages', requireAuth, async (req: any, res) => {
     try {
       const senderId = req.user.claims.sub;
       
@@ -1755,7 +1755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.get('/api/messages', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       // Using getUserMessages instead of getMessagesForUser which doesn't exist
@@ -1767,7 +1767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/messages/:id/read', isAuthenticated, async (req, res) => {
+  app.post('/api/messages/:id/read', requireAuth, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);
       const message = await storage.markMessagesAsRead(parseInt(messageId), req.user.id);
@@ -1779,7 +1779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Discussion routes
-  app.post('/api/discussions', isAuthenticated, async (req: any, res) => {
+  app.post('/api/discussions', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -1806,7 +1806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/discussions/:discussionId/replies', isAuthenticated, async (req: any, res) => {
+  app.post('/api/discussions/:discussionId/replies', requireAuth, async (req: any, res) => {
     try {
       const discussionId = parseInt(req.params.discussionId);
       const userId = req.user.claims.sub;
@@ -1825,7 +1825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notification routes
-  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
+  app.get('/api/notifications', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const notifications = await storage.getUserNotifications(userId);
@@ -1837,7 +1837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Bookmark routes
-  app.get('/api/bookmarks', isAuthenticated, async (req: any, res) => {
+  app.get('/api/bookmarks', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const bookmarks = await storage.getUserBookmarks(userId);
@@ -1848,7 +1848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/bookmarks/check', isAuthenticated, async (req: any, res) => {
+  app.get('/api/bookmarks/check', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const lessonId = parseInt(req.query.lessonId);
@@ -1865,7 +1865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/bookmarks', isAuthenticated, async (req: any, res) => {
+  app.post('/api/bookmarks', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       
@@ -1881,7 +1881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.patch('/api/bookmarks/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/bookmarks/:id', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const bookmarkId = parseInt(req.params.id);
@@ -1900,7 +1900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete('/api/bookmarks/:id', isAuthenticated, async (req: any, res) => {
+  app.delete('/api/bookmarks/:id', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const bookmarkId = parseInt(req.params.id);
@@ -1938,7 +1938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Content sharing routes
-  app.post('/api/share', isAuthenticated, async (req: any, res) => {
+  app.post('/api/share', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { lessonId, courseId } = req.body;
@@ -2007,7 +2007,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Content export route
-  app.post('/api/export', isAuthenticated, async (req: any, res) => {
+  app.post('/api/export', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { lessonId, format, options } = req.body;
@@ -2049,7 +2049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/export/email', isAuthenticated, async (req: any, res) => {
+  app.post('/api/export/email', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const { lessonId } = req.body;
@@ -2086,7 +2086,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // Paystack payment routes
-  app.post('/api/payments/initialize', isAuthenticated, async (req: any, res) => {
+  app.post('/api/payments/initialize', requireAuth, async (req: any, res) => {
     try {
       const { courseId, amount } = req.body;
       const userId = req.user.claims.sub;
@@ -2130,7 +2130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/payments/verify/:reference', isAuthenticated, async (req: any, res) => {
+  app.get('/api/payments/verify/:reference', requireAuth, async (req: any, res) => {
     try {
       const { reference } = req.params;
       const userId = req.user.claims.sub;
@@ -2185,7 +2185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/notifications/:id/read', isAuthenticated, async (req, res) => {
+  app.post('/api/notifications/:id/read', requireAuth, async (req, res) => {
     try {
       const notificationId = parseInt(req.params.id);
       const notification = await storage.markNotificationAsRead(notificationId);
@@ -2197,7 +2197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // System Settings routes
-  app.get('/api/settings/system', isAuthenticated, async (req, res) => {
+  app.get('/api/settings/system', requireAuth, async (req, res) => {
     try {
       const category = req.query.category as string | undefined;
       const settings = await storage.getSystemSettings(category);
@@ -2208,7 +2208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/settings/system/batch', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+  app.post('/api/settings/system/batch', requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
     try {
       const { settings } = req.body;
       if (!Array.isArray(settings)) {
@@ -2227,7 +2227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analytics routes
-  app.get('/api/analytics/course/:courseId', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.get('/api/analytics/course/:courseId', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const courseId = parseInt(req.params.courseId);
       const stats = await storage.getCourseStats(courseId);
@@ -2238,7 +2238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/mentor/:mentorId', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.get('/api/analytics/mentor/:mentorId', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const mentorId = req.params.mentorId;
       const userId = req.user.claims.sub;
@@ -2257,7 +2257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/analytics/student/:studentId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/analytics/student/:studentId', requireAuth, async (req: any, res) => {
     try {
       const studentId = req.params.studentId;
       const userId = req.user.claims.sub;
@@ -2277,7 +2277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Interactive Exercise API endpoints
-  app.get('/api/users/:userId/exercise-progress', isAuthenticated, async (req: any, res) => {
+  app.get('/api/users/:userId/exercise-progress', requireAuth, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const requestingUserId = req.user.claims.sub;
@@ -2338,7 +2338,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/courses/:courseId/exercise-stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/courses/:courseId/exercise-stats', requireAuth, async (req: any, res) => {
     try {
       const { courseId } = req.params;
       const requestorId = req.user.claims.sub;
@@ -2357,7 +2357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get('/api/exercises/stats', isAuthenticated, async (req: any, res) => {
+  app.get('/api/exercises/stats', requireAuth, async (req: any, res) => {
     try {
       const requestorId = req.user.claims.sub;
       const user = await storage.getUser(requestorId);
@@ -2377,7 +2377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Certificate routes
-  app.post('/api/certificates', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
+  app.post('/api/certificates', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
       const certificate = await storage.generateCertificate(
         req.body.userId,
@@ -2392,7 +2392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/certificates', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user/certificates', requireAuth, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const certificates = await storage.getUserCertificates(userId);
@@ -2419,7 +2419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/courses/:courseId/discussions", isAuthenticated, async (req: any, res: Response) => {
+  app.post("/api/courses/:courseId/discussions", requireAuth, async (req: any, res: Response) => {
     try {
       const { courseId } = req.params;
       const { title, content } = req.body;
@@ -2458,7 +2458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/drm', drmRoutes);
   
   // System settings routes
-  app.get("/api/settings", isAuthenticated, async (req, res) => {
+  app.get("/api/settings", requireAuth, async (req, res) => {
     try {
       const settings = await storage.getSystemSettings();
       res.json(settings);
@@ -2468,7 +2468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/settings/currency", isAuthenticated, async (req, res) => {
+  app.get("/api/settings/currency", requireAuth, async (req, res) => {
     try {
       const defaultCurrency = await storage.getSystemSetting('currency.default');
       const availableCurrencies = await storage.getSystemSetting('currency.available');
@@ -2490,7 +2490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Admin-only route to update currency settings
-  app.post("/api/settings/currency", isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+  app.post("/api/settings/currency", requireAuth, requireRole(UserRole.ADMIN), async (req, res) => {
     try {
       const { defaultCurrency, exchangeRates } = req.body;
       
@@ -2519,7 +2519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Basic course data for analytics
-  app.get('/api/courses/basic', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.get('/api/courses/basic', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const courses = await storage.getCourses();
       res.json(courses);
@@ -2530,7 +2530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get student users for analytics
-  app.get('/api/users/students', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.get('/api/users/students', requireAuth, requireRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const students = await storage.getUsersByRole(UserRole.STUDENT);
       res.json(students);
@@ -2541,7 +2541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all students (admin only)
-  app.get("/api/admin/students", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+  app.get("/api/admin/students", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const students = await storage.getUsersByRole('student');
       res.json(students);
@@ -2552,7 +2552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add new student (admin only)
-  app.post("/api/admin/students", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+  app.post("/api/admin/students", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const { firstName, lastName, email, phone, address } = req.body;
       
@@ -2583,7 +2583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update student (admin only)
-  app.put("/api/admin/students/:id", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+  app.put("/api/admin/students/:id", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const { firstName, lastName, email, phone } = req.body;
@@ -2608,7 +2608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete student (admin only)
-  app.delete("/api/admin/students/:id", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+  app.delete("/api/admin/students/:id", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -2625,7 +2625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get individual student data (admin only)
-  app.get("/api/admin/students/:id", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+  app.get("/api/admin/students/:id", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -2665,7 +2665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Endpoint for managing mentor commission rates
-  app.post('/api/admin/mentor/:mentorId/commission', isAuthenticated, hasRole(UserRole.ADMIN), async (req, res) => {
+  app.post('/api/admin/mentor/:mentorId/commission', requireAuth, requireRole(UserRole.ADMIN), async (req, res) => {
     try {
       const { mentorId } = req.params;
       const { commissionRate } = req.body;
@@ -2698,7 +2698,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bank transfer payment endpoint
-  app.post('/api/courses/:id/bank-transfer', isAuthenticated, async (req: any, res) => {
+  app.post('/api/courses/:id/bank-transfer', requireAuth, async (req: any, res) => {
     try {
       const courseId = parseInt(req.params.id);
       const userId = req.user.claims.sub;
@@ -2761,7 +2761,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Wallet payment endpoint
-  app.post('/api/courses/:id/wallet-payment', isAuthenticated, async (req: any, res) => {
+  app.post('/api/courses/:id/wallet-payment', requireAuth, async (req: any, res) => {
     try {
       const courseId = parseInt(req.params.id);
       const userId = req.user.claims.sub;
@@ -2824,7 +2824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // OAuth Settings Admin Routes
-  app.get("/api/admin/oauth-settings", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+  app.get("/api/admin/oauth-settings", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
     try {
       // For now, return empty settings - in production, this would fetch from database
       res.json({
@@ -2836,7 +2836,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/oauth-settings", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+  app.post("/api/admin/oauth-settings", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
     try {
       const { providers } = req.body;
       // For now, just return success - in production, this would save to database
@@ -2847,7 +2847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/admin/oauth-test/:provider", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+  app.post("/api/admin/oauth-test/:provider", requireAuth, requireRole([UserRole.ADMIN]), async (req, res) => {
     try {
       const { provider } = req.params;
       // For now, just return success - in production, this would test the OAuth connection
@@ -2919,7 +2919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============= ANNOUNCEMENTS API =============
   
   // Create Course Announcement
-  app.post("/api/courses/:courseId/announcements", isAuthenticated, hasRole(['admin', 'mentor']), async (req: any, res: Response) => {
+  app.post("/api/courses/:courseId/announcements", requireAuth, requireRole(['admin', 'mentor']), async (req: any, res: Response) => {
     const { courseId } = req.params;
     const { title, content, priority = 'normal', type = 'general' } = req.body;
     
@@ -2962,7 +2962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============= MENTOR ASSIGNMENT API =============
 
   // Assign Mentor to Course
-  app.post("/api/courses/:courseId/mentors", isAuthenticated, hasRole(['admin']), async (req: any, res: Response) => {
+  app.post("/api/courses/:courseId/mentors", requireAuth, requireRole(['admin']), async (req: any, res: Response) => {
     const { courseId } = req.params;
     const { mentorId, role = 'mentor' } = req.body;
     
@@ -3037,7 +3037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get Available Mentors for Assignment
-  app.get("/api/mentors/available", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+  app.get("/api/mentors/available", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     try {
       const mentors = await db.select({
         id: users.id,
@@ -3058,7 +3058,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Remove Mentor from Course
   // Check enrollment status
-  app.get("/api/courses/:courseId/enrollment-status", isAuthenticated, async (req: any, res: Response) => {
+  app.get("/api/courses/:courseId/enrollment-status", requireAuth, async (req: any, res: Response) => {
     try {
       const courseId = parseInt(req.params.courseId);
       const userId = req.user.claims.sub;
@@ -3084,7 +3084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/courses/:courseId/mentors/:mentorId", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+  app.delete("/api/courses/:courseId/mentors/:mentorId", requireAuth, requireRole(['admin']), async (req: Request, res: Response) => {
     const { courseId, mentorId } = req.params;
     
     try {

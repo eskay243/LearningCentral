@@ -1,89 +1,127 @@
-import { useQuery } from "@tanstack/react-query";
-import { User, UserRole } from "@/types";
-import { useState, useEffect } from "react";
-import { getQueryFn } from "@/lib/queryClient";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
+interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+interface LoginData {
+  email: string;
+  password: string;
+}
+
+interface RegisterData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
 
 export function useAuth() {
-  const [redirectToLogin, setRedirectToLogin] = useState(false);
-  
-  const { 
-    data: user, 
-    isLoading, 
-    isError, 
-    error,
-    refetch
-  } = useQuery<User | null>({
-    queryKey: ["/api/auth/user"],
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: user, isLoading, error } = useQuery<User | null>({
+    queryKey: ["/api/user"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/auth/user", {
-          credentials: "include",
+        const response = await fetch("/api/user", {
+          credentials: "include"
         });
         
-        if (res.status === 401) {
-          return null; // Not authenticated
+        if (response.status === 401) {
+          return null;
         }
         
-        if (!res.ok) {
-          throw new Error(`Authentication failed: ${res.status}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch user");
         }
         
-        return await res.json();
+        return await response.json();
       } catch (error) {
         console.error("Auth query error:", error);
         return null;
       }
     },
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Add debug logging
-  console.log("useAuth - Query state:", { user, isLoading, isError, error });
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginData) => {
+      const response = await apiRequest("POST", "/api/login", credentials);
+      return await response.json();
+    },
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${user.firstName}!`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  useEffect(() => {
-    if (redirectToLogin) {
-      // Redirect to login
-      window.location.href = "/api/login";
-    }
-  }, [redirectToLogin]);
+  const registerMutation = useMutation({
+    mutationFn: async (credentials: RegisterData) => {
+      const response = await apiRequest("POST", "/api/register", credentials);
+      return await response.json();
+    },
+    onSuccess: (user: User) => {
+      queryClient.setQueryData(["/api/user"], user);
+      toast({
+        title: "Registration successful",
+        description: `Welcome to Codelab Educare, ${user.firstName}!`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
-  // Provide a login function
-  const login = () => {
-    window.location.href = "/api/login";
-  };
-
-  // Provide a logout function
-  const logout = () => {
-    window.location.href = "/api/logout";
-  };
-
-  // Handle manual retry of authentication
-  const retryAuth = async () => {
-    try {
-      await refetch();
-    } catch (error) {
-      console.error("Authentication retry failed:", error);
-      setRedirectToLogin(true);
-    }
-  };
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/logout");
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear(); // Clear all cached data
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   return {
     user,
     isLoading,
-    isError,
     error,
     isAuthenticated: !!user,
-    isAdmin: user?.role === "admin",
-    isMentor: user?.role === "mentor", 
-    isStudent: user?.role === "student",
-    isAffiliate: user?.role === "affiliate",
-    login,
-    logout,
-    retryAuth
+    loginMutation,
+    registerMutation,
+    logoutMutation,
   };
 }
-
-export default useAuth;
