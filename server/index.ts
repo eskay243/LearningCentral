@@ -3,6 +3,107 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
+import { storage } from "./storage";
+
+async function initializeDemoData() {
+  try {
+    console.log("Initializing demo data...");
+    
+    // Check if student user exists and has enrollments
+    const studentEnrollments = await storage.getStudentEnrollments("demo-oyinkonsola-789");
+    
+    if (studentEnrollments.length === 0) {
+      // Create demo courses if they don't exist
+      const courses = await storage.getCourses();
+      let webDevCourse = courses.find(c => c.title?.includes("Web Development"));
+      let javaCourse = courses.find(c => c.title?.includes("Java"));
+      
+      if (!webDevCourse) {
+        webDevCourse = await storage.createCourse({
+          title: "Full Stack Web Development",
+          description: "Learn modern web development with React, Node.js, and databases",
+          thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80",
+          isPublished: true,
+          price: 29900,
+          currency: "NGN",
+          level: "beginner",
+          duration: 12,
+          categoryId: 1
+        });
+      }
+      
+      if (!javaCourse) {
+        javaCourse = await storage.createCourse({
+          title: "Java Programming Fundamentals",
+          description: "Master Java programming from basics to advanced concepts",
+          thumbnail: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1769&q=80",
+          isPublished: true,
+          price: 24900,
+          currency: "NGN",
+          level: "beginner",
+          duration: 8,
+          categoryId: 1
+        });
+      }
+      
+      // Enroll student in courses
+      await storage.enrollUserInCourse({
+        userId: "demo-oyinkonsola-789",
+        courseId: webDevCourse.id,
+        enrollmentType: "paid",
+        paymentStatus: "completed"
+      });
+      
+      await storage.enrollUserInCourse({
+        userId: "demo-oyinkonsola-789",
+        courseId: javaCourse.id,
+        enrollmentType: "paid",
+        paymentStatus: "completed"
+      });
+      
+      // Create demo modules and lessons for progress tracking
+      const webDevModule = await storage.createModule({
+        courseId: webDevCourse.id,
+        title: "Introduction to Web Development",
+        description: "Learn the fundamentals of web development",
+        orderIndex: 1
+      });
+      
+      const webDevLesson1 = await storage.createLesson({
+        moduleId: webDevModule.id,
+        title: "HTML Basics",
+        description: "Learn HTML fundamentals",
+        content: "Introduction to HTML tags and structure",
+        type: "video",
+        orderIndex: 1,
+        duration: 45
+      });
+      
+      const webDevLesson2 = await storage.createLesson({
+        moduleId: webDevModule.id,
+        title: "CSS Styling",
+        description: "Learn CSS for styling web pages",
+        content: "CSS selectors, properties, and layout",
+        type: "video",
+        orderIndex: 2,
+        duration: 60
+      });
+      
+      // Mark first lesson as completed for progress
+      await storage.updateLessonProgress(webDevLesson1.id, "demo-oyinkonsola-789", {
+        completed: true,
+        completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        timeSpent: 45
+      });
+      
+      console.log("Demo data initialized successfully");
+    } else {
+      console.log("Demo data already exists");
+    }
+  } catch (error) {
+    console.error("Error initializing demo data:", error);
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -55,6 +156,9 @@ app.use((req, res, next) => {
   
   try {
     server = await registerRoutes(app);
+
+    // Initialize demo data for student user
+    await initializeDemoData();
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;

@@ -2421,6 +2421,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getStudentEnrollments(userId: string): Promise<CourseEnrollment[]> {
+    try {
+      return await db
+        .select()
+        .from(courseEnrollments)
+        .where(eq(courseEnrollments.userId, userId))
+        .orderBy(desc(courseEnrollments.enrolledAt));
+    } catch (error) {
+      console.error("Error fetching student enrollments:", error);
+      return [];
+    }
+  }
+
   // Module Management
   async createModule(moduleData: Omit<Module, "id">): Promise<Module> {
     try {
