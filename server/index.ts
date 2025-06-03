@@ -47,6 +47,9 @@ app.use((req, res, next) => {
     setupSimpleAuth(app);
     
     server = await registerRoutes(app);
+    
+    // Seed demo users after database connection is established
+    await seedDemoUsers();
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;

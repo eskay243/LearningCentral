@@ -1,4 +1,6 @@
-import { storage } from "./storage";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 
@@ -43,10 +45,10 @@ export async function seedDemoUsers() {
 
     for (const userData of demoUsers) {
       // Check if user already exists
-      const existingUser = await storage.getUserByEmail(userData.email);
+      const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email));
       if (!existingUser) {
         const hashedPassword = await hashPassword(userData.password);
-        await storage.createUser({
+        await db.insert(users).values({
           id: userData.id,
           email: userData.email,
           firstName: userData.firstName,
