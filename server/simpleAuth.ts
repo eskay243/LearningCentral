@@ -53,19 +53,28 @@ export function setupSimpleAuth(app: Express) {
         return res.status(400).json({ message: "Email and password are required" });
       }
 
-      // Get user by email
-      const user = await storage.getUserByEmail(email);
+      // Get user by email using direct database query
+      const { db } = await import("./db");
+      const { users } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      const [user] = await db.select().from(users).where(eq(users.email, email));
       if (!user) {
+        console.log(`Login attempt: User not found for email ${email}`);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
-      // For demo users, check against demo password or hashed password
-      let isValid = false;
-      if (password === 'Password1234' && user.password === 'demo_hashed_Password1234') {
-        isValid = true;
-      } else if (user.password && user.password !== 'demo_hashed_Password1234') {
-        isValid = await comparePasswords(password, user.password);
+      console.log(`Login attempt for user: ${user.email}, has password: ${!!user.password}`);
+
+      // Validate password using proper hashing comparison
+      if (!user.password) {
+        console.log("No password stored for user");
+        return res.status(401).json({ message: "Invalid email or password" });
       }
+      
+      console.log(`Comparing password. Input: "${password}", Stored hash length: ${user.password.length}`);
+      const isValid = await comparePasswords(password, user.password);
+      console.log(`Password comparison result: ${isValid}`);
 
       if (!isValid) {
         return res.status(401).json({ message: "Invalid email or password" });
@@ -141,6 +150,32 @@ export function setupSimpleAuth(app: Express) {
       }
       res.json({ message: "Logged out successfully" });
     });
+  });
+
+  // Debug endpoint to check user data
+  app.get('/api/debug-user/:email', async (req: AuthRequest, res: Response) => {
+    try {
+      const { db } = await import("./db");
+      const { users } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      const [user] = await db.select().from(users).where(eq(users.email, req.params.email));
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        passwordSet: !!user.password,
+        passwordLength: user.password?.length || 0
+      });
+    } catch (error) {
+      console.error('Debug user error:', error);
+      res.status(500).json({ message: "Server error" });
+    }
   });
 
   // Get current user endpoint
