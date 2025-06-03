@@ -3,7 +3,7 @@ import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
-import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 
 const scryptAsync = promisify(scrypt);
 
@@ -26,12 +26,10 @@ interface AuthRequest extends Request {
 }
 
 export function setupSimpleAuth(app: Express) {
-  // Session setup
-  const PostgresSessionStore = connectPg(session);
-  const sessionStore = new PostgresSessionStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-    ttl: 7 * 24 * 60 * 60, // 1 week
+  // Use in-memory session store to avoid database conflicts
+  const MemoryStore = createMemoryStore(session);
+  const sessionStore = new MemoryStore({
+    checkPeriod: 86400000, // prune expired entries every 24h
   });
 
   app.use(session({
