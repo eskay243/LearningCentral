@@ -2358,7 +2358,8 @@ export class DatabaseStorage implements IStorage {
         query = query.where(eq(courses.isPublished, options.published));
       }
       
-      return await query.orderBy(desc(courses.createdAt));
+      const result = await query;
+      return result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     } catch (error) {
       console.error("Error fetching courses:", error);
       return [];
@@ -2423,11 +2424,11 @@ export class DatabaseStorage implements IStorage {
 
   async getStudentEnrollments(userId: string): Promise<CourseEnrollment[]> {
     try {
-      return await db
+      const result = await db
         .select()
         .from(courseEnrollments)
-        .where(eq(courseEnrollments.userId, userId))
-        .orderBy(desc(courseEnrollments.enrolledAt));
+        .where(eq(courseEnrollments.userId, userId));
+      return result.sort((a, b) => new Date(b.enrolledAt || 0).getTime() - new Date(a.enrolledAt || 0).getTime());
     } catch (error) {
       console.error("Error fetching student enrollments:", error);
       return [];

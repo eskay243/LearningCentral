@@ -157,8 +157,8 @@ app.use((req, res, next) => {
   try {
     server = await registerRoutes(app);
 
-    // Initialize demo data for student user
-    await initializeDemoData();
+    // Demo data initialization temporarily disabled
+    // await initializeDemoData();
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
