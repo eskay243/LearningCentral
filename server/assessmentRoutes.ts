@@ -1,7 +1,29 @@
 import { Express } from "express";
 import { storage } from "./storage";
-import { isAuthenticated, hasRole } from "./replitAuth";
 import { UserRole } from "@shared/schema";
+
+// Simple authentication middleware for demo/session-based auth
+const isAuthenticated = (req: any, res: any, next: any) => {
+  if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+    return next();
+  }
+  console.log("Authentication failed: User not authenticated");
+  return res.status(401).json({ message: "Unauthorized: Not authenticated" });
+};
+
+const hasRole = (roles: UserRole[]) => {
+  return (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized: Not authenticated" });
+    }
+    
+    if (roles.includes(req.user.role)) {
+      return next();
+    }
+    
+    return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
+  };
+};
 
 export function registerAssessmentRoutes(app: Express) {
   // Quiz Routes
