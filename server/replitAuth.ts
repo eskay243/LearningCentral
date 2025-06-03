@@ -96,11 +96,9 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
-  // Set first user as admin or maintain existing roles
-  let role = UserRole.STUDENT;
-  
-  // Always make the current user an admin for testing/development
-  role = "admin" as any; // Type assertion to bypass TypeScript error
+  // Check if user already exists in database to preserve their role
+  const existingUser = await storage.getUser(claims["sub"]);
+  let role = existingUser?.role || UserRole.STUDENT;
   
   const user = await storage.upsertUser({
     id: claims["sub"],
