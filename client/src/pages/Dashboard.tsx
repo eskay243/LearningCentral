@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
+import StableStudentDashboard from '@/pages/stable-student-dashboard';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,10 +100,9 @@ export default function Dashboard() {
   const isStudent = user?.role === 'student';
   const [activeView, setActiveView] = useState('overview');
 
-  // Redirect students to student dashboard
+  // Show student dashboard for student users
   if (isStudent && !isAuthLoading) {
-    window.location.href = '/student-dashboard';
-    return null;
+    return <StableStudentDashboard />;
   }
 
   // Fetch admin dashboard statistics
