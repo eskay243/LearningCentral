@@ -4,9 +4,81 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, BookOpen, Trophy, Clock, PlayCircle, CheckCircle2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  coverImage?: string;
+  progress?: number;
+  instructor?: string;
+  totalLessons?: number;
+  completedLessons?: number;
+  nextLesson?: {
+    id: number;
+    title: string;
+    moduleTitle: string;
+  };
+}
+
+interface Assignment {
+  id: number;
+  title: string;
+  courseTitle: string;
+  dueDate: string;
+  status: 'pending' | 'submitted' | 'graded';
+  score?: number;
+}
+
+interface Quiz {
+  id: number;
+  title: string;
+  courseTitle: string;
+  completedAt?: string;
+  score?: number;
+  passed?: boolean;
+}
+
+interface RecentActivity {
+  id: number;
+  type: 'lesson_completed' | 'quiz_taken' | 'assignment_submitted';
+  title: string;
+  courseTitle: string;
+  timestamp: string;
+}
 
 export default function StableStudentDashboard() {
   const { user, isLoading } = useAuth();
+
+  // Fetch real data from backend APIs
+  const { data: enrolledCourses = [], isLoading: coursesLoading } = useQuery<Course[]>({
+    queryKey: ['/api/student/enrolled-courses'],
+    enabled: !!user && !isLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery<Assignment[]>({
+    queryKey: ['/api/student/assignments'],
+    enabled: !!user && !isLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: quizzes = [], isLoading: quizzesLoading } = useQuery<Quiz[]>({
+    queryKey: ['/api/student/quizzes'],
+    enabled: !!user && !isLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: recentActivity = [], isLoading: activityLoading } = useQuery<RecentActivity[]>({
+    queryKey: ['/api/student/recent-activity'],
+    enabled: !!user && !isLoading,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
 
   if (isLoading || !user) {
     return (
@@ -25,124 +97,51 @@ export default function StableStudentDashboard() {
     );
   }
 
-  // Static demo data to show dashboard functionality
-  const enrolledCourses = [
-    {
-      id: 1,
-      title: "JavaScript Fundamentals",
-      description: "Learn the basics of JavaScript programming",
-      coverImage: "/api/placeholder/300/200",
-      progress: 65,
-      instructor: "Sarah Johnson",
-      totalLessons: 24,
-      completedLessons: 15,
-      nextLesson: {
-        id: 16,
-        title: "Async Programming",
-        moduleTitle: "Advanced Concepts"
-      }
-    },
-    {
-      id: 2,
-      title: "React Development",
-      description: "Build modern web applications with React",
-      coverImage: "/api/placeholder/300/200",
-      progress: 40,
-      instructor: "Mike Chen",
-      totalLessons: 30,
-      completedLessons: 12,
-      nextLesson: {
-        id: 13,
-        title: "State Management",
-        moduleTitle: "React Hooks"
-      }
-    },
-    {
-      id: 3,
-      title: "Node.js Backend",
-      description: "Server-side development with Node.js",
-      coverImage: "/api/placeholder/300/200",
-      progress: 25,
-      instructor: "David Wilson",
-      totalLessons: 20,
-      completedLessons: 5,
-      nextLesson: {
-        id: 6,
-        title: "Express Routing",
-        moduleTitle: "Web Framework"
-      }
-    }
-  ];
+  // Show loading state for data
+  if (coursesLoading || assignmentsLoading || quizzesLoading || activityLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cream-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Welcome back, {user.firstName || 'Student'}! 👋
+            </h1>
+            <p className="text-xl text-gray-600">Loading your learning data...</p>
+          </div>
+          <div className="animate-pulse space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const assignments = [
-    {
-      id: 1,
-      title: "Build a Todo App",
-      courseTitle: "JavaScript Fundamentals",
-      dueDate: "2025-06-10",
-      status: 'pending' as const,
-    },
-    {
-      id: 2,
-      title: "React Component Library",
-      courseTitle: "React Development",
-      dueDate: "2025-06-15",
-      status: 'pending' as const,
-    },
-    {
-      id: 3,
-      title: "REST API Project",
-      courseTitle: "Node.js Backend",
-      dueDate: "2025-06-20",
-      status: 'submitted' as const,
-      score: 85
-    }
-  ];
-
-  const quizzes = [
-    {
-      id: 1,
-      title: "JavaScript Basics Quiz",
-      courseTitle: "JavaScript Fundamentals",
-      completedAt: "2025-06-01",
-      score: 92,
-      passed: true
-    },
-    {
-      id: 2,
-      title: "React Hooks Quiz",
-      courseTitle: "React Development",
-      completedAt: "2025-05-28",
-      score: 78,
-      passed: true
-    }
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      type: 'lesson_completed' as const,
-      title: "Arrow Functions",
-      courseTitle: "JavaScript Fundamentals",
-      timestamp: "2025-06-03T10:30:00Z"
-    },
-    {
-      id: 2,
-      type: 'quiz_taken' as const,
-      title: "JavaScript Basics Quiz",
-      courseTitle: "JavaScript Fundamentals",
-      timestamp: "2025-06-01T14:20:00Z"
-    }
-  ];
+  // Process real data for dashboard display
+  const totalCourses = enrolledCourses.length;
+  const completedCourses = enrolledCourses.filter(course => course.progress === 100).length;
+  const averageProgress = totalCourses > 0 
+    ? Math.round(enrolledCourses.reduce((sum, course) => sum + (course.progress || 0), 0) / totalCourses)
+    : 0;
 
   const pendingAssignments = assignments.filter(a => a.status === 'pending') || [];
+  const completedAssignments = assignments.filter(a => a.status === 'graded' || a.status === 'submitted') || [];
+  
   const upcomingDeadlines = pendingAssignments
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 3);
 
-  const recentQuizzes = quizzes.slice(0, 3) || [];
-  const averageScore = quizzes.length ? 
-    Math.round(quizzes.reduce((sum, quiz) => sum + (quiz.score || 0), 0) / quizzes.length) : 0;
+  const recentQuizzes = quizzes
+    .filter(q => q.completedAt)
+    .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())
+    .slice(0, 3);
+
+  const averageQuizScore = quizzes.length > 0
+    ? Math.round(quizzes.reduce((sum, quiz) => sum + (quiz.score || 0), 0) / quizzes.length)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cream-50 p-6">
@@ -183,7 +182,7 @@ export default function StableStudentDashboard() {
               <Trophy className="h-4 w-4 text-yellow-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{averageScore}%</div>
+              <div className="text-2xl font-bold text-gray-900">{averageQuizScore}%</div>
             </CardContent>
           </Card>
 
