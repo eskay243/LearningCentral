@@ -1,5 +1,5 @@
 import { Express, Request, Response } from 'express';
-import { isAuthenticated } from './replitAuth';
+import { isAuthenticated } from './auth';
 import { storage } from './storage';
 
 interface NotificationRequest extends Request {
@@ -11,11 +11,43 @@ interface NotificationRequest extends Request {
 
 export function registerNotificationRoutes(app: Express) {
   // Get user notifications
-  app.get('/api/notifications', isAuthenticated, async (req: NotificationRequest, res: Response) => {
+  app.get('/api/notifications', async (req: any, res: Response) => {
     try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Unauthorized: Not authenticated' });
+      }
+
       const userId = req.user?.id;
       if (!userId) {
         return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      // For demo purposes, return sample notifications
+      if (userId === "demo-oyinkonsola-789") {
+        const sampleNotifications = [
+          {
+            id: 1,
+            message: "Welcome to Codelab Educare! Start your learning journey today.",
+            type: "welcome",
+            read: false,
+            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 2,
+            message: "New assignment available in Full Stack Web Development",
+            type: "assignment",
+            read: false,
+            createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 3,
+            message: "Quiz deadline approaching for JavaScript Fundamentals",
+            type: "reminder",
+            read: true,
+            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+          }
+        ];
+        return res.json(sampleNotifications);
       }
 
       const notifications = await storage.getUserNotifications(userId);

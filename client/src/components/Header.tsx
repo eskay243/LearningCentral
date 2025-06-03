@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { getInitials, getFullName } from "@/lib/utils";
-import { NotificationCenter } from "@/components/NotificationCenter";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -74,7 +73,12 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
         <div className="flex items-center gap-3 sm:gap-5">
           {isAuthenticated && (
             <>
-              <NotificationCenter />
+              <button 
+                className="hidden sm:flex items-center justify-center h-10 w-10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
+                aria-label="Notifications"
+              >
+                <Bell size={20} />
+              </button>
               <button 
                 className="hidden sm:flex items-center justify-center h-10 w-10 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
                 aria-label="Messages"
