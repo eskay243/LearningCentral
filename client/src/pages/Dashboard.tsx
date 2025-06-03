@@ -96,7 +96,14 @@ export default function Dashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const isAdmin = user?.role === 'admin';
   const isMentor = user?.role === 'mentor';
+  const isStudent = user?.role === 'student';
   const [activeView, setActiveView] = useState('overview');
+
+  // Redirect students to student dashboard
+  if (isStudent && !isAuthLoading) {
+    window.location.href = '/student-dashboard';
+    return null;
+  }
 
   // Fetch admin dashboard statistics
   const { data: dashboardStats, isLoading: isStatsLoading, error: statsError } = useQuery<AdminDashboardStats>({
