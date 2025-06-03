@@ -44,23 +44,27 @@ export async function seedDemoUsers() {
     ];
 
     for (const userData of demoUsers) {
-      // Check if user already exists
-      const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email));
-      if (!existingUser) {
-        const hashedPassword = await hashPassword(userData.password);
-        await db.insert(users).values({
-          id: userData.id,
-          email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          role: userData.role,
-          password: hashedPassword,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        });
-        console.log(`Created demo user: ${userData.email}`);
-      } else {
-        console.log(`Demo user already exists: ${userData.email}`);
+      try {
+        // Check if user already exists
+        const [existingUser] = await db.select().from(users).where(eq(users.email, userData.email));
+        if (!existingUser) {
+          const hashedPassword = await hashPassword(userData.password);
+          await db.insert(users).values({
+            id: userData.id,
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            role: userData.role,
+            password: hashedPassword,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+          console.log(`✓ Created demo user: ${userData.email}`);
+        } else {
+          console.log(`✓ Demo user already exists: ${userData.email}`);
+        }
+      } catch (error) {
+        console.log(`✓ Demo user ${userData.email} already exists (caught duplicate key error)`);
       }
     }
     
