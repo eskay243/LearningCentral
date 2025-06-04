@@ -2504,6 +2504,33 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getLessonsByCourse(courseId: number): Promise<Lesson[]> {
+    try {
+      // Get all modules for the course first
+      const courseModules = await db
+        .select()
+        .from(modules)
+        .where(eq(modules.courseId, courseId))
+        .orderBy(modules.orderIndex);
+
+      // Get all lessons for all modules in the course
+      const allLessons: Lesson[] = [];
+      for (const module of courseModules) {
+        const moduleLessons = await db
+          .select()
+          .from(lessons)
+          .where(eq(lessons.moduleId, module.id))
+          .orderBy(lessons.orderIndex);
+        allLessons.push(...moduleLessons);
+      }
+
+      return allLessons;
+    } catch (error) {
+      console.error("Error fetching course lessons:", error);
+      return [];
+    }
+  }
+
   async getLessonProgress(lessonId: number, userId: string): Promise<LessonProgress | undefined> {
     try {
       const [progress] = await db

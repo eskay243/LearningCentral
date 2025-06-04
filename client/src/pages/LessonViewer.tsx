@@ -25,7 +25,7 @@ export default function LessonViewer() {
   });
 
   // Fetch lessons list for navigation
-  const { data: lessons, isLoading: lessonsLoading } = useQuery({
+  const { data: lessons = [], isLoading: lessonsLoading } = useQuery({
     queryKey: [`/api/courses/${courseId}/lessons`],
   });
 
