@@ -14,6 +14,7 @@ import CourseExercises from "@/pages/CourseExercises";
 import CreateCourse from "@/pages/CreateCourse";
 import CourseCurriculum from "@/pages/CourseCurriculum";
 import LessonEditor from "@/pages/LessonEditor";
+import LessonViewer from "@/pages/LessonViewer";
 import CoursePreview from "@/pages/CoursePreview";
 import Schedule from "@/pages/Schedule";
 import Students from "@/pages/Students";
@@ -69,6 +70,7 @@ function Router() {
         <Route path="/courses/:id/discussion" component={CourseDiscussion} />
         <Route path="/courses/:id/curriculum" component={CourseCurriculum} />
         <Route path="/courses/:courseId/lessons/:lessonId/edit" component={LessonEditor} />
+        <Route path="/courses/:courseId/lessons/:lessonId" component={LessonViewer} />
         <Route path="/courses/:id/payment" component={PaymentPage} />
         <Route path="/courses/:id/bank-transfer" component={BankTransferInstructions} />
         <Route path="/create-course" component={CreateCourse} />
