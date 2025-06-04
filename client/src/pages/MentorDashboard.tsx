@@ -33,6 +33,39 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 
+// Type definitions
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  category: string | null;
+  isPublished: boolean;
+  thumbnail: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  tags: string[] | null;
+}
+
+interface Earnings {
+  totalEarnings: number;
+  thisMonthEarnings: number;
+  pendingPayouts: number;
+  withdrawnFunds: number;
+  commissionRate: number;
+  totalEnrollments: number;
+  courseCount: number;
+}
+
+interface WithdrawalMethod {
+  id: string;
+  name: string;
+  description: string;
+  fees: string;
+  minimumAmount: number;
+  processingTime: string;
+}
+
 const withdrawalSchema = z.object({
   amount: z.number().min(500, "Minimum withdrawal amount is ₦500"),
   method: z.string().min(1, "Please select a withdrawal method"),
@@ -51,7 +84,7 @@ const courseEditSchema = z.object({
 
 type CourseEditForm = z.infer<typeof courseEditSchema>;
 
-function EditCourseForm({ course }: { course: any }) {
+function EditCourseForm({ course }: { course: Course }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -231,7 +264,7 @@ function EditCourseForm({ course }: { course: any }) {
   );
 }
 
-function WithdrawalForm({ withdrawalMethods }: { withdrawalMethods: any[] }) {
+function WithdrawalForm({ withdrawalMethods }: { withdrawalMethods: WithdrawalMethod[] }) {
   const { toast } = useToast();
   
   const form = useForm<WithdrawalForm>({
@@ -360,7 +393,7 @@ export default function MentorDashboard() {
   const { user, isAuthenticated, isMentor, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
 
   // Simple loading state
   if (authLoading) {
@@ -374,15 +407,15 @@ export default function MentorDashboard() {
   // For now, render the dashboard directly to test functionality
   // We'll add proper auth checks once the basic dashboard is working
 
-  const { data: earnings, isLoading: earningsLoading } = useQuery({
+  const { data: earnings, isLoading: earningsLoading } = useQuery<Earnings>({
     queryKey: ["/api/mentor/earnings"],
   });
 
-  const { data: withdrawalMethods } = useQuery({
+  const { data: withdrawalMethods = [] } = useQuery<WithdrawalMethod[]>({
     queryKey: ["/api/mentor/withdrawal-methods"],
   });
 
-  const { data: courses, isLoading: coursesLoading, error: coursesError } = useQuery({
+  const { data: courses = [], isLoading: coursesLoading, error: coursesError } = useQuery<Course[]>({
     queryKey: ["/api/mentor/courses"],
     enabled: !!user && user.role === 'mentor', // Only run query when user is authenticated and is a mentor
   });
@@ -648,8 +681,8 @@ export default function MentorDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {Array.isArray(withdrawalMethods) && withdrawalMethods.length > 0 ? (
-                  withdrawalMethods.map((method: any) => (
+                {withdrawalMethods.length > 0 ? (
+                  withdrawalMethods.map((method) => (
                     <div key={method.id} className="border rounded-lg p-3">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium">{method.name || 'Payment Method'}</h4>
@@ -746,7 +779,7 @@ export default function MentorDashboard() {
                               <DialogHeader>
                                 <DialogTitle>Edit Course</DialogTitle>
                               </DialogHeader>
-                              <EditCourseForm course={editingCourse} />
+                              {editingCourse && <EditCourseForm course={editingCourse} />}
                             </DialogContent>
                           </Dialog>
                         </div>
