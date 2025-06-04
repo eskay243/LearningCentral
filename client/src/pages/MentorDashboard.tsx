@@ -779,7 +779,7 @@ export default function MentorDashboard() {
                               <DialogHeader>
                                 <DialogTitle>Edit Course</DialogTitle>
                               </DialogHeader>
-                              {editingCourse && <EditCourseForm course={editingCourse} />}
+                              <EditCourseForm course={editingCourse!} />
                             </DialogContent>
                           </Dialog>
                         </div>
