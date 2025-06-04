@@ -247,7 +247,11 @@ export default function StableStudentDashboard() {
                         </p>
                         {course.nextLesson && (
                           <div className="mt-2">
-                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                            <Button 
+                              size="sm" 
+                              className="bg-purple-600 hover:bg-purple-700"
+                              onClick={() => setLocation(`/courses/${course.id}/lessons/${course.nextLesson?.id}`)}
+                            >
                               <PlayCircle className="w-4 h-4 mr-2" />
                               Continue: {course.nextLesson.title}
                             </Button>
