@@ -16,6 +16,7 @@ import fs from "fs";
 import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
+import { setupAuth } from "./auth";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -119,7 +120,8 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-
+  // Setup authentication
+  setupAuth(app);
 
   // Dashboard data endpoints with fallback to mock data
   app.get('/api/dashboard/stats', async (req, res) => {
