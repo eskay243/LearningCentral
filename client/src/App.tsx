@@ -40,6 +40,7 @@ import PaymentPage from "@/pages/PaymentPage";
 import BankTransferInstructions from "@/pages/BankTransferInstructions";
 import ContentDemo from "@/pages/ContentDemo";
 import InteractiveLearning from "@/pages/InteractiveLearning";
+import InteractiveCodingPage from "@/pages/InteractiveCodingPage";
 import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
@@ -96,6 +97,7 @@ function Router() {
         <Route path="/payment-callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
         <Route path="/interactive-learning" component={InteractiveLearning} />
+        <Route path="/coding-playground" component={InteractiveCodingPage} />
         <Route path="/certificates" component={Certificates} />
         <Route path="/certificate/verify/:id" component={CertificateVerification} />
         <Route path="/certificate/verify" component={CertificateVerification} />
