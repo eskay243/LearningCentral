@@ -37,7 +37,7 @@ interface CodingExercise {
 }
 
 const InteractiveCodingPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [selectedExercise, setSelectedExercise] = useState<CodingExercise | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<number>>(new Set());
 
@@ -224,6 +224,14 @@ Requirements:
       default: return 'Unknown';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   if (!user) {
     return (
