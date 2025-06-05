@@ -15,6 +15,7 @@ import path from "path";
 import fs from "fs";
 import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
+import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -3524,6 +3525,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register assessment routes
   registerAssessmentRoutes(app);
+  
+  // Register code execution routes
+  registerCodeExecutionRoutes(app);
 
   return httpServer;
 }
