@@ -42,6 +42,7 @@ import ContentDemo from "@/pages/ContentDemo";
 import InteractiveLearning from "@/pages/InteractiveLearning";
 import InteractiveCodingPage from "@/pages/InteractiveCodingPage";
 import DirectCodingPlayground from "@/pages/DirectCodingPlayground";
+import SimpleCodingTest from "@/pages/SimpleCodingTest";
 import TestCodingPage from "@/pages/TestCodingPage";
 import SimpleRoutingTest from "@/pages/SimpleRoutingTest";
 import Certificates from "@/pages/Certificates";
@@ -100,7 +101,8 @@ function Router() {
         <Route path="/payment-callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
         <Route path="/interactive-learning" component={InteractiveLearning} />
-        <Route path="/coding-playground" component={DirectCodingPlayground} />
+        <Route path="/coding-playground" component={SimpleCodingTest} />
+        <Route path="/coding-playground-full" component={DirectCodingPlayground} />
         <Route path="/interactive-coding" component={InteractiveCodingPage} />
         <Route path="/test-coding" component={TestCodingPage} />
         <Route path="/certificates" component={Certificates} />
