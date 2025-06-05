@@ -182,6 +182,10 @@ export function setupAuth(app: Express) {
 
 // Middleware to check authentication
 export const isAuthenticated = (req: any, res: any, next: any) => {
+  console.log('Auth check - isAuthenticated:', req.isAuthenticated());
+  console.log('Auth check - user:', req.user);
+  console.log('Auth check - session:', req.session);
+  
   if (req.isAuthenticated()) {
     return next();
   }
