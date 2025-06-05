@@ -14,7 +14,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [location, navigate] = useLocation();
 
   // Public pages that don't require authentication
-  const publicPages = ['/login', '/demo-users', '/coding-playground', '/test-coding', '/interactive-learning'];
+  const publicPages = ['/login', '/demo-users'];
   const isPublicPage = publicPages.includes(location);
   
   // Pages that should not redirect authenticated users

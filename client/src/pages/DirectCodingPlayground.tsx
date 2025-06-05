@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Play, Code, Trophy } from 'lucide-react';
+import { Clock, Play, Code, Trophy, Lock } from 'lucide-react';
 import CodePlayground from '@/components/coding/CodePlayground';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Exercise {
   id: number;
@@ -77,6 +78,49 @@ const sampleExercises: Exercise[] = [
 
 const DirectCodingPlayground: React.FC = () => {
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const { user, isLoading } = useAuth();
+  
+  // Check if user is authenticated and is a student
+  const isStudent = user?.role === 'student';
+  const hasAccess = user && isStudent;
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied for non-students
+  if (!hasAccess) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16">
+        <Card className="text-center">
+          <CardContent className="pt-16 pb-16">
+            <Lock className="w-16 h-16 text-muted-foreground mx-auto mb-6" />
+            <h1 className="text-2xl font-bold mb-4">Access Restricted</h1>
+            <p className="text-muted-foreground mb-6">
+              {!user 
+                ? "Please sign in as a student to access the coding playground."
+                : "This feature is only available to students. Please contact your administrator if you need access."
+              }
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/login'} 
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {!user ? 'Sign In' : 'Go to Dashboard'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
