@@ -42,6 +42,7 @@ import ContentDemo from "@/pages/ContentDemo";
 import InteractiveLearning from "@/pages/InteractiveLearning";
 import InteractiveCodingPage from "@/pages/InteractiveCodingPage";
 import TestCodingPage from "@/pages/TestCodingPage";
+import SimpleRoutingTest from "@/pages/SimpleRoutingTest";
 import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
