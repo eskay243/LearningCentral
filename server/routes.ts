@@ -119,69 +119,7 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Traditional authentication endpoints
-  app.post('/api/login', async (req: Request, res: Response) => {
-    try {
-      const { email, password } = req.body;
-      console.log('Login attempt:', { email, password: password ? 'provided' : 'missing' });
-      
-      // For demo users, check against demo password
-      if (password === 'Password1234') {
-        console.log('Password matches demo password, looking up user...');
-        const user = await storage.getUserByEmail(email);
-        console.log('User lookup result:', user ? 'found' : 'not found');
-        
-        if (user) {
-          (req.session as any).userId = user.id;
-          console.log('Login successful for user:', user.id);
-          res.json({
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.role
-          });
-          return;
-        }
-      }
-      
-      console.log('Login failed: invalid credentials');
-      res.status(401).json({ message: "Invalid email or password" });
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: "Login failed" });
-    }
-  });
 
-  app.post('/api/logout', (req: Request, res: Response) => {
-    req.session.destroy(() => {
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  app.get('/api/user', async (req: Request, res: Response) => {
-    try {
-      const userId = (req.session as any)?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
-      
-      res.json({
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role
-      });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
 
   // Dashboard data endpoints with fallback to mock data
   app.get('/api/dashboard/stats', async (req, res) => {
