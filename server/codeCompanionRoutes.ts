@@ -1,5 +1,5 @@
 import { Express, Request, Response } from "express";
-import { isAuthenticated } from "./replitAuth";
+import { isAuthenticated } from "./auth";
 
 interface TipRequest {
   language?: string;
