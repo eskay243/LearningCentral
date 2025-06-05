@@ -1,7 +1,7 @@
 import { Express, Request, Response } from 'express';
 import { z } from 'zod';
 import { codeExecutionService } from './codeExecutionService';
-import { isAuthenticated } from './replitAuth';
+import { isAuthenticated } from './auth';
 
 const executeCodeSchema = z.object({
   code: z.string(),

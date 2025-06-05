@@ -15,6 +15,7 @@ import {
   User,
   UsersRound,
   Award,
+  Code,
   Code2,
 } from "lucide-react";
 
@@ -171,6 +172,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           <Link href="/certificates" className={menuItemClass("/certificates")}>
             <Award className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Certificates</span>
+          </Link>
+          
+          <Link href="/coding-playground" className={menuItemClass("/coding-playground")}>
+            <Code className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Coding Playground</span>
           </Link>
           
           <Link href="/code-companion" className={menuItemClass("/code-companion")}>
