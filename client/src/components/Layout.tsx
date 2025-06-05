@@ -21,12 +21,12 @@ const Layout = ({ children }: LayoutProps) => {
   const noRedirectPages = ['/coding-playground', '/test-coding', '/interactive-learning'];
   const shouldNotRedirect = noRedirectPages.includes(location);
 
-  // Redirect unauthenticated users to login page (except for public pages)
+  // Redirect unauthenticated users to login page (except for public pages and coding playground)
   useEffect(() => {
-    if (!isAuthenticated && !isPublicPage) {
+    if (!isAuthenticated && !isPublicPage && !shouldNotRedirect) {
       navigate('/login');
     }
-  }, [isAuthenticated, isPublicPage, navigate]);
+  }, [isAuthenticated, isPublicPage, shouldNotRedirect, navigate]);
 
   // Close sidebar when screen resizes to desktop
   useEffect(() => {
