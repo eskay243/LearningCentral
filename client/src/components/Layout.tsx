@@ -16,6 +16,10 @@ const Layout = ({ children }: LayoutProps) => {
   // Public pages that don't require authentication
   const publicPages = ['/login', '/demo-users'];
   const isPublicPage = publicPages.includes(location);
+  
+  // Pages that should not redirect authenticated users
+  const noRedirectPages = ['/coding-playground', '/test-coding', '/interactive-learning'];
+  const shouldNotRedirect = noRedirectPages.includes(location);
 
   // Redirect unauthenticated users to login page (except for public pages)
   useEffect(() => {
