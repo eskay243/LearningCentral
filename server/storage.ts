@@ -2969,7 +2969,10 @@ export class DatabaseStorage implements IStorage {
       const { limit, offset } = options;
       
       const announcementRows = await db
-        .select()
+        .select({
+          announcement: announcements,
+          creator: users
+        })
         .from(announcements)
         .leftJoin(users, eq(announcements.createdBy, users.id))
         .where(eq(announcements.courseId, courseId))
@@ -2978,12 +2981,86 @@ export class DatabaseStorage implements IStorage {
         .offset(offset);
       
       return announcementRows.map(row => ({
-        ...row.announcements,
-        creator: row.users
+        ...row.announcement,
+        creator: row.creator
       }));
     } catch (error) {
       console.error("Error fetching course announcements:", error);
       return [];
+    }
+  }
+
+  async createAnnouncement(announcementData: any): Promise<any> {
+    try {
+      const [announcement] = await db
+        .insert(announcements)
+        .values({
+          courseId: announcementData.courseId,
+          title: announcementData.title,
+          content: announcementData.content,
+          type: announcementData.type || 'general',
+          priority: announcementData.priority || 'normal',
+          isPublished: announcementData.isPublished || true,
+          publishedAt: new Date(),
+          createdBy: announcementData.createdBy
+        })
+        .returning();
+      
+      return announcement;
+    } catch (error) {
+      console.error("Error creating announcement:", error);
+      throw new Error("Failed to create announcement");
+    }
+  }
+
+  async getAnnouncementsByCourse(courseId: number): Promise<any[]> {
+    try {
+      const announcementRows = await db
+        .select({
+          announcement: announcements,
+          creator: users
+        })
+        .from(announcements)
+        .leftJoin(users, eq(announcements.createdBy, users.id))
+        .where(eq(announcements.courseId, courseId))
+        .orderBy(desc(announcements.createdAt));
+      
+      return announcementRows.map(row => ({
+        ...row.announcement,
+        creator: row.creator
+      }));
+    } catch (error) {
+      console.error("Error fetching announcements by course:", error);
+      return [];
+    }
+  }
+
+  async updateAnnouncement(announcementId: number, updateData: any): Promise<any> {
+    try {
+      const [updatedAnnouncement] = await db
+        .update(announcements)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(eq(announcements.id, announcementId))
+        .returning();
+      
+      return updatedAnnouncement;
+    } catch (error) {
+      console.error("Error updating announcement:", error);
+      throw new Error("Failed to update announcement");
+    }
+  }
+
+  async deleteAnnouncement(announcementId: number): Promise<void> {
+    try {
+      await db
+        .delete(announcements)
+        .where(eq(announcements.id, announcementId));
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
+      throw new Error("Failed to delete announcement");
     }
   }
   
