@@ -48,6 +48,7 @@ import SimpleRoutingTest from "@/pages/SimpleRoutingTest";
 import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
+import AdminPayments from "@/pages/admin-payments";
 import StudentInvoices from "@/pages/StudentInvoices";
 import StudentPayments from "@/pages/student-payments";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
@@ -103,6 +104,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/admin/oauth-settings" component={AdminOAuthSettings} />
+        <Route path="/admin/payments" component={AdminPayments} />
         <Route path="/payment/callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
         <Route path="/interactive-learning" component={InteractiveLearning} />

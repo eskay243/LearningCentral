@@ -153,6 +153,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                     <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                     <span className="truncate">OAuth Settings</span>
                   </Link>
+                  
+                  <Link href="/admin/payments" className={menuItemClass("/admin/payments")}>
+                    <CreditCard className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <span className="truncate">Payment Management</span>
+                  </Link>
                 </>
               )}
             </>
