@@ -2439,12 +2439,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Student Dashboard API Endpoints
-  app.get("/api/student/enrolled-courses", async (req: any, res: Response) => {
+  app.get("/api/student/enrolled-courses", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+      const userId = req.user?.id || req.user?.claims?.sub;
 
       // Get actual enrolled courses from database
 
@@ -2513,12 +2510,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/student/assignments", async (req: any, res: Response) => {
+  app.get("/api/student/assignments", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+      const userId = req.user?.id || req.user?.claims?.sub;
 
       // For demo student, provide sample assignment data
       if (userId === "demo-oyinkonsola-789") {
@@ -2583,12 +2577,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/student/quizzes", async (req: any, res: Response) => {
+  app.get("/api/student/quizzes", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+      const userId = req.user?.id || req.user?.claims?.sub;
 
       // For demo student, provide sample quiz data
       if (userId === "demo-oyinkonsola-789") {
@@ -2652,12 +2643,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/student/recent-activity", async (req: any, res: Response) => {
+  app.get("/api/student/recent-activity", isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.session?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+      const userId = req.user?.id || req.user?.claims?.sub;
 
       // For demo student, provide sample recent activity data
       if (userId === "demo-oyinkonsola-789") {
