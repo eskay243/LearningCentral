@@ -1,14 +1,8 @@
-// @ts-ignore
-import Paystack from "paystack-node";
-
 if (!process.env.PAYSTACK_SECRET_KEY) {
   throw new Error("Missing required Paystack secret: PAYSTACK_SECRET_KEY");
 }
 
-// Initialize Paystack
-const paystack = new Paystack(process.env.PAYSTACK_SECRET_KEY);
-
-// Initialize payment for course enrollment
+// Initialize payment for course enrollment using direct HTTP API
 export async function initializePayment(options: {
   email: string;
   amount: number;
@@ -19,25 +13,35 @@ export async function initializePayment(options: {
   const { email, amount, reference, callbackUrl, metadata } = options;
   
   try {
-    // Amount should be in kobo (multiply by 100)
-    const response = await paystack.transaction.initialize({
+    const paymentData = {
       email,
-      amount: Math.round(amount * 100),
-      reference,
+      amount: Math.round(amount * 100), // Convert to kobo
+      reference: reference || `CLB-${Date.now()}`,
       callback_url: callbackUrl,
       metadata
+    };
+
+    const response = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(paymentData)
     });
+
+    const result = await response.json();
     
-    if (!response.status) {
-      throw new Error(response.message || 'Payment initialization failed');
+    if (!result.status) {
+      throw new Error(result.message || 'Payment initialization failed');
     }
     
     return {
       status: true,
-      data: response.data,
-      authorization_url: response.data.authorization_url,
-      access_code: response.data.access_code,
-      reference: response.data.reference
+      data: result.data,
+      authorization_url: result.data.authorization_url,
+      access_code: result.data.access_code,
+      reference: result.data.reference
     };
   } catch (error: any) {
     console.error('Paystack initialization error:', error);
@@ -45,55 +49,29 @@ export async function initializePayment(options: {
   }
 }
 
-// Verify payment after completion
+// Verify payment after completion using direct HTTP API
 export async function verifyPayment(reference: string) {
   try {
-    const response = await paystack.transaction.verify({ reference });
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      }
+    });
+
+    const result = await response.json();
     
-    if (!response.status) {
-      throw new Error(response.message || 'Payment verification failed');
+    if (!result.status) {
+      throw new Error(result.message || 'Payment verification failed');
     }
     
-    return response.data;
+    return {
+      status: true,
+      data: result.data
+    };
   } catch (error: any) {
     console.error('Paystack verification error:', error);
     throw new Error(`Failed to verify payment: ${error.message}`);
-  }
-}
-
-// Get transaction details
-export async function getTransaction(id: number) {
-  try {
-    const response = await paystack.transaction.get({ id });
-    
-    if (!response.status) {
-      throw new Error(response.message || 'Failed to get transaction');
-    }
-    
-    return response.data;
-  } catch (error: any) {
-    console.error('Paystack transaction fetch error:', error);
-    throw new Error(`Failed to get transaction: ${error.message}`);
-  }
-}
-
-// List transactions
-export async function listTransactions(options?: {
-  perPage?: number;
-  page?: number;
-  from?: string;
-  to?: string;
-}) {
-  try {
-    const response = await paystack.transaction.list(options);
-    
-    if (!response.status) {
-      throw new Error(response.message || 'Failed to list transactions');
-    }
-    
-    return response.data;
-  } catch (error: any) {
-    console.error('Paystack transactions fetch error:', error);
-    throw new Error(`Failed to list transactions: ${error.message}`);
   }
 }
