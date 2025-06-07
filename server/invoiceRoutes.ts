@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "./storage";
-import { isAuthenticated } from "./replitAuth";
+import { isAuthenticated } from "./simpleAuth";
 import { insertInvoiceSchema, insertPaymentTransactionSchema } from "@shared/schema";
 import { z } from "zod";
 import { initializePayment, verifyPayment } from "./paystack";

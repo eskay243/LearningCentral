@@ -1,6 +1,6 @@
 import { type Express } from "express";
 import { storage } from "./storage";
-import { isAuthenticated } from "./replitAuth";
+import { isAuthenticated } from "./simpleAuth";
 import { z } from "zod";
 
 export function registerCommunicationRoutes(app: Express) {

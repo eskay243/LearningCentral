@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { storage } from "./storage";
-import { isAuthenticated, hasRole } from "./replitAuth";
+import { isAuthenticated, hasRole } from "./simpleAuth";
 import { UserRole } from "@shared/schema";
 
 /**

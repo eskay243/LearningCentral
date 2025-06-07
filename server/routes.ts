@@ -74,7 +74,7 @@ const mockData = {
     }
   }))
 };
-import { setupAuth, isAuthenticated, hasRole } from "./replitAuth";
+import { setupSimpleAuth, isAuthenticated, hasRole } from "./simpleAuth";
 import { z } from "zod";
 import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
@@ -82,6 +82,7 @@ import { setUserAsAdmin } from "./admin-setup";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 import { registerCodeCompanionRoutes } from "./codeCompanionRoutes";
+import { registerInvoiceRoutes } from "./invoiceRoutes";
 import { setupWebSocketServer } from "./websocketServer";
 import certificateRoutes from "./certificateRoutes";
 import drmRoutes from "./drmRoutes";
@@ -362,59 +363,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch course overview" });
     }
   });
-  // Initialize authentication without waiting for system settings
-  try {
-    // We'll properly initialize system settings later
-    console.log("Skipping system settings initialization for now");
-  } catch (error) {
-    console.error("Error initializing system settings:", error);
-  }
-  // Setup authentication middleware first
-  try {
-    await setupAuth(app);
-  } catch (error) {
-    console.error("Error setting up authentication:", error);
-    // Continue without auth for development purposes
-  }
+  // Authentication is already set up with setupSimpleAuth above
   
-  // Now add the role-switching endpoint (after auth is set up)
-  app.get("/api/switch-user-role/:role", isAuthenticated, async (req, res) => {
-    try {
-      if (!req.user || !req.user.claims?.sub) {
-        return res.status(401).json({ message: "You must be logged in to switch roles" });
-      }
-
-      const userId = req.user.claims.sub;
-      const { role } = req.params;
-      
-      // Validate role parameter
-      if (!Object.values(UserRole).includes(role as any)) {
-        return res.status(400).json({ 
-          message: "Invalid role specified", 
-          validRoles: Object.values(UserRole) 
-        });
-      }
-      
-      // Update the current user's role
-      const updatedUser = await storage.upsertUser({
-        id: userId,
-        role: role as any,
-      });
-      
-      // Also update the session with the new role
-      if (req.user) {
-        req.user.role = role as any;
-      }
-      
-      res.json({
-        message: `Your role has been updated to ${role}`,
-        user: updatedUser
-      });
-    } catch (error) {
-      console.error("Error switching user role:", error);
-      res.status(500).json({ message: "Failed to switch user role" });
-    }
-  });
+  // Role switching is now handled by the simple auth system
   
   // Serve uploads directory as static files
   app.use('/uploads', expressModule.default.static(uploadsDir));
@@ -430,6 +381,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register Code Companion routes
   registerCodeCompanionRoutes(app);
+  
+  // Register Invoice routes
+  registerInvoiceRoutes(app);
 
   // Mentor-specific earnings endpoints
   app.get("/api/mentor/earnings", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {

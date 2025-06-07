@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { storage } from './storage';
-import { isAuthenticated, hasRole } from './replitAuth';
+import { isAuthenticated, hasRole } from './simpleAuth';
 import { UserRole } from '@shared/schema';
 import { randomBytes } from 'crypto';
 import { eq, sql } from 'drizzle-orm';

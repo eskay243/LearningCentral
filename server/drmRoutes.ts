@@ -7,7 +7,7 @@ import {
   generateSecureVideoUrl,
   DrmProtectionType 
 } from './drmService';
-import { isAuthenticated, hasRole } from './replitAuth';
+import { isAuthenticated, hasRole } from './simpleAuth';
 import { UserRole } from '@shared/schema';
 import { storage } from './storage';
 import fs from 'fs';
