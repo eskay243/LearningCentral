@@ -48,17 +48,17 @@ export function PaymentModal({ isOpen, onClose, course, onPaymentSuccess }: Paym
     try {
       if (paymentMethod === 'paystack') {
         // Initialize Paystack payment
-        const response = await apiRequest("POST", `/api/courses/${course.id}/payment`, {
-          paymentMethod: 'paystack',
-          amount: course.price,
+        const response = await apiRequest("POST", `/api/payments/initialize`, {
+          courseId: course.id,
+          amount: course.price * 100, // Convert to kobo
         });
 
         const paymentData = await response.json();
 
-        if (paymentData.status && paymentData.data?.authorization_url) {
+        if (paymentData.authorizationUrl) {
           // Open Paystack payment in a popup window
           const popup = window.open(
-            paymentData.data.authorization_url,
+            paymentData.authorizationUrl,
             'paystack-payment',
             'width=600,height=700,scrollbars=yes,resizable=yes'
           );
@@ -69,7 +69,7 @@ export function PaymentModal({ isOpen, onClose, course, onPaymentSuccess }: Paym
               clearInterval(checkClosed);
               // Check payment status after popup closes
               setTimeout(() => {
-                verifyPayment(paymentData.data.reference);
+                verifyPayment(paymentData.reference);
               }, 1000);
             }
           }, 1000);

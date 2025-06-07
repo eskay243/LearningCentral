@@ -2082,8 +2082,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payments/initialize', isAuthenticated, async (req: any, res) => {
     try {
       const { courseId, amount } = req.body;
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const userId = req.user.id;
+      const user = req.user;
       
       if (!user || !user.email) {
         return res.status(400).json({ message: "User email required for payment" });
@@ -2126,7 +2126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/payments/verify/:reference', isAuthenticated, async (req: any, res) => {
     try {
       const { reference } = req.params;
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       
       // Verify payment with Paystack
       const paymentData = await verifyPayment(reference);
