@@ -94,6 +94,7 @@ function Router() {
         <Route path="/analytics" component={Analytics} />
         <Route path="/earnings" component={Earnings} />
         <Route path="/invoices" component={StudentInvoices} />
+        <Route path="/payments" component={StudentPayments} />
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/users" component={UserManagement} />
