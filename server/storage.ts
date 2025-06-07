@@ -251,6 +251,15 @@ export interface IStorage {
   getPaymentTransactionByReference(reference: string): Promise<PaymentTransaction | undefined>;
   updatePaymentTransaction(transactionId: number, updateData: Partial<PaymentTransaction>): Promise<PaymentTransaction>;
   getUserPaymentTransactions(userId: string): Promise<PaymentTransaction[]>;
+  
+  // Additional payment methods
+  createPaymentRecord(paymentData: any): Promise<any>;
+  getPaymentByReference(reference: string): Promise<any>;
+  updatePaymentStatus(reference: string, status: string, paymentData?: any): Promise<any>;
+  getUserPayments(userId: string): Promise<any[]>;
+  getPaymentStats(): Promise<any>;
+  getEnrollmentByUserAndCourse(userId: string, courseId: number): Promise<any>;
+  createEnrollment(enrollmentData: any): Promise<any>;
 
   // Coupons and ratings
   createCoupon(couponData: Omit<Coupon, "id" | "createdAt">): Promise<Coupon>;
@@ -3948,6 +3957,165 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error fetching user payment transactions:", error);
       return [];
+    }
+  }
+
+  // Additional payment methods
+  async createPaymentRecord(paymentData: any): Promise<any> {
+    try {
+      const [payment] = await db
+        .insert(paymentTransactions)
+        .values({
+          userId: paymentData.userId,
+          reference: paymentData.reference,
+          amount: paymentData.amount,
+          currency: paymentData.currency || 'NGN',
+          status: paymentData.status,
+          provider: paymentData.provider || 'paystack',
+          providerReference: paymentData.providerReference,
+          providerResponse: paymentData.providerResponse,
+          fees: paymentData.fees || 0,
+          netAmount: paymentData.netAmount || paymentData.amount,
+          gateway: paymentData.gateway,
+          channel: paymentData.channel
+        })
+        .returning();
+      return payment;
+    } catch (error) {
+      console.error("Error creating payment record:", error);
+      throw error;
+    }
+  }
+
+  async getPaymentByReference(reference: string): Promise<any> {
+    try {
+      const [payment] = await db
+        .select()
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.reference, reference));
+      return payment;
+    } catch (error) {
+      console.error("Error getting payment by reference:", error);
+      return null;
+    }
+  }
+
+  async updatePaymentStatus(reference: string, status: string, paymentData?: any): Promise<any> {
+    try {
+      const updateData: any = { status };
+      if (paymentData) {
+        updateData.providerResponse = paymentData;
+        if (status === 'success') {
+          updateData.updatedAt = new Date();
+        }
+      }
+
+      const [payment] = await db
+        .update(paymentTransactions)
+        .set(updateData)
+        .where(eq(paymentTransactions.reference, reference))
+        .returning();
+      return payment;
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      throw error;
+    }
+  }
+
+  async getUserPayments(userId: string): Promise<any[]> {
+    try {
+      const payments = await db
+        .select({
+          payment: paymentTransactions,
+          course: {
+            id: courses.id,
+            title: courses.title,
+            thumbnail: courses.thumbnail
+          }
+        })
+        .from(paymentTransactions)
+        .leftJoin(invoices, eq(paymentTransactions.invoiceId, invoices.id))
+        .leftJoin(courses, eq(invoices.courseId, courses.id))
+        .where(eq(paymentTransactions.userId, userId))
+        .orderBy(desc(paymentTransactions.createdAt));
+
+      return payments.map(p => ({
+        ...p.payment,
+        course: p.course
+      }));
+    } catch (error) {
+      console.error("Error getting user payments:", error);
+      return [];
+    }
+  }
+
+  async getPaymentStats(): Promise<any> {
+    try {
+      const stats = await db
+        .select({
+          totalRevenue: sql<number>`sum(${paymentTransactions.amount})`,
+          totalTransactions: sql<number>`count(*)`,
+          successfulPayments: sql<number>`count(case when ${paymentTransactions.status} = 'success' then 1 end)`,
+          pendingPayments: sql<number>`count(case when ${paymentTransactions.status} = 'pending' then 1 end)`,
+          failedPayments: sql<number>`count(case when ${paymentTransactions.status} = 'failed' then 1 end)`
+        })
+        .from(paymentTransactions);
+
+      return stats[0] || {
+        totalRevenue: 0,
+        totalTransactions: 0,
+        successfulPayments: 0,
+        pendingPayments: 0,
+        failedPayments: 0
+      };
+    } catch (error) {
+      console.error("Error getting payment stats:", error);
+      return {
+        totalRevenue: 0,
+        totalTransactions: 0,
+        successfulPayments: 0,
+        pendingPayments: 0,
+        failedPayments: 0
+      };
+    }
+  }
+
+  async getEnrollmentByUserAndCourse(userId: string, courseId: number): Promise<any> {
+    try {
+      const [enrollment] = await db
+        .select()
+        .from(courseEnrollments)
+        .where(and(
+          eq(courseEnrollments.userId, userId),
+          eq(courseEnrollments.courseId, courseId)
+        ));
+      return enrollment;
+    } catch (error) {
+      console.error("Error getting enrollment:", error);
+      return null;
+    }
+  }
+
+  async createEnrollment(enrollmentData: any): Promise<any> {
+    try {
+      const [enrollment] = await db
+        .insert(courseEnrollments)
+        .values({
+          userId: enrollmentData.userId,
+          courseId: enrollmentData.courseId,
+          progress: enrollmentData.progress || 0,
+          paymentStatus: enrollmentData.paymentStatus,
+          paymentMethod: enrollmentData.paymentMethod,
+          paymentAmount: enrollmentData.paymentAmount,
+          paymentReference: enrollmentData.paymentReference,
+          paymentProvider: enrollmentData.paymentProvider || 'paystack',
+          enrolledAt: new Date()
+        })
+        .returning();
+      return enrollment;
+    } catch (error) {
+      console.error("Error creating enrollment:", error);
+      throw error;
     }
   }
 }
