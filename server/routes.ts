@@ -3188,6 +3188,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Payment Management Routes
+  app.get("/api/payments/stats", isAuthenticated, hasRole(['admin']), async (req: any, res) => {
+    try {
+      const stats = await storage.getPaymentStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error("Payment stats error:", error);
+      res.status(500).json({ message: error.message || "Failed to get payment statistics" });
+    }
+  });
+
+  app.get("/api/payments/admin/all", isAuthenticated, hasRole(['admin']), async (req: any, res) => {
+    try {
+      const payments = await storage.getAllPaymentTransactions();
+      res.json(payments);
+    } catch (error: any) {
+      console.error("Admin payments fetch error:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch payment transactions" });
+    }
+  });
+
   // OAuth Settings Admin Routes
   app.get("/api/admin/oauth-settings", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
     try {

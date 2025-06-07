@@ -4000,6 +4000,140 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getPaymentStats(): Promise<any> {
+    try {
+      // Get basic payment statistics
+      const totalRevenue = await db
+        .select({ total: sql`COALESCE(SUM(amount), 0)` })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.status, 'completed'));
+
+      const totalTransactions = await db
+        .select({ count: sql`COUNT(*)` })
+        .from(paymentTransactions);
+
+      const successfulTransactions = await db
+        .select({ count: sql`COUNT(*)` })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.status, 'completed'));
+
+      const pendingTransactions = await db
+        .select({ count: sql`COUNT(*)` })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.status, 'pending'));
+
+      const failedTransactions = await db
+        .select({ count: sql`COUNT(*)` })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.status, 'failed'));
+
+      const totalFees = await db
+        .select({ total: sql`COALESCE(SUM(fees), 0)` })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.status, 'completed'));
+
+      const netRevenue = await db
+        .select({ total: sql`COALESCE(SUM(net_amount), 0)` })
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.status, 'completed'));
+
+      // Calculate average transaction value
+      const avgTransaction = totalRevenue[0]?.total && successfulTransactions[0]?.count
+        ? Number(totalRevenue[0].total) / Number(successfulTransactions[0].count)
+        : 0;
+
+      // Get monthly revenue trend (last 6 months)
+      const monthlyRevenue = await db
+        .select({
+          month: sql`TO_CHAR(created_at, 'YYYY-MM')`,
+          revenue: sql`COALESCE(SUM(amount), 0)`,
+          transactions: sql`COUNT(*)`
+        })
+        .from(paymentTransactions)
+        .where(
+          and(
+            eq(paymentTransactions.status, 'completed'),
+            sql`created_at >= NOW() - INTERVAL '6 months'`
+          )
+        )
+        .groupBy(sql`TO_CHAR(created_at, 'YYYY-MM')`)
+        .orderBy(sql`TO_CHAR(created_at, 'YYYY-MM') DESC`);
+
+      // Get top performing courses by revenue
+      const topCourses = await db
+        .select({
+          courseId: enrollments.courseId,
+          courseTitle: courses.title,
+          revenue: sql`COALESCE(SUM(payment_amount), 0)`,
+          enrollments: sql`COUNT(*)`
+        })
+        .from(enrollments)
+        .leftJoin(courses, eq(enrollments.courseId, courses.id))
+        .where(eq(enrollments.paymentStatus, 'completed'))
+        .groupBy(enrollments.courseId, courses.title)
+        .orderBy(sql`SUM(payment_amount) DESC`)
+        .limit(10);
+
+      return {
+        totalRevenue: Number(totalRevenue[0]?.total || 0),
+        totalTransactions: Number(totalTransactions[0]?.count || 0),
+        successfulTransactions: Number(successfulTransactions[0]?.count || 0),
+        pendingTransactions: Number(pendingTransactions[0]?.count || 0),
+        failedTransactions: Number(failedTransactions[0]?.count || 0),
+        totalFees: Number(totalFees[0]?.total || 0),
+        netRevenue: Number(netRevenue[0]?.total || 0),
+        averageTransactionValue: avgTransaction,
+        monthlyRevenue: monthlyRevenue.map(m => ({
+          month: m.month,
+          revenue: Number(m.revenue),
+          transactions: Number(m.transactions)
+        })),
+        topCourses: topCourses.map(c => ({
+          courseId: c.courseId,
+          courseTitle: c.courseTitle,
+          revenue: Number(c.revenue),
+          enrollments: Number(c.enrollments)
+        }))
+      };
+    } catch (error) {
+      console.error("Error getting payment stats:", error);
+      throw error;
+    }
+  }
+
+  async getAllPaymentTransactions(): Promise<any[]> {
+    try {
+      const payments = await db
+        .select({
+          id: paymentTransactions.id,
+          reference: paymentTransactions.reference,
+          userId: paymentTransactions.userId,
+          userEmail: users.email,
+          userName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+          courseId: paymentTransactions.courseId,
+          courseTitle: courses.title,
+          amount: paymentTransactions.amount,
+          currency: paymentTransactions.currency,
+          status: paymentTransactions.status,
+          provider: paymentTransactions.provider,
+          channel: paymentTransactions.channel,
+          fees: paymentTransactions.fees,
+          netAmount: paymentTransactions.netAmount,
+          createdAt: paymentTransactions.createdAt,
+          updatedAt: paymentTransactions.updatedAt
+        })
+        .from(paymentTransactions)
+        .leftJoin(users, eq(paymentTransactions.userId, users.id))
+        .leftJoin(courses, eq(paymentTransactions.courseId, courses.id))
+        .orderBy(desc(paymentTransactions.createdAt));
+
+      return payments;
+    } catch (error) {
+      console.error("Error getting all payment transactions:", error);
+      throw error;
+    }
+  }
+
   async updatePaymentStatus(reference: string, status: string, paymentData?: any): Promise<any> {
     try {
       const updateData: any = { status };
