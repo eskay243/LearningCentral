@@ -50,7 +50,7 @@ export function PaymentModal({ isOpen, onClose, course, onPaymentSuccess }: Paym
         // Initialize Paystack payment
         const response = await apiRequest("POST", `/api/payments/initialize`, {
           courseId: course.id,
-          amount: course.price * 100, // Convert to kobo
+          amount: course.price, // Amount in naira (backend will convert to kobo)
         });
 
         const paymentData = await response.json();
@@ -123,10 +123,7 @@ export function PaymentModal({ isOpen, onClose, course, onPaymentSuccess }: Paym
 
   const verifyPayment = async (reference: string) => {
     try {
-      const response = await apiRequest("POST", `/api/payment/verify`, {
-        reference,
-        courseId: course.id,
-      });
+      const response = await apiRequest("GET", `/api/payments/verify/${reference}`);
 
       if (response.ok) {
         const result = await response.json();
