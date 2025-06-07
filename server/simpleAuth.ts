@@ -71,7 +71,7 @@ export function setupSimpleAuth(app: Express) {
   // Logout (reset to student)
   app.get('/api/logout', (req, res) => {
     currentUser = demoUsers['dev-student'];
-    res.json({ message: 'Logged out successfully' });
+    res.redirect('/');
   });
 
   // Login endpoint (for compatibility)

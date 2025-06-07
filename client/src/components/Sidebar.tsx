@@ -17,6 +17,7 @@ import {
   Award,
   Code,
   Code2,
+  Receipt,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -111,6 +112,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           <Link href="/schedule" className={menuItemClass("/schedule")}>
             <Calendar className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Schedule</span>
+          </Link>
+          
+          <Link href="/student-invoices" className={menuItemClass("/student-invoices")}>
+            <Receipt className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">My Invoices</span>
           </Link>
           
           {(isAdmin || isMentor) && (
