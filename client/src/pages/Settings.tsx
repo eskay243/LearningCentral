@@ -100,6 +100,15 @@ const Settings = () => {
     }
   });
 
+  // Fetch user invoices
+  const { data: invoices = [], isLoading: isInvoicesLoading } = useQuery({
+    queryKey: ["/api/invoices"],
+    enabled: !!user,
+  });
+
+  // Invoice filter state
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState("all");
+
   // Default profile values
   const defaultProfile: z.infer<typeof profileFormSchema> = {
     firstName: "",
@@ -650,19 +659,172 @@ const Settings = () => {
           <TabsContent value="invoices">
             <Card>
               <CardHeader>
-                <CardTitle>My Invoices</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5" />
+                  My Invoices
+                </CardTitle>
                 <CardDescription>
                   View and manage your payment invoices and transaction history
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-gray-500 mb-4">
-                    Your invoice management will be displayed here. Click below to access the full invoice interface.
-                  </p>
-                  <Button asChild>
-                    <a href="/student-invoices">View All Invoices</a>
-                  </Button>
+                <div className="space-y-6">
+                  {/* Invoice Filter Controls */}
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-gray-500" />
+                      <Select value={invoiceStatusFilter} onValueChange={setInvoiceStatusFilter}>
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Invoices</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="paid">Paid</SelectItem>
+                          <SelectItem value="overdue">Overdue</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Export Report
+                    </Button>
+                  </div>
+
+                  {/* Invoice Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Total Outstanding</p>
+                          <p className="text-2xl font-bold text-orange-600">₦125,400</p>
+                        </div>
+                        <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <Receipt className="h-6 w-6 text-orange-600" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Paid This Month</p>
+                          <p className="text-2xl font-bold text-green-600">₦85,000</p>
+                        </div>
+                        <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                          <DollarSign className="h-6 w-6 text-green-600" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-500">Overdue Amount</p>
+                          <p className="text-2xl font-bold text-red-600">₦25,400</p>
+                        </div>
+                        <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
+                          <AlertCircle className="h-6 w-6 text-red-600" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Invoices Table */}
+                  <div className="border rounded-lg">
+                    {isInvoicesLoading ? (
+                      <div className="p-8 text-center">
+                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-500">Loading invoices...</p>
+                      </div>
+                    ) : invoices.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-2">No invoices found</p>
+                        <p className="text-sm text-gray-400">Your payment invoices will appear here once created</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Invoice ID</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {invoices.map((invoice: any) => (
+                            <TableRow key={invoice.id}>
+                              <TableCell className="font-medium">#{invoice.invoiceNumber}</TableCell>
+                              <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
+                              <TableCell className="max-w-xs truncate">{invoice.description || 'Course payment'}</TableCell>
+                              <TableCell>₦{invoice.amount.toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={
+                                    invoice.status === 'paid' ? 'default' :
+                                    invoice.status === 'pending' ? 'secondary' :
+                                    invoice.status === 'overdue' ? 'destructive' : 'outline'
+                                  }
+                                >
+                                  {invoice.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="ghost">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost">
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+
+                  {/* Payment History Section */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Recent Payment Activity</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <DollarSign className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Payment Received</p>
+                            <p className="text-sm text-gray-500">Invoice #INV-2025-001</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-green-600">+₦85,000</p>
+                          <p className="text-sm text-gray-500">2 days ago</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Receipt className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">Invoice Generated</p>
+                            <p className="text-sm text-gray-500">Advanced React Course</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">₦125,400</p>
+                          <p className="text-sm text-gray-500">1 week ago</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
