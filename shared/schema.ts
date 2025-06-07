@@ -383,14 +383,7 @@ export const courseDiscussions = pgTable("course_discussions", {
   isAnnouncement: boolean("is_announcement").notNull().default(false),
 });
 
-// DiscussionReplies table
-export const discussionReplies = pgTable("discussion_replies", {
-  id: serial("id").primaryKey(),
-  discussionId: integer("discussion_id").notNull().references(() => courseDiscussions.id),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+// Legacy discussion replies - replaced by enhanced discussionReplies table below
 
 // NotificationSettings table
 // Define currency options
@@ -724,6 +717,503 @@ export type Notification = typeof notifications.$inferSelect;
 export type CodingExercise = typeof codingExercises.$inferSelect;
 export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
 
+// Enhanced Interactive Coding Exercises with Real-time Feedback
+export const codingChallenges = pgTable("coding_challenges", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  lessonId: integer("lesson_id").references(() => lessons.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  difficulty: text("difficulty").notNull().default("beginner"), // beginner, intermediate, advanced
+  language: text("language").notNull(), // javascript, python, java, cpp, etc.
+  starterCode: text("starter_code"),
+  solutionCode: text("solution_code"),
+  testCases: jsonb("test_cases").notNull(), // array of input/output test cases
+  hiddenTestCases: jsonb("hidden_test_cases"), // test cases not visible to students
+  hints: jsonb("hints"), // progressive hints system
+  timeLimit: integer("time_limit").default(300), // seconds
+  memoryLimit: integer("memory_limit").default(128), // MB
+  maxAttempts: integer("max_attempts").default(5),
+  points: integer("points").default(10),
+  tags: text("tags").array(),
+  prerequisites: jsonb("prerequisites"), // required skills/concepts
+  learningObjectives: jsonb("learning_objectives"),
+  executionEnvironment: text("execution_environment").default("sandbox"),
+  allowedLibraries: jsonb("allowed_libraries"),
+  isPublished: boolean("is_published").default(false),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Real-time Code Execution Results
+export const codeExecutions = pgTable("code_executions", {
+  id: serial("id").primaryKey(),
+  challengeId: integer("challenge_id").notNull().references(() => codingChallenges.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  sessionId: varchar("session_id").notNull(),
+  code: text("code").notNull(),
+  language: text("language").notNull(),
+  status: text("status").notNull(), // running, success, error, timeout
+  output: text("output"),
+  errors: text("errors"),
+  executionTime: integer("execution_time"), // milliseconds
+  memoryUsed: integer("memory_used"), // KB
+  testResults: jsonb("test_results"), // detailed test case results
+  hintsUsed: integer("hints_used").default(0),
+  score: real("score").default(0),
+  executedAt: timestamp("executed_at").defaultNow(),
+});
+
+// Progressive Hints System
+export const challengeHints = pgTable("challenge_hints", {
+  id: serial("id").primaryKey(),
+  challengeId: integer("challenge_id").notNull().references(() => codingChallenges.id),
+  hintLevel: integer("hint_level").notNull(),
+  hintText: text("hint_text").notNull(),
+  codeSnippet: text("code_snippet"),
+  unlockAfterAttempts: integer("unlock_after_attempts").default(1),
+  penaltyPoints: integer("penalty_points").default(0),
+  orderIndex: integer("order_index").default(0),
+});
+
+// Student Code Submissions with Auto-grading
+export const codingSubmissions = pgTable("coding_submissions", {
+  id: serial("id").primaryKey(),
+  challengeId: integer("challenge_id").notNull().references(() => codingChallenges.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  code: text("code").notNull(),
+  language: text("language").notNull(),
+  status: text("status").notNull(), // submitted, grading, passed, failed, partial
+  score: real("score").default(0),
+  maxScore: real("max_score").notNull(),
+  testsPassed: integer("tests_passed").default(0),
+  totalTests: integer("total_tests").notNull(),
+  executionTime: integer("execution_time"),
+  memoryUsed: integer("memory_used"),
+  attemptNumber: integer("attempt_number").default(1),
+  hintsUsed: integer("hints_used").default(0),
+  feedback: text("feedback"),
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  gradedAt: timestamp("graded_at"),
+  isCompleted: boolean("is_completed").default(false),
+});
+
+// Advanced Quiz System with Multiple Question Types
+export const advancedQuizzes = pgTable("advanced_quizzes", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  lessonId: integer("lesson_id").references(() => lessons.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  instructions: text("instructions"),
+  timeLimit: integer("time_limit"), // minutes
+  attempts: integer("attempts").default(1),
+  shuffleQuestions: boolean("shuffle_questions").default(false),
+  shuffleAnswers: boolean("shuffle_answers").default(false),
+  showResults: boolean("show_results").default(true),
+  passingScore: real("passing_score").default(70),
+  availableFrom: timestamp("available_from"),
+  availableUntil: timestamp("available_until"),
+  isPublished: boolean("is_published").default(false),
+  gradingMethod: text("grading_method").default("highest"), // highest, average, latest
+  proctored: boolean("proctored").default(false),
+  randomizeFromPool: boolean("randomize_from_pool").default(false),
+  questionsPerAttempt: integer("questions_per_attempt"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Advanced Question Types
+export const advancedQuizQuestions = pgTable("advanced_quiz_questions", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").notNull().references(() => advancedQuizzes.id),
+  questionType: text("question_type").notNull(), // multiple_choice, true_false, fill_blank, essay, code, matching, ordering, hotspot
+  questionText: text("question_text").notNull(),
+  questionHtml: text("question_html"), // rich content support
+  mediaUrl: text("media_url"), // images, videos, audio
+  points: real("points").default(1),
+  difficulty: text("difficulty").default("medium"),
+  explanation: text("explanation"),
+  feedback: text("feedback"),
+  timeLimit: integer("time_limit"), // per question time limit
+  orderIndex: integer("order_index").default(0),
+  isRequired: boolean("is_required").default(true),
+  
+  // Multiple Choice / True-False
+  options: jsonb("options"), // [{id, text, isCorrect, feedback}]
+  correctAnswers: jsonb("correct_answers"), // for multiple correct answers
+  
+  // Fill in the blanks
+  blanks: jsonb("blanks"), // positions and correct answers
+  
+  // Code questions
+  codeLanguage: text("code_language"),
+  codeTemplate: text("code_template"),
+  testCases: jsonb("test_cases"),
+  
+  // Matching questions
+  matchingPairs: jsonb("matching_pairs"), // left and right items to match
+  
+  // Ordering questions
+  orderItems: jsonb("order_items"), // items to be arranged in correct order
+  
+  // Hotspot questions (click on image)
+  hotspots: jsonb("hotspots"), // clickable areas on image
+  
+  metadata: jsonb("metadata"), // additional question-specific data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Quiz Attempts with Enhanced Tracking
+export const advancedQuizAttempts = pgTable("advanced_quiz_attempts", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").notNull().references(() => advancedQuizzes.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  attemptNumber: integer("attempt_number").default(1),
+  startedAt: timestamp("started_at").defaultNow(),
+  submittedAt: timestamp("submitted_at"),
+  timeSpent: integer("time_spent"), // seconds
+  score: real("score"),
+  maxScore: real("max_score"),
+  percentage: real("percentage"),
+  passed: boolean("passed").default(false),
+  status: text("status").default("in_progress"), // in_progress, submitted, graded, abandoned
+  questionsAnswered: integer("questions_answered").default(0),
+  totalQuestions: integer("total_questions"),
+  
+  // Proctoring data
+  browserLockdown: boolean("browser_lockdown").default(false),
+  tabSwitches: integer("tab_switches").default(0),
+  suspiciousActivity: jsonb("suspicious_activity"),
+  webcamRecording: text("webcam_recording"),
+  screenRecording: text("screen_recording"),
+  
+  // Analytics
+  clickPattern: jsonb("click_pattern"),
+  keystrokePattern: jsonb("keystroke_pattern"),
+  timePerQuestion: jsonb("time_per_question"),
+  
+  metadata: jsonb("metadata"),
+  gradedAt: timestamp("graded_at"),
+  gradedBy: varchar("graded_by").references(() => users.id),
+});
+
+// Student Answers with Rich Support
+export const advancedQuizAnswers = pgTable("advanced_quiz_answers", {
+  id: serial("id").primaryKey(),
+  attemptId: integer("attempt_id").notNull().references(() => advancedQuizAttempts.id),
+  questionId: integer("question_id").notNull().references(() => advancedQuizQuestions.id),
+  
+  // Different answer types
+  textAnswer: text("text_answer"),
+  selectedOptions: jsonb("selected_options"), // for multiple choice
+  codeAnswer: text("code_answer"),
+  fileUploads: jsonb("file_uploads"),
+  matchingAnswer: jsonb("matching_answer"),
+  orderingAnswer: jsonb("ordering_answer"),
+  hotspotAnswer: jsonb("hotspot_answer"),
+  
+  isCorrect: boolean("is_correct"),
+  partialCredit: real("partial_credit").default(0),
+  pointsEarned: real("points_earned").default(0),
+  autoGraded: boolean("auto_graded").default(false),
+  
+  timeSpent: integer("time_spent"), // seconds on this question
+  attempts: integer("attempts").default(1),
+  feedback: text("feedback"),
+  
+  answeredAt: timestamp("answered_at").defaultNow(),
+  lastModified: timestamp("last_modified").defaultNow(),
+});
+
+// Enhanced Assignment System with File Uploads
+export const advancedAssignments = pgTable("advanced_assignments", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  lessonId: integer("lesson_id").references(() => lessons.id),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  instructions: text("instructions"),
+  requirements: jsonb("requirements"), // detailed requirements
+  
+  // Submission settings
+  submissionType: text("submission_type").notNull(), // file, text, url, code, mixed
+  allowedFileTypes: jsonb("allowed_file_types"), // [.pdf, .doc, .zip]
+  maxFileSize: integer("max_file_size").default(10), // MB
+  maxFiles: integer("max_files").default(5),
+  requiresUpload: boolean("requires_upload").default(false),
+  
+  // Timing
+  dueDate: timestamp("due_date"),
+  availableFrom: timestamp("available_from"),
+  availableUntil: timestamp("available_until"),
+  lateSubmissionAllowed: boolean("late_submission_allowed").default(true),
+  latePenalty: real("late_penalty").default(10), // percentage per day
+  
+  // Grading
+  maxPoints: real("max_points").default(100),
+  gradingType: text("grading_type").default("points"), // points, rubric, pass_fail
+  autoGrading: boolean("auto_grading").default(false),
+  plagiarismCheck: boolean("plagiarism_check").default(false),
+  
+  // Collaboration
+  groupAssignment: boolean("group_assignment").default(false),
+  maxGroupSize: integer("max_group_size").default(1),
+  peerReview: boolean("peer_review").default(false),
+  
+  isPublished: boolean("is_published").default(false),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Assignment Submissions with File Support
+export const advancedAssignmentSubmissions = pgTable("advanced_assignment_submissions", {
+  id: serial("id").primaryKey(),
+  assignmentId: integer("assignment_id").notNull().references(() => advancedAssignments.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  groupId: integer("group_id"), // for group assignments
+  
+  // Submission content
+  textSubmission: text("text_submission"),
+  urlSubmission: text("url_submission"),
+  codeSubmission: text("code_submission"),
+  codeLanguage: text("code_language"),
+  
+  // File uploads
+  uploadedFiles: jsonb("uploaded_files"), // [{filename, url, size, type, uploadedAt}]
+  totalFileSize: integer("total_file_size"), // bytes
+  
+  // Status and timing
+  status: text("status").default("draft"), // draft, submitted, graded, returned
+  submittedAt: timestamp("submitted_at"),
+  isLate: boolean("is_late").default(false),
+  lateDays: integer("late_days").default(0),
+  
+  // Grading
+  score: real("score"),
+  maxScore: real("max_score"),
+  grade: text("grade"), // letter grade
+  feedback: text("feedback"),
+  rubricScores: jsonb("rubric_scores"),
+  
+  // Plagiarism
+  plagiarismScore: real("plagiarism_score"),
+  plagiarismReport: text("plagiarism_report"),
+  
+  // Revision system
+  revisionNumber: integer("revision_number").default(1),
+  allowResubmission: boolean("allow_resubmission").default(false),
+  resubmissionDue: timestamp("resubmission_due"),
+  
+  gradedBy: varchar("graded_by").references(() => users.id),
+  gradedAt: timestamp("graded_at"),
+  returnedAt: timestamp("returned_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// File Upload Management
+export const uploadedFiles = pgTable("uploaded_files", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").references(() => advancedAssignmentSubmissions.id),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  fileSize: integer("file_size").notNull(), // bytes
+  filePath: text("file_path").notNull(),
+  fileUrl: text("file_url"),
+  checksum: text("checksum"), // for integrity verification
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  isProcessed: boolean("is_processed").default(false),
+  processingStatus: text("processing_status"), // pending, processing, completed, failed
+  metadata: jsonb("metadata"),
+});
+
+// Discussion Forums and Q&A
+export const discussionForums = pgTable("discussion_forums", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  lessonId: integer("lesson_id").references(() => lessons.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  forumType: text("forum_type").default("general"), // general, qa, announcements, project
+  isModerated: boolean("is_moderated").default(false),
+  allowAnonymous: boolean("allow_anonymous").default(false),
+  isLocked: boolean("is_locked").default(false),
+  isPinned: boolean("is_pinned").default(false),
+  orderIndex: integer("order_index").default(0),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Discussion Topics/Threads
+export const discussionTopics = pgTable("discussion_topics", {
+  id: serial("id").primaryKey(),
+  forumId: integer("forum_id").notNull().references(() => discussionForums.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  contentType: text("content_type").default("text"), // text, html, markdown
+  
+  // Topic properties
+  topicType: text("topic_type").default("discussion"), // discussion, question, announcement
+  isSticky: boolean("is_sticky").default(false),
+  isLocked: boolean("is_locked").default(false),
+  isAnonymous: boolean("is_anonymous").default(false),
+  
+  // Q&A specific
+  isQuestion: boolean("is_question").default(false),
+  hasAcceptedAnswer: boolean("has_accepted_answer").default(false),
+  acceptedAnswerId: integer("accepted_answer_id"),
+  
+  // Engagement
+  views: integer("views").default(0),
+  likes: integer("likes").default(0),
+  dislikes: integer("dislikes").default(0),
+  replies: integer("replies").default(0),
+  
+  // Attachments
+  attachments: jsonb("attachments"),
+  
+  // Moderation
+  isApproved: boolean("is_approved").default(true),
+  moderatedBy: varchar("moderated_by").references(() => users.id),
+  moderatedAt: timestamp("moderated_at"),
+  
+  tags: text("tags").array(),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Discussion Replies
+export const discussionReplies = pgTable("discussion_replies", {
+  id: serial("id").primaryKey(),
+  topicId: integer("topic_id").notNull().references(() => discussionTopics.id),
+  parentReplyId: integer("parent_reply_id").references(() => discussionReplies.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  contentType: text("content_type").default("text"),
+  
+  // Reply properties
+  isAnonymous: boolean("is_anonymous").default(false),
+  isAcceptedAnswer: boolean("is_accepted_answer").default(false),
+  isEndorsed: boolean("is_endorsed").default(false), // instructor endorsed
+  
+  // Engagement
+  likes: integer("likes").default(0),
+  dislikes: integer("dislikes").default(0),
+  helpfulVotes: integer("helpful_votes").default(0),
+  
+  // Attachments
+  attachments: jsonb("attachments"),
+  
+  // Moderation
+  isApproved: boolean("is_approved").default(true),
+  moderatedBy: varchar("moderated_by").references(() => users.id),
+  moderatedAt: timestamp("moderated_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Discussion Votes/Reactions
+export const discussionVotes = pgTable("discussion_votes", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  topicId: integer("topic_id").references(() => discussionTopics.id),
+  replyId: integer("reply_id").references(() => discussionReplies.id),
+  voteType: text("vote_type").notNull(), // like, dislike, helpful, unhelpful
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Live Video Sessions with Enhanced Features
+export const videoSessions = pgTable("video_sessions", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  hostId: varchar("host_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  
+  // Session configuration
+  sessionType: text("session_type").default("live"), // live, webinar, office_hours, group_study
+  maxParticipants: integer("max_participants").default(50),
+  requiresApproval: boolean("requires_approval").default(false),
+  allowRecording: boolean("allow_recording").default(true),
+  allowScreenShare: boolean("allow_screen_share").default(true),
+  allowChat: boolean("allow_chat").default(true),
+  allowBreakouts: boolean("allow_breakouts").default(false),
+  
+  // Scheduling
+  scheduledStart: timestamp("scheduled_start").notNull(),
+  scheduledEnd: timestamp("scheduled_end").notNull(),
+  actualStart: timestamp("actual_start"),
+  actualEnd: timestamp("actual_end"),
+  timeZone: text("time_zone").default("UTC"),
+  
+  // Meeting details
+  meetingId: text("meeting_id"),
+  meetingPassword: text("meeting_password"),
+  joinUrl: text("join_url"),
+  hostUrl: text("host_url"),
+  
+  // Recording
+  recordingUrl: text("recording_url"),
+  recordingSize: integer("recording_size"), // bytes
+  recordingDuration: integer("recording_duration"), // seconds
+  
+  // Status
+  status: text("status").default("scheduled"), // scheduled, live, ended, cancelled
+  
+  // Analytics
+  totalParticipants: integer("total_participants").default(0),
+  peakParticipants: integer("peak_participants").default(0),
+  averageDuration: integer("average_duration"), // seconds
+  
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Video Session Participants
+export const videoSessionParticipants = pgTable("video_session_participants", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => videoSessions.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Participation details
+  joinedAt: timestamp("joined_at"),
+  leftAt: timestamp("left_at"),
+  duration: integer("duration"), // seconds
+  role: text("role").default("participant"), // host, moderator, participant, observer
+  
+  // Permissions
+  canSpeak: boolean("can_speak").default(true),
+  canVideo: boolean("can_video").default(true),
+  canChat: boolean("can_chat").default(true),
+  canScreenShare: boolean("can_screen_share").default(false),
+  
+  // Status
+  status: text("status").default("invited"), // invited, joined, left, removed
+  connectionQuality: text("connection_quality"), // poor, fair, good, excellent
+  
+  // Engagement
+  microphoneTime: integer("microphone_time").default(0), // seconds speaking
+  chatMessages: integer("chat_messages").default(0),
+  reactionsGiven: integer("reactions_given").default(0),
+  
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Assessment System Types
 export type Assessment = typeof assessments.$inferSelect;
 export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
@@ -734,6 +1224,44 @@ export type Rubric = typeof rubrics.$inferSelect;
 export type RubricScore = typeof rubricScores.$inferSelect;
 export type GradeCategory = typeof gradeCategories.$inferSelect;
 export type CourseGrade = typeof courseGrades.$inferSelect;
+
+// Enhanced Learning System Types
+export type CodingChallenge = typeof codingChallenges.$inferSelect;
+export type CodeExecution = typeof codeExecutions.$inferSelect;
+export type ChallengeHint = typeof challengeHints.$inferSelect;
+export type CodingSubmission = typeof codingSubmissions.$inferSelect;
+export type AdvancedQuiz = typeof advancedQuizzes.$inferSelect;
+export type AdvancedQuizQuestion = typeof advancedQuizQuestions.$inferSelect;
+export type AdvancedQuizAttempt = typeof advancedQuizAttempts.$inferSelect;
+export type AdvancedQuizAnswer = typeof advancedQuizAnswers.$inferSelect;
+export type AdvancedAssignment = typeof advancedAssignments.$inferSelect;
+export type AdvancedAssignmentSubmission = typeof advancedAssignmentSubmissions.$inferSelect;
+export type UploadedFile = typeof uploadedFiles.$inferSelect;
+export type DiscussionForum = typeof discussionForums.$inferSelect;
+export type DiscussionTopic = typeof discussionTopics.$inferSelect;
+export type DiscussionReply = typeof discussionReplies.$inferSelect;
+export type DiscussionVote = typeof discussionVotes.$inferSelect;
+export type VideoSession = typeof videoSessions.$inferSelect;
+export type VideoSessionParticipant = typeof videoSessionParticipants.$inferSelect;
+
+// Insert schemas for new tables
+export const insertCodingChallengeSchema = createInsertSchema(codingChallenges);
+export const insertCodeExecutionSchema = createInsertSchema(codeExecutions);
+export const insertChallengeHintSchema = createInsertSchema(challengeHints);
+export const insertCodingSubmissionSchema = createInsertSchema(codingSubmissions);
+export const insertAdvancedQuizSchema = createInsertSchema(advancedQuizzes);
+export const insertAdvancedQuizQuestionSchema = createInsertSchema(advancedQuizQuestions);
+export const insertAdvancedQuizAttemptSchema = createInsertSchema(advancedQuizAttempts);
+export const insertAdvancedQuizAnswerSchema = createInsertSchema(advancedQuizAnswers);
+export const insertAdvancedAssignmentSchema = createInsertSchema(advancedAssignments);
+export const insertAdvancedAssignmentSubmissionSchema = createInsertSchema(advancedAssignmentSubmissions);
+export const insertUploadedFileSchema = createInsertSchema(uploadedFiles);
+export const insertDiscussionForumSchema = createInsertSchema(discussionForums);
+export const insertDiscussionTopicSchema = createInsertSchema(discussionTopics);
+export const insertDiscussionReplySchema = createInsertSchema(discussionReplies);
+export const insertDiscussionVoteSchema = createInsertSchema(discussionVotes);
+export const insertVideoSessionSchema = createInsertSchema(videoSessions);
+export const insertVideoSessionParticipantSchema = createInsertSchema(videoSessionParticipants);
 
 // Messaging and communication
 export const conversations = pgTable("conversations", {
