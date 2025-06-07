@@ -48,6 +48,10 @@ import SimpleRoutingTest from "@/pages/SimpleRoutingTest";
 import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
+import InteractiveCodingChallenge from "@/pages/InteractiveCodingChallenge";
+import AdvancedQuizTaking from "@/pages/AdvancedQuizTaking";
+import AdvancedAssignmentSubmission from "@/pages/AdvancedAssignmentSubmission";
+import DiscussionForum from "@/pages/DiscussionForum";
 import AdminPayments from "@/pages/admin-payments";
 import StudentInvoices from "@/pages/StudentInvoices";
 import StudentPayments from "@/pages/student-payments";
@@ -120,6 +124,12 @@ function Router() {
         <Route path="/code-companion/old" component={CodeCompanion} />
         <Route path="/mentor-dashboard" component={MentorDashboard} />
         <Route path="/demo-users" component={DemoUsers} />
+        <Route path="/coding-challenges/:challengeId" component={InteractiveCodingChallenge} />
+        <Route path="/advanced-quizzes/:quizId" component={AdvancedQuizTaking} />
+        <Route path="/advanced-assignments/:assignmentId" component={AdvancedAssignmentSubmission} />
+        <Route path="/courses/:courseId/forums" component={DiscussionForum} />
+        <Route path="/courses/:courseId/forums/:forumId" component={DiscussionForum} />
+        <Route path="/courses/:courseId/forums/:forumId/topics/:topicId" component={DiscussionForum} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
