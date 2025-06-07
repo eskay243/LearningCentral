@@ -35,7 +35,7 @@ import AuthPage from "@/pages/AuthPage";
 import { useAuth } from "@/hooks/useAuth";
 import AdminSetup from "@/pages/AdminSetup";
 import AdminOAuthSettings from "@/pages/AdminOAuthSettings";
-import PaymentCallback from "@/pages/PaymentCallback";
+import PaymentCallback from "@/pages/payment-callback";
 import PaymentPage from "@/pages/PaymentPage";
 import BankTransferInstructions from "@/pages/BankTransferInstructions";
 import ContentDemo from "@/pages/ContentDemo";
@@ -49,6 +49,7 @@ import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
 import StudentInvoices from "@/pages/StudentInvoices";
+import StudentPayments from "@/pages/student-payments";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import CodeCompanion from "@/pages/CodeCompanion";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
@@ -100,7 +101,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/admin/oauth-settings" component={AdminOAuthSettings} />
-        <Route path="/payment-callback" component={PaymentCallback} />
+        <Route path="/payment/callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
         <Route path="/interactive-learning" component={InteractiveLearning} />
         <Route path="/coding-playground" component={DirectCodingPlayground} />
