@@ -15,8 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { AlertCircle, DollarSign, PoundSterling } from 'lucide-react';
+import { AlertCircle, DollarSign, PoundSterling, Receipt, Download, Eye, Calendar, Filter } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import useAuth from "@/hooks/useAuth";
 
 // Type definitions for user profile, notification settings, and currency settings
@@ -279,10 +281,11 @@ const Settings = () => {
 
       <div className="flex flex-col gap-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-1 md:grid-cols-5">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="account">Account</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
             {isAdmin ? (
               <TabsTrigger value="system">System</TabsTrigger>
             ) : (
@@ -638,6 +641,28 @@ const Settings = () => {
                       <Button variant="destructive">Delete Account</Button>
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Invoices */}
+          <TabsContent value="invoices">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Invoices</CardTitle>
+                <CardDescription>
+                  View and manage your payment invoices and transaction history
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">
+                    Your invoice management will be displayed here. Click below to access the full invoice interface.
+                  </p>
+                  <Button asChild>
+                    <a href="/student-invoices">View All Invoices</a>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

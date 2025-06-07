@@ -52,6 +52,9 @@ let currentUser: SimpleUser = demoUsers['dev-student'];
 export function setupSimpleAuth(app: Express) {
   // Get current user
   app.get('/api/user', (req, res) => {
+    if (!currentUser) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
     res.json(currentUser);
   });
 
@@ -68,9 +71,9 @@ export function setupSimpleAuth(app: Express) {
     }
   });
 
-  // Logout (reset to student)
+  // Logout (clear user session)
   app.get('/api/logout', (req, res) => {
-    currentUser = demoUsers['dev-student'];
+    currentUser = null as any; // Clear current user
     res.redirect('/');
   });
 
@@ -81,6 +84,9 @@ export function setupSimpleAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
+  if (!currentUser) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
   req.user = currentUser;
   next();
 };
