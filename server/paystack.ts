@@ -32,7 +32,13 @@ export async function initializePayment(options: {
       throw new Error(response.message || 'Payment initialization failed');
     }
     
-    return response.data;
+    return {
+      status: true,
+      data: response.data,
+      authorization_url: response.data.authorization_url,
+      access_code: response.data.access_code,
+      reference: response.data.reference
+    };
   } catch (error: any) {
     console.error('Paystack initialization error:', error);
     throw new Error(`Failed to initialize payment: ${error.message}`);

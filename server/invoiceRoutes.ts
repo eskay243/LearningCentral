@@ -197,27 +197,23 @@ export function registerInvoiceRoutes(app: Express) {
       const reference = `inv_${invoice.invoiceNumber}_${Date.now()}`;
 
       // Initialize Paystack payment
-      const paymentData = {
+      const paymentResponse = await initializePayment({
         email: userEmail,
-        amount: Math.round(invoice.amount * 100), // Convert to kobo
+        amount: invoice.amount, // Function handles kobo conversion
         reference,
+        callbackUrl: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment/callback`,
         metadata: {
           invoiceId: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
           userId,
           courseId: invoice.courseId,
           ...metadata
-        },
-        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:5000'}/payment/callback`,
-        channels: ['card', 'bank', 'ussd', 'qr', 'bank_transfer']
-      };
-
-      const paymentResponse = await paystackApi.initializeTransaction(paymentData);
+        }
+      });
 
       if (!paymentResponse.status) {
         return res.status(400).json({ 
-          message: "Failed to initialize payment", 
-          error: paymentResponse.message 
+          message: "Failed to initialize payment"
         });
       }
 
@@ -240,7 +236,7 @@ export function registerInvoiceRoutes(app: Express) {
 
       res.json({
         success: true,
-        paymentUrl: paymentResponse.data.authorization_url,
+        paymentUrl: paymentResponse.authorization_url,
         reference: paymentResponse.data.reference,
         accessCode: paymentResponse.data.access_code
       });
@@ -266,7 +262,7 @@ export function registerInvoiceRoutes(app: Express) {
       }
 
       // Verify with Paystack
-      const verification = await paystackApi.verifyTransaction(reference);
+      const verification = await verifyPayment(reference);
 
       if (!verification.status) {
         await storage.updatePaymentTransaction(transaction.id, {
