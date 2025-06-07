@@ -48,6 +48,7 @@ import SimpleRoutingTest from "@/pages/SimpleRoutingTest";
 import Certificates from "@/pages/Certificates";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
+import StudentInvoices from "@/pages/StudentInvoices";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import CodeCompanion from "@/pages/CodeCompanion";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
@@ -91,6 +92,7 @@ function Router() {
         <Route path="/messages" component={Messages} />
         <Route path="/analytics" component={Analytics} />
         <Route path="/earnings" component={Earnings} />
+        <Route path="/invoices" component={StudentInvoices} />
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/users" component={UserManagement} />

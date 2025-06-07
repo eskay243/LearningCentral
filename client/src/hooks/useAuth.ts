@@ -28,7 +28,17 @@ export function useAuth() {
           throw new Error(`Authentication failed: ${res.status}`);
         }
         
-        return await res.json();
+        const text = await res.text();
+        if (!text) {
+          return null;
+        }
+        
+        try {
+          return JSON.parse(text);
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError, "Response text:", text);
+          return null;
+        }
       } catch (error) {
         console.error("Auth query error:", error);
         return null;
