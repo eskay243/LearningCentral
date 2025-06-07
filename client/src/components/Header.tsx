@@ -128,17 +128,13 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                     </p>
                   </div>
                   <div className="pt-2">
-                    <Link href="/profile">
-                      <a className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <User className="mr-2 h-4 w-4 text-gray-500" />
-                        My Profile
-                      </a>
+                    <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <User className="mr-2 h-4 w-4 text-gray-500" />
+                      My Profile
                     </Link>
-                    <Link href="/settings">
-                      <a className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <Settings className="mr-2 h-4 w-4 text-gray-500" />
-                        Settings
-                      </a>
+                    <Link href="/settings" className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <Settings className="mr-2 h-4 w-4 text-gray-500" />
+                      Settings
                     </Link>
                     <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                     <a 

@@ -17,7 +17,7 @@ import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
 import { registerInvoiceRoutes } from "./invoiceRoutes";
-import { setupSimpleAuth, isAuthenticated, hasRole } from "./simpleAuth";
+
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -74,7 +74,7 @@ const mockData = {
     }
   }))
 };
-import { setupSimpleAuth, isAuthenticated, hasRole } from "./simpleAuth";
+import { setupAuth, isAuthenticated, hasRole } from "./auth";
 import { z } from "zod";
 import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
@@ -123,7 +123,7 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
-  setupSimpleAuth(app);
+  setupAuth(app);
 
   // Dashboard data endpoints with fallback to mock data
   app.get('/api/dashboard/stats', async (req, res) => {
