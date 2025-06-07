@@ -77,6 +77,13 @@ import {
   type InsertCourseAnnouncement,
   type InsertNotification,
   type InsertNotificationSetting,
+  // Invoice and payment types
+  invoices,
+  paymentTransactions,
+  type Invoice,
+  type PaymentTransaction,
+  type InsertInvoice,
+  type InsertPaymentTransaction,
   UserRole,
 } from "@shared/schema";
 import { db } from "./db";
@@ -230,6 +237,21 @@ export interface IStorage {
   verifyCertificate(certificateId: number): Promise<{valid: boolean; certificate?: Certificate}>;
   generateVerificationCode(): Promise<string>;
   
+  // Invoice Management
+  createInvoice(invoiceData: InsertInvoice): Promise<Invoice>;
+  getInvoice(invoiceId: number): Promise<Invoice | undefined>;
+  getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | undefined>;
+  getUserInvoices(userId: string): Promise<Invoice[]>;
+  updateInvoiceStatus(invoiceId: number, status: string, paidAt?: Date): Promise<Invoice>;
+  generateInvoiceNumber(): Promise<string>;
+  
+  // Payment Transaction Management
+  createPaymentTransaction(transactionData: InsertPaymentTransaction): Promise<PaymentTransaction>;
+  getPaymentTransaction(transactionId: number): Promise<PaymentTransaction | undefined>;
+  getPaymentTransactionByReference(reference: string): Promise<PaymentTransaction | undefined>;
+  updatePaymentTransaction(transactionId: number, updateData: Partial<PaymentTransaction>): Promise<PaymentTransaction>;
+  getUserPaymentTransactions(userId: string): Promise<PaymentTransaction[]>;
+
   // Coupons and ratings
   createCoupon(couponData: Omit<Coupon, "id" | "createdAt">): Promise<Coupon>;
   validateCoupon(couponCode: string): Promise<Coupon | undefined>;
@@ -3757,6 +3779,175 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error creating course discussion:", error);
       throw new Error("Failed to create discussion");
+    }
+  }
+
+  // Invoice Management Methods
+  async generateInvoiceNumber(): Promise<string> {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `INV-${timestamp}-${random}`;
+  }
+
+  async createInvoice(invoiceData: InsertInvoice): Promise<Invoice> {
+    try {
+      const invoiceNumber = await this.generateInvoiceNumber();
+      
+      const [invoice] = await db
+        .insert(invoices)
+        .values({
+          ...invoiceData,
+          invoiceNumber
+        })
+        .returning();
+
+      return invoice;
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      throw new Error("Failed to create invoice");
+    }
+  }
+
+  async getInvoice(invoiceId: number): Promise<Invoice | undefined> {
+    try {
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId));
+
+      return invoice;
+    } catch (error) {
+      console.error("Error fetching invoice:", error);
+      return undefined;
+    }
+  }
+
+  async getInvoiceByNumber(invoiceNumber: string): Promise<Invoice | undefined> {
+    try {
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.invoiceNumber, invoiceNumber));
+
+      return invoice;
+    } catch (error) {
+      console.error("Error fetching invoice by number:", error);
+      return undefined;
+    }
+  }
+
+  async getUserInvoices(userId: string): Promise<Invoice[]> {
+    try {
+      const userInvoices = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.userId, userId))
+        .orderBy(desc(invoices.createdAt));
+
+      return userInvoices;
+    } catch (error) {
+      console.error("Error fetching user invoices:", error);
+      return [];
+    }
+  }
+
+  async updateInvoiceStatus(invoiceId: number, status: string, paidAt?: Date): Promise<Invoice> {
+    try {
+      const updateData: any = {
+        status,
+        updatedAt: new Date()
+      };
+
+      if (paidAt) {
+        updateData.paidAt = paidAt;
+      }
+
+      const [invoice] = await db
+        .update(invoices)
+        .set(updateData)
+        .where(eq(invoices.id, invoiceId))
+        .returning();
+
+      return invoice;
+    } catch (error) {
+      console.error("Error updating invoice status:", error);
+      throw new Error("Failed to update invoice status");
+    }
+  }
+
+  // Payment Transaction Management Methods
+  async createPaymentTransaction(transactionData: InsertPaymentTransaction): Promise<PaymentTransaction> {
+    try {
+      const [transaction] = await db
+        .insert(paymentTransactions)
+        .values(transactionData)
+        .returning();
+
+      return transaction;
+    } catch (error) {
+      console.error("Error creating payment transaction:", error);
+      throw new Error("Failed to create payment transaction");
+    }
+  }
+
+  async getPaymentTransaction(transactionId: number): Promise<PaymentTransaction | undefined> {
+    try {
+      const [transaction] = await db
+        .select()
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.id, transactionId));
+
+      return transaction;
+    } catch (error) {
+      console.error("Error fetching payment transaction:", error);
+      return undefined;
+    }
+  }
+
+  async getPaymentTransactionByReference(reference: string): Promise<PaymentTransaction | undefined> {
+    try {
+      const [transaction] = await db
+        .select()
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.reference, reference));
+
+      return transaction;
+    } catch (error) {
+      console.error("Error fetching payment transaction by reference:", error);
+      return undefined;
+    }
+  }
+
+  async updatePaymentTransaction(transactionId: number, updateData: Partial<PaymentTransaction>): Promise<PaymentTransaction> {
+    try {
+      const [transaction] = await db
+        .update(paymentTransactions)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(eq(paymentTransactions.id, transactionId))
+        .returning();
+
+      return transaction;
+    } catch (error) {
+      console.error("Error updating payment transaction:", error);
+      throw new Error("Failed to update payment transaction");
+    }
+  }
+
+  async getUserPaymentTransactions(userId: string): Promise<PaymentTransaction[]> {
+    try {
+      const transactions = await db
+        .select()
+        .from(paymentTransactions)
+        .where(eq(paymentTransactions.userId, userId))
+        .orderBy(desc(paymentTransactions.createdAt));
+
+      return transactions;
+    } catch (error) {
+      console.error("Error fetching user payment transactions:", error);
+      return [];
     }
   }
 }

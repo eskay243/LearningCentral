@@ -446,6 +446,48 @@ export const notificationSettings = pgTable("notification_settings", {
 
 
 
+// Invoices table for payment tracking
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  invoiceNumber: varchar("invoice_number").notNull().unique(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  courseId: integer("course_id").references(() => courses.id),
+  amount: real("amount").notNull(),
+  currency: varchar("currency").notNull().default("NGN"),
+  status: varchar("status").notNull().default("pending"), // pending, paid, cancelled, refunded
+  dueDate: timestamp("due_date").notNull(),
+  paidAt: timestamp("paid_at"),
+  paymentReference: varchar("payment_reference"),
+  paymentMethod: varchar("payment_method"), // paystack, bank_transfer, wallet
+  description: text("description"),
+  lineItems: jsonb("line_items").notNull().default([]),
+  taxAmount: real("tax_amount").default(0),
+  discountAmount: real("discount_amount").default(0),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// Payment transactions table for detailed tracking
+export const paymentTransactions = pgTable("payment_transactions", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").references(() => invoices.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  reference: varchar("reference").notNull().unique(),
+  amount: real("amount").notNull(),
+  currency: varchar("currency").notNull().default("NGN"),
+  status: varchar("status").notNull(), // pending, success, failed, cancelled
+  provider: varchar("provider").notNull(), // paystack, bank, wallet
+  providerReference: varchar("provider_reference"),
+  providerResponse: jsonb("provider_response"),
+  fees: real("fees").default(0),
+  netAmount: real("net_amount"),
+  gateway: varchar("gateway"),
+  channel: varchar("channel"), // card, bank, ussd, qr
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Bookmarks table
 export const bookmarks = pgTable("bookmarks", {
   id: serial("id").primaryKey(),
@@ -761,6 +803,17 @@ export const insertMessageReactionSchema = createInsertSchema(messageReactions);
 export const insertCourseAnnouncementSchema = createInsertSchema(courseAnnouncements);
 export const insertNotificationSchema = createInsertSchema(notifications);
 export const insertNotificationSettingSchema = createInsertSchema(notificationSettings);
+export const insertInvoiceSchema = createInsertSchema(invoices).omit({
+  id: true,
+  invoiceNumber: true,
+  createdAt: true,
+  updatedAt: true
+});
+export const insertPaymentTransactionSchema = createInsertSchema(paymentTransactions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
 
 // Create insert types
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
@@ -770,3 +823,9 @@ export type InsertMessageReaction = z.infer<typeof insertMessageReactionSchema>;
 export type InsertCourseAnnouncement = z.infer<typeof insertCourseAnnouncementSchema>;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type InsertNotificationSetting = z.infer<typeof insertNotificationSettingSchema>;
+export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type InsertPaymentTransaction = z.infer<typeof insertPaymentTransactionSchema>;
+
+// Create select types
+export type Invoice = typeof invoices.$inferSelect;
+export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
