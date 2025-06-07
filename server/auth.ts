@@ -59,18 +59,13 @@ export function setupAuth(app: Express) {
       { usernameField: 'email' },
       async (email, password, done) => {
         try {
-          console.log('LocalStrategy: Authenticating user:', email);
           const user = await storage.getUserByEmail(email);
           
           if (!user) {
-            console.log('LocalStrategy: User not found:', email);
             return done(null, false, { message: 'Invalid email or password' });
           }
 
-          console.log('LocalStrategy: User found:', user.email, 'Has password:', !!user.password);
-
           if (!user.password) {
-            console.log('LocalStrategy: User has no password set');
             return done(null, false, { message: 'User has no password set' });
           }
 
@@ -80,18 +75,15 @@ export function setupAuth(app: Express) {
             // For demo users, extract the actual password from the demo format
             const demoPassword = user.password.replace('demo_hashed_', '');
             isValid = password === demoPassword;
-            console.log('LocalStrategy: Demo password validation result:', isValid);
           } else {
             // For real users with properly hashed passwords
             isValid = await comparePasswords(password, user.password);
-            console.log('LocalStrategy: Hashed password validation result:', isValid);
           }
           
           if (!isValid) {
             return done(null, false, { message: 'Invalid email or password' });
           }
 
-          console.log('LocalStrategy: Authentication successful for:', user.email);
           return done(null, user);
         } catch (error) {
           console.error('LocalStrategy: Authentication error:', error);
@@ -156,24 +148,20 @@ export function setupAuth(app: Express) {
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
-    console.log('Login attempt for:', req.body.email);
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
         console.error('Authentication error:', err);
         return res.status(500).json({ message: "Authentication error" });
       }
       if (!user) {
-        console.log('Authentication failed:', info?.message);
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       
-      console.log('User authenticated successfully:', user.email);
       req.login(user, (err) => {
         if (err) {
           console.error('Login session error:', err);
           return res.status(500).json({ message: "Login failed" });
         }
-        console.log('Login session created successfully');
         res.json({
           id: user.id,
           email: user.email,
