@@ -16,7 +16,6 @@ import fs from "fs";
 import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
-import { registerInvoiceRoutes } from "./invoiceRoutes";
 
 
 // Mock data for UI display when database is not fully connected
@@ -3009,6 +3008,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating mentor commission rate:", error);
       res.status(500).json({ message: "Failed to update mentor commission rate" });
+    }
+  });
+
+  // Paystack payment endpoint
+  app.post('/api/courses/:id/payment', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user?.id || req.user?.claims?.sub;
+      const { email, paymentMethod } = req.body;
+
+      // Get user details
+      const user = await storage.getUser(userId);
+      
+      if (!user || !email) {
+        return res.status(400).json({ message: "User email required for payment" });
+      }
+
+      // Check if already enrolled
+      const existingEnrollment = await storage.getCourseEnrollment(courseId, userId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+
+      // Get course details
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      if (course.price <= 0) {
+        return res.status(400).json({ message: "This is a free course" });
+      }
+
+      // Initialize Paystack payment
+      const paymentData = await initializePayment({
+        email,
+        amount: course.price,
+        reference: `CLB-${courseId}-${Date.now()}`,
+        callbackUrl: `${req.protocol}://${req.get('host')}/payment/callback?courseId=${courseId}`,
+        metadata: {
+          courseId,
+          userId,
+          courseName: course.title
+        }
+      });
+
+      res.json(paymentData);
+      
+    } catch (error: any) {
+      console.error("Error initializing Paystack payment:", error);
+      res.status(500).json({ message: `Payment initialization failed: ${error.message}` });
     }
   });
 
