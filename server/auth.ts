@@ -173,11 +173,19 @@ export function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  // Logout endpoint
+  // Logout endpoint (POST)
   app.post("/api/logout", (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
       res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  // Logout endpoint (GET) for direct navigation
+  app.get("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.redirect("/");
     });
   });
 
@@ -199,13 +207,25 @@ export function setupAuth(app: Express) {
 
 // Middleware to check authentication
 export const isAuthenticated = (req: any, res: any, next: any) => {
-  console.log('Auth check - isAuthenticated:', req.isAuthenticated());
-  console.log('Auth check - user:', req.user);
-  console.log('Auth check - session:', req.session);
+  console.log('=== Authentication Check ===');
+  console.log('req.isAuthenticated():', req.isAuthenticated());
+  console.log('req.user exists:', !!req.user);
+  console.log('req.session.passport:', req.session?.passport);
+  console.log('req.sessionID:', req.sessionID);
   
-  if (req.isAuthenticated()) {
+  // Check both passport authentication and user presence
+  if (req.isAuthenticated() && req.user) {
+    console.log('Authentication SUCCESS via passport + user');
     return next();
   }
+  
+  // Additional check for session-based authentication
+  if (req.user) {
+    console.log('Authentication SUCCESS via user only');
+    return next();
+  }
+  
+  console.log('Authentication FAILED');
   res.status(401).json({ message: "Authentication required" });
 };
 
