@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useParams, useLocation } from "wouter";
+import { PaymentModal } from "@/components/PaymentModal";
 import { 
   UsersIcon, 
   ClockIcon, 
@@ -33,6 +34,7 @@ export default function CourseDetail() {
   // Dialog states
   const [mentorDialogOpen, setMentorDialogOpen] = useState(false);
   const [announcementDialogOpen, setAnnouncementDialogOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedMentorId, setSelectedMentorId] = useState("");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementContent, setAnnouncementContent] = useState("");
@@ -249,8 +251,8 @@ export default function CourseDetail() {
     
     // Check if this is a paid course
     if (course?.price && course.price > 0) {
-      // Redirect to payment page for paid courses
-      setLocation(`/courses/${id}/payment`);
+      // Open payment modal for paid courses
+      setPaymentModalOpen(true);
       return;
     }
     
@@ -852,6 +854,27 @@ export default function CourseDetail() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Payment Modal */}
+      {course && (
+        <PaymentModal
+          isOpen={paymentModalOpen}
+          onClose={() => setPaymentModalOpen(false)}
+          course={{
+            id: course.id,
+            title: course.title,
+            price: course.price,
+          }}
+          onPaymentSuccess={() => {
+            // Refresh enrollment status and redirect to course view
+            queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/enrollment-status`] });
+            queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}`] });
+            setTimeout(() => {
+              setLocation(`/courses/${id}/view`);
+            }, 1000);
+          }}
+        />
+      )}
     </div>
   );
 }

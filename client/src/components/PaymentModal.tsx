@@ -1,10 +1,20 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, CreditCard, Shield, CheckCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Loader2, CreditCard, Building2, Wallet } from "lucide-react";
+import { formatCurrency } from "@/lib/currencyUtils";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -13,140 +23,201 @@ interface PaymentModalProps {
     id: number;
     title: string;
     price: number;
-    thumbnail?: string;
   };
-  userEmail: string;
+  onPaymentSuccess: () => void;
 }
 
-export function PaymentModal({ isOpen, onClose, course, userEmail }: PaymentModalProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
+export function PaymentModal({ isOpen, onClose, course, onPaymentSuccess }: PaymentModalProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'bank-transfer' | 'wallet'>('paystack');
 
-  const paymentMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/payments/initialize", {
-        courseId: course.id,
-        email: userEmail,
-        amount: course.price,
-        callbackUrl: `${window.location.origin}/payment/callback`
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      // Redirect to Paystack payment page
-      if (data.authorization_url) {
-        window.location.href = data.authorization_url;
-      } else {
-        toast({
-          title: "Payment Error",
-          description: "Unable to initialize payment. Please try again.",
-          variant: "destructive",
-        });
-      }
-    },
-    onError: (error: Error) => {
+  const handlePayment = async () => {
+    if (!user) {
       toast({
-        title: "Payment Failed",
-        description: error.message,
+        title: "Authentication Required",
+        description: "Please log in to enroll in courses.",
         variant: "destructive",
       });
-      setIsProcessing(false);
-    },
-  });
+      return;
+    }
 
-  const handlePayment = () => {
     setIsProcessing(true);
-    paymentMutation.mutate();
+
+    try {
+      if (paymentMethod === 'paystack') {
+        // Initialize Paystack payment
+        const response = await apiRequest("POST", `/api/courses/${course.id}/payment`, {
+          paymentMethod: 'paystack',
+          amount: course.price,
+        });
+
+        const paymentData = await response.json();
+
+        if (paymentData.status && paymentData.data?.authorization_url) {
+          // Open Paystack payment in a popup window
+          const popup = window.open(
+            paymentData.data.authorization_url,
+            'paystack-payment',
+            'width=600,height=700,scrollbars=yes,resizable=yes'
+          );
+
+          // Monitor the popup for completion
+          const checkClosed = setInterval(() => {
+            if (popup?.closed) {
+              clearInterval(checkClosed);
+              // Check payment status after popup closes
+              setTimeout(() => {
+                verifyPayment(paymentData.data.reference);
+              }, 1000);
+            }
+          }, 1000);
+
+          // Fallback timeout after 10 minutes
+          setTimeout(() => {
+            if (popup && !popup.closed) {
+              popup.close();
+            }
+            clearInterval(checkClosed);
+          }, 600000);
+        } else {
+          throw new Error('Failed to initialize payment');
+        }
+      } else if (paymentMethod === 'bank-transfer') {
+        // Handle bank transfer
+        toast({
+          title: "Bank Transfer Instructions",
+          description: "Bank transfer details will be sent to your email. Please complete the transfer and upload proof of payment.",
+        });
+        onClose();
+      } else if (paymentMethod === 'wallet') {
+        // Handle wallet payment
+        const response = await apiRequest("POST", `/api/courses/${course.id}/enroll`, {
+          paymentMethod: 'wallet',
+          amount: course.price,
+        });
+
+        if (response.ok) {
+          toast({
+            title: "Payment Successful",
+            description: "You have been enrolled in the course using your wallet balance.",
+          });
+          onPaymentSuccess();
+          onClose();
+        } else {
+          throw new Error('Insufficient wallet balance or payment failed');
+        }
+      }
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast({
+        title: "Payment Failed",
+        description: error.message || "An error occurred while processing your payment.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN'
-    }).format(price);
+  const verifyPayment = async (reference: string) => {
+    try {
+      const response = await apiRequest("POST", `/api/payment/verify`, {
+        reference,
+        courseId: course.id,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          toast({
+            title: "Payment Successful",
+            description: "You have been successfully enrolled in the course!",
+          });
+          onPaymentSuccess();
+          onClose();
+        } else {
+          toast({
+            title: "Payment Verification Failed",
+            description: "Please contact support if you believe this is an error.",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Payment verification error:", error);
+      toast({
+        title: "Payment Verification Error",
+        description: "Unable to verify payment. Please contact support.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Complete Your Enrollment
-          </DialogTitle>
+          <DialogTitle>Complete Payment</DialogTitle>
+          <DialogDescription>
+            Choose your preferred payment method for "{course.title}"
+          </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6">
-          {/* Course Summary */}
-          <div className="flex gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            {course.thumbnail && (
-              <img 
-                src={course.thumbnail} 
-                alt={course.title}
-                className="w-16 h-16 rounded-lg object-cover"
-              />
-            )}
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">{course.title}</h3>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                {formatPrice(course.price)}
-              </p>
+          <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {formatCurrency(course.price)}
             </div>
+            <div className="text-sm text-muted-foreground">Course Fee</div>
           </div>
 
-          {/* Payment Features */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <Shield className="h-5 w-5 text-green-600" />
-              <span className="text-sm">Secure payment powered by Paystack</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-sm">Instant access after payment</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span className="text-sm">30-day money-back guarantee</span>
-            </div>
-          </div>
+          <div className="space-y-4">
+            <Label className="text-base font-medium">Payment Method</Label>
+            <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as any)}>
+              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent">
+                <RadioGroupItem value="paystack" id="paystack" />
+                <Label htmlFor="paystack" className="flex items-center space-x-2 cursor-pointer flex-1">
+                  <CreditCard className="w-4 h-4" />
+                  <span>Card Payment (Paystack)</span>
+                </Label>
+              </div>
 
-          {/* Payment Info */}
-          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              You'll be redirected to Paystack to complete your payment securely. 
-              After successful payment, you'll be automatically enrolled in the course.
-            </p>
-          </div>
+              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent">
+                <RadioGroupItem value="bank-transfer" id="bank-transfer" />
+                <Label htmlFor="bank-transfer" className="flex items-center space-x-2 cursor-pointer flex-1">
+                  <Building2 className="w-4 h-4" />
+                  <span>Bank Transfer</span>
+                </Label>
+              </div>
 
-          {/* Payment Button */}
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              className="flex-1" 
-              onClick={onClose}
-              disabled={isProcessing}
-            >
-              Cancel
-            </Button>
-            <Button 
-              className="flex-1 bg-purple-600 hover:bg-purple-700" 
-              onClick={handlePayment}
-              disabled={isProcessing || paymentMutation.isPending}
-            >
-              {isProcessing || paymentMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  Pay {formatPrice(course.price)}
-                </>
-              )}
-            </Button>
+              <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent">
+                <RadioGroupItem value="wallet" id="wallet" />
+                <Label htmlFor="wallet" className="flex items-center space-x-2 cursor-pointer flex-1">
+                  <Wallet className="w-4 h-4" />
+                  <span>Wallet Balance</span>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
         </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isProcessing}>
+            Cancel
+          </Button>
+          <Button onClick={handlePayment} disabled={isProcessing}>
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Proceed to Payment'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
