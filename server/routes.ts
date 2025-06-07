@@ -548,6 +548,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Development fallback user endpoint
+  app.get('/api/user', async (req: any, res) => {
+    // Create a development user for testing
+    const devUser = {
+      id: 'dev-student',
+      email: 'student@codelabeducare.com',
+      firstName: 'Demo',
+      lastName: 'Student',
+      role: 'student',
+      profileImageUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    res.json(devUser);
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
