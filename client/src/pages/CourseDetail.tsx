@@ -175,29 +175,24 @@ export default function CourseDetail() {
     },
   });
 
-  // Enrollment mutation
+  // Enrollment mutation (only for free courses)
   const enrollMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/courses/${id}/enroll`);
       return res.json();
     },
     onSuccess: () => {
-      if (course?.price && course.price > 0) {
-        // Redirect to payment page for paid courses
-        setLocation(`/courses/${id}/payment`);
-      } else {
-        // Free course enrollment
-        toast({
-          title: "Success",
-          description: "You have been enrolled in this course!",
-        });
-        queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/enrollment-status`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}`] });
-        // Redirect to course view after successful free enrollment
-        setTimeout(() => {
-          setLocation(`/courses/${id}/view`);
-        }, 1000);
-      }
+      // Free course enrollment success
+      toast({
+        title: "Success",
+        description: "You have been enrolled in this course!",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/enrollment-status`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}`] });
+      // Redirect to course view after successful free enrollment
+      setTimeout(() => {
+        setLocation(`/courses/${id}/view`);
+      }, 1000);
     },
     onError: (error: any) => {
       toast({
@@ -252,7 +247,14 @@ export default function CourseDetail() {
       return;
     }
     
-    // Only enroll if not already enrolled
+    // Check if this is a paid course
+    if (course?.price && course.price > 0) {
+      // Redirect to payment page for paid courses
+      setLocation(`/courses/${id}/payment`);
+      return;
+    }
+    
+    // For free courses, enroll directly
     enrollMutation.mutate();
   };
 
