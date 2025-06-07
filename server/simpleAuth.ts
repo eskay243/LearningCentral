@@ -81,6 +81,26 @@ export function setupSimpleAuth(app: Express) {
   app.get('/api/login', (req, res) => {
     res.redirect('/');
   });
+
+  // POST Login endpoint for form submissions
+  app.post('/api/login', (req, res) => {
+    const { email, password } = req.body;
+    
+    // Find user by email
+    const user = Object.values(demoUsers).find(u => u.email === email);
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+    
+    // For demo purposes, accept any password or check if it's "Password1234"
+    if (password && (password === 'Password1234' || password.length > 0)) {
+      currentUser = user;
+      return res.json(user);
+    }
+    
+    return res.status(401).json({ message: 'Invalid email or password' });
+  });
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {

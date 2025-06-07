@@ -46,12 +46,10 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
         </button>
         
         {/* Logo (visible on small screens) */}
-        <div className="flex items-center flex-shrink-0 lg:hidden">
-          <Link href="/">
-            <span className="text-lg font-bold text-gray-800 dark:text-white hidden sm:block cursor-pointer">Codelab Educare</span>
-            <span className="text-lg font-bold text-gray-800 dark:text-white sm:hidden cursor-pointer">CL</span>
-          </Link>
-        </div>
+        <Link href="/" className="flex items-center flex-shrink-0 lg:hidden">
+          <span className="text-lg font-bold text-gray-800 dark:text-white hidden sm:block cursor-pointer">Codelab Educare</span>
+          <span className="text-lg font-bold text-gray-800 dark:text-white sm:hidden cursor-pointer">CL</span>
+        </Link>
         
         {/* Search Box */}
         <div className="hidden sm:flex items-center relative max-w-md w-full mx-6 lg:mx-0">
