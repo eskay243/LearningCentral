@@ -971,7 +971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get enrollment for a specific course
-  app.get('/api/courses/:id/enrollment', async (req: any, res: Response) => {
+  app.get('/api/courses/:id/enrollment', isAuthenticated, async (req: any, res: Response) => {
     try {
       const courseId = parseInt(req.params.id);
       
@@ -979,10 +979,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid course ID" });
       }
       
-      // Use session-based authentication like other student endpoints
-      const userId = req.session?.userId;
+      // Get user ID from authenticated user
+      const userId = req.user?.id || req.user?.sub;
       if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
+        return res.status(401).json({ message: "User ID not found" });
       }
       
       const enrollment = await storage.getCourseEnrollment(courseId, userId);
@@ -993,7 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post('/api/courses/:id/enroll', async (req: any, res: Response) => {
+  app.post('/api/courses/:id/enroll', isAuthenticated, async (req: any, res: Response) => {
     try {
       const courseId = parseInt(req.params.id);
       
@@ -1001,10 +1001,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid course ID" });
       }
       
-      // Use session-based authentication like other student endpoints
-      const userId = req.session?.userId;
+      // Get user ID from authenticated user
+      const userId = req.user?.id || req.user?.sub;
       if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
+        return res.status(401).json({ message: "User ID not found" });
       }
       
       // Check if user is already enrolled
@@ -3373,13 +3373,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Remove Mentor from Course
   // Check enrollment status
-  app.get("/api/courses/:courseId/enrollment-status", async (req: any, res: Response) => {
+  app.get("/api/courses/:courseId/enrollment-status", isAuthenticated, async (req: any, res: Response) => {
     try {
       const courseId = parseInt(req.params.courseId);
-      const userId = req.session?.userId;
+      const userId = req.user?.id || req.user?.sub;
       
       if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
+        return res.status(401).json({ message: "User ID not found" });
       }
       
       // Check if user is enrolled by looking at the enrollments table
