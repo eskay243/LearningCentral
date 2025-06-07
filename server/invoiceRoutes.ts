@@ -9,7 +9,7 @@ export function registerInvoiceRoutes(app: Express) {
   // Create invoice for course enrollment
   app.post("/api/invoices/create", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { courseId, amount, description, lineItems, taxAmount = 0, discountAmount = 0 } = req.body;
 
       // Validate required fields
@@ -85,7 +85,7 @@ export function registerInvoiceRoutes(app: Express) {
   // Get user invoices
   app.get("/api/invoices/user", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const invoices = await storage.getUserInvoices(userId);
 
       const invoicesWithCourseInfo = await Promise.all(
@@ -125,7 +125,7 @@ export function registerInvoiceRoutes(app: Express) {
   // Get specific invoice
   app.get("/api/invoices/:invoiceId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const invoiceId = parseInt(req.params.invoiceId);
 
       const invoice = await storage.getInvoice(invoiceId);
@@ -160,7 +160,7 @@ export function registerInvoiceRoutes(app: Express) {
   // Initialize payment for invoice
   app.post("/api/invoices/:invoiceId/pay", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const invoiceId = parseInt(req.params.invoiceId);
       const { email, metadata } = req.body;
 
@@ -337,7 +337,7 @@ export function registerInvoiceRoutes(app: Express) {
   // Get payment transactions for user
   app.get("/api/transactions/user", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const transactions = await storage.getUserPaymentTransactions(userId);
 
       const transactionsWithInvoiceInfo = await Promise.all(
