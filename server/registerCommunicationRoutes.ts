@@ -7,7 +7,7 @@ export function registerCommunicationRoutes(app: Express) {
   // Get all conversations for a user
   app.get('/api/messages/conversations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const conversations = await storage.getUserConversations(userId);
       res.json(conversations);
     } catch (error) {
@@ -19,7 +19,7 @@ export function registerCommunicationRoutes(app: Express) {
   // Get messages for a specific conversation
   app.get('/api/messages/conversations/:conversationId', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const conversationId = parseInt(req.params.conversationId);
       
       // Check if user is part of this conversation
@@ -43,7 +43,7 @@ export function registerCommunicationRoutes(app: Express) {
   // Create a new conversation
   app.post('/api/messages/conversations', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const participantIds = req.body.participantIds || [];
       
       // Validate
@@ -83,7 +83,7 @@ export function registerCommunicationRoutes(app: Express) {
   // Send a message
   app.post('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
-      const senderId = req.user.claims.sub;
+      const senderId = req.user.id;
       const { conversationId, content } = req.body;
       
       // Validate
@@ -116,7 +116,7 @@ export function registerCommunicationRoutes(app: Express) {
   // Add participants to a conversation
   app.post('/api/messages/conversations/:conversationId/participants', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const conversationId = parseInt(req.params.conversationId);
       const participantIds = req.body.participantIds || [];
       
