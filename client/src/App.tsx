@@ -76,10 +76,11 @@ function Router() {
         <Route path="/courses/:id/view" component={CourseView} />
         <Route path="/courses/:id/discussion" component={CourseDiscussion} />
         <Route path="/courses/:id/curriculum" component={CourseCurriculum} />
-        <Route path="/courses/:courseId/lessons/:lessonId/edit" component={LessonEditor} />
-        <Route path="/courses/:courseId/lessons/:lessonId" component={LessonViewer} />
         <Route path="/courses/:id/payment" component={PaymentPage} />
         <Route path="/courses/:id/bank-transfer" component={BankTransferInstructions} />
+        <Route path="/courses/:id/preview" component={CoursePreview} />
+        <Route path="/courses/:courseId/lessons/:lessonId/edit" component={LessonEditor} />
+        <Route path="/courses/:courseId/lessons/:lessonId" component={LessonViewer} />
         <Route path="/create-course" component={CreateCourse} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/students" component={Students} />
@@ -115,9 +116,6 @@ function Router() {
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route path="/code-companion" component={CodeCompanionChat} />
         <Route path="/code-companion/old" component={CodeCompanion} />
-        <Route path="/courses/:id/preview" component={CoursePreview} />
-        <Route path="/courses/:id/view" component={CourseView} />
-        <Route path="/student-profile/:id" component={StudentProfile} />
         <Route path="/mentor-dashboard" component={MentorDashboard} />
         <Route path="/demo-users" component={DemoUsers} />
         <Route component={NotFound} />

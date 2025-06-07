@@ -184,14 +184,19 @@ export default function CourseDetail() {
     onSuccess: () => {
       if (course?.price && course.price > 0) {
         // Redirect to payment page for paid courses
-        setLocation(`/payment?courseId=${id}&amount=${course.price}`);
+        setLocation(`/courses/${id}/payment`);
       } else {
         // Free course enrollment
         toast({
           title: "Success",
           description: "You have been enrolled in this course!",
         });
+        queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}/enrollment-status`] });
         queryClient.invalidateQueries({ queryKey: [`/api/courses/${id}`] });
+        // Redirect to course view after successful free enrollment
+        setTimeout(() => {
+          setLocation(`/courses/${id}/view`);
+        }, 1000);
       }
     },
     onError: (error: any) => {
