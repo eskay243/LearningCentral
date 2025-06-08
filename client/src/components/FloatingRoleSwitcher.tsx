@@ -130,7 +130,7 @@ export default function FloatingRoleSwitcher({
   };
 
   // Don't render if not enabled or user doesn't have permission based on original role
-  const canUseRoleSwitcher = user && (originalRole === UserRole.ADMIN || originalRole === UserRole.MENTOR);
+  const canUseRoleSwitcher = user && (originalUserRole === UserRole.ADMIN || originalUserRole === UserRole.MENTOR);
   if (!isEnabled || !canUseRoleSwitcher) {
     return null;
   }
