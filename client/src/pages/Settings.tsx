@@ -74,6 +74,17 @@ const Settings = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
   const isAdmin = user?.role === "admin";
+  
+  // Role switcher state management
+  const [roleSwitcherEnabled, setRoleSwitcherEnabled] = useState(() => {
+    const saved = localStorage.getItem('role-switcher-enabled');
+    return saved ? JSON.parse(saved) : true;
+  });
+
+  const handleToggleRoleSwitcher = (enabled: boolean) => {
+    setRoleSwitcherEnabled(enabled);
+    localStorage.setItem('role-switcher-enabled', JSON.stringify(enabled));
+  };
 
   // Fetch user profile
   const { data: profile, isLoading: isProfileLoading } = useQuery<UserProfile>({
@@ -1031,6 +1042,14 @@ const Settings = () => {
                     </form>
                   </Form>
                 </div>
+                
+                <Separator className="my-6" />
+                
+                {/* Role Switcher Settings */}
+                <AdminRoleSwitcherSettings 
+                  isEnabled={roleSwitcherEnabled}
+                  onToggleEnabled={handleToggleRoleSwitcher}
+                />
               </CardContent>
             </Card>
           </TabsContent>
