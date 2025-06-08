@@ -33,6 +33,9 @@ export default function FloatingRoleSwitcher({
   const [isOpen, setIsOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
 
+  // Get original user role for permissions (stored when first logged in)
+  const originalUserRole = localStorage.getItem('original-user-role') || user?.role;
+
   // Filter available roles based on current user's permissions
   const getAvailableRoles = () => {
     const allRoles = [
@@ -66,10 +69,10 @@ export default function FloatingRoleSwitcher({
       }
     ];
 
-    if (user?.role === UserRole.ADMIN) {
+    if (originalUserRole === UserRole.ADMIN) {
       // Admin can switch to all roles
       return allRoles;
-    } else if (user?.role === UserRole.MENTOR) {
+    } else if (originalUserRole === UserRole.MENTOR) {
       // Mentor can only switch between mentor and student
       return allRoles.filter(role => 
         role.key === UserRole.MENTOR || role.key === UserRole.STUDENT
@@ -126,8 +129,8 @@ export default function FloatingRoleSwitcher({
     }
   };
 
-  // Don't render if not enabled or user doesn't have permission
-  const canUseRoleSwitcher = user && (user.role === UserRole.ADMIN || user.role === UserRole.MENTOR);
+  // Don't render if not enabled or user doesn't have permission based on original role
+  const canUseRoleSwitcher = user && (originalRole === UserRole.ADMIN || originalRole === UserRole.MENTOR);
   if (!isEnabled || !canUseRoleSwitcher) {
     return null;
   }

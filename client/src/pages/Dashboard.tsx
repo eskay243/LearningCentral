@@ -100,11 +100,6 @@ export default function Dashboard() {
   const isStudent = user?.role === 'student';
   const [activeView, setActiveView] = useState('overview');
 
-  // Show student dashboard for student users
-  if (isStudent && !isAuthLoading) {
-    return <StableStudentDashboard />;
-  }
-
   // Fetch admin dashboard statistics
   const { data: dashboardStats, isLoading: isStatsLoading, error: statsError } = useQuery<AdminDashboardStats>({
     queryKey: ["/api/admin/dashboard-stats"],
@@ -118,6 +113,11 @@ export default function Dashboard() {
     enabled: isAdmin && !isAuthLoading,
     retry: false
   });
+
+  // Show student dashboard for student users
+  if (isStudent && !isAuthLoading) {
+    return <StableStudentDashboard />;
+  }
 
   // Fetch all users for admin dashboard
   const { data: allUsers = [], isLoading: isUsersLoading } = useQuery<any[]>({

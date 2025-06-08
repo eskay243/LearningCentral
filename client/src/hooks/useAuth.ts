@@ -34,7 +34,17 @@ export function useAuth() {
         }
         
         try {
-          return JSON.parse(text);
+          const userData = JSON.parse(text);
+          
+          // Store original user role for role switcher permissions
+          if (userData && userData.role) {
+            const existingOriginalRole = localStorage.getItem('original-user-role');
+            if (!existingOriginalRole) {
+              localStorage.setItem('original-user-role', userData.role);
+            }
+          }
+          
+          return userData;
         } catch (parseError) {
           console.error("JSON parse error:", parseError, "Response text:", text);
           return null;
@@ -67,6 +77,9 @@ export function useAuth() {
 
   // Provide a logout function
   const logout = () => {
+    // Clear original role on logout
+    localStorage.removeItem('original-user-role');
+    localStorage.removeItem('role-switcher-enabled');
     window.location.href = "/api/logout";
   };
 
