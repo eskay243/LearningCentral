@@ -20,6 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import useAuth from "@/hooks/useAuth";
+import AdminRoleSwitcherSettings from "@/components/AdminRoleSwitcherSettings";
 
 // Type definitions for user profile, notification settings, and currency settings
 interface UserProfile {

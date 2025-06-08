@@ -1,9 +1,11 @@
 import { Switch, Route } from "wouter";
+import { useState, useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelpBubbleProvider } from "./contexts/HelpBubbleContext";
+import FloatingRoleSwitcher from "@/components/FloatingRoleSwitcher";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
@@ -137,12 +139,26 @@ function Router() {
 }
 
 function App() {
+  const [roleSwitcherEnabled, setRoleSwitcherEnabled] = useState(() => {
+    const saved = localStorage.getItem('role-switcher-enabled');
+    return saved ? JSON.parse(saved) : true; // Default to enabled
+  });
+
+  const handleToggleRoleSwitcher = (enabled: boolean) => {
+    setRoleSwitcherEnabled(enabled);
+    localStorage.setItem('role-switcher-enabled', JSON.stringify(enabled));
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <HelpBubbleProvider>
           <Toaster />
           <Router />
+          <FloatingRoleSwitcher 
+            isEnabled={roleSwitcherEnabled}
+            onToggleEnabled={handleToggleRoleSwitcher}
+          />
         </HelpBubbleProvider>
       </TooltipProvider>
     </QueryClientProvider>
