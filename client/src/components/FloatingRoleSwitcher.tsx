@@ -33,36 +33,54 @@ export default function FloatingRoleSwitcher({
   const [isOpen, setIsOpen] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
 
-  const roles = [
-    {
-      key: UserRole.ADMIN,
-      label: "Admin",
-      icon: Shield,
-      color: "bg-red-500 hover:bg-red-600",
-      description: "Full system access"
-    },
-    {
-      key: UserRole.MENTOR,
-      label: "Mentor",
-      icon: Users,
-      color: "bg-blue-500 hover:bg-blue-600",
-      description: "Course management"
-    },
-    {
-      key: UserRole.STUDENT,
-      label: "Student",
-      icon: GraduationCap,
-      color: "bg-green-500 hover:bg-green-600",
-      description: "Learning interface"
-    },
-    {
-      key: UserRole.AFFILIATE,
-      label: "Affiliate",
-      icon: DollarSign,
-      color: "bg-purple-500 hover:bg-purple-600",
-      description: "Partner access"
+  // Filter available roles based on current user's permissions
+  const getAvailableRoles = () => {
+    const allRoles = [
+      {
+        key: UserRole.ADMIN,
+        label: "Admin",
+        icon: Shield,
+        color: "bg-red-500 hover:bg-red-600",
+        description: "Full system access"
+      },
+      {
+        key: UserRole.MENTOR,
+        label: "Mentor",
+        icon: Users,
+        color: "bg-blue-500 hover:bg-blue-600",
+        description: "Course management"
+      },
+      {
+        key: UserRole.STUDENT,
+        label: "Student",
+        icon: GraduationCap,
+        color: "bg-green-500 hover:bg-green-600",
+        description: "Learning interface"
+      },
+      {
+        key: UserRole.AFFILIATE,
+        label: "Affiliate",
+        icon: DollarSign,
+        color: "bg-purple-500 hover:bg-purple-600",
+        description: "Partner access"
+      }
+    ];
+
+    if (user?.role === UserRole.ADMIN) {
+      // Admin can switch to all roles
+      return allRoles;
+    } else if (user?.role === UserRole.MENTOR) {
+      // Mentor can only switch between mentor and student
+      return allRoles.filter(role => 
+        role.key === UserRole.MENTOR || role.key === UserRole.STUDENT
+      );
     }
-  ];
+    
+    // Students and affiliates cannot use role switcher (handled by permission check above)
+    return [];
+  };
+
+  const roles = getAvailableRoles();
 
   const switchUserRole = async (role: string) => {
     setIsSwitching(true);
@@ -108,8 +126,9 @@ export default function FloatingRoleSwitcher({
     }
   };
 
-  // Don't render if not enabled or user is not admin
-  if (!isEnabled || !user || user.role !== UserRole.ADMIN) {
+  // Don't render if not enabled or user doesn't have permission
+  const canUseRoleSwitcher = user && (user.role === UserRole.ADMIN || user.role === UserRole.MENTOR);
+  if (!isEnabled || !canUseRoleSwitcher) {
     return null;
   }
 
