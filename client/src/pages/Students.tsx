@@ -96,11 +96,11 @@ const Students = () => {
         student.email?.toLowerCase().includes(searchTerm.toLowerCase())
       )
       .filter(student => 
-        courseFilter === "all" || (student.courses && student.courses.some((course: any) => course.id.toString() === courseFilter))
+        courseFilter === "all" || (student.enrollments && student.enrollments.some((enrollment: any) => enrollment.courseId.toString() === courseFilter))
       )
       .filter(student => {
         if (activeTab === "all") return true;
-        if (activeTab === "active") return student.lastActive && new Date(student.lastActive).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
+        if (activeTab === "active") return student.updatedAt && new Date(student.updatedAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000;
         if (activeTab === "completed") return student.completedCourses > 0;
         return true;
       });
@@ -170,14 +170,7 @@ const Students = () => {
     },
   ];
   
-  const filteredStudents = filterStudents(students || mockStudents);
-  
-  // Mock courses for filtering
-  const mockCourses = [
-    { id: 1, title: "JavaScript Course" },
-    { id: 2, title: "Python for Beginners" },
-    { id: 3, title: "SQL for Data Science" },
-  ];
+  const filteredStudents = filterStudents(students || []);
 
   return (
     <div className="p-4 md:p-6">

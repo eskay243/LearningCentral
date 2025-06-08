@@ -2854,11 +2854,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all students (admin only)
+  // Get all students with enrollment data (admin only)
   app.get("/api/admin/students", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
     try {
       const students = await storage.getUsersByRole('student');
-      res.json(students);
+      
+      // Fetch enrollment data for each student
+      const studentsWithEnrollments = await Promise.all(
+        students.map(async (student) => {
+          const enrollments = await storage.getEnrollmentsByUser(student.id);
+          const enrollmentData = await Promise.all(
+            enrollments.map(async (enrollment) => {
+              const course = await storage.getCourse(enrollment.courseId);
+              return {
+                courseId: enrollment.courseId,
+                courseName: course?.title || 'Unknown Course',
+                progress: enrollment.progress || 0,
+                enrolledAt: enrollment.enrolledAt,
+                paymentStatus: enrollment.paymentStatus,
+                paymentAmount: enrollment.paymentAmount
+              };
+            })
+          );
+          
+          return {
+            ...student,
+            enrollments: enrollmentData,
+            totalCourses: enrollmentData.length,
+            completedCourses: enrollmentData.filter(e => e.progress >= 100).length,
+            averageProgress: enrollmentData.length > 0 
+              ? Math.round(enrollmentData.reduce((sum, e) => sum + e.progress, 0) / enrollmentData.length)
+              : 0
+          };
+        })
+      );
+      
+      res.json(studentsWithEnrollments);
     } catch (error) {
       console.error("Error fetching students:", error);
       res.status(500).json({ message: "Failed to fetch students" });

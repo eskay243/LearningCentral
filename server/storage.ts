@@ -137,6 +137,7 @@ export interface IStorage {
   getCourseEnrollment(courseId: number, userId: string): Promise<CourseEnrollment | undefined>;
   updateCourseProgress(enrollmentId: number, progress: number): Promise<CourseEnrollment>;
   getStudentEnrollments(userId: string): Promise<CourseEnrollment[]>;
+  getEnrollmentsByUser(userId: string): Promise<CourseEnrollment[]>;
   
   // Mentor operations
   assignMentorToCourse(mentorCourse: Omit<MentorCourse, "id" | "assignedAt">): Promise<MentorCourse>;
