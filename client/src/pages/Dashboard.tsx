@@ -114,11 +114,6 @@ export default function Dashboard() {
     retry: false
   });
 
-  // Show student dashboard for student users
-  if (isStudent && !isAuthLoading) {
-    return <StableStudentDashboard />;
-  }
-
   // Fetch all users for admin dashboard
   const { data: allUsers = [], isLoading: isUsersLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/users"],
@@ -139,6 +134,11 @@ export default function Dashboard() {
     enabled: isMentor && !isAuthLoading,
     retry: false
   });
+
+  // Show student dashboard for student users - moved after all hooks
+  if (isStudent && !isAuthLoading) {
+    return <StableStudentDashboard />;
+  }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
