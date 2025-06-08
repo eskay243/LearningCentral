@@ -337,27 +337,27 @@ const Students = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center">
-                              <span className="font-medium">{student.totalCourses}</span>
+                              <span className="font-medium">{student.totalCourses || 0}</span>
                               <span className="mx-2 text-gray-300">/</span>
-                              <span className="text-green-600">{student.completedCourses} completed</span>
+                              <span className="text-green-600">{student.completedCourses || 0} completed</span>
                             </div>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {(student.courses || []).slice(0, 2).map((course: any) => (
-                                <Badge key={course.id} variant="outline" className="text-xs">
-                                  {course.title.length > 15 ? course.title.substring(0, 15) + '...' : course.title}
+                              {(student.enrollments || []).slice(0, 2).map((enrollment: any) => (
+                                <Badge key={enrollment.courseId} variant="outline" className="text-xs">
+                                  {enrollment.courseName.length > 15 ? enrollment.courseName.substring(0, 15) + '...' : enrollment.courseName}
                                 </Badge>
                               ))}
-                              {(student.courses || []).length > 2 && (
+                              {(student.enrollments || []).length > 2 && (
                                 <Badge variant="outline" className="text-xs">
-                                  +{(student.courses || []).length - 2} more
+                                  +{(student.enrollments || []).length - 2} more
                                 </Badge>
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col">
-                              <span className="text-sm font-medium mb-1">{student.progress}%</span>
-                              <Progress value={student.progress} className="h-2 w-32" />
+                              <span className="text-sm font-medium mb-1">{student.averageProgress || 0}%</span>
+                              <Progress value={student.averageProgress || 0} className="h-2 w-32" />
                             </div>
                           </TableCell>
                           <TableCell>

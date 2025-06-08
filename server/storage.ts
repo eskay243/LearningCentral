@@ -2467,6 +2467,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getEnrollmentsByUser(userId: string): Promise<CourseEnrollment[]> {
+    return this.getStudentEnrollments(userId);
+  }
+
   // Module Management
   async createModule(moduleData: Omit<Module, "id">): Promise<Module> {
     try {
