@@ -3209,6 +3209,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Role Switching for Development/Testing
+  app.get("/api/switch-user-role/:role", isAuthenticated, async (req: any, res) => {
+    try {
+      const { role } = req.params;
+      const validRoles = ['admin', 'mentor', 'student', 'affiliate'];
+      
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+      
+      // Update the current user's role in the database
+      const updatedUser = await storage.updateUser(req.user.id, { role });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      // Update the session user object
+      req.user = updatedUser;
+      
+      res.json({ 
+        message: `Successfully switched to ${role} role`, 
+        user: updatedUser 
+      });
+    } catch (error) {
+      console.error("Error switching role:", error);
+      res.status(500).json({ message: "Failed to switch role" });
+    }
+  });
+
   // OAuth Settings Admin Routes
   app.get("/api/admin/oauth-settings", isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
     try {

@@ -80,7 +80,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
         {user && (
           <div className="px-6 py-2 mb-4">
             <div className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
-              {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+              {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'User'}
             </div>
           </div>
         )}

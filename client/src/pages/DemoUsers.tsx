@@ -41,16 +41,33 @@ export default function DemoUsers() {
 
     setIsSwitching(true);
     try {
-      const response = await fetch(`/api/switch-user-role/${role}`);
+      const response = await fetch(`/api/switch-user-role/${role}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to switch user role");
+        let errorMessage = "Failed to switch user role";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If response is not JSON, use the status text
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned invalid response format');
       }
       
       const data: SwitchRoleResponse = await response.json();
-      
-      // Force refresh user data
-      window.location.reload();
       
       toast({
         title: "Role updated successfully",
@@ -58,7 +75,17 @@ export default function DemoUsers() {
       });
 
       setSelectedRole(role);
+      
+      // Invalidate and refetch user data
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+      // Small delay before refresh to show the toast
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error) {
+      console.error("Role switch error:", error);
       toast({
         title: "Error switching role",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
