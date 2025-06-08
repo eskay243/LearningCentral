@@ -18,6 +18,7 @@ import {
   Code,
   Code2,
   Receipt,
+  CreditCard,
 } from "lucide-react";
 
 interface SidebarProps {
