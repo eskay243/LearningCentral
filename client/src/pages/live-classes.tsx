@@ -169,17 +169,21 @@ export default function LiveClassesPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Live Classes</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Join live sessions, manage your classes, and view analytics
+            {user?.role === 'student' 
+              ? "Join upcoming live sessions and view your class schedule"
+              : "Join live sessions, manage your classes, and view analytics"
+            }
           </p>
         </div>
         
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Session
-            </Button>
-          </DialogTrigger>
+        {(user?.role === 'admin' || user?.role === 'mentor') && (
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Session
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Create Live Session</DialogTitle>
@@ -319,6 +323,7 @@ export default function LiveClassesPage() {
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Tabs */}
@@ -326,7 +331,7 @@ export default function LiveClassesPage() {
         {[
           { key: "upcoming", label: "Upcoming", icon: Calendar },
           { key: "past", label: "Past Sessions", icon: Clock },
-          { key: "analytics", label: "Analytics", icon: BarChart3 },
+          ...(user?.role === 'admin' || user?.role === 'mentor' ? [{ key: "analytics", label: "Analytics", icon: BarChart3 }] : []),
         ].map(({ key, label, icon: Icon }) => (
           <button
             key={key}
