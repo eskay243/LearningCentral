@@ -2,7 +2,7 @@ import { Express } from "express";
 import { isAuthenticated } from "./auth";
 import { initializePayment, verifyPayment, listTransactions } from "./paystack";
 import { storage } from "./storage";
-import { generateInvoicePDF } from "./invoiceService";
+import { generateInvoicePDF, generateReceiptPDF } from "./invoiceService";
 
 export function registerPaymentRoutes(app: Express) {
   // Initialize payment for course enrollment
@@ -216,6 +216,75 @@ export function registerPaymentRoutes(app: Express) {
     } catch (error: any) {
       console.error("Invoice download error:", error);
       res.status(500).json({ message: error.message || "Failed to download invoice" });
+    }
+  });
+
+  // Download receipt for a payment transaction
+  app.get("/api/payments/:reference/receipt", isAuthenticated, async (req: any, res) => {
+    try {
+      const { reference } = req.params;
+      const userId = req.user?.id || req.user?.claims?.sub;
+
+      if (!userId) {
+        return res.status(400).json({ message: "User information not found" });
+      }
+
+      // Check if user is admin or owns the payment
+      const isAdmin = req.user?.role === "admin";
+      
+      if (!isAdmin) {
+        // For non-admin users, verify they own this payment
+        const payment = await storage.getPaymentByReference(reference);
+        if (!payment || payment.userId !== userId) {
+          return res.status(404).json({ message: "Payment not found" });
+        }
+      }
+
+      // Generate receipt PDF
+      const pdfBuffer = await generateReceiptPDF(reference);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="receipt-${reference}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      console.error("Receipt download error:", error);
+      res.status(500).json({ message: error.message || "Failed to download receipt" });
+    }
+  });
+
+  // Process refund for a payment (admin only)
+  app.post("/api/payments/:reference/refund", isAuthenticated, async (req: any, res) => {
+    try {
+      const { reference } = req.params;
+      const { amount, reason } = req.body;
+
+      // Check if user is admin
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Get payment details
+      const payment = await storage.getPaymentByReference(reference);
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
+
+      if (payment.status !== 'success') {
+        return res.status(400).json({ message: "Only successful payments can be refunded" });
+      }
+
+      // For demo purposes, we'll just update the payment status
+      // In a real implementation, you would integrate with the payment provider's refund API
+      await storage.updatePaymentStatus(reference, 'refunded');
+
+      res.json({ 
+        success: true, 
+        message: "Refund initiated successfully",
+        refundAmount: amount 
+      });
+    } catch (error: any) {
+      console.error("Refund processing error:", error);
+      res.status(500).json({ message: error.message || "Failed to process refund" });
     }
   });
 

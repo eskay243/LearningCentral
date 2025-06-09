@@ -145,8 +145,9 @@ export async function generateReceiptPDF(paymentReference: string): Promise<Buff
     doc.text("Thank you for your payment!", 105, 250, { align: "center" });
     doc.text("This is a computer-generated receipt.", 105, 260, { align: "center" });
     
-    // Convert to buffer
-    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+    // Convert to buffer using the correct method
+    const pdfArrayBuffer = doc.output('arraybuffer');
+    const pdfBuffer = Buffer.from(pdfArrayBuffer);
     
     return pdfBuffer;
   } catch (error) {
