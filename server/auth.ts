@@ -230,6 +230,8 @@ export const hasRole = (roles: string | string[]) => {
     const userRole = req.user.role;
     const allowedRoles = Array.isArray(roles) ? roles : [roles];
     
+    console.log('Role check - User role:', userRole, 'Allowed roles:', allowedRoles);
+    
     if (allowedRoles.includes(userRole)) {
       return next();
     }
