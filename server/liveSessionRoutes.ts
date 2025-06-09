@@ -103,7 +103,7 @@ export function registerLiveSessionRoutes(app: Express) {
         title: rawData.title,
         description: rawData.description,
         courseId: parseInt(rawData.courseId),
-        lessonId: rawData.lessonId || 1, // Default to lesson 1 if not provided
+        lessonId: rawData.lessonId || null, // Allow null for course-level sessions
         startTime: rawData.startTime, // Already converted to Date object
         endTime: rawData.endTime, // Already converted to Date object
         duration: rawData.duration || 60,
