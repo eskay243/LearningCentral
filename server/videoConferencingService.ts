@@ -35,6 +35,13 @@ export interface CalendarEvent {
 export class VideoConferencingService {
   
   /**
+   * Generate meeting credentials without requiring provider API setup
+   */
+  generateMeetingCredentials(session: any): MeetingCredentials {
+    return this.createFallbackMeeting(session);
+  }
+  
+  /**
    * Create a meeting based on the selected provider
    */
   async createMeeting(
@@ -248,14 +255,36 @@ export class VideoConferencingService {
    * Create fallback meeting when API fails
    */
   private createFallbackMeeting(session: InsertLiveSession): MeetingCredentials {
-    const meetingId = `live-${Date.now()}`;
-    const meetingPassword = this.generateMeetingPassword();
+    const provider = session.provider || 'google_meet';
+    const courseId = session.courseId || 'general';
+    const timestamp = Date.now().toString(36);
+    
+    let meetingUrl: string;
+    let meetingId: string;
+    let meetingPassword: string | undefined;
+    
+    switch (provider) {
+      case 'zoom':
+        meetingId = `${courseId}${timestamp}`.replace(/[^0-9]/g, '').substring(0, 11);
+        meetingUrl = `https://zoom.us/j/${meetingId}`;
+        meetingPassword = this.generateMeetingPassword();
+        break;
+      case 'zoho':
+        meetingId = `codelab-${courseId}-${timestamp}`;
+        meetingUrl = `https://meeting.zoho.com/meeting/${meetingId}`;
+        meetingPassword = this.generateMeetingPassword();
+        break;
+      default: // google_meet
+        meetingId = `codelab-${courseId}-${timestamp}`;
+        meetingUrl = `https://meet.google.com/${meetingId}`;
+        break;
+    }
     
     return {
-      meetingUrl: `https://meet.codelabeducare.com/room/${meetingId}`,
+      meetingUrl,
       meetingId,
       meetingPassword,
-      hostUrl: `https://meet.codelabeducare.com/room/${meetingId}?role=host`,
+      hostUrl: meetingUrl,
     };
   }
 

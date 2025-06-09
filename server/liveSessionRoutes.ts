@@ -176,22 +176,16 @@ export function registerLiveSessionRoutes(app: Express) {
         endTime: sessionData.endTime?.constructor?.name
       });
 
-      // Get mentor's video provider settings
-      const providerSettings = await storage.getVideoProviderSettings(req.user.id, sessionData.provider || 'google_meet');
-      
-      // Create meeting with video conferencing service
-      let meetingCredentials = null;
-      if (providerSettings) {
-        try {
-          meetingCredentials = await videoConferencingService.createMeeting(sessionData, providerSettings);
-          sessionData.meetingUrl = meetingCredentials.meetingUrl;
-          sessionData.meetingId = meetingCredentials.meetingId;
-          sessionData.meetingPassword = meetingCredentials.meetingPassword;
-          sessionData.hostKey = meetingCredentials.hostKey;
-        } catch (error) {
-          console.error('Failed to create video meeting:', error);
-          // Continue with session creation without meeting integration
-        }
+      // Generate meeting credentials automatically
+      try {
+        const meetingCredentials = videoConferencingService.generateMeetingCredentials(sessionData);
+        sessionData.meetingUrl = meetingCredentials.meetingUrl;
+        sessionData.meetingId = meetingCredentials.meetingId;
+        sessionData.meetingPassword = meetingCredentials.meetingPassword;
+        sessionData.hostKey = meetingCredentials.hostUrl;
+      } catch (error) {
+        console.error('Failed to generate meeting credentials:', error);
+        // Still create session without meeting details
       }
 
       const session = await storage.createLiveSession(sessionData);
