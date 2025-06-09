@@ -54,16 +54,26 @@ export function registerLiveSessionRoutes(app: Express) {
   // Create new live session
   app.post('/api/live-sessions', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
-      const sessionData = insertLiveSessionSchema.parse(req.body);
-      sessionData.mentorId = req.user.id;
+      // Parse the raw request body first
+      const rawData = req.body;
       
-      // Convert string dates to Date objects
-      if (sessionData.startTime && typeof sessionData.startTime === 'string') {
-        sessionData.startTime = new Date(sessionData.startTime);
+      // Convert datetime-local strings to proper Date objects before schema validation
+      if (rawData.startTime && typeof rawData.startTime === 'string') {
+        rawData.startTime = new Date(rawData.startTime);
+        if (isNaN(rawData.startTime.getTime())) {
+          return res.status(400).json({ message: 'Invalid start time format' });
+        }
       }
-      if (sessionData.endTime && typeof sessionData.endTime === 'string') {
-        sessionData.endTime = new Date(sessionData.endTime);
+      if (rawData.endTime && typeof rawData.endTime === 'string') {
+        rawData.endTime = new Date(rawData.endTime);
+        if (isNaN(rawData.endTime.getTime())) {
+          return res.status(400).json({ message: 'Invalid end time format' });
+        }
       }
+      
+      // Now parse with schema
+      const sessionData = insertLiveSessionSchema.parse(rawData);
+      sessionData.mentorId = req.user.id;
 
       // Get mentor's video provider settings
       const providerSettings = await storage.getVideoProviderSettings(req.user.id, sessionData.provider || 'google_meet');
