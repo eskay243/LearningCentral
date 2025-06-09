@@ -177,9 +177,8 @@ export async function generateReceiptPDF(paymentReference: string): Promise<Buff
     doc.text(`Generated on: ${new Date().toLocaleString('en-GB')}`, 20, 290);
     
     // Convert to buffer using binary string method for better compatibility
-    const pdfOutput = doc.output('datauristring');
-    const base64Data = pdfOutput.split(',')[1];
-    const pdfBuffer = Buffer.from(base64Data, 'base64');
+    const pdfBinaryString = doc.output('binarystring');
+    const pdfBuffer = Buffer.from(pdfBinaryString, 'binary');
     
     return pdfBuffer;
   } catch (error) {
