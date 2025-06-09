@@ -272,7 +272,7 @@ const Students = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
-              {(courses || mockCourses).map((course) => (
+              {(courses || []).map((course) => (
                 <SelectItem key={course.id} value={course.id.toString()}>
                   {course.title}
                 </SelectItem>
