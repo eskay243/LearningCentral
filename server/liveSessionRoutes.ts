@@ -54,26 +54,55 @@ export function registerLiveSessionRoutes(app: Express) {
   // Create new live session
   app.post('/api/live-sessions', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
-      // Parse the raw request body first
-      const rawData = req.body;
+      console.log('Raw request body:', JSON.stringify(req.body, null, 2));
       
-      // Convert datetime-local strings to proper Date objects before schema validation
-      if (rawData.startTime && typeof rawData.startTime === 'string') {
-        rawData.startTime = new Date(rawData.startTime);
-        if (isNaN(rawData.startTime.getTime())) {
-          return res.status(400).json({ message: 'Invalid start time format' });
+      // Parse the raw request body first
+      const rawData = { ...req.body };
+      
+      console.log('Before date conversion:', {
+        startTime: rawData.startTime,
+        startTimeType: typeof rawData.startTime,
+        endTime: rawData.endTime,
+        endTimeType: typeof rawData.endTime
+      });
+      
+      // Ensure proper date conversion for datetime-local inputs
+      if (rawData.startTime) {
+        if (typeof rawData.startTime === 'string') {
+          // Handle datetime-local format (YYYY-MM-DDTHH:MM)
+          const startDate = new Date(rawData.startTime);
+          if (isNaN(startDate.getTime())) {
+            return res.status(400).json({ message: 'Invalid start time format' });
+          }
+          rawData.startTime = startDate;
+          console.log('Converted startTime to Date object:', rawData.startTime);
         }
       }
-      if (rawData.endTime && typeof rawData.endTime === 'string') {
-        rawData.endTime = new Date(rawData.endTime);
-        if (isNaN(rawData.endTime.getTime())) {
-          return res.status(400).json({ message: 'Invalid end time format' });
+      if (rawData.endTime) {
+        if (typeof rawData.endTime === 'string') {
+          // Handle datetime-local format (YYYY-MM-DDTHH:MM)
+          const endDate = new Date(rawData.endTime);
+          if (isNaN(endDate.getTime())) {
+            return res.status(400).json({ message: 'Invalid end time format' });
+          }
+          rawData.endTime = endDate;
+          console.log('Converted endTime to Date object:', rawData.endTime);
         }
       }
+      
+      console.log('After date conversion:', {
+        startTime: rawData.startTime,
+        startTimeType: typeof rawData.startTime,
+        endTime: rawData.endTime,
+        endTimeType: typeof rawData.endTime
+      });
       
       // Now parse with schema
+      console.log('Parsing with schema...');
       const sessionData = insertLiveSessionSchema.parse(rawData);
       sessionData.mentorId = req.user.id;
+      
+      console.log('Final sessionData before storage:', JSON.stringify(sessionData, null, 2));
 
       // Get mentor's video provider settings
       const providerSettings = await storage.getVideoProviderSettings(req.user.id, sessionData.provider || 'google_meet');
