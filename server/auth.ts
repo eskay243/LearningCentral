@@ -207,6 +207,8 @@ export function setupAuth(app: Express) {
 
 // Middleware to check authentication
 export const isAuthenticated = (req: any, res: any, next: any) => {
+  console.log('Authentication check - isAuthenticated():', req.isAuthenticated(), 'user:', !!req.user);
+  
   // Check both passport authentication and user presence
   if (req.isAuthenticated() && req.user) {
     return next();
