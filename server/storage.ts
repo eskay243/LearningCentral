@@ -773,8 +773,6 @@ export class DatabaseStorage implements IStorage {
         sessionId: data.sessionId,
         userId: data.userId,
         joinTime: data.joinTime,
-        status: data.status,
-        lastActivity: data.joinTime
       })
       .returning();
     
