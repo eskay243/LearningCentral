@@ -42,7 +42,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Get student schedule - all live classes automatically updated
   app.get('/api/student/schedule', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const { startDate, endDate, status } = req.query;
       
       // Get all sessions for courses the student is enrolled in
@@ -100,7 +100,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Get live sessions for mentor
   app.get('/api/mentor/live-sessions', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
-      const mentorId = req.user.id;
+      const mentorId = req.user.claims.sub;
       const sessions = await storage.getLiveSessionsByMentor(mentorId);
       res.json(sessions);
     } catch (error: any) {
@@ -224,13 +224,13 @@ export function registerLiveSessionRoutes(app: Express) {
       }
 
       // Check if user is the mentor or admin
-      if (existingSession.mentorId !== req.user.id && req.user.role !== 'admin') {
+      if (existingSession.mentorId !== req.user.claims.sub && req.user.role !== 'admin') {
         return res.status(403).json({ message: 'Not authorized to update this session' });
       }
 
       // Update meeting if meeting details changed
       if (updateData.title || updateData.startTime || updateData.endTime || updateData.description) {
-        const providerSettings = await storage.getVideoProviderSettings(req.user.id, existingSession.provider);
+        const providerSettings = await storage.getVideoProviderSettings(req.user.claims.sub, existingSession.provider);
         if (providerSettings && existingSession.meetingId) {
           try {
             await videoConferencingService.updateMeeting(existingSession, providerSettings, updateData);
@@ -289,7 +289,7 @@ export function registerLiveSessionRoutes(app: Express) {
   app.post('/api/live-sessions/:sessionId/join', isAuthenticated, async (req: any, res: Response) => {
     try {
       const sessionId = parseInt(req.params.sessionId);
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
 
       const session = await storage.getLiveSession(sessionId);
       if (!session) {
@@ -328,7 +328,7 @@ export function registerLiveSessionRoutes(app: Express) {
   app.post('/api/live-sessions/:sessionId/leave', isAuthenticated, async (req: any, res: Response) => {
     try {
       const sessionId = parseInt(req.params.sessionId);
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
 
       await storage.updateSessionAttendance(sessionId, userId, {
         leftTime: new Date(),
@@ -430,7 +430,7 @@ export function registerLiveSessionRoutes(app: Express) {
       const sessionId = parseInt(req.params.sessionId);
       const qaData = insertLiveSessionQASchema.parse(req.body);
       qaData.sessionId = sessionId;
-      qaData.studentId = req.user.id;
+      qaData.studentId = req.user.claims.sub;
 
       const question = await storage.createSessionQuestion(qaData);
       res.status(201).json(question);
@@ -499,7 +499,7 @@ export function registerLiveSessionRoutes(app: Express) {
       const pollId = parseInt(req.params.pollId);
       const responseData = insertLiveSessionPollResponseSchema.parse(req.body);
       responseData.pollId = pollId;
-      responseData.userId = req.user.id;
+      responseData.userId = req.user.claims.sub;
 
       const response = await storage.respondToPoll(responseData);
       res.status(201).json(response);
