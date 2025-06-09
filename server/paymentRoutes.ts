@@ -49,18 +49,21 @@ export function registerPaymentRoutes(app: Express) {
         }
       });
 
-      // Store payment record
-      await storage.createPaymentRecord({
-        reference: paymentData.reference,
+      // Store payment transaction record
+      await storage.createPaymentTransaction({
         userId,
         courseId,
+        reference: paymentData.reference,
         amount,
+        currency: "NGN",
         status: "pending",
-        paymentMethod: "paystack",
-        metadata: {
-          access_code: paymentData.access_code,
-          authorization_url: paymentData.authorization_url
-        }
+        provider: "paystack",
+        providerReference: paymentData.reference,
+        providerResponse: paymentData,
+        fees: 0,
+        netAmount: amount,
+        gateway: "paystack",
+        channel: "card"
       });
 
       res.json(paymentData);
@@ -86,14 +89,19 @@ export function registerPaymentRoutes(app: Express) {
         return res.status(400).json({ message: "Payment verification failed" });
       }
 
-      // Get payment record
-      const paymentRecord = await storage.getPaymentByReference(reference);
+      // Get payment transaction record
+      const paymentRecord = await storage.getPaymentTransactionByReference(reference);
       if (!paymentRecord) {
         return res.status(404).json({ message: "Payment record not found" });
       }
 
-      // Update payment status
-      await storage.updatePaymentStatus(reference, "completed", paymentData);
+      // Update payment transaction status
+      await storage.updatePaymentTransactionStatus(reference, "success", {
+        providerResponse: paymentData,
+        fees: paymentData.fees || 0,
+        netAmount: paymentData.amount - (paymentData.fees || 0),
+        channel: paymentData.channel || "card"
+      });
 
       // Enroll user in course
       const enrollment = await storage.createEnrollment({

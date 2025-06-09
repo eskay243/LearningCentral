@@ -251,6 +251,7 @@ export interface IStorage {
   getPaymentTransaction(transactionId: number): Promise<PaymentTransaction | undefined>;
   getPaymentTransactionByReference(reference: string): Promise<PaymentTransaction | undefined>;
   updatePaymentTransaction(transactionId: number, updateData: Partial<PaymentTransaction>): Promise<PaymentTransaction>;
+  updatePaymentTransactionStatus(reference: string, status: string, updateData?: any): Promise<PaymentTransaction>;
   getUserPaymentTransactions(userId: string): Promise<PaymentTransaction[]>;
   
   // Additional payment methods
@@ -3947,6 +3948,33 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating payment transaction:", error);
       throw new Error("Failed to update payment transaction");
+    }
+  }
+
+  async updatePaymentTransactionStatus(reference: string, status: string, updateData?: any): Promise<PaymentTransaction> {
+    try {
+      const updateFields: any = {
+        status,
+        updatedAt: new Date()
+      };
+
+      if (updateData) {
+        if (updateData.providerResponse) updateFields.providerResponse = updateData.providerResponse;
+        if (updateData.fees !== undefined) updateFields.fees = updateData.fees;
+        if (updateData.netAmount !== undefined) updateFields.netAmount = updateData.netAmount;
+        if (updateData.channel) updateFields.channel = updateData.channel;
+      }
+
+      const [transaction] = await db
+        .update(paymentTransactions)
+        .set(updateFields)
+        .where(eq(paymentTransactions.reference, reference))
+        .returning();
+
+      return transaction;
+    } catch (error) {
+      console.error("Error updating payment transaction status:", error);
+      throw new Error("Failed to update payment transaction status");
     }
   }
 
