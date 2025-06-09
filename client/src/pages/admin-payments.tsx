@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Download, Search, Filter, DollarSign, CreditCard, Users, TrendingUp, Eye, User, BookOpen, X, Copy, CheckCircle } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface PaymentTransaction {
   id: string;
@@ -342,104 +342,100 @@ export default function AdminPayments() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="min-w-[120px]">Reference</TableHead>
-                        <TableHead className="min-w-[200px]">User</TableHead>
-                        <TableHead className="min-w-[180px]">Course</TableHead>
-                        <TableHead className="min-w-[120px]">Amount</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
-                        <TableHead className="min-w-[100px]">Provider</TableHead>
-                        <TableHead className="min-w-[120px]">Date</TableHead>
-                        <TableHead className="min-w-[100px]">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                <div className="w-full">
+                  <table className="w-full table-fixed">
+                    <thead>
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[14%]">Reference</th>
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[20%]">User</th>
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[16%]">Course</th>
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[12%]">Amount</th>
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[8%]">Status</th>
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[10%]">Provider</th>
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[12%]">Date</th>
+                        <th className="text-left py-3 px-3 font-medium text-gray-700 dark:text-gray-300 w-[8%]">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredPayments?.map((payment) => (
-                        <TableRow key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                          <TableCell className="font-mono text-xs">
-                            <div className="truncate max-w-[120px]" title={payment.reference}>
+                        <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <td className="py-4 px-3">
+                            <div className="font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded truncate" title={payment.reference}>
                               {payment.reference}
                             </div>
-                          </TableCell>
-                          <TableCell>
+                          </td>
+                          <td className="py-4 px-3">
                             <div className="space-y-1">
-                              <div className="font-medium truncate max-w-[180px]" title={payment.userName}>
+                              <div className="font-medium text-sm truncate" title={payment.userName}>
                                 {payment.userName}
                               </div>
-                              <div className="text-sm text-gray-500 truncate max-w-[180px]" title={payment.userEmail}>
+                              <div className="text-xs text-gray-500 truncate" title={payment.userEmail}>
                                 {payment.userEmail}
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
+                          </td>
+                          <td className="py-4 px-3">
                             <div className="space-y-1">
-                              <div className="font-medium truncate max-w-[160px]" title={payment.courseTitle}>
+                              <div className="font-medium text-sm truncate" title={payment.courseTitle}>
                                 {payment.courseTitle}
                               </div>
-                              <div className="text-sm text-gray-500">ID: {payment.courseId}</div>
+                              <div className="text-xs text-gray-500">#{payment.courseId}</div>
                             </div>
-                          </TableCell>
-                          <TableCell>
+                          </td>
+                          <td className="py-4 px-3">
                             <div className="space-y-1">
-                              <div className="font-semibold text-green-600 dark:text-green-400">
-                                {formatPrice(payment.amount, payment.currency)}
+                              <div className="font-semibold text-sm text-green-600 dark:text-green-400">
+                                ₦{(payment.amount / 1000).toFixed(0)}k
                               </div>
                               {payment.fees > 0 && (
                                 <div className="text-xs text-gray-500">
-                                  Net: {formatPrice(payment.netAmount, payment.currency)}
+                                  Net: ₦{((payment.netAmount || 0) / 1000).toFixed(0)}k
                                 </div>
                               )}
                             </div>
-                          </TableCell>
-                          <TableCell>
+                          </td>
+                          <td className="py-4 px-3">
                             <Badge 
                               variant={payment.status === 'success' ? 'default' : 
                                      payment.status === 'pending' ? 'secondary' : 'destructive'}
-                              className="font-medium"
+                              className="text-xs"
                             >
                               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="font-medium capitalize">{payment.provider}</div>
-                              {payment.channel && (
-                                <div className="text-sm text-gray-500 capitalize">{payment.channel}</div>
-                              )}
+                          </td>
+                          <td className="py-4 px-3">
+                            <div className="text-sm font-medium capitalize truncate" title={payment.provider}>
+                              {payment.provider}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
-                              {formatDistanceToNow(new Date(payment.createdAt), { addSuffix: true })}
+                          </td>
+                          <td className="py-4 px-3">
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              {format(new Date(payment.createdAt), 'MMM dd')}
                             </div>
-                          </TableCell>
-                          <TableCell>
+                          </td>
+                          <td className="py-4 px-3">
                             <Button 
                               variant="ghost" 
                               size="sm"
+                              className="h-8 w-8 p-0"
                               onClick={() => setSelectedPayment(payment)}
-                              className="hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20"
                             >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       )) || (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center py-12">
+                        <tr>
+                          <td colSpan={8} className="text-center py-12">
                             <div className="flex flex-col items-center space-y-2">
                               <CreditCard className="h-8 w-8 text-gray-400" />
                               <p className="text-gray-500">No payment transactions found</p>
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       )}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>
