@@ -13,6 +13,19 @@ import {
   insertCalendarEventSchema
 } from "@shared/schema";
 
+// Helper function to get user ID from either old or new auth format
+function getUserId(user: any): string {
+  // New format: getUserId(req.user) (Replit Auth)
+  if (user.claims && user.claims.sub) {
+    return user.claims.sub;
+  }
+  // Old format: req.user.id (Local Auth)
+  if (user.id) {
+    return user.id;
+  }
+  throw new Error('User ID not found in request');
+}
+
 export function registerLiveSessionRoutes(app: Express) {
   
   // Get live sessions for a course
@@ -30,7 +43,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Get upcoming live sessions for student
   app.get('/api/student/upcoming-sessions', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req.user);
       const sessions = await storage.getUpcomingSessionsForStudent(userId);
       res.json(sessions);
     } catch (error: any) {
@@ -42,7 +55,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Get student schedule - all live classes automatically updated
   app.get('/api/student/schedule', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req.user);
       const { startDate, endDate, status } = req.query;
       
       // Get all sessions for courses the student is enrolled in
@@ -100,7 +113,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Get live sessions for mentor
   app.get('/api/mentor/live-sessions', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
-      const mentorId = req.user.claims.sub;
+      const mentorId = getUserId(req.user);
       const sessions = await storage.getLiveSessionsByMentor(mentorId);
       res.json(sessions);
     } catch (error: any) {
@@ -224,13 +237,13 @@ export function registerLiveSessionRoutes(app: Express) {
       }
 
       // Check if user is the mentor or admin
-      if (existingSession.mentorId !== req.user.claims.sub && req.user.role !== 'admin') {
+      if (existingSession.mentorId !== getUserId(req.user) && req.user.role !== 'admin') {
         return res.status(403).json({ message: 'Not authorized to update this session' });
       }
 
       // Update meeting if meeting details changed
       if (updateData.title || updateData.startTime || updateData.endTime || updateData.description) {
-        const providerSettings = await storage.getVideoProviderSettings(req.user.claims.sub, existingSession.provider);
+        const providerSettings = await storage.getVideoProviderSettings(getUserId(req.user), existingSession.provider);
         if (providerSettings && existingSession.meetingId) {
           try {
             await videoConferencingService.updateMeeting(existingSession, providerSettings, updateData);
@@ -289,7 +302,7 @@ export function registerLiveSessionRoutes(app: Express) {
   app.post('/api/live-sessions/:sessionId/join', isAuthenticated, async (req: any, res: Response) => {
     try {
       const sessionId = parseInt(req.params.sessionId);
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req.user);
 
       const session = await storage.getLiveSession(sessionId);
       if (!session) {
@@ -328,7 +341,7 @@ export function registerLiveSessionRoutes(app: Express) {
   app.post('/api/live-sessions/:sessionId/leave', isAuthenticated, async (req: any, res: Response) => {
     try {
       const sessionId = parseInt(req.params.sessionId);
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req.user);
 
       await storage.updateSessionAttendance(sessionId, userId, {
         leftTime: new Date(),
@@ -430,7 +443,7 @@ export function registerLiveSessionRoutes(app: Express) {
       const sessionId = parseInt(req.params.sessionId);
       const qaData = insertLiveSessionQASchema.parse(req.body);
       qaData.sessionId = sessionId;
-      qaData.studentId = req.user.claims.sub;
+      qaData.studentId = getUserId(req.user);
 
       const question = await storage.createSessionQuestion(qaData);
       res.status(201).json(question);
@@ -499,7 +512,7 @@ export function registerLiveSessionRoutes(app: Express) {
       const pollId = parseInt(req.params.pollId);
       const responseData = insertLiveSessionPollResponseSchema.parse(req.body);
       responseData.pollId = pollId;
-      responseData.userId = req.user.claims.sub;
+      responseData.userId = getUserId(req.user);
 
       const response = await storage.respondToPoll(responseData);
       res.status(201).json(response);
@@ -536,8 +549,8 @@ export function registerLiveSessionRoutes(app: Express) {
       }
 
       // Check if user has access to recording
-      const isEnrolled = await storage.isUserEnrolledInCourse(req.user.claims.sub, session.courseId);
-      if (!isEnrolled && req.user.role !== 'admin' && session.mentorId !== req.user.claims.sub) {
+      const isEnrolled = await storage.isUserEnrolledInCourse(getUserId(req.user), session.courseId);
+      if (!isEnrolled && req.user.role !== 'admin' && session.mentorId !== getUserId(req.user)) {
         return res.status(403).json({ message: 'Not authorized to access recording' });
       }
 
@@ -641,7 +654,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Video provider settings routes
   app.get('/api/video-providers/settings', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req.user);
       const settings = await storage.getAllVideoProviderSettings(userId);
       res.json(settings);
     } catch (error: any) {
@@ -653,7 +666,7 @@ export function registerLiveSessionRoutes(app: Express) {
   app.post('/api/video-providers/settings', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
       const settingsData = req.body;
-      settingsData.userId = req.user.claims.sub;
+      settingsData.userId = getUserId(req.user);
       
       const settings = await storage.saveVideoProviderSettings(settingsData);
       res.status(201).json(settings);
