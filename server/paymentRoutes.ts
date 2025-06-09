@@ -240,18 +240,61 @@ export function registerPaymentRoutes(app: Express) {
         }
       }
 
-      // Generate receipt PDF
-      const pdfBuffer = await generateReceiptPDF(reference);
+      // Get payment details for receipt
+      const payment = await storage.getPaymentByReference(reference);
+      if (!payment) {
+        return res.status(404).json({ message: "Payment not found" });
+      }
 
-      // Set proper headers for PDF download
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="receipt-${reference}.pdf"`);
-      res.setHeader('Content-Length', pdfBuffer.length.toString());
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
+      const user = await storage.getUser(payment.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Generate simple text receipt
+      const customerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A';
+      const receiptText = `
+===============================================
+            CODELAB EDUCARE
+         PAYMENT RECEIPT
+===============================================
+
+Receipt Number: ${payment.reference}
+Date: ${new Date(payment.createdAt).toLocaleDateString('en-GB')}
+Status: ${payment.status.toUpperCase()}
+
+-----------------------------------------------
+CUSTOMER DETAILS
+-----------------------------------------------
+Name: ${customerName}
+Email: ${user.email}
+Customer ID: ${user.id}
+
+-----------------------------------------------
+PAYMENT INFORMATION
+-----------------------------------------------
+Amount: ₦${Number(payment.amount).toLocaleString()}
+Payment Method: ${payment.channel || 'Online Payment'}
+Provider: ${payment.provider || 'Paystack'}
+Reference: ${payment.providerReference || payment.reference}
+
+-----------------------------------------------
+TOTAL PAID: ₦${Number(payment.amount).toLocaleString()}
+-----------------------------------------------
+
+Thank you for your payment!
+This is a computer-generated receipt.
+
+Generated: ${new Date().toLocaleString('en-GB')}
+===============================================
+      `;
+
+      // Set headers for text download
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="receipt-${reference}.txt"`);
+      res.setHeader('Content-Length', Buffer.byteLength(receiptText, 'utf8').toString());
       
-      res.end(pdfBuffer);
+      res.send(receiptText);
     } catch (error: any) {
       console.error("Receipt download error:", error);
       res.status(500).json({ message: error.message || "Failed to download receipt" });
