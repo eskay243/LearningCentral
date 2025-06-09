@@ -206,21 +206,63 @@ export const assignmentSubmissions = pgTable("assignment_submissions", {
   gradedBy: varchar("graded_by").references(() => users.id),
 });
 
-// LiveSessions table
+// Enhanced LiveSessions table with video conferencing integration
 export const liveSessions = pgTable("live_sessions", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id").notNull().references(() => lessons.id),
+  courseId: integer("course_id").notNull().references(() => courses.id),
   mentorId: varchar("mentor_id").references(() => users.id), // The mentor/teacher hosting the session
   title: text("title").notNull(), // Session title
   description: text("description"), // Detailed description
+  
+  // Enhanced scheduling
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
+  timezone: text("timezone").notNull().default("UTC"),
+  duration: integer("duration").notNull(), // duration in minutes
+  
+  // Video conferencing integration
+  provider: text("provider").notNull().default("google_meet"), // google_meet, zoom, zoho
   meetingUrl: text("meeting_url"),
+  meetingId: text("meeting_id"),
+  meetingPassword: text("meeting_password"),
+  hostKey: text("host_key"), // for zoom host controls
+  
+  // Recording and replay
   recordingUrl: text("recording_url"),
-  status: text("status").notNull().default("scheduled"), // scheduled, in-progress, completed, cancelled
+  recordingId: text("recording_id"),
+  recordingPassword: text("recording_password"),
+  autoRecord: boolean("auto_record").default(true),
+  recordingSize: integer("recording_size"), // bytes
+  recordingDuration: integer("recording_duration"), // seconds
+  
+  // Session management
+  status: text("status").notNull().default("scheduled"), // scheduled, live, completed, cancelled
+  maxAttendees: integer("max_attendees").default(100),
+  capacity: integer("capacity"), // Max number of participants
+  
+  // Features
+  waitingRoomEnabled: boolean("waiting_room_enabled").default(true),
+  chatEnabled: boolean("chat_enabled").default(true),
+  qnaEnabled: boolean("qna_enabled").default(true),
+  breakoutRoomsEnabled: boolean("breakout_rooms_enabled").default(false),
+  pollsEnabled: boolean("polls_enabled").default(true),
+  
+  // Recurrence
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: jsonb("recurrence_pattern"), // daily, weekly, monthly with config
+  parentSessionId: integer("parent_session_id").references(() => liveSessions.id),
+  
+  // Notifications
+  reminderSent: boolean("reminder_sent").default(false),
+  followUpSent: boolean("follow_up_sent").default(false),
+  
+  // Content and materials
+  agenda: text("agenda"),
   notes: text("notes"), // Notes from the session
   materials: jsonb("materials"), // Links to study materials
-  capacity: integer("capacity"), // Max number of participants
+  requirements: text("requirements"), // what students need to prepare
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -264,6 +306,85 @@ export const liveSessionRollCallResponses = pgTable("live_session_roll_call_resp
   responseTime: timestamp("response_time").notNull().defaultNow(),
   responseMethod: text("response_method").notNull().default("app"), // app, mobile, voice
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Live Session Chat Messages
+export const liveSessionMessages = pgTable("live_session_messages", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => liveSessions.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  messageType: text("message_type").notNull().default("text"), // text, question, poll, reaction
+  isPrivate: boolean("is_private").default(false),
+  replyToId: integer("reply_to_id").references(() => liveSessionMessages.id),
+  timestamp: timestamp("timestamp").defaultNow(),
+  isModerated: boolean("is_moderated").default(false),
+});
+
+// Live Session Q&A
+export const liveSessionQA = pgTable("live_session_qa", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => liveSessions.id),
+  studentId: varchar("student_id").notNull().references(() => users.id),
+  mentorId: varchar("mentor_id").references(() => users.id),
+  question: text("question").notNull(),
+  answer: text("answer"),
+  status: text("status").notNull().default("pending"), // pending, answered, dismissed
+  upvotes: integer("upvotes").default(0),
+  isAnonymous: boolean("is_anonymous").default(false),
+  askedAt: timestamp("asked_at").defaultNow(),
+  answeredAt: timestamp("answered_at"),
+});
+
+// Live Session Polls
+export const liveSessionPolls = pgTable("live_session_polls", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => liveSessions.id),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  question: text("question").notNull(),
+  options: jsonb("options").notNull(), // array of poll options
+  pollType: text("poll_type").notNull().default("multiple_choice"), // multiple_choice, single_choice, text
+  isAnonymous: boolean("is_anonymous").default(true),
+  isActive: boolean("is_active").default(true),
+  results: jsonb("results"), // poll results data
+  createdAt: timestamp("created_at").defaultNow(),
+  closedAt: timestamp("closed_at"),
+});
+
+// Live Session Poll Responses
+export const liveSessionPollResponses = pgTable("live_session_poll_responses", {
+  id: serial("id").primaryKey(),
+  pollId: integer("poll_id").notNull().references(() => liveSessionPolls.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  response: jsonb("response").notNull(), // user's poll response
+  submittedAt: timestamp("submitted_at").defaultNow(),
+});
+
+// Calendar Integration Events
+export const calendarEvents = pgTable("calendar_events", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").notNull().references(() => liveSessions.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: text("provider").notNull(), // google, outlook, apple
+  eventId: text("event_id").notNull(), // external calendar event ID
+  syncStatus: text("sync_status").notNull().default("pending"), // pending, synced, failed
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Video Conferencing Provider Settings
+export const videoProviderSettings = pgTable("video_provider_settings", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: text("provider").notNull(), // google_meet, zoom, zoho
+  isDefault: boolean("is_default").default(false),
+  settings: jsonb("settings").notNull(), // provider-specific settings
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  tokenExpiresAt: timestamp("token_expires_at"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Messages table
@@ -673,7 +794,6 @@ export const insertLessonSchema = createInsertSchema(lessons);
 export const insertQuizSchema = createInsertSchema(quizzes);
 export const insertQuizQuestionSchema = createInsertSchema(quizQuestions);
 export const insertAssignmentSchema = createInsertSchema(assignments);
-export const insertLiveSessionSchema = createInsertSchema(liveSessions);
 export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments);
 export const insertMentorCourseSchema = createInsertSchema(mentorCourses);
 export const insertAffiliateCommissionSchema = createInsertSchema(affiliateCommissions);
@@ -702,6 +822,14 @@ export type Assignment = typeof assignments.$inferSelect;
 export type AssignmentSubmission = typeof assignmentSubmissions.$inferSelect;
 export type LiveSession = typeof liveSessions.$inferSelect;
 export type LiveSessionAttendance = typeof liveSessionAttendance.$inferSelect;
+export type LiveSessionRollCall = typeof liveSessionRollCalls.$inferSelect;
+export type LiveSessionRollCallResponse = typeof liveSessionRollCallResponses.$inferSelect;
+export type LiveSessionMessage = typeof liveSessionMessages.$inferSelect;
+export type LiveSessionQA = typeof liveSessionQA.$inferSelect;
+export type LiveSessionPoll = typeof liveSessionPolls.$inferSelect;
+export type LiveSessionPollResponse = typeof liveSessionPollResponses.$inferSelect;
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+export type VideoProviderSetting = typeof videoProviderSettings.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type CourseMentor = typeof courseMentors.$inferSelect;
 // Certificate type is already defined above, removed duplicate
@@ -1263,6 +1391,62 @@ export const insertDiscussionReplySchema = createInsertSchema(discussionReplies)
 export const insertDiscussionVoteSchema = createInsertSchema(discussionVotes);
 export const insertVideoSessionSchema = createInsertSchema(videoSessions);
 export const insertVideoSessionParticipantSchema = createInsertSchema(videoSessionParticipants);
+
+// Live Session Insert Schemas
+export const insertLiveSessionSchema = createInsertSchema(liveSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLiveSessionAttendanceSchema = createInsertSchema(liveSessionAttendance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLiveSessionMessageSchema = createInsertSchema(liveSessionMessages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertLiveSessionQASchema = createInsertSchema(liveSessionQA).omit({
+  id: true,
+  askedAt: true,
+  answeredAt: true,
+});
+
+export const insertLiveSessionPollSchema = createInsertSchema(liveSessionPolls).omit({
+  id: true,
+  createdAt: true,
+  closedAt: true,
+});
+
+export const insertLiveSessionPollResponseSchema = createInsertSchema(liveSessionPollResponses).omit({
+  id: true,
+  submittedAt: true,
+});
+
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertVideoProviderSettingsSchema = createInsertSchema(videoProviderSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Insert types
+export type InsertLiveSession = z.infer<typeof insertLiveSessionSchema>;
+export type InsertLiveSessionAttendance = z.infer<typeof insertLiveSessionAttendanceSchema>;
+export type InsertLiveSessionMessage = z.infer<typeof insertLiveSessionMessageSchema>;
+export type InsertLiveSessionQA = z.infer<typeof insertLiveSessionQASchema>;
+export type InsertLiveSessionPoll = z.infer<typeof insertLiveSessionPollSchema>;
+export type InsertLiveSessionPollResponse = z.infer<typeof insertLiveSessionPollResponseSchema>;
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
+export type InsertVideoProviderSettings = z.infer<typeof insertVideoProviderSettingsSchema>;
 
 // Messaging and communication
 export const conversations = pgTable("conversations", {
