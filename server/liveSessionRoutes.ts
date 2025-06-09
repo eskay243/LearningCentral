@@ -2,7 +2,7 @@ import { Request, Response, Express } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
 import { videoConferencingService } from "./videoConferencingService";
-import { isAuthenticated, hasRole } from "./simpleAuth";
+import { isAuthenticated, hasRole } from "./auth";
 import { 
   insertLiveSessionSchema,
   insertLiveSessionAttendanceSchema,

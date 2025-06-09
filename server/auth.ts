@@ -235,9 +235,11 @@ export const hasRole = (roles: string | string[]) => {
     console.log('Role check - User role:', userRole, 'Allowed roles:', allowedRoles);
     
     if (allowedRoles.includes(userRole)) {
+      console.log('Role check PASSED - calling next()');
       return next();
     }
     
+    console.log('Role check FAILED - returning 403');
     res.status(403).json({ message: "Insufficient permissions" });
   };
 };
