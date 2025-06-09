@@ -1,5 +1,6 @@
 import { storage } from "./storage";
 import PDFDocument from "pdfkit";
+import { PassThrough } from "stream";
 
 interface InvoiceData {
   userId: string;
@@ -108,79 +109,103 @@ export async function generateReceiptPDF(paymentReference: string): Promise<Buff
       throw new Error("User not found");
     }
     
-    // Create PDF document using PDFKit for better compatibility
-    return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ margin: 50 });
-      const chunks: Buffer[] = [];
+    // Create PDF document using PDFKit with improved stream handling
+    return new Promise<Buffer>((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          info: {
+            Title: `Receipt-${payment.reference}`,
+            Author: 'Codelab Educare',
+            Subject: 'Payment Receipt'
+          }
+        });
 
-      // Collect PDF data
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => {
-        const pdfBuffer = Buffer.concat(chunks);
-        resolve(pdfBuffer);
-      });
-      doc.on('error', reject);
+        // Use PassThrough stream for better buffer handling
+        const stream = new PassThrough();
+        const chunks: Buffer[] = [];
 
-      // Header with company branding
-      doc.fontSize(24)
-         .fillColor('#800080')
-         .text('CODELAB EDUCARE', { align: 'center' });
-      
-      doc.fontSize(16)
-         .fillColor('#000000')
-         .text('Payment Receipt', { align: 'center' })
-         .moveDown(2);
+        stream.on('data', (chunk) => chunks.push(chunk));
+        stream.on('end', () => {
+          const result = Buffer.concat(chunks);
+          resolve(result);
+        });
+        stream.on('error', reject);
 
-      // Receipt information
-      doc.fontSize(12)
-         .text(`Receipt #: ${payment.reference}`, 50, doc.y)
-         .text(`Date: ${new Date(payment.createdAt).toLocaleDateString('en-GB')}`, 350, doc.y - 12)
-         .text(`Status: ${payment.status.toUpperCase()}`, 350, doc.y)
-         .moveDown(2);
+        doc.pipe(stream);
 
-      // Customer Information Section
-      doc.fontSize(14)
-         .fillColor('#800080')
-         .text('Customer Information', 50, doc.y)
-         .moveDown(0.5);
-      
-      const customerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A';
-      doc.fontSize(11)
-         .fillColor('#000000')
-         .text(`Name: ${customerName}`, 50, doc.y)
-         .text(`Email: ${user.email}`, 50, doc.y + 15)
-         .moveDown(2);
+        // Build PDF content
+        doc.fontSize(20)
+           .fillColor('#800080')
+           .text('CODELAB EDUCARE', { align: 'center' });
+        
+        doc.moveDown(0.5)
+           .fontSize(16)
+           .fillColor('#000000')
+           .text('PAYMENT RECEIPT', { align: 'center' });
 
-      // Payment Details Section
-      doc.fontSize(14)
-         .fillColor('#800080')
-         .text('Payment Details', 50, doc.y)
-         .moveDown(0.5);
-      
-      doc.fontSize(11)
-         .fillColor('#000000')
-         .text(`Amount: ₦${Number(payment.amount).toLocaleString()}`, 50, doc.y)
-         .text(`Payment Method: ${payment.channel || 'Online'}`, 50, doc.y + 15)
-         .text(`Provider: ${payment.provider || 'Paystack'}`, 50, doc.y + 30)
-         .text(`Transaction ID: ${payment.providerReference || payment.reference}`, 50, doc.y + 45)
-         .moveDown(2);
+        doc.moveDown(1.5);
 
-      // Total amount highlighted
-      doc.fontSize(14)
-         .fillColor('#800080')
-         .text(`Total Amount Paid: ₦${Number(payment.amount).toLocaleString()}`, 50, doc.y)
-         .moveDown(3);
+        // Receipt details
+        doc.fontSize(12)
+           .fillColor('#000000')
+           .text(`Receipt Number: ${payment.reference}`, 50)
+           .text(`Date: ${new Date(payment.createdAt).toLocaleDateString('en-GB')}`, 300, doc.y - 14)
+           .text(`Status: ${payment.status.toUpperCase()}`, 300, doc.y);
 
-      // Footer
-      doc.fontSize(10)
-         .fillColor('#808080')
-         .text('Thank you for your payment!', { align: 'center' })
-         .text('This is a computer-generated receipt and does not require a signature.', { align: 'center' })
-         .moveDown(1)
-         .text(`Generated on: ${new Date().toLocaleString('en-GB')}`, 50, doc.y);
+        doc.moveDown(1);
 
-      // Finalize the PDF
-      doc.end();
+        // Customer section
+        doc.fontSize(14)
+           .fillColor('#800080')
+           .text('CUSTOMER DETAILS');
+        
+        doc.moveDown(0.3);
+        const customerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A';
+        doc.fontSize(11)
+           .fillColor('#000000')
+           .text(`Name: ${customerName}`)
+           .text(`Email: ${user.email}`)
+           .text(`Customer ID: ${user.id}`);
+
+        doc.moveDown(1);
+
+        // Payment section
+        doc.fontSize(14)
+           .fillColor('#800080')
+           .text('PAYMENT INFORMATION');
+        
+        doc.moveDown(0.3);
+        doc.fontSize(11)
+           .fillColor('#000000')
+           .text(`Amount: ₦${Number(payment.amount).toLocaleString()}`)
+           .text(`Payment Method: ${payment.channel || 'Online Payment'}`)
+           .text(`Provider: ${payment.provider || 'Paystack'}`)
+           .text(`Reference: ${payment.providerReference || payment.reference}`);
+
+        doc.moveDown(1.5);
+
+        // Total
+        doc.fontSize(14)
+           .fillColor('#800080')
+           .text(`TOTAL PAID: ₦${Number(payment.amount).toLocaleString()}`);
+
+        doc.moveDown(2);
+
+        // Footer
+        doc.fontSize(9)
+           .fillColor('#666666')
+           .text('Thank you for your payment!', { align: 'center' })
+           .text('This is a computer-generated receipt.', { align: 'center' })
+           .moveDown(0.5)
+           .text(`Generated: ${new Date().toLocaleString('en-GB')}`, { align: 'center' });
+
+        doc.end();
+
+      } catch (error) {
+        reject(error);
+      }
     });
   } catch (error) {
     console.error("Error generating receipt PDF:", error);
