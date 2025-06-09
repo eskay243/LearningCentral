@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +50,84 @@ export default function AdminPayments() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>('all');
   const [selectedPayment, setSelectedPayment] = useState<PaymentTransaction | null>(null);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+  const [isProcessingRefund, setIsProcessingRefund] = useState(false);
+  
+  const { toast } = useToast();
+
+  // Download receipt handler
+  const handleDownloadReceipt = async () => {
+    if (!selectedPayment) return;
+    
+    setIsDownloadingReceipt(true);
+    try {
+      const response = await fetch(`/api/payments/${selectedPayment.reference}/receipt`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download receipt');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `receipt-${selectedPayment.reference}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Receipt Downloaded",
+        description: "The payment receipt has been downloaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Download Failed",
+        description: "Failed to download the receipt. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingReceipt(false);
+    }
+  };
+
+  // Process refund handler
+  const handleProcessRefund = async () => {
+    if (!selectedPayment) return;
+    
+    setIsProcessingRefund(true);
+    try {
+      const response = await apiRequest('POST', `/api/payments/${selectedPayment.reference}/refund`, {
+        amount: selectedPayment.amount,
+        reason: 'Admin initiated refund'
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Refund Initiated",
+          description: "The refund has been initiated successfully. It may take 3-5 business days to reflect.",
+        });
+        setSelectedPayment(null);
+        // Refresh the payments list
+        window.location.reload();
+      } else {
+        throw new Error('Failed to process refund');
+      }
+    } catch (error) {
+      toast({
+        title: "Refund Failed",
+        description: "Failed to process the refund. Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingRefund(false);
+    }
+  };
 
   // Fetch payment statistics
   const { data: stats, isLoading: statsLoading } = useQuery<PaymentStats>({
@@ -688,19 +768,30 @@ export default function AdminPayments() {
               {/* Action Buttons */}
               <div className="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleDownloadReceipt}
+                    disabled={isDownloadingReceipt}
+                  >
                     <Download className="h-4 w-4 mr-2" />
-                    Download Receipt
+                    {isDownloadingReceipt ? 'Downloading...' : 'Download Receipt'}
                   </Button>
                   {selectedPayment.status === 'success' && (
-                    <Button variant="outline" size="sm">
-                      Process Refund
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleProcessRefund}
+                      disabled={isProcessingRefund}
+                    >
+                      {isProcessingRefund ? 'Processing...' : 'Process Refund'}
                     </Button>
                   )}
                 </div>
                 <Button 
                   variant="ghost" 
                   onClick={() => setSelectedPayment(null)}
+                  disabled={isDownloadingReceipt || isProcessingRefund}
                 >
                   Close
                 </Button>
