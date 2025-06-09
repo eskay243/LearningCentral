@@ -1,5 +1,5 @@
 import { storage } from "./storage";
-import jsPDF from "jspdf";
+import PDFDocument from "pdfkit";
 
 interface InvoiceData {
   userId: string;
@@ -108,79 +108,80 @@ export async function generateReceiptPDF(paymentReference: string): Promise<Buff
       throw new Error("User not found");
     }
     
-    // Create PDF document with specific settings for better compatibility
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-      compress: true
+    // Create PDF document using PDFKit for better compatibility
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50 });
+      const chunks: Buffer[] = [];
+
+      // Collect PDF data
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        resolve(pdfBuffer);
+      });
+      doc.on('error', reject);
+
+      // Header with company branding
+      doc.fontSize(24)
+         .fillColor('#800080')
+         .text('CODELAB EDUCARE', { align: 'center' });
+      
+      doc.fontSize(16)
+         .fillColor('#000000')
+         .text('Payment Receipt', { align: 'center' })
+         .moveDown(2);
+
+      // Receipt information
+      doc.fontSize(12)
+         .text(`Receipt #: ${payment.reference}`, 50, doc.y)
+         .text(`Date: ${new Date(payment.createdAt).toLocaleDateString('en-GB')}`, 350, doc.y - 12)
+         .text(`Status: ${payment.status.toUpperCase()}`, 350, doc.y)
+         .moveDown(2);
+
+      // Customer Information Section
+      doc.fontSize(14)
+         .fillColor('#800080')
+         .text('Customer Information', 50, doc.y)
+         .moveDown(0.5);
+      
+      const customerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A';
+      doc.fontSize(11)
+         .fillColor('#000000')
+         .text(`Name: ${customerName}`, 50, doc.y)
+         .text(`Email: ${user.email}`, 50, doc.y + 15)
+         .moveDown(2);
+
+      // Payment Details Section
+      doc.fontSize(14)
+         .fillColor('#800080')
+         .text('Payment Details', 50, doc.y)
+         .moveDown(0.5);
+      
+      doc.fontSize(11)
+         .fillColor('#000000')
+         .text(`Amount: ₦${Number(payment.amount).toLocaleString()}`, 50, doc.y)
+         .text(`Payment Method: ${payment.channel || 'Online'}`, 50, doc.y + 15)
+         .text(`Provider: ${payment.provider || 'Paystack'}`, 50, doc.y + 30)
+         .text(`Transaction ID: ${payment.providerReference || payment.reference}`, 50, doc.y + 45)
+         .moveDown(2);
+
+      // Total amount highlighted
+      doc.fontSize(14)
+         .fillColor('#800080')
+         .text(`Total Amount Paid: ₦${Number(payment.amount).toLocaleString()}`, 50, doc.y)
+         .moveDown(3);
+
+      // Footer
+      doc.fontSize(10)
+         .fillColor('#808080')
+         .text('Thank you for your payment!', { align: 'center' })
+         .text('This is a computer-generated receipt and does not require a signature.', { align: 'center' })
+         .moveDown(1)
+         .text(`Generated on: ${new Date().toLocaleString('en-GB')}`, 50, doc.y);
+
+      // Finalize the PDF
+      doc.end();
     });
-    
-    // Set document metadata
-    doc.setProperties({
-      title: `Receipt-${payment.reference}`,
-      subject: 'Payment Receipt',
-      author: 'Codelab Educare',
-      creator: 'Codelab Educare LMS'
-    });
-    
-    // Header
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text("PAYMENT RECEIPT", 105, 30, { align: "center" });
-    
-    // Company details
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text("Codelab Educare", 20, 50);
-    doc.text("Learning Management System", 20, 60);
-    doc.text("Lagos, Nigeria", 20, 70);
-    
-    // Receipt details section
-    doc.setFont('helvetica', 'bold');
-    doc.text("Receipt Details:", 20, 90);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Receipt #: ${payment.reference}`, 20, 100);
-    doc.text(`Date: ${new Date(payment.createdAt).toLocaleDateString('en-GB')}`, 20, 110);
-    doc.text(`Status: ${payment.status.toUpperCase()}`, 20, 120);
-    
-    // Customer details section
-    doc.setFont('helvetica', 'bold');
-    doc.text("Customer Details:", 20, 140);
-    doc.setFont('helvetica', 'normal');
-    const customerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'N/A';
-    doc.text(`Name: ${customerName}`, 20, 150);
-    doc.text(`Email: ${user.email}`, 20, 160);
-    
-    // Payment details section
-    doc.setFont('helvetica', 'bold');
-    doc.text("Payment Information:", 20, 180);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Amount: ₦${Number(payment.amount).toLocaleString()}`, 20, 190);
-    doc.text(`Payment Method: ${payment.channel || 'Online'}`, 20, 200);
-    doc.text(`Provider: ${payment.provider || 'Paystack'}`, 20, 210);
-    doc.text(`Transaction ID: ${payment.providerReference || payment.reference}`, 20, 220);
-    
-    // Total amount (highlighted)
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text(`Total Amount Paid: ₦${Number(payment.amount).toLocaleString()}`, 20, 240);
-    
-    // Footer
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text("Thank you for your payment!", 105, 270, { align: "center" });
-    doc.text("This is a computer-generated receipt and does not require a signature.", 105, 280, { align: "center" });
-    
-    // Generate timestamp for the PDF
-    const timestamp = new Date().toISOString();
-    doc.text(`Generated on: ${new Date().toLocaleString('en-GB')}`, 20, 290);
-    
-    // Convert to buffer using binary string method for better compatibility
-    const pdfBinaryString = doc.output('binarystring');
-    const pdfBuffer = Buffer.from(pdfBinaryString, 'binary');
-    
-    return pdfBuffer;
   } catch (error) {
     console.error("Error generating receipt PDF:", error);
     throw new Error("Failed to generate receipt");
