@@ -48,6 +48,7 @@ import SimpleCodingTest from "@/pages/SimpleCodingTest";
 import TestCodingPage from "@/pages/TestCodingPage";
 import SimpleRoutingTest from "@/pages/SimpleRoutingTest";
 import Certificates from "@/pages/Certificates";
+import LiveClasses from "@/pages/live-classes";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
 import InteractiveCodingChallenge from "@/pages/InteractiveCodingChallenge";
@@ -122,6 +123,7 @@ function Router() {
         <Route path="/certificate/verify" component={CertificateVerification} />
         <Route path="/certificate/admin" component={CertificateAdmin} />
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
+        <Route path="/live-classes" component={LiveClasses} />
         <Route path="/code-companion" component={CodeCompanionChat} />
         <Route path="/code-companion/old" component={CodeCompanion} />
         <Route path="/mentor-dashboard" component={MentorDashboard} />

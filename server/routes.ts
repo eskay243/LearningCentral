@@ -16,6 +16,7 @@ import fs from "fs";
 import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
+import { registerLiveSessionRoutes } from "./liveSessionRoutes";
 
 
 // Mock data for UI display when database is not fully connected
@@ -3560,6 +3561,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register code execution routes
   registerCodeExecutionRoutes(app);
+  
+  // Register live session routes
+  registerLiveSessionRoutes(app);
   
   // Register invoice and payment routes
   registerInvoiceRoutes(app);
