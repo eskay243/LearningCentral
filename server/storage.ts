@@ -182,6 +182,7 @@ export interface IStorage {
   createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession>;
   getLiveSession(sessionId: number): Promise<LiveSession | undefined>;
   getLiveSessionsByCourse(courseId: number): Promise<LiveSession[]>;
+  getAllLiveSessions(): Promise<LiveSession[]>;
   getLiveSessionsByMentor(mentorId: string): Promise<LiveSession[]>;
   getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]>;
   getUpcomingSessionsForStudent(userId: string): Promise<LiveSession[]>;
@@ -663,6 +664,15 @@ export class DatabaseStorage implements IStorage {
       .from(liveSessions)
       .where(eq(liveSessions.mentorId, mentorId))
       .orderBy(desc(liveSessions.startTime));
+    
+    return sessions;
+  }
+
+  async getAllLiveSessions(): Promise<LiveSession[]> {
+    const sessions = await db
+      .select()
+      .from(liveSessions)
+      .orderBy(asc(liveSessions.startTime));
     
     return sessions;
   }
