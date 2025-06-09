@@ -466,6 +466,7 @@ export const paymentTransactions = pgTable("payment_transactions", {
   id: serial("id").primaryKey(),
   invoiceId: integer("invoice_id").references(() => invoices.id),
   userId: varchar("user_id").notNull().references(() => users.id),
+  courseId: integer("course_id").references(() => courses.id),
   reference: varchar("reference").notNull().unique(),
   amount: real("amount").notNull(),
   currency: varchar("currency").notNull().default("NGN"),

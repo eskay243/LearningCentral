@@ -85,7 +85,7 @@ export function registerPaymentRoutes(app: Express) {
       // Verify payment with Paystack
       const paymentData = await verifyPayment(reference);
       
-      if (paymentData.status !== "success") {
+      if (!paymentData.status || paymentData.data?.status !== "success") {
         return res.status(400).json({ message: "Payment verification failed" });
       }
 
@@ -96,11 +96,12 @@ export function registerPaymentRoutes(app: Express) {
       }
 
       // Update payment transaction status
+      const transactionData = paymentData.data;
       await storage.updatePaymentTransactionStatus(reference, "success", {
         providerResponse: paymentData,
-        fees: paymentData.fees || 0,
-        netAmount: paymentData.amount - (paymentData.fees || 0),
-        channel: paymentData.channel || "card"
+        fees: transactionData?.fees || 0,
+        netAmount: (transactionData?.amount || 0) - (transactionData?.fees || 0),
+        channel: transactionData?.channel || "card"
       });
 
       // Enroll user in course

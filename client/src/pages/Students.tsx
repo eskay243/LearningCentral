@@ -170,7 +170,7 @@ const Students = () => {
     },
   ];
   
-  const filteredStudents = filterStudents(students || []);
+  const filteredStudents = filterStudents(Array.isArray(students) ? students : []);
 
   return (
     <div className="p-4 md:p-6">
@@ -272,7 +272,7 @@ const Students = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Courses</SelectItem>
-              {(courses || []).map((course) => (
+              {Array.isArray(courses) && courses.map((course: any) => (
                 <SelectItem key={course.id} value={course.id.toString()}>
                   {course.title}
                 </SelectItem>
