@@ -19,6 +19,7 @@ import {
   Code2,
   Receipt,
   CreditCard,
+  Video,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -113,6 +114,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           <Link href="/schedule" className={menuItemClass("/schedule")}>
             <Calendar className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Schedule</span>
+          </Link>
+          
+          <Link href="/live-classes" className={menuItemClass("/live-classes")}>
+            <Video className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Live Classes</span>
           </Link>
           
           {(isAdmin || isMentor) && (
