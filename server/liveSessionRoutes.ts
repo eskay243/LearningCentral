@@ -306,7 +306,7 @@ export function registerLiveSessionRoutes(app: Express) {
       const attendanceData = {
         sessionId,
         userId,
-        joinTime: new Date(),
+        joinedAt: new Date(),
         status: 'present' as const,
       };
 

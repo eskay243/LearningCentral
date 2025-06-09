@@ -955,13 +955,16 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async recordSessionAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance> {
-    return this.recordLiveSessionAttendance({
-      sessionId: attendanceData.sessionId,
-      userId: attendanceData.userId,
-      joinTime: attendanceData.joinTime || new Date(),
-      status: attendanceData.status || "present"
-    });
+  async recordSessionAttendance(attendanceData: any): Promise<any> {
+    const [attendance] = await db
+      .insert(liveSessionAttendance)
+      .values({
+        sessionId: attendanceData.sessionId,
+        userId: attendanceData.userId,
+        joinedAt: attendanceData.joinedAt || new Date(),
+      })
+      .returning();
+    return attendance;
   }
   
   async getLiveSessionAttendance(sessionId: number): Promise<LiveSessionAttendance[]> {
