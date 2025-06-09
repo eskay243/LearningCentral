@@ -45,29 +45,17 @@ export function registerLiveSessionRoutes(app: Express) {
       const userId = req.user.id;
       const { startDate, endDate, status } = req.query;
       
-      console.log('Student schedule request for userId:', userId);
-      
       // Get all sessions for courses the student is enrolled in
       const enrolledCourses = await storage.getStudentEnrollments(userId);
-      console.log('Enrolled courses:', enrolledCourses.length, enrolledCourses.map(e => e.courseId));
       const courseIds = enrolledCourses.map(enrollment => enrollment.courseId);
       
       let allSessions: any[] = [];
       
-      // If no enrollments, show all available sessions for now
-      if (courseIds.length === 0) {
-        console.log('No enrollments found, fetching all sessions');
-        allSessions = await storage.getAllLiveSessions();
-      } else {
-        // Fetch sessions for each enrolled course
-        for (const courseId of courseIds) {
-          const courseSessions = await storage.getLiveSessionsByCourse(courseId);
-          console.log(`Course ${courseId} sessions:`, courseSessions.length);
-          allSessions = [...allSessions, ...courseSessions];
-        }
+      // Fetch sessions for each enrolled course
+      for (const courseId of courseIds) {
+        const courseSessions = await storage.getLiveSessionsByCourse(courseId);
+        allSessions = [...allSessions, ...courseSessions];
       }
-      
-      console.log('Total sessions found:', allSessions.length);
       
       // Filter by date range if provided
       if (startDate || endDate) {
