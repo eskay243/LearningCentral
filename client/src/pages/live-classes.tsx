@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
+import useAuth from "@/hooks/useAuth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -57,6 +58,7 @@ export default function LiveClassesPage() {
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useUser();
 
   const form = useForm<LiveSessionForm>({
     resolver: zodResolver(liveSessionSchema),
@@ -75,9 +77,9 @@ export default function LiveClassesPage() {
     },
   });
 
-  // Fetch upcoming sessions
+  // Fetch upcoming sessions - use mentor endpoint for admin/mentor users
   const { data: upcomingSessions = [], isLoading: loadingUpcoming } = useQuery({
-    queryKey: ["/api/student/upcoming-sessions"],
+    queryKey: user?.role === 'admin' || user?.role === 'mentor' ? ["/api/mentor/live-sessions"] : ["/api/student/upcoming-sessions"],
     enabled: activeTab === "upcoming",
   });
 
@@ -105,7 +107,7 @@ export default function LiveClassesPage() {
       });
       setIsCreateDialogOpen(false);
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/student/upcoming-sessions"] });
+      queryClient.invalidateQueries({ queryKey: user?.role === 'admin' || user?.role === 'mentor' ? ["/api/mentor/live-sessions"] : ["/api/student/upcoming-sessions"] });
     },
     onError: (error: any) => {
       toast({
