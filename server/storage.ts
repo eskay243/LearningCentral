@@ -520,36 +520,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLiveSessionsByCourse(courseId: number): Promise<LiveSession[]> {
-    // First, get modules for the course
+    // Get sessions directly linked to the course OR linked through lessons
+    
+    // First, get sessions directly linked to the course
+    const directSessions = await db
+      .select()
+      .from(liveSessions)
+      .where(eq(liveSessions.courseId, courseId))
+      .orderBy(asc(liveSessions.startTime));
+    
+    // Then, get sessions linked through lessons (for backward compatibility)
     const courseModules = await db
       .select({ id: modules.id })
       .from(modules)
       .where(eq(modules.courseId, courseId));
     
-    if (courseModules.length === 0) {
-      return [];
+    let lessonSessions: any[] = [];
+    
+    if (courseModules.length > 0) {
+      const moduleIds = courseModules.map(module => module.id);
+      
+      const moduleLessons = await db
+        .select({ id: lessons.id })
+        .from(lessons)
+        .where(inArray(lessons.moduleId, moduleIds));
+      
+      if (moduleLessons.length > 0) {
+        const lessonIds = moduleLessons.map(lesson => lesson.id);
+        
+        lessonSessions = await db
+          .select()
+          .from(liveSessions)
+          .where(inArray(liveSessions.lessonId, lessonIds))
+          .orderBy(asc(liveSessions.startTime));
+      }
     }
     
-    const moduleIds = courseModules.map(module => module.id);
+    // Combine both types of sessions and remove duplicates
+    const allSessions = [...directSessions, ...lessonSessions];
+    const uniqueSessions = allSessions.filter((session, index, self) => 
+      index === self.findIndex(s => s.id === session.id)
+    );
     
-    // Next, get lessons for these modules
-    const moduleLessons = await db
-      .select({ id: lessons.id })
-      .from(lessons)
-      .where(inArray(lessons.moduleId, moduleIds));
-    
-    if (moduleLessons.length === 0) {
-      return [];
-    }
-    
-    const lessonIds = moduleLessons.map(lesson => lesson.id);
-    
-    // Finally, get live sessions for these lessons
-    return db
-      .select()
-      .from(liveSessions)
-      .where(inArray(liveSessions.lessonId, lessonIds))
-      .orderBy(asc(liveSessions.startTime));
+    // Sort by start time
+    return uniqueSessions.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
   }
   
   async getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]> {
