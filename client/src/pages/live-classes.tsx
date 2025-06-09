@@ -58,7 +58,7 @@ export default function LiveClassesPage() {
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const form = useForm<LiveSessionForm>({
     resolver: zodResolver(liveSessionSchema),
