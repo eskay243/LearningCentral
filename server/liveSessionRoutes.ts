@@ -30,7 +30,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Get upcoming live sessions for student
   app.get('/api/student/upcoming-sessions', isAuthenticated, async (req: any, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const sessions = await storage.getUpcomingSessionsForStudent(userId);
       res.json(sessions);
     } catch (error: any) {
