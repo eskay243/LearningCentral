@@ -490,9 +490,28 @@ export class DatabaseStorage implements IStorage {
   
   // Live Session Operations  
   async createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession> {
+    // Ensure dates are properly converted to Date objects
+    const processedData = { ...sessionData };
+    
+    if (processedData.startTime && typeof processedData.startTime === 'string') {
+      processedData.startTime = new Date(processedData.startTime);
+    }
+    if (processedData.endTime && typeof processedData.endTime === 'string') {
+      processedData.endTime = new Date(processedData.endTime);
+    }
+    
+    console.log('Storage layer - processed data:', {
+      startTime: processedData.startTime,
+      startTimeType: typeof processedData.startTime,
+      startTimeConstructor: processedData.startTime?.constructor?.name,
+      endTime: processedData.endTime,
+      endTimeType: typeof processedData.endTime,
+      endTimeConstructor: processedData.endTime?.constructor?.name
+    });
+    
     const [session] = await db
       .insert(liveSessions)
-      .values(sessionData)
+      .values(processedData)
       .returning();
     return session;
   }
