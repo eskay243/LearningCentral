@@ -243,9 +243,15 @@ export function registerPaymentRoutes(app: Express) {
       // Generate receipt PDF
       const pdfBuffer = await generateReceiptPDF(reference);
 
+      // Set proper headers for PDF download
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="receipt-${reference}.pdf"`);
-      res.send(pdfBuffer);
+      res.setHeader('Content-Length', pdfBuffer.length.toString());
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      res.end(pdfBuffer);
     } catch (error: any) {
       console.error("Receipt download error:", error);
       res.status(500).json({ message: error.message || "Failed to download receipt" });
