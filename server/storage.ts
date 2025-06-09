@@ -188,6 +188,7 @@ export interface IStorage {
   getUpcomingSessionsForStudent(userId: string): Promise<LiveSession[]>;
   updateLiveSession(id: number, updates: Partial<LiveSession>): Promise<LiveSession>;
   recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance>;
+  recordSessionAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance>;
   getLiveSessionAttendance(sessionId: number): Promise<LiveSessionAttendance[]>;
   getLiveSessionAttendanceByUser(userId: string): Promise<LiveSessionAttendance[]>;
   enrollStudentsInSession(sessionId: number, courseId: number): Promise<void>;
@@ -946,6 +947,15 @@ export class DatabaseStorage implements IStorage {
   // This is replaced by the more detailed recordLiveSessionAttendance method
   // We're keeping this method for backward compatibility
   async recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance> {
+    return this.recordLiveSessionAttendance({
+      sessionId: attendanceData.sessionId,
+      userId: attendanceData.userId,
+      joinTime: attendanceData.joinTime || new Date(),
+      status: attendanceData.status || "present"
+    });
+  }
+
+  async recordSessionAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance> {
     return this.recordLiveSessionAttendance({
       sessionId: attendanceData.sessionId,
       userId: attendanceData.userId,
