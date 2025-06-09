@@ -13,6 +13,8 @@ import {
   liveSessionAttendance,
   liveSessionRollCalls,
   liveSessionRollCallResponses,
+  liveSessionMessages,
+  liveSessionQA,
   certificates,
   coupons,
   courseRatings,
@@ -177,12 +179,18 @@ export interface IStorage {
   
   // Live session operations
   createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession>;
+  getLiveSession(sessionId: number): Promise<LiveSession | undefined>;
   getLiveSessionsByCourse(courseId: number): Promise<LiveSession[]>;
   getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]>;
+  getUpcomingSessionsForStudent(userId: string): Promise<LiveSession[]>;
   updateLiveSession(id: number, updates: Partial<LiveSession>): Promise<LiveSession>;
   recordAttendance(attendanceData: Omit<LiveSessionAttendance, "id">): Promise<LiveSessionAttendance>;
   getLiveSessionAttendance(sessionId: number): Promise<LiveSessionAttendance[]>;
   getLiveSessionAttendanceByUser(userId: string): Promise<LiveSessionAttendance[]>;
+  enrollStudentsInSession(sessionId: number, courseId: number): Promise<void>;
+  getVideoProviderSettings(userId: string, provider: string): Promise<any>;
+  getSessionMessages(sessionId: number, page: number, limit: number): Promise<any[]>;
+  createSessionQuestion(qaData: any): Promise<any>;
   
   // Communication - Conversations
   createConversation(conversationData: InsertConversation): Promise<Conversation>;
@@ -595,6 +603,77 @@ export class DatabaseStorage implements IStorage {
       .from(liveSessions)
       .where(eq(liveSessions.id, id));
     return session;
+  }
+
+  async getUpcomingSessionsForStudent(userId: string): Promise<LiveSession[]> {
+    // Get courses the student is enrolled in
+    const enrollments = await db
+      .select({ courseId: courseEnrollments.courseId })
+      .from(courseEnrollments)
+      .where(eq(courseEnrollments.userId, userId));
+    
+    if (enrollments.length === 0) {
+      return [];
+    }
+    
+    const courseIds = enrollments.map(e => e.courseId);
+    const now = new Date();
+    
+    // Get upcoming sessions for enrolled courses
+    const sessions = await db
+      .select()
+      .from(liveSessions)
+      .where(
+        and(
+          inArray(liveSessions.courseId, courseIds),
+          gte(liveSessions.startTime, now),
+          eq(liveSessions.status, "scheduled")
+        )
+      )
+      .orderBy(asc(liveSessions.startTime))
+      .limit(10);
+    
+    return sessions;
+  }
+
+  async enrollStudentsInSession(sessionId: number, courseId: number): Promise<void> {
+    // This is a placeholder implementation
+    // In a real system, you might want to create enrollment records
+    // or send notifications to enrolled students
+    console.log(`Enrolling students from course ${courseId} in session ${sessionId}`);
+  }
+
+  async getVideoProviderSettings(userId: string, provider: string): Promise<any> {
+    // This would typically fetch user's video provider credentials/settings
+    // For now, return a basic configuration
+    return {
+      provider,
+      apiKey: process.env[`${provider.toUpperCase()}_API_KEY`],
+      // Add other provider-specific settings
+    };
+  }
+
+  async getSessionMessages(sessionId: number, page: number, limit: number): Promise<any[]> {
+    const offset = (page - 1) * limit;
+    
+    const messages = await db
+      .select()
+      .from(liveSessionMessages)
+      .where(eq(liveSessionMessages.sessionId, sessionId))
+      .orderBy(desc(liveSessionMessages.timestamp))
+      .limit(limit)
+      .offset(offset);
+    
+    return messages;
+  }
+
+  async createSessionQuestion(qaData: any): Promise<any> {
+    const [question] = await db
+      .insert(liveSessionQA)
+      .values(qaData)
+      .returning();
+    
+    return question;
   }
   
   async getLiveSessionAttendees(sessionId: number): Promise<LiveSessionAttendance[]> {

@@ -56,6 +56,14 @@ export function registerLiveSessionRoutes(app: Express) {
     try {
       const sessionData = insertLiveSessionSchema.parse(req.body);
       sessionData.mentorId = req.user.id;
+      
+      // Convert string dates to Date objects
+      if (sessionData.startTime && typeof sessionData.startTime === 'string') {
+        sessionData.startTime = new Date(sessionData.startTime);
+      }
+      if (sessionData.endTime && typeof sessionData.endTime === 'string') {
+        sessionData.endTime = new Date(sessionData.endTime);
+      }
 
       // Get mentor's video provider settings
       const providerSettings = await storage.getVideoProviderSettings(req.user.id, sessionData.provider || 'google_meet');
@@ -96,6 +104,14 @@ export function registerLiveSessionRoutes(app: Express) {
     try {
       const sessionId = parseInt(req.params.sessionId);
       const updateData = insertLiveSessionSchema.partial().parse(req.body);
+      
+      // Convert string dates to Date objects
+      if (updateData.startTime && typeof updateData.startTime === 'string') {
+        updateData.startTime = new Date(updateData.startTime);
+      }
+      if (updateData.endTime && typeof updateData.endTime === 'string') {
+        updateData.endTime = new Date(updateData.endTime);
+      }
       
       const existingSession = await storage.getLiveSession(sessionId);
       if (!existingSession) {

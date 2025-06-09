@@ -63,6 +63,9 @@ export default function LiveClassesPage() {
     defaultValues: {
       title: "",
       description: "",
+      courseId: 0,
+      startTime: "",
+      endTime: "",
       provider: "google_meet",
       timezone: "Africa/Lagos",
       maxParticipants: 100,
