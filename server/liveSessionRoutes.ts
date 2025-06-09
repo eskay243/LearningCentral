@@ -641,7 +641,7 @@ export function registerLiveSessionRoutes(app: Express) {
   // Video provider settings routes
   app.get('/api/video-providers/settings', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user.claims.sub;
       const settings = await storage.getAllVideoProviderSettings(userId);
       res.json(settings);
     } catch (error: any) {
@@ -653,7 +653,7 @@ export function registerLiveSessionRoutes(app: Express) {
   app.post('/api/video-providers/settings', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
       const settingsData = req.body;
-      settingsData.userId = req.user.id;
+      settingsData.userId = req.user.claims.sub;
       
       const settings = await storage.saveVideoProviderSettings(settingsData);
       res.status(201).json(settings);
