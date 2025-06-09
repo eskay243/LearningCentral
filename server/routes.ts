@@ -502,21 +502,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Development fallback user endpoint
+  // User endpoint with proper authentication
   app.get('/api/user', async (req: any, res) => {
-    // Create a development user for testing
-    const devUser = {
-      id: 'dev-student',
-      email: 'student@codelabeducare.com',
-      firstName: 'Demo',
-      lastName: 'Student',
-      role: 'student',
-      profileImageUrl: null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
     
-    res.json(devUser);
+    const user = req.user;
+    res.json({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      profileImageUrl: user.profileImageUrl
+    });
   });
 
   // Auth routes
