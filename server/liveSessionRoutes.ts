@@ -536,8 +536,8 @@ export function registerLiveSessionRoutes(app: Express) {
       }
 
       // Check if user has access to recording
-      const isEnrolled = await storage.isUserEnrolledInCourse(req.user.id, session.courseId);
-      if (!isEnrolled && req.user.role !== 'admin' && session.mentorId !== req.user.id) {
+      const isEnrolled = await storage.isUserEnrolledInCourse(req.user.claims.sub, session.courseId);
+      if (!isEnrolled && req.user.role !== 'admin' && session.mentorId !== req.user.claims.sub) {
         return res.status(403).json({ message: 'Not authorized to access recording' });
       }
 
