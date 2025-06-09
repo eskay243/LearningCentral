@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Search, Filter, DollarSign, CreditCard, Users, TrendingUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Download, Search, Filter, DollarSign, CreditCard, Users, TrendingUp, Eye, User, BookOpen, X, Copy, CheckCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface PaymentTransaction {
@@ -46,6 +47,7 @@ export default function AdminPayments() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>('all');
+  const [selectedPayment, setSelectedPayment] = useState<PaymentTransaction | null>(null);
 
   // Fetch payment statistics
   const { data: stats, isLoading: statsLoading } = useQuery<PaymentStats>({
@@ -250,93 +252,207 @@ export default function AdminPayments() {
             </Button>
           </div>
 
-          {/* Transactions Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Transactions</CardTitle>
-              <CardDescription>
-                All payment transactions with detailed information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>User</TableHead>
-                      <TableHead>Course</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Provider</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPayments?.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell className="font-mono text-xs">
-                          {payment.reference}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{payment.userName}</div>
-                            <div className="text-sm text-gray-500">{payment.userEmail}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-48">
-                            <div className="font-medium truncate">{payment.courseTitle}</div>
-                            <div className="text-sm text-gray-500">ID: {payment.courseId}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{formatPrice(payment.amount, payment.currency)}</div>
-                            {payment.fees > 0 && (
-                              <div className="text-sm text-gray-500">
-                                Net: {formatPrice(payment.netAmount, payment.currency)}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(payment.status)}>
-                            {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{payment.provider}</div>
-                            {payment.channel && (
-                              <div className="text-sm text-gray-500">{payment.channel}</div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {formatDistanceToNow(new Date(payment.createdAt), { addSuffix: true })}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm">
-                            View Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )) || (
+          {/* Transactions Table - Desktop */}
+          <div className="hidden lg:block">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Transactions</CardTitle>
+                <CardDescription>
+                  All payment transactions with detailed information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-8">
-                          No payment transactions found
-                        </TableCell>
+                        <TableHead className="min-w-[120px]">Reference</TableHead>
+                        <TableHead className="min-w-[200px]">User</TableHead>
+                        <TableHead className="min-w-[180px]">Course</TableHead>
+                        <TableHead className="min-w-[120px]">Amount</TableHead>
+                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[100px]">Provider</TableHead>
+                        <TableHead className="min-w-[120px]">Date</TableHead>
+                        <TableHead className="min-w-[100px]">Actions</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPayments?.map((payment) => (
+                        <TableRow key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                          <TableCell className="font-mono text-xs">
+                            <div className="truncate max-w-[120px]" title={payment.reference}>
+                              {payment.reference}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium truncate max-w-[180px]" title={payment.userName}>
+                                {payment.userName}
+                              </div>
+                              <div className="text-sm text-gray-500 truncate max-w-[180px]" title={payment.userEmail}>
+                                {payment.userEmail}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium truncate max-w-[160px]" title={payment.courseTitle}>
+                                {payment.courseTitle}
+                              </div>
+                              <div className="text-sm text-gray-500">ID: {payment.courseId}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-semibold text-green-600 dark:text-green-400">
+                                {formatPrice(payment.amount, payment.currency)}
+                              </div>
+                              {payment.fees > 0 && (
+                                <div className="text-xs text-gray-500">
+                                  Net: {formatPrice(payment.netAmount, payment.currency)}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={payment.status === 'success' ? 'default' : 
+                                     payment.status === 'pending' ? 'secondary' : 'destructive'}
+                              className="font-medium"
+                            >
+                              {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium capitalize">{payment.provider}</div>
+                              {payment.channel && (
+                                <div className="text-sm text-gray-500 capitalize">{payment.channel}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              {formatDistanceToNow(new Date(payment.createdAt), { addSuffix: true })}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedPayment(payment)}
+                              className="hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )) || (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-12">
+                            <div className="flex flex-col items-center space-y-2">
+                              <CreditCard className="h-8 w-8 text-gray-400" />
+                              <p className="text-gray-500">No payment transactions found</p>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Transactions Cards - Mobile */}
+          <div className="lg:hidden space-y-4">
+            {filteredPayments?.map((payment) => (
+              <Card key={payment.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="space-y-1">
+                      <div className="font-mono text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                        {payment.reference}
+                      </div>
+                      <Badge 
+                        variant={payment.status === 'success' ? 'default' : 
+                               payment.status === 'pending' ? 'secondary' : 'destructive'}
+                        className="font-medium"
+                      >
+                        {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                      </Badge>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg text-green-600 dark:text-green-400">
+                        {formatPrice(payment.amount, payment.currency)}
+                      </div>
+                      {payment.fees > 0 && (
+                        <div className="text-xs text-gray-500">
+                          Net: {formatPrice(payment.netAmount, payment.currency)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-gray-400" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium truncate">{payment.userName}</div>
+                        <div className="text-sm text-gray-500 truncate">{payment.userEmail}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <BookOpen className="h-4 w-4 text-gray-400" />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium truncate">{payment.courseTitle}</div>
+                        <div className="text-sm text-gray-500">Course ID: {payment.courseId}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <CreditCard className="h-4 w-4" />
+                        <span className="capitalize">{payment.provider}</span>
+                        {payment.channel && (
+                          <>
+                            <span>•</span>
+                            <span className="capitalize">{payment.channel}</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {formatDistanceToNow(new Date(payment.createdAt), { addSuffix: true })}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20"
+                      onClick={() => setSelectedPayment(payment)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )) || (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <div className="flex flex-col items-center space-y-2">
+                    <CreditCard className="h-12 w-12 text-gray-400" />
+                    <p className="text-gray-500">No payment transactions found</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
@@ -415,6 +531,184 @@ export default function AdminPayments() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Payment Details Modal */}
+      <Dialog open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Payment Transaction Details
+            </DialogTitle>
+            <DialogDescription>
+              Complete information about this payment transaction
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPayment && (
+            <div className="space-y-6">
+              {/* Transaction Overview */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Transaction ID</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="font-mono text-sm">{selectedPayment.id}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 w-6 p-0"
+                      onClick={() => navigator.clipboard.writeText(selectedPayment.id)}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <div className="mt-1">
+                    <Badge 
+                      variant={selectedPayment.status === 'success' ? 'default' : 
+                             selectedPayment.status === 'pending' ? 'secondary' : 'destructive'}
+                      className="font-medium"
+                    >
+                      {selectedPayment.status === 'success' && <CheckCircle className="h-3 w-3 mr-1" />}
+                      {selectedPayment.status.charAt(0).toUpperCase() + selectedPayment.status.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Payment Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Reference</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="font-mono text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                          {selectedPayment.reference}
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 w-6 p-0"
+                          onClick={() => navigator.clipboard.writeText(selectedPayment.reference)}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Amount</label>
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+                        {formatPrice(selectedPayment.amount, selectedPayment.currency)}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Payment Provider</label>
+                      <div className="mt-1">
+                        <div className="font-medium capitalize">{selectedPayment.provider}</div>
+                        {selectedPayment.channel && (
+                          <div className="text-sm text-gray-500 capitalize">
+                            via {selectedPayment.channel}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Transaction Date</label>
+                      <div className="mt-1">
+                        <div className="font-medium">
+                          {new Date(selectedPayment.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {formatDistanceToNow(new Date(selectedPayment.createdAt), { addSuffix: true })}
+                        </div>
+                      </div>
+                    </div>
+                    {selectedPayment.fees > 0 && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">Fees & Net Amount</label>
+                        <div className="mt-1 space-y-1">
+                          <div className="text-sm">
+                            Fees: {formatPrice(selectedPayment.fees, selectedPayment.currency)}
+                          </div>
+                          <div className="font-medium">
+                            Net: {formatPrice(selectedPayment.netAmount, selectedPayment.currency)}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Information */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Customer Information</h3>
+                <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{selectedPayment.userName}</div>
+                      <div className="text-sm text-gray-500">{selectedPayment.userEmail}</div>
+                      <div className="text-sm text-gray-500 mt-1">User ID: {selectedPayment.userId}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Course Information */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Course Information</h3>
+                <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                      <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{selectedPayment.courseTitle}</div>
+                      <div className="text-sm text-gray-500 mt-1">Course ID: {selectedPayment.courseId}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Receipt
+                  </Button>
+                  {selectedPayment.status === 'success' && (
+                    <Button variant="outline" size="sm">
+                      Process Refund
+                    </Button>
+                  )}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedPayment(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
