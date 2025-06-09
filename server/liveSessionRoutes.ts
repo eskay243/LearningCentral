@@ -39,6 +39,64 @@ export function registerLiveSessionRoutes(app: Express) {
     }
   });
 
+  // Get student schedule - all live classes automatically updated
+  app.get('/api/student/schedule', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const { startDate, endDate, status } = req.query;
+      
+      // Get all sessions for courses the student is enrolled in
+      const enrolledCourses = await storage.getStudentEnrollments(userId);
+      const courseIds = enrolledCourses.map(enrollment => enrollment.courseId);
+      
+      let allSessions: any[] = [];
+      
+      // Fetch sessions for each enrolled course
+      for (const courseId of courseIds) {
+        const courseSessions = await storage.getLiveSessionsByCourse(courseId);
+        allSessions = [...allSessions, ...courseSessions];
+      }
+      
+      // Filter by date range if provided
+      if (startDate || endDate) {
+        allSessions = allSessions.filter(session => {
+          const sessionDate = new Date(session.startTime);
+          if (startDate && sessionDate < new Date(startDate)) return false;
+          if (endDate && sessionDate > new Date(endDate)) return false;
+          return true;
+        });
+      }
+      
+      // Filter by status if provided (upcoming, past, live)
+      if (status) {
+        const now = new Date();
+        allSessions = allSessions.filter(session => {
+          const start = new Date(session.startTime);
+          const end = new Date(session.endTime);
+          
+          switch (status) {
+            case 'upcoming':
+              return start > now;
+            case 'live':
+              return start <= now && end >= now;
+            case 'past':
+              return end < now;
+            default:
+              return true;
+          }
+        });
+      }
+      
+      // Sort by start time
+      allSessions.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+      
+      res.json(allSessions);
+    } catch (error: any) {
+      console.error('Error fetching student schedule:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Get live sessions for mentor
   app.get('/api/mentor/live-sessions', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {

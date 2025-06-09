@@ -1294,7 +1294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Live session routes
   app.get('/api/live-sessions', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       const { courseId, limit } = req.query;
       

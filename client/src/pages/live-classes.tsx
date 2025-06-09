@@ -77,10 +77,13 @@ export default function LiveClassesPage() {
     },
   });
 
-  // Fetch upcoming sessions - use mentor endpoint for admin/mentor users
+  // Fetch sessions based on user role and active tab
+  const isAdminOrMentor = user?.role === 'admin' || user?.role === 'mentor';
+  const endpoint = isAdminOrMentor ? "/api/mentor/live-sessions" : "/api/student/schedule";
+  
   const { data: upcomingSessions = [], isLoading: loadingUpcoming } = useQuery({
-    queryKey: user?.role === 'admin' || user?.role === 'mentor' ? ["/api/mentor/live-sessions"] : ["/api/student/upcoming-sessions"],
-    enabled: activeTab === "upcoming",
+    queryKey: [endpoint, { status: activeTab }],
+    enabled: (activeTab === "upcoming" || activeTab === "past") && !!user,
   });
 
   // Fetch courses for session creation

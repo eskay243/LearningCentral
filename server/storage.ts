@@ -137,6 +137,7 @@ export interface IStorage {
   // Enrollment operations
   enrollUserInCourse(enrollment: Omit<CourseEnrollment, "id" | "enrolledAt">): Promise<CourseEnrollment>;
   getCourseEnrollment(courseId: number, userId: string): Promise<CourseEnrollment | undefined>;
+  isUserEnrolledInCourse(userId: string, courseId: number): Promise<boolean>;
   updateCourseProgress(enrollmentId: number, progress: number): Promise<CourseEnrollment>;
   getStudentEnrollments(userId: string): Promise<CourseEnrollment[]>;
   getEnrollmentsByUser(userId: string): Promise<CourseEnrollment[]>;
@@ -2776,6 +2777,16 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error fetching course enrollment:", error);
       return undefined;
+    }
+  }
+
+  async isUserEnrolledInCourse(userId: string, courseId: number): Promise<boolean> {
+    try {
+      const enrollment = await this.getCourseEnrollment(courseId, userId);
+      return !!enrollment;
+    } catch (error) {
+      console.error("Error checking course enrollment:", error);
+      return false;
     }
   }
 
