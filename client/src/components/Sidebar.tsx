@@ -165,6 +165,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                     <CreditCard className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                     <span className="truncate">Payment Management</span>
                   </Link>
+                  
+                  <Link href="/admin/video-settings" className={menuItemClass("/admin/video-settings")}>
+                    <Video className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <span className="truncate">Video Settings</span>
+                  </Link>
                 </>
               )}
             </>

@@ -15,6 +15,7 @@ import {
   liveSessionRollCallResponses,
   liveSessionMessages,
   liveSessionQA,
+  videoProviderSettings,
   certificates,
   coupons,
   courseRatings,
