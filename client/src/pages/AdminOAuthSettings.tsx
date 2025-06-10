@@ -6,8 +6,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Settings, Save, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Settings, Save, Eye, EyeOff, AlertCircle, CheckCircle2, Video, Key, Shield, TestTube, Info } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 interface OAuthProvider {
   name: string;
@@ -49,12 +58,123 @@ const defaultProviders: Record<string, Partial<OAuthProvider>> = {
   }
 };
 
+// Video provider configuration schemas
+const googleMeetSchema = z.object({
+  provider: z.literal("google_meet"),
+  isActive: z.boolean(),
+  settings: z.object({
+    clientId: z.string().min(1, "Client ID is required"),
+    clientSecret: z.string().min(1, "Client Secret is required"),
+    projectId: z.string().min(1, "Project ID is required"),
+    calendarId: z.string().optional(),
+  }),
+  features: z.object({
+    recording: z.boolean(),
+    waiting_room: z.boolean(),
+    chat: z.boolean(),
+    polls: z.boolean(),
+  }),
+});
+
+const zoomSchema = z.object({
+  provider: z.literal("zoom"),
+  isActive: z.boolean(),
+  settings: z.object({
+    apiKey: z.string().min(1, "API Key is required"),
+    apiSecret: z.string().min(1, "API Secret is required"),
+    accountId: z.string().min(1, "Account ID is required"),
+    webhookSecret: z.string().optional(),
+  }),
+  features: z.object({
+    recording: z.boolean(),
+    waiting_room: z.boolean(),
+    chat: z.boolean(),
+    polls: z.boolean(),
+  }),
+});
+
+const zohoSchema = z.object({
+  provider: z.literal("zoho"),
+  isActive: z.boolean(),
+  settings: z.object({
+    clientId: z.string().min(1, "Client ID is required"),
+    clientSecret: z.string().min(1, "Client Secret is required"),
+    region: z.string().min(1, "Region is required"),
+    refreshToken: z.string().optional(),
+  }),
+  features: z.object({
+    recording: z.boolean(),
+    waiting_room: z.boolean(),
+    chat: z.boolean(),
+    polls: z.boolean(),
+  }),
+});
+
+type VideoProviderConfig = z.infer<typeof googleMeetSchema> | z.infer<typeof zoomSchema> | z.infer<typeof zohoSchema>;
+
 export default function AdminOAuthSettings() {
   const [providers, setProviders] = useState<Record<string, OAuthProvider>>({});
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+
+  // Video settings state
+  const [activeProvider, setActiveProvider] = useState<string>("google_meet");
+  const [showVideoSecrets, setShowVideoSecrets] = useState<Record<string, boolean>>({});
+
+  // Fetch video provider settings
+  const { data: providerSettings, isLoading: videoLoading } = useQuery({
+    queryKey: ['/api/video-providers/settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/video-providers/settings');
+      if (!response.ok) throw new Error('Failed to fetch provider settings');
+      return response.json();
+    },
+  });
+
+  // Save video configuration mutation
+  const saveVideoConfigMutation = useMutation({
+    mutationFn: async (config: VideoProviderConfig) => {
+      const response = await apiRequest("POST", "/api/video-providers/settings", config);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/video-providers/settings'] });
+      toast({
+        title: "Configuration Saved",
+        description: "Video provider settings have been updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Save Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Test video connection mutation
+  const testVideoConnectionMutation = useMutation({
+    mutationFn: async (provider: string) => {
+      const response = await apiRequest("POST", `/api/video-providers/${provider}/test`, {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Connection Test Successful",
+        description: `Successfully connected to ${activeProvider.replace('_', ' ')} API`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Connection Test Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     loadOAuthSettings();
@@ -279,58 +399,538 @@ export default function AdminOAuthSettings() {
     );
   }
 
+  // Video settings helper functions
+  const getVideoProviderStatus = (provider: string) => {
+    const settings = providerSettings?.find((p: any) => p.provider === provider);
+    if (!settings) return { status: 'not_configured', label: 'Not Configured', color: 'gray' };
+    if (!settings.isActive) return { status: 'inactive', label: 'Configured but Inactive', color: 'yellow' };
+    return { status: 'active', label: 'Active', color: 'green' };
+  };
+
+  const getVideoFormSchema = (provider: string) => {
+    switch (provider) {
+      case 'google_meet': return googleMeetSchema;
+      case 'zoom': return zoomSchema;
+      case 'zoho': return zohoSchema;
+      default: return googleMeetSchema;
+    }
+  };
+
+  const videoForm = useForm<VideoProviderConfig>({
+    resolver: zodResolver(getVideoFormSchema(activeProvider)),
+    defaultValues: {
+      provider: activeProvider as any,
+      isActive: false,
+      settings: {},
+      features: {
+        recording: true,
+        waiting_room: true,
+        chat: true,
+        polls: true
+      }
+    }
+  });
+
+  const toggleVideoSecretVisibility = (field: string) => {
+    setShowVideoSecrets(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  const getVideoProviderIcon = (provider: string) => {
+    switch (provider) {
+      case 'google_meet':
+        return <Video className="w-5 h-5 text-blue-600" />;
+      case 'zoom':
+        return <Video className="w-5 h-5 text-blue-500" />;
+      case 'zoho':
+        return <Video className="w-5 h-5 text-red-500" />;
+      default:
+        return <Video className="w-5 h-5" />;
+    }
+  };
+
+  const onVideoSubmit = (data: VideoProviderConfig) => {
+    saveVideoConfigMutation.mutate(data);
+  };
+
+  const renderVideoSettings = () => {
+    if (videoLoading) {
+      return (
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-32 bg-gray-200 rounded"></div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {['google_meet', 'zoom', 'zoho'].map((provider) => {
+            const status = getVideoProviderStatus(provider);
+            return (
+              <Card 
+                key={provider}
+                className={`cursor-pointer transition-all ${
+                  activeProvider === provider ? 'ring-2 ring-purple-500' : ''
+                }`}
+                onClick={() => setActiveProvider(provider)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      {getVideoProviderIcon(provider)}
+                      <div>
+                        <h3 className="font-medium capitalize">
+                          {provider.replace('_', ' ')}
+                        </h3>
+                        <Badge 
+                          variant={status.color === 'green' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {status.label}
+                        </Badge>
+                      </div>
+                    </div>
+                    {status.status === 'active' && (
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        <Form {...videoForm}>
+          <form onSubmit={videoForm.handleSubmit(onVideoSubmit)} className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-3">
+                  {getVideoProviderIcon(activeProvider)}
+                  <span className="capitalize">
+                    {activeProvider.replace('_', ' ')} Configuration
+                  </span>
+                </CardTitle>
+                <CardDescription>
+                  Configure {activeProvider.replace('_', ' ')} API settings for video conferencing
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={videoForm.control}
+                  name="isActive"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Enable {activeProvider.replace('_', ' ')}
+                        </FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          Allow this provider to be used for video conferences
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {videoForm.watch('isActive') && (
+                  <div className="space-y-4">
+                    {activeProvider === 'google_meet' && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={videoForm.control}
+                            name="settings.clientId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Client ID</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Google OAuth Client ID" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={videoForm.control}
+                            name="settings.clientSecret"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Client Secret</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input 
+                                      type={showVideoSecrets.clientSecret ? "text" : "password"}
+                                      placeholder="Google OAuth Client Secret" 
+                                      {...field} 
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-0 top-0 h-full px-3 py-2"
+                                      onClick={() => toggleVideoSecretVisibility('clientSecret')}
+                                    >
+                                      {showVideoSecrets.clientSecret ? (
+                                        <EyeOff className="h-4 w-4" />
+                                      ) : (
+                                        <Eye className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <FormField
+                          control={videoForm.control}
+                          name="settings.projectId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Project ID</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Google Cloud Project ID" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+
+                    {activeProvider === 'zoom' && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={videoForm.control}
+                            name="settings.apiKey"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>API Key</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Zoom API Key" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={videoForm.control}
+                            name="settings.apiSecret"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>API Secret</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input 
+                                      type={showVideoSecrets.apiSecret ? "text" : "password"}
+                                      placeholder="Zoom API Secret" 
+                                      {...field} 
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-0 top-0 h-full px-3 py-2"
+                                      onClick={() => toggleVideoSecretVisibility('apiSecret')}
+                                    >
+                                      {showVideoSecrets.apiSecret ? (
+                                        <EyeOff className="h-4 w-4" />
+                                      ) : (
+                                        <Eye className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <FormField
+                          control={videoForm.control}
+                          name="settings.accountId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Account ID</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Zoom Account ID" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+
+                    {activeProvider === 'zoho' && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={videoForm.control}
+                            name="settings.clientId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Client ID</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Zoho Client ID" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={videoForm.control}
+                            name="settings.clientSecret"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Client Secret</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input 
+                                      type={showVideoSecrets.clientSecret ? "text" : "password"}
+                                      placeholder="Zoho Client Secret" 
+                                      {...field} 
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="absolute right-0 top-0 h-full px-3 py-2"
+                                      onClick={() => toggleVideoSecretVisibility('clientSecret')}
+                                    >
+                                      {showVideoSecrets.clientSecret ? (
+                                        <EyeOff className="h-4 w-4" />
+                                      ) : (
+                                        <Eye className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        <FormField
+                          control={videoForm.control}
+                          name="settings.region"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Region</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select region" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="us">United States</SelectItem>
+                                  <SelectItem value="eu">Europe</SelectItem>
+                                  <SelectItem value="in">India</SelectItem>
+                                  <SelectItem value="au">Australia</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="text-sm font-medium mb-3">Feature Settings</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={videoForm.control}
+                          name="features.recording"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-sm">Recording</FormLabel>
+                                <div className="text-xs text-muted-foreground">
+                                  Enable session recording
+                                </div>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={videoForm.control}
+                          name="features.waiting_room"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-sm">Waiting Room</FormLabel>
+                                <div className="text-xs text-muted-foreground">
+                                  Enable waiting room
+                                </div>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={videoForm.control}
+                          name="features.chat"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-sm">Chat</FormLabel>
+                                <div className="text-xs text-muted-foreground">
+                                  Enable in-meeting chat
+                                </div>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={videoForm.control}
+                          name="features.polls"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-sm">Polls</FormLabel>
+                                <div className="text-xs text-muted-foreground">
+                                  Enable live polls
+                                </div>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => testVideoConnectionMutation.mutate(activeProvider)}
+                        disabled={testVideoConnectionMutation.isPending}
+                      >
+                        <TestTube className="mr-2 h-4 w-4" />
+                        {testVideoConnectionMutation.isPending ? "Testing..." : "Test Connection"}
+                      </Button>
+
+                      <Button type="submit" disabled={saveVideoConfigMutation.isPending}>
+                        <Save className="mr-2 h-4 w-4" />
+                        {saveVideoConfigMutation.isPending ? "Saving..." : "Save Configuration"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </form>
+        </Form>
+      </div>
+    );
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
             <Settings className="mr-3 h-8 w-8" />
-            OAuth Provider Settings
+            Authentication & Video Settings
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Configure external authentication providers for your platform
+            Configure OAuth providers and video conferencing settings
           </p>
         </div>
-        <Button onClick={saveSettings} disabled={isSaving}>
-          <Save className="mr-2 h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Settings"}
-        </Button>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <AlertCircle className="mr-2 h-5 w-5 text-amber-500" />
-            Setup Instructions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4 text-sm">
-            <div>
-              <h4 className="font-semibold">Google OAuth Setup:</h4>
-              <p>1. Go to <a href="https://console.developers.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Cloud Console</a></p>
-              <p>2. Create a new project or select existing one</p>
-              <p>3. Enable Google+ API and create OAuth 2.0 credentials</p>
-            </div>
-            <div>
-              <h4 className="font-semibold">GitHub OAuth Setup:</h4>
-              <p>1. Go to <a href="https://github.com/settings/applications/new" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">GitHub Developer Settings</a></p>
-              <p>2. Register a new OAuth application</p>
-            </div>
-            <div>
-              <h4 className="font-semibold">Microsoft OAuth Setup:</h4>
-              <p>1. Go to <a href="https://portal.azure.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Azure Portal</a></p>
-              <p>2. Register a new application in Azure Active Directory</p>
-            </div>
+      <Tabs defaultValue="oauth" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="oauth">OAuth Providers</TabsTrigger>
+          <TabsTrigger value="video">Video Conferencing</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="oauth" className="space-y-6 mt-6">
+          <div className="flex justify-end mb-4">
+            <Button onClick={saveSettings} disabled={isSaving}>
+              <Save className="mr-2 h-4 w-4" />
+              {isSaving ? "Saving..." : "Save OAuth Settings"}
+            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="space-y-6">
-        {Object.entries(providers).map(([name, provider]) => 
-          renderProviderConfig(name, provider)
-        )}
-      </div>
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <AlertCircle className="mr-2 h-5 w-5 text-amber-500" />
+                Setup Instructions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4 text-sm">
+                <div>
+                  <h4 className="font-semibold">Google OAuth Setup:</h4>
+                  <p>1. Go to <a href="https://console.developers.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google Cloud Console</a></p>
+                  <p>2. Create a new project or select existing one</p>
+                  <p>3. Enable Google+ API and create OAuth 2.0 credentials</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold">GitHub OAuth Setup:</h4>
+                  <p>1. Go to <a href="https://github.com/settings/applications/new" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">GitHub Developer Settings</a></p>
+                  <p>2. Register a new OAuth application</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Microsoft OAuth Setup:</h4>
+                  <p>1. Go to <a href="https://portal.azure.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Azure Portal</a></p>
+                  <p>2. Register a new application in Azure Active Directory</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6">
+            {Object.entries(providers).map(([name, provider]) => 
+              renderProviderConfig(name, provider)
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="video" className="space-y-6 mt-6">
+          {renderVideoSettings()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
