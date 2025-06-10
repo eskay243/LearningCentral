@@ -1058,6 +1058,72 @@ export const advancedQuizAnswers = pgTable("advanced_quiz_answers", {
   lastModified: timestamp("last_modified").defaultNow(),
 });
 
+// Video Content Management System
+export const videoContent = pgTable("video_content", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => courses.id),
+  lessonId: integer("lesson_id").references(() => lessons.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  
+  // Video file information
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size"), // bytes
+  duration: integer("duration").notNull(), // seconds
+  resolution: text("resolution"), // e.g., "1920x1080"
+  format: text("format").notNull(), // mp4, webm, etc.
+  
+  // Streaming and delivery
+  streamingUrl: text("streaming_url"),
+  thumbnailUrl: text("thumbnail_url"),
+  previewUrl: text("preview_url"),
+  
+  // Access control and DRM
+  accessLevel: text("access_level").default("premium"), // free, premium, restricted
+  isPublic: boolean("is_public").default(false),
+  allowDownload: boolean("allow_download").default(false),
+  watermarkText: text("watermark_text"),
+  drmProtected: boolean("drm_protected").default(false),
+  
+  // Processing status
+  processingStatus: text("processing_status").default("pending"), // pending, processing, ready, failed
+  processingProgress: integer("processing_progress").default(0), // 0-100
+  processingError: text("processing_error"),
+  
+  // Analytics
+  viewCount: integer("view_count").default(0),
+  totalWatchTime: integer("total_watch_time").default(0), // seconds
+  
+  // Metadata
+  uploadedBy: varchar("uploaded_by").notNull().references(() => users.id),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  publishedAt: timestamp("published_at"),
+});
+
+// Video Watch Progress Tracking
+export const videoProgress = pgTable("video_progress", {
+  id: serial("id").primaryKey(),
+  videoId: integer("video_id").notNull().references(() => videoContent.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  currentTime: integer("current_time").default(0), // seconds
+  watchedDuration: integer("watched_duration").default(0), // total seconds watched
+  watchPercentage: real("watch_percentage").default(0), // 0-100
+  completed: boolean("completed").default(false),
+  
+  // Session tracking
+  sessionStart: timestamp("session_start").defaultNow(),
+  lastWatched: timestamp("last_watched").defaultNow(),
+  totalSessions: integer("total_sessions").default(1),
+  
+  // Quality and engagement
+  playbackQuality: text("playback_quality"), // 720p, 1080p, etc.
+  playbackSpeed: real("playback_speed").default(1.0),
+  interactionEvents: jsonb("interaction_events"), // pauses, seeks, etc.
+});
+
 // Enhanced Assignment System with File Uploads
 export const advancedAssignments = pgTable("advanced_assignments", {
   id: serial("id").primaryKey(),
@@ -1373,6 +1439,10 @@ export type DiscussionVote = typeof discussionVotes.$inferSelect;
 export type VideoSession = typeof videoSessions.$inferSelect;
 export type VideoSessionParticipant = typeof videoSessionParticipants.$inferSelect;
 
+// Video Content Management Types
+export type VideoContent = typeof videoContent.$inferSelect;
+export type VideoProgress = typeof videoProgress.$inferSelect;
+
 // Insert schemas for new tables
 export const insertCodingChallengeSchema = createInsertSchema(codingChallenges);
 export const insertCodeExecutionSchema = createInsertSchema(codeExecutions);
@@ -1391,6 +1461,20 @@ export const insertDiscussionReplySchema = createInsertSchema(discussionReplies)
 export const insertDiscussionVoteSchema = createInsertSchema(discussionVotes);
 export const insertVideoSessionSchema = createInsertSchema(videoSessions);
 export const insertVideoSessionParticipantSchema = createInsertSchema(videoSessionParticipants);
+
+// Video Content Management Insert Schemas
+export const insertVideoContentSchema = createInsertSchema(videoContent).omit({
+  id: true,
+  uploadedAt: true,
+  updatedAt: true,
+  publishedAt: true,
+});
+
+export const insertVideoProgressSchema = createInsertSchema(videoProgress).omit({
+  id: true,
+  sessionStart: true,
+  lastWatched: true,
+});
 
 // Live Session Insert Schemas
 export const insertLiveSessionSchema = createInsertSchema(liveSessions).omit({

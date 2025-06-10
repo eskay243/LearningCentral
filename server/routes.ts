@@ -17,6 +17,7 @@ import { registerNotificationRoutes } from "./notificationRoutes";
 import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
 import { registerLiveSessionRoutes } from "./liveSessionRoutes";
+import { courseContentRoutes } from "./courseContentRoutes";
 
 
 // Mock data for UI display when database is not fully connected
