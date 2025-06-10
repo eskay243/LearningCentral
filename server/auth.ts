@@ -76,3 +76,40 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
 
 // Alias for compatibility
 export const isAuthenticated = authenticateToken;
+
+// Setup authentication middleware
+export const setupAuth = (app: any) => {
+  // CORS middleware
+  app.use((req: any, res: any, next: any) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
+};
+
+// Role-based access control
+export const hasRole = (roles: string | string[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const userRole = req.user.role;
+    const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
+    if (!allowedRoles.includes(userRole)) {
+      return res.status(403).json({ message: 'Insufficient permissions' });
+    }
+
+    next();
+  };
+};
+
+// Alias for compatibility
+export const requireRole = hasRole;

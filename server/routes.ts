@@ -2762,6 +2762,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register authentication routes
+  registerAuthRoutes(app);
+  
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time messaging
