@@ -49,6 +49,7 @@ import TestCodingPage from "@/pages/TestCodingPage";
 import SimpleRoutingTest from "@/pages/SimpleRoutingTest";
 import Certificates from "@/pages/Certificates";
 import LiveClasses from "@/pages/live-classes";
+import AdminVideoSettings from "@/pages/admin-video-settings";
 import CertificateVerification from "@/pages/CertificateVerification";
 import CertificateAdmin from "@/pages/CertificateAdmin";
 import InteractiveCodingChallenge from "@/pages/InteractiveCodingChallenge";
@@ -111,6 +112,7 @@ function Router() {
         <Route path="/auth" component={AuthPage} />
         <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/admin/oauth-settings" component={AdminOAuthSettings} />
+        <Route path="/admin/video-settings" component={AdminVideoSettings} />
         <Route path="/admin/payments" component={AdminPayments} />
         <Route path="/payment/callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
