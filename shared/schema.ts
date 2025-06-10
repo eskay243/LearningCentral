@@ -10,6 +10,7 @@ import {
   jsonb,
   index,
   primaryKey,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -792,7 +793,7 @@ export const insertCourseSchema = createInsertSchema(courses);
 export const insertModuleSchema = createInsertSchema(modules);
 export const insertLessonSchema = createInsertSchema(lessons);
 export const insertQuizSchema = createInsertSchema(quizzes);
-export const insertQuizQuestionSchema = createInsertSchema(quizQuestions);
+export const insertOriginalQuizQuestionSchema = createInsertSchema(quizQuestions);
 export const insertAssignmentSchema = createInsertSchema(assignments);
 export const insertCourseEnrollmentSchema = createInsertSchema(courseEnrollments);
 export const insertMentorCourseSchema = createInsertSchema(mentorCourses);
@@ -1468,7 +1469,7 @@ export const assessmentQuizQuestions = pgTable("assessment_quiz_questions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const quizAttempts = pgTable("quiz_attempts", {
+export const assessmentQuizAttempts = pgTable("assessment_quiz_attempts", {
   id: serial("id").primaryKey(),
   quizId: integer("quiz_id").references(() => automatedQuizzes.id),
   userId: varchar("user_id").references(() => users.id),
@@ -1499,8 +1500,8 @@ export const quizAttempts = pgTable("quiz_attempts", {
 
 export const quizAnswers = pgTable("quiz_answers", {
   id: serial("id").primaryKey(),
-  attemptId: integer("attempt_id").references(() => quizAttempts.id, { onDelete: 'cascade' }),
-  questionId: integer("question_id").references(() => quizQuestions.id),
+  attemptId: integer("attempt_id").references(() => assessmentQuizAttempts.id, { onDelete: 'cascade' }),
+  questionId: integer("question_id").references(() => assessmentQuizQuestions.id),
   
   // Answer Content
   answer: jsonb("answer"), // Student's answer(s)
@@ -1764,8 +1765,8 @@ export type CourseGrade = typeof courseGrades.$inferSelect;
 
 // Enhanced Assessment & Grading Types
 export type AutomatedQuiz = typeof automatedQuizzes.$inferSelect;
-export type QuizQuestion = typeof quizQuestions.$inferSelect;
-export type QuizAttempt = typeof quizAttempts.$inferSelect;
+export type AssessmentQuizQuestion = typeof assessmentQuizQuestions.$inferSelect;
+export type AssessmentQuizAttempt = typeof assessmentQuizAttempts.$inferSelect;
 export type QuizAnswer = typeof quizAnswers.$inferSelect;
 export type AssignmentRubric = typeof assignmentRubrics.$inferSelect;
 export type RubricCriteria = typeof rubricCriteria.$inferSelect;
@@ -1831,6 +1832,79 @@ export const insertVideoProgressSchema = createInsertSchema(videoProgress).omit(
   id: true,
   sessionStart: true,
   lastWatched: true,
+});
+
+// Assessment & Grading Insert Schemas
+export const insertAutomatedQuizSchema = createInsertSchema(automatedQuizzes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertQuizQuestionSchema = createInsertSchema(assessmentQuizQuestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertQuizAttemptSchema = createInsertSchema(assessmentQuizAttempts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertQuizAnswerSchema = createInsertSchema(quizAnswers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAssignmentRubricSchema = createInsertSchema(assignmentRubrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRubricCriteriaSchema = createInsertSchema(rubricCriteria).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAssignmentGradeSchema = createInsertSchema(assignmentGrades).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPeerReviewSchema = createInsertSchema(peerReviews).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertStudentProgressSchema = createInsertSchema(studentProgress).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertLearningAnalyticsSchema = createInsertSchema(learningAnalytics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCertificateTemplateSchema = createInsertSchema(certificateTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertGeneratedCertificateSchema = createInsertSchema(generatedCertificates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Live Session Insert Schemas
