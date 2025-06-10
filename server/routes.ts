@@ -19,6 +19,7 @@ import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
 import { registerLiveSessionRoutes } from "./liveSessionRoutes";
 import { registerEnhancedLiveSessionRoutes } from "./enhancedLiveSessionRoutes";
 import { courseContentRoutes } from "./courseContentRoutes";
+import { registerAuthRoutes } from "./authRoutes";
 
 
 // Mock data for UI display when database is not fully connected
