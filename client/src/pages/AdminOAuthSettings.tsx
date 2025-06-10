@@ -131,6 +131,7 @@ export default function AdminOAuthSettings() {
       if (!response.ok) throw new Error('Failed to fetch provider settings');
       return response.json();
     },
+    retry: false,
   });
 
   // Save video configuration mutation
@@ -174,6 +175,21 @@ export default function AdminOAuthSettings() {
         variant: "destructive",
       });
     },
+  });
+
+  // Simplified video form without conditional resolver
+  const videoForm = useForm<any>({
+    defaultValues: {
+      provider: activeProvider,
+      isActive: false,
+      settings: {},
+      features: {
+        recording: true,
+        waiting_room: true,
+        chat: true,
+        polls: true
+      }
+    }
   });
 
   useEffect(() => {
@@ -407,29 +423,7 @@ export default function AdminOAuthSettings() {
     return { status: 'active', label: 'Active', color: 'green' };
   };
 
-  const getVideoFormSchema = (provider: string) => {
-    switch (provider) {
-      case 'google_meet': return googleMeetSchema;
-      case 'zoom': return zoomSchema;
-      case 'zoho': return zohoSchema;
-      default: return googleMeetSchema;
-    }
-  };
 
-  const videoForm = useForm<VideoProviderConfig>({
-    resolver: zodResolver(getVideoFormSchema(activeProvider)),
-    defaultValues: {
-      provider: activeProvider as any,
-      isActive: false,
-      settings: {},
-      features: {
-        recording: true,
-        waiting_room: true,
-        chat: true,
-        polls: true
-      }
-    }
-  });
 
   const toggleVideoSecretVisibility = (field: string) => {
     setShowVideoSecrets(prev => ({
