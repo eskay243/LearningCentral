@@ -218,8 +218,30 @@ export const isAuthenticated = (req: any, res: any, next: any) => {
   if (req.user) {
     return next();
   }
-  
-  res.status(401).json({ message: "Authentication required" });
+
+  console.log('Authentication failed - no valid session or user');
+  return res.status(401).json({ message: "Authentication required" });
+};
+
+// Middleware to check user role
+export const requireRole = (allowedRoles: string | string[]) => {
+  return (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: "Insufficient permissions",
+        required: allowedRoles,
+        current: req.user.role
+      });
+    }
+
+    return next();
+  };
 };
 
 // Middleware to check specific roles

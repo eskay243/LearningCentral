@@ -322,9 +322,30 @@ export interface IStorage {
   // Additional methods for lessons
   getLesson(lessonId: number): Promise<Lesson | undefined>;
 
-  // Live session implementation
+  // Enhanced Live session implementation with video conferencing
+  createLiveSession(sessionData: any): Promise<LiveSession>;
+  updateLiveSession(sessionId: number, updateData: any): Promise<LiveSession>;
+  deleteLiveSession(sessionId: number): Promise<void>;
+  getLiveSessions(options?: { courseId?: number; status?: string; upcoming?: boolean }): Promise<LiveSession[]>;
   getUpcomingLiveSessions(options?: { courseId?: number; limit?: number }): Promise<LiveSession[]>;
   getLiveSession(id: number): Promise<LiveSession | undefined>;
+  
+  // Session attendance methods
+  recordSessionAttendance(attendanceData: any): Promise<any>;
+  updateSessionAttendance(sessionId: number, userId: string, updateData: any): Promise<any>;
+  getSessionAttendance(sessionId: number): Promise<any[]>;
+  getActiveSessionAttendance(sessionId: number): Promise<any[]>;
+  
+  // Interactive features methods
+  createSessionPoll(pollData: any): Promise<any>;
+  submitPollResponse(responseData: any): Promise<any>;
+  getPollResults(pollId: number): Promise<any>;
+  createSessionQuestion(questionData: any): Promise<any>;
+  answerSessionQuestion(questionId: number, answerData: any): Promise<any>;
+  getSessionQuestions(sessionId: number): Promise<any[]>;
+  createSessionMessage(messageData: any): Promise<any>;
+  getSessionMessages(sessionId: number, options?: { limit?: number; before?: number }): Promise<any[]>;
+  getSessionAnalytics(sessionId: number): Promise<any>;
   
   // Course content management methods
   getCourseContent(courseId: number): Promise<any>;
@@ -2118,6 +2139,348 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error creating code execution:", error);
       throw error;
+    }
+  }
+
+  // Enhanced Live Session Methods with Video Conferencing
+  async createLiveSession(sessionData: any): Promise<LiveSession> {
+    try {
+      const [session] = await db
+        .insert(liveSessions)
+        .values({
+          ...sessionData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      return session;
+    } catch (error) {
+      console.error("Error creating live session:", error);
+      throw error;
+    }
+  }
+
+  async updateLiveSession(sessionId: number, updateData: any): Promise<LiveSession> {
+    try {
+      const [session] = await db
+        .update(liveSessions)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(eq(liveSessions.id, sessionId))
+        .returning();
+      return session;
+    } catch (error) {
+      console.error("Error updating live session:", error);
+      throw error;
+    }
+  }
+
+  async deleteLiveSession(sessionId: number): Promise<void> {
+    try {
+      await db.delete(liveSessions).where(eq(liveSessions.id, sessionId));
+    } catch (error) {
+      console.error("Error deleting live session:", error);
+      throw error;
+    }
+  }
+
+  async getLiveSessions(options?: { courseId?: number; status?: string; upcoming?: boolean }): Promise<LiveSession[]> {
+    try {
+      let query = db.select().from(liveSessions);
+      
+      if (options?.courseId) {
+        query = query.where(eq(liveSessions.courseId, options.courseId));
+      }
+      if (options?.status) {
+        query = query.where(eq(liveSessions.status, options.status));
+      }
+      if (options?.upcoming) {
+        query = query.where(gt(liveSessions.scheduledAt, new Date()));
+      }
+      
+      return await query.orderBy(desc(liveSessions.scheduledAt));
+    } catch (error) {
+      console.error("Error fetching live sessions:", error);
+      return [];
+    }
+  }
+
+  // Session Attendance Methods
+  async recordSessionAttendance(attendanceData: any): Promise<any> {
+    try {
+      const [attendance] = await db
+        .insert(liveSessionAttendance)
+        .values({
+          ...attendanceData,
+          createdAt: new Date()
+        })
+        .returning();
+      return attendance;
+    } catch (error) {
+      console.error("Error recording session attendance:", error);
+      throw error;
+    }
+  }
+
+  async updateSessionAttendance(sessionId: number, userId: string, updateData: any): Promise<any> {
+    try {
+      const [attendance] = await db
+        .update(liveSessionAttendance)
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(liveSessionAttendance.sessionId, sessionId),
+          eq(liveSessionAttendance.userId, userId)
+        ))
+        .returning();
+      return attendance;
+    } catch (error) {
+      console.error("Error updating session attendance:", error);
+      throw error;
+    }
+  }
+
+  async getSessionAttendance(sessionId: number): Promise<any[]> {
+    try {
+      const attendance = await db
+        .select({
+          id: liveSessionAttendance.id,
+          userId: liveSessionAttendance.userId,
+          status: liveSessionAttendance.status,
+          joinTime: liveSessionAttendance.joinTime,
+          leaveTime: liveSessionAttendance.leaveTime,
+          userName: sql`${users.firstName} || ' ' || ${users.lastName}`,
+          userEmail: users.email,
+          userRole: users.role
+        })
+        .from(liveSessionAttendance)
+        .leftJoin(users, eq(liveSessionAttendance.userId, users.id))
+        .where(eq(liveSessionAttendance.sessionId, sessionId));
+      return attendance;
+    } catch (error) {
+      console.error("Error fetching session attendance:", error);
+      return [];
+    }
+  }
+
+  async getActiveSessionAttendance(sessionId: number): Promise<any[]> {
+    try {
+      const attendance = await db
+        .select()
+        .from(liveSessionAttendance)
+        .where(and(
+          eq(liveSessionAttendance.sessionId, sessionId),
+          eq(liveSessionAttendance.status, 'joined'),
+          isNull(liveSessionAttendance.leaveTime)
+        ));
+      return attendance;
+    } catch (error) {
+      console.error("Error fetching active session attendance:", error);
+      return [];
+    }
+  }
+
+  // Interactive Features Methods
+  async createSessionPoll(pollData: any): Promise<any> {
+    try {
+      const [poll] = await db
+        .insert(liveSessionPolls)
+        .values({
+          ...pollData,
+          createdAt: new Date()
+        })
+        .returning();
+      return poll;
+    } catch (error) {
+      console.error("Error creating session poll:", error);
+      throw error;
+    }
+  }
+
+  async submitPollResponse(responseData: any): Promise<any> {
+    try {
+      const [response] = await db
+        .insert(liveSessionPollResponses)
+        .values({
+          ...responseData,
+          submittedAt: new Date()
+        })
+        .returning();
+      return response;
+    } catch (error) {
+      console.error("Error submitting poll response:", error);
+      throw error;
+    }
+  }
+
+  async getPollResults(pollId: number): Promise<any> {
+    try {
+      const responses = await db
+        .select({
+          answer: liveSessionPollResponses.answer,
+          count: sql`count(*)`,
+        })
+        .from(liveSessionPollResponses)
+        .where(eq(liveSessionPollResponses.pollId, pollId))
+        .groupBy(liveSessionPollResponses.answer);
+      
+      return {
+        pollId,
+        totalResponses: responses.reduce((sum, r) => sum + Number(r.count), 0),
+        results: responses.map(r => ({
+          answer: r.answer,
+          count: Number(r.count)
+        }))
+      };
+    } catch (error) {
+      console.error("Error fetching poll results:", error);
+      return { pollId, totalResponses: 0, results: [] };
+    }
+  }
+
+  async createSessionQuestion(questionData: any): Promise<any> {
+    try {
+      const [question] = await db
+        .insert(liveSessionQA)
+        .values({
+          ...questionData,
+          askedAt: new Date()
+        })
+        .returning();
+      return question;
+    } catch (error) {
+      console.error("Error creating session question:", error);
+      throw error;
+    }
+  }
+
+  async answerSessionQuestion(questionId: number, answerData: any): Promise<any> {
+    try {
+      const [question] = await db
+        .update(liveSessionQA)
+        .set({
+          ...answerData,
+          answeredAt: new Date()
+        })
+        .where(eq(liveSessionQA.id, questionId))
+        .returning();
+      return question;
+    } catch (error) {
+      console.error("Error answering session question:", error);
+      throw error;
+    }
+  }
+
+  async getSessionQuestions(sessionId: number): Promise<any[]> {
+    try {
+      const questions = await db
+        .select({
+          id: liveSessionQA.id,
+          question: liveSessionQA.question,
+          answer: liveSessionQA.answer,
+          askedAt: liveSessionQA.askedAt,
+          answeredAt: liveSessionQA.answeredAt,
+          askedByName: sql`${users.firstName} || ' ' || ${users.lastName}`,
+          isAnswered: sql`${liveSessionQA.answer} IS NOT NULL`
+        })
+        .from(liveSessionQA)
+        .leftJoin(users, eq(liveSessionQA.askedBy, users.id))
+        .where(eq(liveSessionQA.sessionId, sessionId))
+        .orderBy(desc(liveSessionQA.askedAt));
+      return questions;
+    } catch (error) {
+      console.error("Error fetching session questions:", error);
+      return [];
+    }
+  }
+
+  async createSessionMessage(messageData: any): Promise<any> {
+    try {
+      const [message] = await db
+        .insert(liveSessionMessages)
+        .values({
+          ...messageData,
+          sentAt: new Date()
+        })
+        .returning();
+      return message;
+    } catch (error) {
+      console.error("Error creating session message:", error);
+      throw error;
+    }
+  }
+
+  async getSessionMessages(sessionId: number, options?: { limit?: number; before?: number }): Promise<any[]> {
+    try {
+      let query = db
+        .select({
+          id: liveSessionMessages.id,
+          message: liveSessionMessages.message,
+          sentAt: liveSessionMessages.sentAt,
+          senderName: sql`${users.firstName} || ' ' || ${users.lastName}`,
+          senderRole: users.role
+        })
+        .from(liveSessionMessages)
+        .leftJoin(users, eq(liveSessionMessages.senderId, users.id))
+        .where(eq(liveSessionMessages.sessionId, sessionId));
+
+      if (options?.before) {
+        query = query.where(lt(liveSessionMessages.id, options.before));
+      }
+
+      query = query.orderBy(desc(liveSessionMessages.sentAt));
+
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+
+      return await query;
+    } catch (error) {
+      console.error("Error fetching session messages:", error);
+      return [];
+    }
+  }
+
+  async getSessionAnalytics(sessionId: number): Promise<any> {
+    try {
+      const session = await this.getLiveSession(sessionId);
+      const attendance = await this.getSessionAttendance(sessionId);
+      
+      const totalAttendees = attendance.length;
+      const averageAttendanceTime = attendance.reduce((sum, a) => {
+        if (a.joinTime && a.leaveTime) {
+          return sum + (new Date(a.leaveTime).getTime() - new Date(a.joinTime).getTime());
+        }
+        return sum;
+      }, 0) / totalAttendees || 0;
+
+      const questionsCount = await db
+        .select({ count: sql`count(*)` })
+        .from(liveSessionQA)
+        .where(eq(liveSessionQA.sessionId, sessionId));
+
+      const pollsCount = await db
+        .select({ count: sql`count(*)` })
+        .from(liveSessionPolls)
+        .where(eq(liveSessionPolls.sessionId, sessionId));
+
+      return {
+        sessionId,
+        totalAttendees,
+        averageAttendanceTime: Math.round(averageAttendanceTime / 1000 / 60), // minutes
+        questionsAsked: Number(questionsCount[0]?.count || 0),
+        pollsCreated: Number(pollsCount[0]?.count || 0),
+        sessionDuration: session?.actualEndTime && session?.actualStartTime 
+          ? Math.round((new Date(session.actualEndTime).getTime() - new Date(session.actualStartTime).getTime()) / 1000 / 60)
+          : 0
+      };
+    } catch (error) {
+      console.error("Error fetching session analytics:", error);
+      return { sessionId, totalAttendees: 0, averageAttendanceTime: 0, questionsAsked: 0, pollsCreated: 0, sessionDuration: 0 };
     }
   }
 
