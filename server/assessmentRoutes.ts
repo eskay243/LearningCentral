@@ -1,863 +1,542 @@
-import { Express } from "express";
+import type { Express } from "express";
 import { storage } from "./storage";
-import { UserRole } from "@shared/schema";
-
-// Simple authentication middleware for demo/session-based auth
-const isAuthenticated = async (req: any, res: any, next: any) => {
-  try {
-    console.log("Assessment auth check - Session:", req.session);
-    console.log("Assessment auth check - Session userId:", req.session?.userId);
-    
-    const userId = req.session?.userId;
-    if (!userId) {
-      console.log("Authentication failed: No session userId");
-      return res.status(401).json({ message: "Unauthorized: Not authenticated" });
-    }
-
-    const user = await storage.getUserById(userId);
-    if (!user) {
-      console.log("Authentication failed: User not found for ID:", userId);
-      return res.status(401).json({ message: "Unauthorized: Not authenticated" });
-    }
-
-    console.log("Assessment auth successful for user:", user.id);
-    req.user = user;
-    return next();
-  } catch (error) {
-    console.error("Authentication error:", error);
-    return res.status(401).json({ message: "Unauthorized: Not authenticated" });
-  }
-};
-
-const hasRole = (roles: UserRole[]) => {
-  return (req: any, res: any, next: any) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized: Not authenticated" });
-    }
-    
-    if (roles.includes(req.user.role)) {
-      return next();
-    }
-    
-    return res.status(403).json({ message: "Forbidden: Insufficient permissions" });
-  };
-};
+import { assessmentGradingService } from "./assessmentGradingService";
+import { insertAutomatedQuizSchema, insertQuizQuestionSchema, insertQuizAttemptSchema, insertQuizAnswerSchema, insertAssignmentRubricSchema, insertRubricCriteriaSchema, insertAssignmentGradeSchema, insertPeerReviewSchema, insertStudentProgressSchema, insertLearningAnalyticsSchema, insertCertificateTemplateSchema, insertGeneratedCertificateSchema } from "@shared/schema";
+import { z } from "zod";
 
 export function registerAssessmentRoutes(app: Express) {
-  // Quiz Routes
-  app.get('/api/quizzes', async (req, res) => {
+  // Automated Quiz Management
+  app.post("/api/quizzes", async (req, res) => {
     try {
-      const { courseId, moduleId, lessonId } = req.query;
-      const quizzes = await storage.getQuizzes({
-        courseId: courseId ? Number(courseId) : undefined,
-        moduleId: moduleId ? Number(moduleId) : undefined,
-        lessonId: lessonId ? Number(lessonId) : undefined
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const validatedData = insertAutomatedQuizSchema.parse({
+        ...req.body,
+        createdBy: req.user.id
       });
-      res.json(quizzes);
-    } catch (error) {
-      console.error("Error fetching quizzes:", error);
-      res.status(500).json({ message: "Failed to fetch quizzes" });
-    }
-  });
-  
-  app.get('/api/quizzes/:id', async (req, res) => {
-    try {
-      const quiz = await storage.getQuiz(Number(req.params.id));
-      if (!quiz) {
-        return res.status(404).json({ message: "Quiz not found" });
-      }
-      res.json(quiz);
-    } catch (error) {
-      console.error("Error fetching quiz:", error);
-      res.status(500).json({ message: "Failed to fetch quiz" });
-    }
-  });
-  
-  app.post('/api/quizzes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const quizData = req.body;
-      const quiz = await storage.createQuiz(quizData);
+      
+      const quiz = await storage.createAutomatedQuiz(validatedData);
       res.status(201).json(quiz);
-    } catch (error) {
-      console.error("Error creating quiz:", error);
-      res.status(500).json({ message: "Failed to create quiz" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
-  
-  app.put('/api/quizzes/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+
+  app.get("/api/quizzes", async (req, res) => {
     try {
-      const quizId = Number(req.params.id);
-      const quizData = req.body;
-      const quiz = await storage.updateQuiz(quizId, quizData);
+      const { courseId } = req.query;
+      const quizzes = courseId 
+        ? await storage.getAutomatedQuizzesByCourse(Number(courseId))
+        : await storage.getAllAutomatedQuizzes();
+      res.json(quizzes);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/quizzes/:id", async (req, res) => {
+    try {
+      const quiz = await storage.getAutomatedQuiz(Number(req.params.id));
+      if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+      
+      const questions = await storage.getQuizQuestions(quiz.id);
+      res.json({ ...quiz, questions });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/quizzes/:id", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const quiz = await storage.updateAutomatedQuiz(Number(req.params.id), req.body);
       res.json(quiz);
-    } catch (error) {
-      console.error("Error updating quiz:", error);
-      res.status(500).json({ message: "Failed to update quiz" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
-  
-  app.get('/api/quizzes/:id/questions', async (req, res) => {
+
+  app.delete("/api/quizzes/:id", async (req, res) => {
     try {
-      const quizId = Number(req.params.id);
-      const questions = await storage.getQuizQuestions(quizId);
-      res.json(questions);
-    } catch (error) {
-      console.error("Error fetching quiz questions:", error);
-      res.status(500).json({ message: "Failed to fetch quiz questions" });
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      await storage.deleteAutomatedQuiz(Number(req.params.id));
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
-  
-  app.post('/api/quiz-questions', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+
+  // Quiz Questions Management
+  app.post("/api/quizzes/:quizId/questions", async (req, res) => {
     try {
-      const questionData = req.body;
-      const question = await storage.addQuizQuestion(questionData);
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const validatedData = insertQuizQuestionSchema.parse({
+        ...req.body,
+        quizId: Number(req.params.quizId)
+      });
+      
+      const question = await storage.createQuizQuestion(validatedData);
+      
+      // Update quiz total questions count
+      const questions = await storage.getQuizQuestions(Number(req.params.quizId));
+      await storage.updateAutomatedQuiz(Number(req.params.quizId), { 
+        totalQuestions: questions.length 
+      });
+      
       res.status(201).json(question);
-    } catch (error) {
-      console.error("Error adding quiz question:", error);
-      res.status(500).json({ message: "Failed to add quiz question" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
-  
-  app.put('/api/quiz-questions/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+
+  app.put("/api/questions/:id", async (req, res) => {
     try {
-      const questionId = Number(req.params.id);
-      const questionData = req.body;
-      const question = await storage.updateQuizQuestion(questionId, questionData);
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const question = await storage.updateQuizQuestion(Number(req.params.id), req.body);
       res.json(question);
-    } catch (error) {
-      console.error("Error updating quiz question:", error);
-      res.status(500).json({ message: "Failed to update quiz question" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
-  
-  app.delete('/api/quiz-questions/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+
+  app.delete("/api/questions/:id", async (req, res) => {
     try {
-      const questionId = Number(req.params.id);
-      await storage.deleteQuizQuestion(questionId);
-      res.status(204).end();
-    } catch (error) {
-      console.error("Error deleting quiz question:", error);
-      res.status(500).json({ message: "Failed to delete quiz question" });
-    }
-  });
-  
-  // Start a new quiz attempt
-  app.post('/api/quiz-attempts/start', isAuthenticated, async (req: any, res) => {
-    try {
-      const { quizId } = req.body;
-      const userId = req.user.claims.sub;
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
-      // Check if user has already started an attempt for this quiz
-      const existingAttempt = await storage.getActiveQuizAttempt(userId, quizId);
-      if (existingAttempt) {
-        return res.json(existingAttempt);
+      await storage.deleteQuizQuestion(Number(req.params.id));
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Quiz Taking and Grading
+  app.post("/api/quizzes/:id/attempts", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const quiz = await storage.getAutomatedQuiz(Number(req.params.id));
+      if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+      
+      // Check if quiz is available
+      const now = new Date();
+      if (quiz.availableFrom && now < quiz.availableFrom) {
+        return res.status(400).json({ message: "Quiz not yet available" });
+      }
+      if (quiz.availableUntil && now > quiz.availableUntil) {
+        return res.status(400).json({ message: "Quiz deadline has passed" });
       }
       
-      // Create new attempt
-      const attempt = await storage.startQuizAttempt(userId, quizId);
+      // Check attempt limits
+      const existingAttempts = await storage.getUserQuizAttempts(req.user.id, Number(req.params.id));
+      if (existingAttempts.length >= quiz.maxAttempts) {
+        return res.status(400).json({ message: "Maximum attempts reached" });
+      }
+      
+      const attempt = await storage.createQuizAttempt({
+        quizId: Number(req.params.id),
+        userId: req.user.id,
+        attemptNumber: existingAttempts.length + 1,
+        status: "in_progress",
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent") || ""
+      });
+      
       res.status(201).json(attempt);
-    } catch (error) {
-      console.error("Error starting quiz attempt:", error);
-      res.status(500).json({ message: "Failed to start quiz attempt" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
 
-  // Save individual answer during quiz attempt
-  app.post('/api/quiz-attempts/save-answer', isAuthenticated, async (req: any, res) => {
+  app.post("/api/attempts/:attemptId/answers", async (req, res) => {
     try {
-      const { attemptId, questionId, answer } = req.body;
-      const userId = req.user.claims.sub;
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
-      // Verify the attempt belongs to the user
-      const attempt = await storage.getQuizAttemptById(attemptId);
-      if (!attempt || attempt.userId !== userId) {
-        return res.status(403).json({ message: "Unauthorized access to quiz attempt" });
-      }
+      const { questionId, answer } = req.body;
       
-      await storage.saveQuizAnswer(attemptId, questionId, answer);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error saving quiz answer:", error);
-      res.status(500).json({ message: "Failed to save answer" });
+      const answerRecord = await storage.createQuizAnswer({
+        attemptId: Number(req.params.attemptId),
+        questionId,
+        answer,
+        answeredAt: new Date()
+      });
+      
+      res.status(201).json(answerRecord);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
 
-  // Submit complete quiz attempt
-  app.post('/api/quiz-attempts/submit', isAuthenticated, async (req: any, res) => {
+  app.post("/api/attempts/:attemptId/submit", async (req, res) => {
     try {
-      const { attemptId, answers } = req.body;
-      const userId = req.user.claims.sub;
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
-      // Verify the attempt belongs to the user
-      const attempt = await storage.getQuizAttemptById(attemptId);
-      if (!attempt || attempt.userId !== userId) {
-        return res.status(403).json({ message: "Unauthorized access to quiz attempt" });
+      const attempt = await storage.getQuizAttempt(Number(req.params.attemptId));
+      if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+      
+      if (attempt.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
-      const result = await storage.submitQuizAttempt(attemptId, answers);
-      res.json(result);
-    } catch (error) {
-      console.error("Error submitting quiz attempt:", error);
-      res.status(500).json({ message: "Failed to submit quiz attempt" });
+      // Update attempt status
+      const timeSpent = Math.floor((Date.now() - attempt.startedAt.getTime()) / 1000);
+      await storage.updateQuizAttempt(Number(req.params.attemptId), {
+        submittedAt: new Date(),
+        status: "submitted",
+        timeSpent
+      });
+      
+      // Auto-grade the quiz
+      const gradingResult = await assessmentGradingService.gradeQuizAttempt(Number(req.params.attemptId));
+      
+      res.json({
+        attemptId: Number(req.params.attemptId),
+        ...gradingResult
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 
-  // Get quiz attempt results
-  app.get('/api/quiz-attempts/:attemptId/results', isAuthenticated, async (req: any, res) => {
+  app.get("/api/attempts/:attemptId/results", async (req, res) => {
     try {
-      const attemptId = Number(req.params.attemptId);
-      const userId = req.user.claims.sub;
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
-      // Get the attempt and verify ownership
-      const attempt = await storage.getQuizAttemptById(attemptId);
-      if (!attempt || attempt.userId !== userId) {
-        return res.status(403).json({ message: "Unauthorized access to quiz results" });
+      const attempt = await storage.getQuizAttempt(Number(req.params.attemptId));
+      if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+      
+      if (attempt.userId !== req.user.id) {
+        return res.status(403).json({ message: "Access denied" });
       }
       
-      // Get quiz details
-      const quiz = await storage.getQuiz(attempt.quizId);
-      if (!quiz) {
-        return res.status(404).json({ message: "Quiz not found" });
-      }
-      
-      // Get questions for detailed results
+      const answers = await storage.getQuizAnswers(Number(req.params.attemptId));
       const questions = await storage.getQuizQuestions(attempt.quizId);
       
-      // Build detailed results with question text and explanations
-      const gradedAnswers = attempt.answers.map((answer: any) => {
-        const question = questions.find(q => q.id === answer.questionId);
-        return {
-          ...answer,
-          questionText: question?.question || 'Question not found',
-          correctAnswer: question?.correctAnswer || '',
-          explanation: question?.explanation || ''
-        };
+      const results = {
+        attempt,
+        questions: questions.map(q => {
+          const answer = answers.find(a => a.questionId === q.id);
+          return {
+            ...q,
+            studentAnswer: answer?.answer,
+            pointsEarned: answer?.pointsEarned,
+            isCorrect: answer?.isCorrect,
+            feedback: answer?.feedback
+          };
+        })
+      };
+      
+      res.json(results);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Assignment Rubrics
+  app.post("/api/rubrics", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const validatedData = insertAssignmentRubricSchema.parse({
+        ...req.body,
+        createdBy: req.user.id
       });
       
-      const result = {
-        ...attempt,
-        quiz,
-        gradedAnswers
-      };
-      
-      res.json(result);
-    } catch (error) {
-      console.error("Error fetching quiz results:", error);
-      res.status(500).json({ message: "Failed to fetch quiz results" });
-    }
-  });
-
-  // Get assignment for submission
-  app.get('/api/assignments/:assignmentId', isAuthenticated, async (req, res) => {
-    try {
-      const assignmentId = Number(req.params.assignmentId);
-      const assignment = await storage.getAssignment(assignmentId);
-      
-      if (!assignment) {
-        return res.status(404).json({ message: "Assignment not found" });
-      }
-      
-      res.json(assignment);
-    } catch (error) {
-      console.error("Error fetching assignment:", error);
-      res.status(500).json({ message: "Failed to fetch assignment" });
-    }
-  });
-
-  // Get user's existing submission for an assignment
-  app.get('/api/assignments/:assignmentId/my-submission', isAuthenticated, async (req: any, res) => {
-    try {
-      const assignmentId = Number(req.params.assignmentId);
-      const userId = req.user.claims.sub;
-      
-      const submission = await storage.getUserAssignmentSubmission(userId, assignmentId);
-      
-      if (!submission) {
-        return res.status(404).json({ message: "No submission found" });
-      }
-      
-      res.json(submission);
-    } catch (error) {
-      console.error("Error fetching user submission:", error);
-      res.status(500).json({ message: "Failed to fetch submission" });
-    }
-  });
-
-  // Submit assignment (with file upload)
-  app.post('/api/assignment-submissions', isAuthenticated, async (req: any, res) => {
-    try {
-      const { assignmentId, submissionText, status } = req.body;
-      const userId = req.user.claims.sub;
-      
-      // Handle file uploads if present
-      const files = req.files || [];
-      
-      const submissionData = {
-        assignmentId: Number(assignmentId),
-        userId,
-        submissionText: submissionText || '',
-        submissionFiles: files.map((file: any) => ({
-          name: file.originalname,
-          size: file.size,
-          path: file.path,
-          mimetype: file.mimetype
-        })),
-        status: status || 'submitted',
-        submittedAt: new Date()
-      };
-      
-      const submission = await storage.createAssignmentSubmission(submissionData);
-      res.status(201).json(submission);
-    } catch (error) {
-      console.error("Error submitting assignment:", error);
-      res.status(500).json({ message: "Failed to submit assignment" });
-    }
-  });
-
-  // Save assignment draft
-  app.post('/api/assignment-submissions/draft', isAuthenticated, async (req: any, res) => {
-    try {
-      const { assignmentId, submissionText } = req.body;
-      const userId = req.user.claims.sub;
-      
-      // Handle file uploads if present
-      const files = req.files || [];
-      
-      const submissionData = {
-        assignmentId: Number(assignmentId),
-        userId,
-        submissionText: submissionText || '',
-        submissionFiles: files.map((file: any) => ({
-          name: file.originalname,
-          size: file.size,
-          path: file.path,
-          mimetype: file.mimetype
-        })),
-        status: 'draft',
-        submittedAt: null
-      };
-      
-      // Check if draft already exists
-      const existingSubmission = await storage.getUserAssignmentSubmission(userId, Number(assignmentId));
-      
-      let submission;
-      if (existingSubmission && existingSubmission.status === 'draft') {
-        submission = await storage.updateAssignmentSubmission(existingSubmission.id, submissionData);
-      } else {
-        submission = await storage.createAssignmentSubmission(submissionData);
-      }
-      
-      res.json(submission);
-    } catch (error) {
-      console.error("Error saving assignment draft:", error);
-      res.status(500).json({ message: "Failed to save draft" });
-    }
-  });
-  
-  app.get('/api/quizzes/:id/attempts', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const quizId = Number(req.params.id);
-      const attempts = await storage.getQuizAttempts(quizId);
-      res.json(attempts);
-    } catch (error) {
-      console.error("Error fetching quiz attempts:", error);
-      res.status(500).json({ message: "Failed to fetch quiz attempts" });
-    }
-  });
-  
-  app.get('/api/users/:userId/quiz-attempts', isAuthenticated, async (req: any, res) => {
-    try {
-      // Only allow users to view their own attempts, or mentors/admins to view any
-      const currentUserId = req.user.claims.sub;
-      const userToView = req.params.userId;
-      const userRole = req.user.claims.role;
-      
-      if (userToView !== currentUserId && 
-          userRole !== UserRole.ADMIN && 
-          userRole !== UserRole.MENTOR) {
-        return res.status(403).json({ message: "You can only view your own quiz attempts" });
-      }
-      
-      const quizId = req.query.quizId ? Number(req.query.quizId) : undefined;
-      const attempts = await storage.getUserQuizAttempts(userToView, quizId);
-      res.json(attempts);
-    } catch (error) {
-      console.error("Error fetching user quiz attempts:", error);
-      res.status(500).json({ message: "Failed to fetch user quiz attempts" });
-    }
-  });
-  
-  app.get('/api/mentors/:mentorId/quizzes', isAuthenticated, async (req: any, res) => {
-    try {
-      // Check if the user is the mentor in question or an admin
-      const currentUserId = req.user.claims.sub;
-      const mentorId = req.params.mentorId;
-      const userRole = req.user.claims.role;
-      
-      if (mentorId !== currentUserId && userRole !== UserRole.ADMIN) {
-        return res.status(403).json({ message: "You can only view your own quizzes" });
-      }
-      
-      const quizzes = await storage.getQuizzesByMentor(mentorId);
-      res.json(quizzes);
-    } catch (error) {
-      console.error("Error fetching mentor quizzes:", error);
-      res.status(500).json({ message: "Failed to fetch mentor quizzes" });
-    }
-  });
-  
-  // Assignment Routes
-  app.get('/api/assignments', async (req, res) => {
-    try {
-      const { courseId, moduleId, lessonId } = req.query;
-      const assignments = await storage.getAssignments({
-        courseId: courseId ? Number(courseId) : undefined,
-        moduleId: moduleId ? Number(moduleId) : undefined,
-        lessonId: lessonId ? Number(lessonId) : undefined
-      });
-      res.json(assignments);
-    } catch (error) {
-      console.error("Error fetching assignments:", error);
-      res.status(500).json({ message: "Failed to fetch assignments" });
-    }
-  });
-  
-  app.get('/api/assignments/:id', async (req, res) => {
-    try {
-      const assignment = await storage.getAssignment(Number(req.params.id));
-      if (!assignment) {
-        return res.status(404).json({ message: "Assignment not found" });
-      }
-      res.json(assignment);
-    } catch (error) {
-      console.error("Error fetching assignment:", error);
-      res.status(500).json({ message: "Failed to fetch assignment" });
-    }
-  });
-  
-  app.post('/api/assignments', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const assignmentData = req.body;
-      
-      // Convert dueDate string to Date object if provided
-      if (assignmentData.dueDate && typeof assignmentData.dueDate === 'string') {
-        assignmentData.dueDate = new Date(assignmentData.dueDate);
-      }
-      
-      const assignment = await storage.createAssignment(assignmentData);
-      res.status(201).json(assignment);
-    } catch (error) {
-      console.error("Error creating assignment:", error);
-      res.status(500).json({ message: "Failed to create assignment" });
-    }
-  });
-  
-  app.put('/api/assignments/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const assignmentId = Number(req.params.id);
-      const assignmentData = req.body;
-      const assignment = await storage.updateAssignment(assignmentId, assignmentData);
-      res.json(assignment);
-    } catch (error) {
-      console.error("Error updating assignment:", error);
-      res.status(500).json({ message: "Failed to update assignment" });
-    }
-  });
-
-  app.delete('/api/assignments/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const assignmentId = Number(req.params.id);
-      await storage.deleteAssignment(assignmentId);
-      res.status(200).json({ message: "Assignment deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting assignment:", error);
-      res.status(500).json({ message: "Failed to delete assignment" });
-    }
-  });
-  
-  app.post('/api/assignment-submissions', isAuthenticated, async (req: any, res) => {
-    try {
-      const submissionData = {
-        ...req.body,
-        userId: req.user.claims.sub
-      };
-      const submission = await storage.submitAssignment(submissionData);
-      res.status(201).json(submission);
-    } catch (error) {
-      console.error("Error submitting assignment:", error);
-      res.status(500).json({ message: "Failed to submit assignment" });
-    }
-  });
-  
-  app.get('/api/assignments/:id/submissions', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const assignmentId = Number(req.params.id);
-      const submissions = await storage.getAssignmentSubmissions(assignmentId);
-      res.json(submissions);
-    } catch (error) {
-      console.error("Error fetching assignment submissions:", error);
-      res.status(500).json({ message: "Failed to fetch assignment submissions" });
-    }
-  });
-  
-  app.get('/api/assignment-submissions/:id', isAuthenticated, async (req: any, res) => {
-    try {
-      const submissionId = Number(req.params.id);
-      const submission = await storage.getAssignmentSubmission(submissionId);
-      
-      if (!submission) {
-        return res.status(404).json({ message: "Submission not found" });
-      }
-      
-      // Only allow the submitter, mentors, or admins to view the submission
-      const currentUserId = req.user.claims.sub;
-      const userRole = req.user.claims.role;
-      
-      if (submission.userId !== currentUserId && 
-          userRole !== UserRole.ADMIN && 
-          userRole !== UserRole.MENTOR) {
-        return res.status(403).json({ message: "You don't have permission to view this submission" });
-      }
-      
-      res.json(submission);
-    } catch (error) {
-      console.error("Error fetching assignment submission:", error);
-      res.status(500).json({ message: "Failed to fetch assignment submission" });
-    }
-  });
-  
-  app.post('/api/assignment-submissions/:id/grade', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
-    try {
-      const submissionId = Number(req.params.id);
-      const { grade, feedback } = req.body;
-      const gradedBy = req.user.claims.sub;
-      
-      const submission = await storage.gradeAssignment(submissionId, grade, feedback, gradedBy);
-      res.json(submission);
-    } catch (error) {
-      console.error("Error grading assignment:", error);
-      res.status(500).json({ message: "Failed to grade assignment" });
-    }
-  });
-  
-  app.get('/api/users/:userId/assignment-submissions', isAuthenticated, async (req: any, res) => {
-    try {
-      // Only allow users to view their own submissions, or mentors/admins to view any
-      const currentUserId = req.user.claims.sub;
-      const userToView = req.params.userId;
-      const userRole = req.user.claims.role;
-      
-      if (userToView !== currentUserId && 
-          userRole !== UserRole.ADMIN && 
-          userRole !== UserRole.MENTOR) {
-        return res.status(403).json({ message: "You can only view your own assignment submissions" });
-      }
-      
-      const assignmentId = req.query.assignmentId ? Number(req.query.assignmentId) : undefined;
-      const submissions = await storage.getUserAssignmentSubmissions(userToView, assignmentId);
-      res.json(submissions);
-    } catch (error) {
-      console.error("Error fetching user assignment submissions:", error);
-      res.status(500).json({ message: "Failed to fetch user assignment submissions" });
-    }
-  });
-  
-  app.get('/api/mentors/:mentorId/assignments', isAuthenticated, async (req: any, res) => {
-    try {
-      // Check if the user is the mentor in question or an admin
-      const currentUserId = req.user.claims.sub;
-      const mentorId = req.params.mentorId;
-      const userRole = req.user.claims.role;
-      
-      if (mentorId !== currentUserId && userRole !== UserRole.ADMIN) {
-        return res.status(403).json({ message: "You can only view your own assignments" });
-      }
-      
-      const assignments = await storage.getAssignmentsByMentor(mentorId);
-      res.json(assignments);
-    } catch (error) {
-      console.error("Error fetching mentor assignments:", error);
-      res.status(500).json({ message: "Failed to fetch mentor assignments" });
-    }
-  });
-
-  // Advanced Assessment Routes
-  app.get('/api/assessments', async (req, res) => {
-    try {
-      const { courseId, type, difficulty } = req.query;
-      const assessments = await storage.getAssessments({
-        courseId: courseId ? Number(courseId) : undefined,
-        type: type as string,
-        difficulty: difficulty as string
-      });
-      res.json(assessments);
-    } catch (error) {
-      console.error("Error fetching assessments:", error);
-      res.status(500).json({ message: "Failed to fetch assessments" });
-    }
-  });
-
-  app.get('/api/assessments/:id', async (req, res) => {
-    try {
-      const assessment = await storage.getAssessment(Number(req.params.id));
-      if (!assessment) {
-        return res.status(404).json({ message: "Assessment not found" });
-      }
-      res.json(assessment);
-    } catch (error) {
-      console.error("Error fetching assessment:", error);
-      res.status(500).json({ message: "Failed to fetch assessment" });
-    }
-  });
-
-  app.post('/api/assessments', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
-    try {
-      const assessmentData = {
-        ...req.body,
-        createdBy: req.user.claims.sub
-      };
-      const assessment = await storage.createAssessment(assessmentData);
-      res.status(201).json(assessment);
-    } catch (error) {
-      console.error("Error creating assessment:", error);
-      res.status(500).json({ message: "Failed to create assessment" });
-    }
-  });
-
-  app.put('/api/assessments/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const assessmentId = Number(req.params.id);
-      const assessmentData = req.body;
-      const assessment = await storage.updateAssessment(assessmentId, assessmentData);
-      res.json(assessment);
-    } catch (error) {
-      console.error("Error updating assessment:", error);
-      res.status(500).json({ message: "Failed to update assessment" });
-    }
-  });
-
-  app.get('/api/assessments/:id/questions', async (req, res) => {
-    try {
-      const assessmentId = Number(req.params.id);
-      const questions = await storage.getAssessmentQuestions(assessmentId);
-      res.json(questions);
-    } catch (error) {
-      console.error("Error fetching assessment questions:", error);
-      res.status(500).json({ message: "Failed to fetch assessment questions" });
-    }
-  });
-
-  app.post('/api/assessment-questions', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const questionData = req.body;
-      const question = await storage.addAssessmentQuestion(questionData);
-      res.status(201).json(question);
-    } catch (error) {
-      console.error("Error adding assessment question:", error);
-      res.status(500).json({ message: "Failed to add assessment question" });
-    }
-  });
-
-  app.put('/api/assessment-questions/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const questionId = Number(req.params.id);
-      const questionData = req.body;
-      const question = await storage.updateAssessmentQuestion(questionId, questionData);
-      res.json(question);
-    } catch (error) {
-      console.error("Error updating assessment question:", error);
-      res.status(500).json({ message: "Failed to update assessment question" });
-    }
-  });
-
-  app.delete('/api/assessment-questions/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const questionId = Number(req.params.id);
-      await storage.deleteAssessmentQuestion(questionId);
-      res.status(204).end();
-    } catch (error) {
-      console.error("Error deleting assessment question:", error);
-      res.status(500).json({ message: "Failed to delete assessment question" });
-    }
-  });
-
-  app.post('/api/assessment-attempts', isAuthenticated, async (req: any, res) => {
-    try {
-      const attemptData = {
-        ...req.body,
-        userId: req.user.claims.sub
-      };
-      const attempt = await storage.startAssessmentAttempt(attemptData);
-      res.status(201).json(attempt);
-    } catch (error) {
-      console.error("Error starting assessment attempt:", error);
-      res.status(500).json({ message: "Failed to start assessment attempt" });
-    }
-  });
-
-  app.put('/api/assessment-attempts/:id/submit', isAuthenticated, async (req: any, res) => {
-    try {
-      const attemptId = Number(req.params.id);
-      const { answers, submissionData } = req.body;
-      const userId = req.user.claims.sub;
-      
-      const result = await storage.submitAssessmentAttempt(attemptId, answers, submissionData, userId);
-      res.json(result);
-    } catch (error) {
-      console.error("Error submitting assessment attempt:", error);
-      res.status(500).json({ message: "Failed to submit assessment attempt" });
-    }
-  });
-
-  app.get('/api/assessments/:id/attempts', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const assessmentId = Number(req.params.id);
-      const attempts = await storage.getAssessmentAttempts(assessmentId);
-      res.json(attempts);
-    } catch (error) {
-      console.error("Error fetching assessment attempts:", error);
-      res.status(500).json({ message: "Failed to fetch assessment attempts" });
-    }
-  });
-
-  app.get('/api/users/:userId/assessment-attempts', isAuthenticated, async (req: any, res) => {
-    try {
-      const currentUserId = req.user.claims.sub;
-      const userToView = req.params.userId;
-      const userRole = req.user.claims.role;
-      
-      if (userToView !== currentUserId && 
-          userRole !== UserRole.ADMIN && 
-          userRole !== UserRole.MENTOR) {
-        return res.status(403).json({ message: "You can only view your own assessment attempts" });
-      }
-      
-      const assessmentId = req.query.assessmentId ? Number(req.query.assessmentId) : undefined;
-      const attempts = await storage.getUserAssessmentAttempts(userToView, assessmentId);
-      res.json(attempts);
-    } catch (error) {
-      console.error("Error fetching user assessment attempts:", error);
-      res.status(500).json({ message: "Failed to fetch user assessment attempts" });
-    }
-  });
-
-  app.post('/api/assessment-attempts/:id/grade', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
-    try {
-      const attemptId = Number(req.params.id);
-      const { scores, feedback, overrideScore } = req.body;
-      const gradedBy = req.user.claims.sub;
-      
-      const result = await storage.gradeAssessmentAttempt(attemptId, scores, feedback, overrideScore, gradedBy);
-      res.json(result);
-    } catch (error) {
-      console.error("Error grading assessment attempt:", error);
-      res.status(500).json({ message: "Failed to grade assessment attempt" });
-    }
-  });
-
-  // Rubric Management Routes
-  app.get('/api/rubrics', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const { assessmentId } = req.query;
-      const rubrics = await storage.getRubrics(assessmentId ? Number(assessmentId) : undefined);
-      res.json(rubrics);
-    } catch (error) {
-      console.error("Error fetching rubrics:", error);
-      res.status(500).json({ message: "Failed to fetch rubrics" });
-    }
-  });
-
-  app.post('/api/rubrics', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
-    try {
-      const rubricData = {
-        ...req.body,
-        createdBy: req.user.claims.sub
-      };
-      const rubric = await storage.createRubric(rubricData);
+      const rubric = await storage.createAssignmentRubric(validatedData);
       res.status(201).json(rubric);
-    } catch (error) {
-      console.error("Error creating rubric:", error);
-      res.status(500).json({ message: "Failed to create rubric" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
     }
   });
 
-  app.put('/api/rubrics/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+  app.get("/api/rubrics", async (req, res) => {
     try {
-      const rubricId = Number(req.params.id);
-      const rubricData = req.body;
-      const rubric = await storage.updateRubric(rubricId, rubricData);
-      res.json(rubric);
-    } catch (error) {
-      console.error("Error updating rubric:", error);
-      res.status(500).json({ message: "Failed to update rubric" });
-    }
-  });
-
-  // Grade Category Management
-  app.get('/api/courses/:courseId/grade-categories', async (req, res) => {
-    try {
-      const courseId = Number(req.params.courseId);
-      const categories = await storage.getGradeCategories(courseId);
-      res.json(categories);
-    } catch (error) {
-      console.error("Error fetching grade categories:", error);
-      res.status(500).json({ message: "Failed to fetch grade categories" });
-    }
-  });
-
-  app.post('/api/grade-categories', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const categoryData = req.body;
-      const category = await storage.createGradeCategory(categoryData);
-      res.status(201).json(category);
-    } catch (error) {
-      console.error("Error creating grade category:", error);
-      res.status(500).json({ message: "Failed to create grade category" });
-    }
-  });
-
-  app.put('/api/grade-categories/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const categoryId = Number(req.params.id);
-      const categoryData = req.body;
-      const category = await storage.updateGradeCategory(categoryId, categoryData);
-      res.json(category);
-    } catch (error) {
-      console.error("Error updating grade category:", error);
-      res.status(500).json({ message: "Failed to update grade category" });
-    }
-  });
-
-  // Course Grade Overview
-  app.get('/api/courses/:courseId/grades', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
-    try {
-      const courseId = Number(req.params.courseId);
-      const grades = await storage.getCourseGrades(courseId);
-      res.json(grades);
-    } catch (error) {
-      console.error("Error fetching course grades:", error);
-      res.status(500).json({ message: "Failed to fetch course grades" });
-    }
-  });
-
-  app.get('/api/users/:userId/grades', isAuthenticated, async (req: any, res) => {
-    try {
-      const currentUserId = req.user.claims.sub;
-      const userToView = req.params.userId;
-      const userRole = req.user.claims.role;
+      const { assignmentId, courseId } = req.query;
+      let rubrics;
       
-      if (userToView !== currentUserId && 
-          userRole !== UserRole.ADMIN && 
-          userRole !== UserRole.MENTOR) {
-        return res.status(403).json({ message: "You can only view your own grades" });
+      if (assignmentId) {
+        rubrics = await storage.getRubricsByAssignment(Number(assignmentId));
+      } else if (courseId) {
+        rubrics = await storage.getRubricsByCourse(Number(courseId));
+      } else {
+        rubrics = await storage.getAllRubrics();
       }
       
-      const courseId = req.query.courseId ? Number(req.query.courseId) : undefined;
-      const grades = await storage.getUserGrades(userToView, courseId);
+      res.json(rubrics);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/rubrics/:id", async (req, res) => {
+    try {
+      const rubric = await storage.getAssignmentRubric(Number(req.params.id));
+      if (!rubric) return res.status(404).json({ message: "Rubric not found" });
+      
+      const criteria = await storage.getRubricCriteria(rubric.id);
+      res.json({ ...rubric, criteria });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/rubrics/:rubricId/criteria", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const validatedData = insertRubricCriteriaSchema.parse({
+        ...req.body,
+        rubricId: Number(req.params.rubricId)
+      });
+      
+      const criteria = await storage.createRubricCriteria(validatedData);
+      res.status(201).json(criteria);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Assignment Grading
+  app.post("/api/assignments/:assignmentId/grades", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const { studentId, rubricId, criteriaScores, overallFeedback } = req.body;
+      
+      const grade = await assessmentGradingService.gradeAssignmentWithRubric(
+        Number(req.params.assignmentId),
+        studentId,
+        rubricId,
+        criteriaScores,
+        req.user.id,
+        overallFeedback
+      );
+      
+      res.status(201).json(grade);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/assignments/:assignmentId/grades", async (req, res) => {
+    try {
+      const grades = await storage.getAssignmentGrades(Number(req.params.assignmentId));
       res.json(grades);
-    } catch (error) {
-      console.error("Error fetching user grades:", error);
-      res.status(500).json({ message: "Failed to fetch user grades" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Peer Review Management
+  app.post("/api/assignments/:assignmentId/peer-reviews/assign", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const { rubricId } = req.body;
+      await assessmentGradingService.assignPeerReviewers(Number(req.params.assignmentId), rubricId);
+      
+      res.json({ message: "Peer reviewers assigned successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/peer-reviews/assigned", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const reviews = await storage.getAssignedPeerReviews(req.user.id);
+      res.json(reviews);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/peer-reviews/:reviewId/submit", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const { overallRating, overallFeedback, criteriaScores } = req.body;
+      
+      // Update peer review
+      await storage.updatePeerReview(Number(req.params.reviewId), {
+        overallRating,
+        overallFeedback,
+        status: "completed",
+        submittedAt: new Date()
+      });
+      
+      // If criteria scores provided, create grade entry
+      if (criteriaScores && criteriaScores.length > 0) {
+        const review = await storage.getPeerReview(Number(req.params.reviewId));
+        if (review) {
+          await assessmentGradingService.gradeAssignmentWithRubric(
+            review.assignmentId,
+            review.revieweeId,
+            review.gradeId || 0, // This would need proper rubric ID handling
+            criteriaScores,
+            req.user.id,
+            overallFeedback
+          );
+        }
+      }
+      
+      res.json({ message: "Peer review submitted successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  // Progress Tracking and Analytics
+  app.get("/api/students/:studentId/progress", async (req, res) => {
+    try {
+      const { courseId } = req.query;
+      
+      if (courseId) {
+        const progress = await storage.getStudentProgress(req.params.studentId, Number(courseId));
+        const analytics = await storage.getLearningAnalytics(req.params.studentId, Number(courseId));
+        
+        res.json({
+          progress,
+          analytics
+        });
+      } else {
+        const allProgress = await storage.getAllStudentProgress(req.params.studentId);
+        res.json(allProgress);
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/courses/:courseId/progress-report", async (req, res) => {
+    try {
+      const report = await assessmentGradingService.generateProgressReport(Number(req.params.courseId));
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Certificate Management
+  app.post("/api/certificate-templates", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const validatedData = insertCertificateTemplateSchema.parse(req.body);
+      const template = await storage.createCertificateTemplate(validatedData);
+      
+      res.status(201).json(template);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/certificate-templates", async (req, res) => {
+    try {
+      const { courseId } = req.query;
+      const templates = courseId 
+        ? await storage.getCertificateTemplatesByCourse(Number(courseId))
+        : await storage.getAllCertificateTemplates();
+      
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/certificates/generate", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const { userId, courseId, templateId } = req.body;
+      
+      const certificate = await assessmentGradingService.generateCertificate(
+        userId,
+        courseId,
+        templateId
+      );
+      
+      res.status(201).json(certificate);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/certificates", async (req, res) => {
+    try {
+      const { userId, courseId } = req.query;
+      
+      let certificates;
+      if (userId && courseId) {
+        certificates = await storage.getUserCourseCertificates(userId as string, Number(courseId));
+      } else if (userId) {
+        certificates = await storage.getUserCertificates(userId as string);
+      } else {
+        certificates = await storage.getAllCertificates();
+      }
+      
+      res.json(certificates);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/certificates/verify/:verificationCode", async (req, res) => {
+    try {
+      const certificate = await storage.getCertificateByVerificationCode(req.params.verificationCode);
+      
+      if (!certificate) {
+        return res.status(404).json({ message: "Certificate not found" });
+      }
+      
+      if (certificate.status !== "active") {
+        return res.status(400).json({ message: "Certificate is not active" });
+      }
+      
+      // Check expiry
+      if (certificate.expiryDate && new Date() > certificate.expiryDate) {
+        return res.status(400).json({ message: "Certificate has expired" });
+      }
+      
+      res.json({
+        valid: true,
+        certificate: {
+          certificateNumber: certificate.certificateNumber,
+          studentName: certificate.studentName,
+          courseName: certificate.courseName,
+          completionDate: certificate.completionDate,
+          issueDate: certificate.issueDate,
+          finalGrade: certificate.finalGrade
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Analytics Dashboard Data
+  app.get("/api/analytics/assessment-overview", async (req, res) => {
+    try {
+      const { courseId, timeRange } = req.query;
+      
+      // This would implement comprehensive analytics
+      const analytics = {
+        totalQuizzes: await storage.countQuizzesByCourse(Number(courseId)),
+        totalAttempts: await storage.countQuizAttemptsByCourse(Number(courseId)),
+        averageScore: await storage.getAverageQuizScoreByCourse(Number(courseId)),
+        completionRate: await storage.getQuizCompletionRate(Number(courseId)),
+        topPerformers: await storage.getTopPerformers(Number(courseId)),
+        strugglingStudents: await storage.getStrugglingStudents(Number(courseId))
+      };
+      
+      res.json(analytics);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 }

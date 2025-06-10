@@ -1409,6 +1409,348 @@ export const videoSessionParticipants = pgTable("video_session_participants", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Enhanced Assessment & Grading System
+
+// Automated Quiz Grading System
+export const automatedQuizzes = pgTable("automated_quizzes", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  courseId: integer("course_id").references(() => courses.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  
+  // Quiz Configuration
+  timeLimit: integer("time_limit"), // minutes
+  totalQuestions: integer("total_questions").default(0),
+  maxAttempts: integer("max_attempts").default(1),
+  passingScore: decimal("passing_score", { precision: 5, scale: 2 }).default("70.00"),
+  
+  // Grading Settings
+  autoGrade: boolean("auto_grade").default(true),
+  showResults: boolean("show_results").default(true),
+  showCorrectAnswers: boolean("show_correct_answers").default(false),
+  randomizeQuestions: boolean("randomize_questions").default(false),
+  
+  // Scheduling
+  availableFrom: timestamp("available_from"),
+  availableUntil: timestamp("available_until"),
+  
+  // Status
+  isPublished: boolean("is_published").default(false),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const assessmentQuizQuestions = pgTable("assessment_quiz_questions", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").references(() => automatedQuizzes.id, { onDelete: 'cascade' }),
+  
+  // Question Content
+  question: text("question").notNull(),
+  questionType: varchar("question_type", { length: 50 }).notNull(), // multiple_choice, true_false, short_answer, essay, fill_blank, matching
+  explanation: text("explanation"),
+  
+  // Scoring
+  points: decimal("points", { precision: 5, scale: 2 }).default("1.00"),
+  
+  // Options and Answers
+  options: jsonb("options"), // Array of options for multiple choice
+  correctAnswers: jsonb("correct_answers"), // Array of correct answers
+  keywords: jsonb("keywords"), // Keywords for auto-grading short answers
+  
+  // Question Metadata
+  difficulty: varchar("difficulty", { length: 20 }).default("medium"), // easy, medium, hard
+  tags: jsonb("tags"),
+  orderIndex: integer("order_index").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const quizAttempts = pgTable("quiz_attempts", {
+  id: serial("id").primaryKey(),
+  quizId: integer("quiz_id").references(() => automatedQuizzes.id),
+  userId: varchar("user_id").references(() => users.id),
+  
+  // Attempt Details
+  attemptNumber: integer("attempt_number").default(1),
+  startedAt: timestamp("started_at").defaultNow(),
+  submittedAt: timestamp("submitted_at"),
+  timeSpent: integer("time_spent"), // seconds
+  
+  // Scoring
+  totalScore: decimal("total_score", { precision: 5, scale: 2 }).default("0.00"),
+  maxScore: decimal("max_score", { precision: 5, scale: 2 }).default("0.00"),
+  percentage: decimal("percentage", { precision: 5, scale: 2 }).default("0.00"),
+  passed: boolean("passed").default(false),
+  
+  // Status
+  status: varchar("status", { length: 20 }).default("in_progress"), // in_progress, submitted, graded, expired
+  autoGraded: boolean("auto_graded").default(false),
+  
+  // Metadata
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const quizAnswers = pgTable("quiz_answers", {
+  id: serial("id").primaryKey(),
+  attemptId: integer("attempt_id").references(() => quizAttempts.id, { onDelete: 'cascade' }),
+  questionId: integer("question_id").references(() => quizQuestions.id),
+  
+  // Answer Content
+  answer: jsonb("answer"), // Student's answer(s)
+  isCorrect: boolean("is_correct"),
+  pointsEarned: decimal("points_earned", { precision: 5, scale: 2 }).default("0.00"),
+  
+  // Grading
+  autoGraded: boolean("auto_graded").default(false),
+  manualGraded: boolean("manual_graded").default(false),
+  gradedBy: varchar("graded_by").references(() => users.id),
+  feedback: text("feedback"),
+  
+  answeredAt: timestamp("answered_at").defaultNow(),
+  gradedAt: timestamp("graded_at"),
+});
+
+// Assignment Rubrics System
+export const assignmentRubrics = pgTable("assignment_rubrics", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  assignmentId: integer("assignment_id").references(() => assignments.id),
+  courseId: integer("course_id").references(() => courses.id),
+  createdBy: varchar("created_by").references(() => users.id),
+  
+  // Rubric Configuration
+  totalPoints: decimal("total_points", { precision: 5, scale: 2 }).default("100.00"),
+  passingScore: decimal("passing_score", { precision: 5, scale: 2 }).default("70.00"),
+  
+  // Peer Review Settings
+  enablePeerReview: boolean("enable_peer_review").default(false),
+  peerReviewers: integer("peer_reviewers").default(3),
+  peerReviewDeadline: timestamp("peer_review_deadline"),
+  
+  isActive: boolean("is_active").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const rubricCriteria = pgTable("rubric_criteria", {
+  id: serial("id").primaryKey(),
+  rubricId: integer("rubric_id").references(() => assignmentRubrics.id, { onDelete: 'cascade' }),
+  
+  // Criteria Details
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  maxPoints: decimal("max_points", { precision: 5, scale: 2 }).notNull(),
+  weight: decimal("weight", { precision: 5, scale: 2 }).default("1.00"),
+  
+  // Performance Levels
+  levels: jsonb("levels"), // Array of performance levels with descriptions and point ranges
+  
+  orderIndex: integer("order_index").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const assignmentGrades = pgTable("assignment_grades", {
+  id: serial("id").primaryKey(),
+  assignmentId: integer("assignment_id").references(() => assignments.id),
+  studentId: varchar("student_id").references(() => users.id),
+  rubricId: integer("rubric_id").references(() => assignmentRubrics.id),
+  gradedBy: varchar("graded_by").references(() => users.id),
+  
+  // Grading Details
+  totalScore: decimal("total_score", { precision: 5, scale: 2 }).default("0.00"),
+  maxScore: decimal("max_score", { precision: 5, scale: 2 }).default("0.00"),
+  percentage: decimal("percentage", { precision: 5, scale: 2 }).default("0.00"),
+  letterGrade: varchar("letter_grade", { length: 5 }),
+  
+  // Status
+  status: varchar("status", { length: 20 }).default("pending"), // pending, graded, reviewed
+  isPeerReview: boolean("is_peer_review").default(false),
+  
+  // Feedback
+  overallFeedback: text("overall_feedback"),
+  strengths: text("strengths"),
+  improvements: text("improvements"),
+  
+  gradedAt: timestamp("graded_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const criteriaScores = pgTable("criteria_scores", {
+  id: serial("id").primaryKey(),
+  gradeId: integer("grade_id").references(() => assignmentGrades.id, { onDelete: 'cascade' }),
+  criteriaId: integer("criteria_id").references(() => rubricCriteria.id),
+  
+  // Scoring
+  score: decimal("score", { precision: 5, scale: 2 }).notNull(),
+  maxScore: decimal("max_score", { precision: 5, scale: 2 }).notNull(),
+  level: varchar("level", { length: 50 }), // Performance level achieved
+  
+  // Feedback
+  feedback: text("feedback"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Peer Review System
+export const peerReviews = pgTable("peer_reviews", {
+  id: serial("id").primaryKey(),
+  assignmentId: integer("assignment_id").references(() => assignments.id),
+  reviewerId: varchar("reviewer_id").references(() => users.id),
+  revieweeId: varchar("reviewee_id").references(() => users.id),
+  gradeId: integer("grade_id").references(() => assignmentGrades.id),
+  
+  // Review Status
+  status: varchar("status", { length: 20 }).default("assigned"), // assigned, in_progress, completed
+  isAnonymous: boolean("is_anonymous").default(true),
+  
+  // Review Content
+  overallRating: integer("overall_rating").default(0), // 1-5 scale
+  overallFeedback: text("overall_feedback"),
+  
+  // Quality Metrics
+  helpfulnessRating: integer("helpfulness_rating"), // Rated by reviewee
+  qualityScore: decimal("quality_score", { precision: 5, scale: 2 }),
+  
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Progress Tracking System
+export const studentProgress = pgTable("student_progress", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  courseId: integer("course_id").references(() => courses.id),
+  
+  // Overall Progress
+  overallProgress: decimal("overall_progress", { precision: 5, scale: 2 }).default("0.00"), // percentage
+  completedLessons: integer("completed_lessons").default(0),
+  totalLessons: integer("total_lessons").default(0),
+  
+  // Assessment Progress
+  completedQuizzes: integer("completed_quizzes").default(0),
+  totalQuizzes: integer("total_quizzes").default(0),
+  averageQuizScore: decimal("average_quiz_score", { precision: 5, scale: 2 }).default("0.00"),
+  
+  // Assignment Progress
+  completedAssignments: integer("completed_assignments").default(0),
+  totalAssignments: integer("total_assignments").default(0),
+  averageAssignmentScore: decimal("average_assignment_score", { precision: 5, scale: 2 }).default("0.00"),
+  
+  // Engagement Metrics
+  timeSpent: integer("time_spent").default(0), // total minutes
+  loginStreak: integer("login_streak").default(0), // consecutive days
+  lastActivity: timestamp("last_activity"),
+  
+  // Performance Indicators
+  currentGrade: decimal("current_grade", { precision: 5, scale: 2 }),
+  gradeLetterEquivalent: varchar("grade_letter_equivalent", { length: 5 }),
+  isOnTrack: boolean("is_on_track").default(true),
+  
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const learningAnalytics = pgTable("learning_analytics", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  courseId: integer("course_id").references(() => courses.id),
+  
+  // Learning Patterns
+  preferredStudyTime: varchar("preferred_study_time", { length: 20 }), // morning, afternoon, evening
+  averageSessionDuration: integer("average_session_duration"), // minutes
+  peakPerformanceDay: varchar("peak_performance_day", { length: 20 }),
+  
+  // Difficulty Analysis
+  strugglingTopics: jsonb("struggling_topics"), // Array of topic IDs
+  strongTopics: jsonb("strong_topics"), // Array of topic IDs
+  recommendedTopics: jsonb("recommended_topics"), // AI-generated recommendations
+  
+  // Engagement Metrics
+  forumParticipation: integer("forum_participation").default(0),
+  questionsAsked: integer("questions_asked").default(0),
+  helpGiven: integer("help_given").default(0),
+  
+  // Risk Assessment
+  riskLevel: varchar("risk_level", { length: 20 }).default("low"), // low, medium, high
+  interventionSuggested: boolean("intervention_suggested").default(false),
+  lastRiskAssessment: timestamp("last_risk_assessment"),
+  
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Certificate Generation System
+export const certificateTemplates = pgTable("certificate_templates", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  courseId: integer("course_id").references(() => courses.id),
+  
+  // Template Design
+  templateData: jsonb("template_data"), // SVG/HTML template with placeholders
+  backgroundImage: varchar("background_image", { length: 500 }),
+  logoUrl: varchar("logo_url", { length: 500 }),
+  
+  // Certificate Requirements
+  minPassingGrade: decimal("min_passing_grade", { precision: 5, scale: 2 }).default("70.00"),
+  requiredAssignments: jsonb("required_assignments"), // Array of assignment IDs
+  requiredQuizzes: jsonb("required_quizzes"), // Array of quiz IDs
+  
+  // Certificate Details
+  credentialType: varchar("credential_type", { length: 50 }).default("completion"), // completion, achievement, mastery
+  validityPeriod: integer("validity_period"), // months (null = no expiry)
+  
+  isActive: boolean("is_active").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const generatedCertificates = pgTable("generated_certificates", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").references(() => certificateTemplates.id),
+  userId: varchar("user_id").references(() => users.id),
+  courseId: integer("course_id").references(() => courses.id),
+  
+  // Certificate Details
+  certificateNumber: varchar("certificate_number", { length: 100 }).notNull().unique(),
+  studentName: varchar("student_name", { length: 255 }).notNull(),
+  courseName: varchar("course_name", { length: 255 }).notNull(),
+  
+  // Achievement Data
+  finalGrade: decimal("final_grade", { precision: 5, scale: 2 }),
+  completionDate: timestamp("completion_date").notNull(),
+  issueDate: timestamp("issue_date").defaultNow(),
+  expiryDate: timestamp("expiry_date"),
+  
+  // Certificate Files
+  certificateUrl: varchar("certificate_url", { length: 500 }),
+  verificationCode: varchar("verification_code", { length: 100 }).unique(),
+  
+  // Status
+  status: varchar("status", { length: 20 }).default("active"), // active, revoked, expired
+  downloadCount: integer("download_count").default(0),
+  
+  // Metadata
+  metadata: jsonb("metadata"), // Additional certificate data
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Assessment System Types
 export type Assessment = typeof assessments.$inferSelect;
 export type AssessmentQuestion = typeof assessmentQuestions.$inferSelect;
@@ -1419,6 +1761,21 @@ export type Rubric = typeof rubrics.$inferSelect;
 export type RubricScore = typeof rubricScores.$inferSelect;
 export type GradeCategory = typeof gradeCategories.$inferSelect;
 export type CourseGrade = typeof courseGrades.$inferSelect;
+
+// Enhanced Assessment & Grading Types
+export type AutomatedQuiz = typeof automatedQuizzes.$inferSelect;
+export type QuizQuestion = typeof quizQuestions.$inferSelect;
+export type QuizAttempt = typeof quizAttempts.$inferSelect;
+export type QuizAnswer = typeof quizAnswers.$inferSelect;
+export type AssignmentRubric = typeof assignmentRubrics.$inferSelect;
+export type RubricCriteria = typeof rubricCriteria.$inferSelect;
+export type AssignmentGrade = typeof assignmentGrades.$inferSelect;
+export type CriteriaScore = typeof criteriaScores.$inferSelect;
+export type PeerReview = typeof peerReviews.$inferSelect;
+export type StudentProgress = typeof studentProgress.$inferSelect;
+export type LearningAnalytics = typeof learningAnalytics.$inferSelect;
+export type CertificateTemplate = typeof certificateTemplates.$inferSelect;
+export type GeneratedCertificate = typeof generatedCertificates.$inferSelect;
 
 // Enhanced Learning System Types
 export type CodingChallenge = typeof codingChallenges.$inferSelect;

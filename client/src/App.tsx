@@ -98,6 +98,7 @@ function Router() {
         <Route path="/student-profile/:id" component={StudentProfile} />
         <Route path="/assessments" component={Assessments} />
         <Route path="/assessment-dashboard" component={AssessmentDashboard} />
+        <Route path="/assessment" component={AssessmentDashboard} />
         <Route path="/quiz/:id/take" component={QuizTaking} />
         <Route path="/quiz-results/:attemptId" component={QuizResults} />
         <Route path="/assignments/:assignmentId/submit" component={AssignmentSubmission} />
