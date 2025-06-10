@@ -506,11 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User endpoint with proper authentication
-  app.get('/api/user', async (req: any, res) => {
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
+  app.get('/api/user', isAuthenticated, async (req: any, res) => {
     const user = req.user;
     res.json({
       id: user.id,

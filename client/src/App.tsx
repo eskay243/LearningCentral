@@ -33,6 +33,8 @@ import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import UserManagement from "@/pages/UserManagement";
 import Login from "@/pages/Login";
+import LoginPage from "@/pages/login";
+import RegisterPage from "@/pages/register";
 import AuthPage from "@/pages/AuthPage";
 import { useAuth } from "@/hooks/useAuth";
 import AdminSetup from "@/pages/AdminSetup";
@@ -111,7 +113,8 @@ function Router() {
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/users" component={UserManagement} />
-        <Route path="/login" component={Login} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="/register" component={RegisterPage} />
         <Route path="/auth" component={AuthPage} />
         <Route path="/admin-setup" component={AdminSetup} />
         <Route path="/admin/oauth-settings" component={AdminOAuthSettings} />

@@ -86,10 +86,9 @@ export const setupAuth = (app: any) => {
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     
     if (req.method === 'OPTIONS') {
-      res.sendStatus(200);
-    } else {
-      next();
+      return res.sendStatus(200);
     }
+    next();
   });
 };
 
