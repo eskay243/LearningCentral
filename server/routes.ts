@@ -2767,11 +2767,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // WebSocket server is now handled by setupWebSocketServer
   
-  // Register certificate routes for certificate management
-  app.use('/api/certificates', certificateRoutes);
-  
-  // Register DRM routes for content protection
-  app.use('/api/drm', drmRoutes);
+  // Register course content management routes
+  app.use('/api', courseContentRoutes);
   
   // System settings routes
   app.get("/api/settings", isAuthenticated, async (req, res) => {

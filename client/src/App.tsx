@@ -69,6 +69,7 @@ import StudentDashboard from "@/pages/student-dashboard";
 import StableStudentDashboard from "@/pages/stable-student-dashboard";
 import MentorDashboard from "@/pages/MentorDashboard";
 import CourseDiscussion from "@/pages/CourseDiscussion";
+import CourseContentManagement from "@/pages/course-content-management";
 
 function Router() {
   return (
@@ -136,6 +137,7 @@ function Router() {
         <Route path="/courses/:courseId/forums" component={DiscussionForum} />
         <Route path="/courses/:courseId/forums/:forumId" component={DiscussionForum} />
         <Route path="/courses/:courseId/forums/:forumId/topics/:topicId" component={DiscussionForum} />
+        <Route path="/content-management" component={CourseContentManagement} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
