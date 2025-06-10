@@ -70,6 +70,7 @@ import StableStudentDashboard from "@/pages/stable-student-dashboard";
 import MentorDashboard from "@/pages/MentorDashboard";
 import CourseDiscussion from "@/pages/CourseDiscussion";
 import CourseContentManagement from "@/pages/course-content-management";
+import LiveSession from "@/pages/live-session";
 
 function Router() {
   return (
@@ -127,6 +128,7 @@ function Router() {
         <Route path="/certificate/admin" component={CertificateAdmin} />
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route path="/live-classes" component={LiveClasses} />
+        <Route path="/live-sessions/:id" component={LiveSession} />
         <Route path="/code-companion" component={CodeCompanionChat} />
         <Route path="/code-companion/old" component={CodeCompanion} />
         <Route path="/mentor-dashboard" component={MentorDashboard} />

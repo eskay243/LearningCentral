@@ -4,7 +4,7 @@ import { isAuthenticated, requireRole } from "./auth";
 import { videoConferencingService } from "./videoConferencing";
 import { WebSocket } from 'ws';
 
-export function registerEnhancedLiveSessionRoutes(app: Express, wss: any) {
+export function registerEnhancedLiveSessionRoutes(app: Express) {
   // Create Live Session with Video Conferencing
   app.post("/api/live-sessions", isAuthenticated, requireRole(['mentor', 'admin']), async (req, res) => {
     try {

@@ -3562,7 +3562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerCodeExecutionRoutes(app);
   
   // Register enhanced live session routes with video conferencing
-  registerEnhancedLiveSessionRoutes(app, wss);
+  registerEnhancedLiveSessionRoutes(app);
   
   // Register invoice and payment routes
   registerInvoiceRoutes(app);
