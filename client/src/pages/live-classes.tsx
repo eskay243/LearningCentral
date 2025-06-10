@@ -33,7 +33,8 @@ import {
   Camera,
   CameraOff,
   Share,
-  FileText
+  FileText,
+  Trash2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -135,6 +136,28 @@ export default function LiveClassesPage() {
         title: "Joined Session",
         description: "Redirecting to video conference...",
       });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to join session",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete session mutation
+  const deleteSessionMutation = useMutation({
+    mutationFn: async (sessionId: number) => {
+      const response = await apiRequest("DELETE", `/api/live-sessions/${sessionId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Session deleted successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/mentor/live-sessions"] });
     },
     onError: (error: any) => {
       toast({
@@ -447,6 +470,29 @@ export default function LiveClassesPage() {
                         </div>
                         
                         <div className="flex items-center space-x-2">
+                          {session.meetingUrl && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => window.open(session.meetingUrl, "_blank")}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-1" />
+                              Meeting Link
+                            </Button>
+                          )}
+                          
+                          {(user?.role === 'admin' || user?.role === 'mentor') && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => deleteSessionMutation.mutate(session.id)}
+                              disabled={deleteSessionMutation.isPending}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                          
                           <Button variant="ghost" size="sm">
                             <MessageSquare className="w-4 h-4" />
                           </Button>

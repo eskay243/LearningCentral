@@ -997,15 +997,40 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async recordSessionAttendance(attendanceData: any): Promise<any> {
+  async recordSessionAttendance(sessionId: number, userId: string): Promise<any> {
+    // Check if attendance record already exists
+    const [existingAttendance] = await db
+      .select()
+      .from(liveSessionAttendance)
+      .where(and(
+        eq(liveSessionAttendance.sessionId, sessionId),
+        eq(liveSessionAttendance.userId, userId)
+      ));
+    
+    if (existingAttendance) {
+      // Update the attendance record with new activity
+      return await db
+        .update(liveSessionAttendance)
+        .set({
+          lastActivity: new Date(),
+          updatedAt: new Date()
+        })
+        .where(eq(liveSessionAttendance.id, existingAttendance.id))
+        .returning();
+    }
+    
+    // Create new attendance record
     const [attendance] = await db
       .insert(liveSessionAttendance)
       .values({
-        sessionId: attendanceData.sessionId,
-        userId: attendanceData.userId,
-        joinedAt: attendanceData.joinedAt || new Date(),
+        sessionId,
+        userId,
+        joinTime: new Date(),
+        status: "present",
+        lastActivity: new Date()
       })
       .returning();
+    
     return attendance;
   }
   
