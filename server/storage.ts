@@ -193,6 +193,8 @@ export interface IStorage {
   getLiveSessionAttendanceByUser(userId: string): Promise<LiveSessionAttendance[]>;
   enrollStudentsInSession(sessionId: number, courseId: number): Promise<void>;
   getVideoProviderSettings(userId: string, provider: string): Promise<any>;
+  getAllVideoProviderSettings(userId: string): Promise<any[]>;
+  saveVideoProviderSettings(settingsData: any): Promise<any>;
   getSessionMessages(sessionId: number, page: number, limit: number): Promise<any[]>;
   createSessionQuestion(qaData: any): Promise<any>;
   
@@ -744,13 +746,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVideoProviderSettings(userId: string, provider: string): Promise<any> {
-    // This would typically fetch user's video provider credentials/settings
-    // For now, return a basic configuration
-    return {
-      provider,
-      apiKey: process.env[`${provider.toUpperCase()}_API_KEY`],
-      // Add other provider-specific settings
-    };
+    const [settings] = await db
+      .select()
+      .from(videoProviderSettings)
+      .where(and(
+        eq(videoProviderSettings.userId, userId),
+        eq(videoProviderSettings.provider, provider)
+      ));
+    
+    return settings;
+  }
+
+  async getAllVideoProviderSettings(userId: string): Promise<any[]> {
+    return await db
+      .select()
+      .from(videoProviderSettings)
+      .where(eq(videoProviderSettings.userId, userId));
+  }
+
+  async saveVideoProviderSettings(settingsData: any): Promise<any> {
+    const existingSettings = await this.getVideoProviderSettings(settingsData.userId, settingsData.provider);
+    
+    if (existingSettings) {
+      // Update existing settings
+      const [updated] = await db
+        .update(videoProviderSettings)
+        .set({
+          ...settingsData,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(videoProviderSettings.userId, settingsData.userId),
+          eq(videoProviderSettings.provider, settingsData.provider)
+        ))
+        .returning();
+      
+      return updated;
+    } else {
+      // Create new settings
+      const [created] = await db
+        .insert(videoProviderSettings)
+        .values(settingsData)
+        .returning();
+      
+      return created;
+    }
   }
 
   async getSessionMessages(sessionId: number, page: number, limit: number): Promise<any[]> {

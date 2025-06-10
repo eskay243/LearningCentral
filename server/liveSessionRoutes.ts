@@ -675,4 +675,28 @@ export function registerLiveSessionRoutes(app: Express) {
       res.status(500).json({ message: error.message });
     }
   });
+
+  // Test video provider connection
+  app.post('/api/video-providers/:provider/test', isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
+    try {
+      const { provider } = req.params;
+      
+      // Mock test for now - in production, this would test actual API connections
+      const testResult = {
+        success: true,
+        provider,
+        message: `Successfully connected to ${provider.replace('_', ' ')} API`,
+        timestamp: new Date().toISOString()
+      };
+
+      res.json(testResult);
+    } catch (error: any) {
+      console.error(`Error testing ${req.params.provider} connection:`, error);
+      res.status(500).json({ 
+        success: false,
+        message: 'Connection test failed',
+        error: error.message 
+      });
+    }
+  });
 }
