@@ -692,6 +692,50 @@ export class DatabaseStorage implements IStorage {
     return sessions;
   }
 
+  async deleteLiveSession(sessionId: number): Promise<boolean> {
+    // First delete related attendance records
+    await db
+      .delete(liveSessionAttendance)
+      .where(eq(liveSessionAttendance.sessionId, sessionId));
+    
+    // Delete roll call responses
+    const rollCalls = await db
+      .select()
+      .from(liveSessionRollCalls)
+      .where(eq(liveSessionRollCalls.sessionId, sessionId));
+    
+    for (const rollCall of rollCalls) {
+      await db
+        .delete(liveSessionRollCallResponses)
+        .where(eq(liveSessionRollCallResponses.rollCallId, rollCall.id));
+    }
+    
+    // Delete roll calls
+    await db
+      .delete(liveSessionRollCalls)
+      .where(eq(liveSessionRollCalls.sessionId, sessionId));
+    
+    // Delete Q&A entries
+    await db
+      .delete(liveSessionQA)
+      .where(eq(liveSessionQA.sessionId, sessionId));
+    
+    // Delete poll responses and polls would go here if they existed
+    // For now, skip as these tables aren't in the current schema
+    
+    // Delete messages
+    await db
+      .delete(liveSessionMessages)
+      .where(eq(liveSessionMessages.sessionId, sessionId));
+    
+    // Finally delete the session itself
+    const result = await db
+      .delete(liveSessions)
+      .where(eq(liveSessions.id, sessionId));
+    
+    return true;
+  }
+
   async enrollStudentsInSession(sessionId: number, courseId: number): Promise<void> {
     // This is a placeholder implementation
     // In a real system, you might want to create enrollment records

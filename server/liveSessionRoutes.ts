@@ -180,7 +180,7 @@ export function registerLiveSessionRoutes(app: Express) {
         duration: rawData.duration || 60,
         provider: rawData.provider || 'google_meet',
         timezone: rawData.timezone || 'UTC',
-        mentorId: req.user.id
+        mentorId: getUserId(req.user)
       };
       
       console.log('Final sessionData before storage:', {
@@ -276,12 +276,12 @@ export function registerLiveSessionRoutes(app: Express) {
       }
 
       // Check if user is the mentor or admin
-      if (session.mentorId !== req.user.id && req.user.role !== 'admin') {
+      if (session.mentorId !== getUserId(req.user) && req.user.role !== 'admin') {
         return res.status(403).json({ message: 'Not authorized to delete this session' });
       }
 
       // Delete meeting from video conferencing provider
-      const providerSettings = await storage.getVideoProviderSettings(req.user.id, session.provider);
+      const providerSettings = await storage.getVideoProviderSettings(getUserId(req.user), session.provider);
       if (providerSettings && session.meetingId) {
         try {
           await videoConferencingService.deleteMeeting(session, providerSettings);
