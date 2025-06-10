@@ -17,7 +17,6 @@ import {
   liveSessionQA,
   videoProviderSettings,
   certificates,
-  generatedCertificates,
   coupons,
   courseRatings,
   lessonProgress,
@@ -4060,9 +4059,9 @@ export class DatabaseStorage implements IStorage {
     return certificate;
   }
   
-  async getAllCertificates(): Promise<any[]> {
+  async getAllCertificates(): Promise<Certificate[]> {
     try {
-      const allCertificates = await db.select().from(generatedCertificates);
+      const allCertificates = await db.select().from(certificates);
       return allCertificates;
     } catch (error) {
       console.error("Error fetching all certificates:", error);

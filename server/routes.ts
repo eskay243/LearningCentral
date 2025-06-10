@@ -19,7 +19,6 @@ import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
 import { registerLiveSessionRoutes } from "./liveSessionRoutes";
 import { registerEnhancedLiveSessionRoutes } from "./enhancedLiveSessionRoutes";
 import { courseContentRoutes } from "./courseContentRoutes";
-import { registerAuthRoutes } from "./authRoutes";
 
 
 // Mock data for UI display when database is not fully connected
@@ -506,7 +505,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User endpoint with proper authentication
-  app.get('/api/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/user', async (req: any, res) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
     const user = req.user;
     res.json({
       id: user.id,
@@ -2758,9 +2761,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Register authentication routes
-  registerAuthRoutes(app);
-  
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time messaging

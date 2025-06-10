@@ -1,114 +1,267 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { storage } from './storage';
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { Express } from "express";
+import session from "express-session";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+import { storage } from "./storage";
+import { User as SelectUser } from "@shared/schema";
+import connectPg from "connect-pg-simple";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-    firstName?: string;
-    lastName?: string;
-  };
+declare global {
+  namespace Express {
+    interface User extends SelectUser {}
+  }
 }
 
-export const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+const scryptAsync = promisify(scrypt);
 
-  if (!token) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
+async function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+  return `${buf.toString("hex")}.${salt}`;
+}
 
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const user = await storage.getUser(decoded.userId);
-    
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+async function comparePasswords(supplied: string, stored: string) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+
+export function setupAuth(app: Express) {
+  const PostgresSessionStore = connectPg(session);
+  const sessionStore = new PostgresSessionStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+    ttl: 7 * 24 * 60 * 60, // 1 week
+  });
+
+  const sessionSettings: session.SessionOptions = {
+    secret: process.env.SESSION_SECRET || 'dev-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
     }
+  };
 
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      firstName: user.firstName || '',
-      lastName: user.lastName || ''
-    };
-    
-    next();
-  } catch (error) {
-    return res.status(403).json({ message: 'Invalid token' });
-  }
-};
+  app.set("trust proxy", 1);
+  app.use(session(sessionSettings));
+  app.use(passport.initialize());
+  app.use(passport.session());
 
-export const generateToken = (userId: string) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '24h' });
-};
+  passport.use(
+    new LocalStrategy(
+      { usernameField: 'email' },
+      async (email, password, done) => {
+        try {
+          const user = await storage.getUserByEmail(email);
+          
+          if (!user) {
+            return done(null, false, { message: 'Invalid email or password' });
+          }
 
-export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+          if (!user.password) {
+            return done(null, false, { message: 'User has no password set' });
+          }
 
-  if (token) {
+          // Handle both hashed passwords and demo passwords
+          let isValid = false;
+          if (user.password.startsWith('demo_hashed_')) {
+            // For demo users, extract the actual password from the demo format
+            const demoPassword = user.password.replace('demo_hashed_', '');
+            isValid = password === demoPassword;
+          } else {
+            // For real users with properly hashed passwords
+            isValid = await comparePasswords(password, user.password);
+          }
+          
+          if (!isValid) {
+            return done(null, false, { message: 'Invalid email or password' });
+          }
+
+          return done(null, user);
+        } catch (error) {
+          console.error('LocalStrategy: Authentication error:', error);
+          return done(error);
+        }
+      }
+    )
+  );
+
+  passport.serializeUser((user, done) => done(null, user.id));
+  
+  passport.deserializeUser(async (id: string, done) => {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const user = await storage.getUser(decoded.userId);
-      
-      if (user) {
-        req.user = {
+      console.log('Deserializing user with ID:', id);
+      const user = await storage.getUser(id);
+      console.log('Deserialized user:', user);
+      done(null, user);
+    } catch (error) {
+      console.log('Deserialization error:', error);
+      done(error);
+    }
+  });
+
+  // Register endpoint
+  app.post("/api/register", async (req, res, next) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+
+      if (!email || !password || !firstName || !lastName) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role: 'student' // Default role
+      });
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json({
           id: user.id,
           email: user.email,
-          role: user.role,
-          firstName: user.firstName || '',
-          lastName: user.lastName || ''
-        };
-      }
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role
+        });
+      });
     } catch (error) {
-      // Continue without authentication
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
     }
+  });
+
+  // Login endpoint
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error('Authentication error:', err);
+        return res.status(500).json({ message: "Authentication error" });
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Authentication failed" });
+      }
+      
+      req.login(user, (err) => {
+        if (err) {
+          console.error('Login session error:', err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        res.json({
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role
+        });
+      });
+    })(req, res, next);
+  });
+
+  // Logout endpoint (POST)
+  app.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  // Logout endpoint (GET) for direct navigation
+  app.get("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.redirect("/");
+    });
+  });
+
+  // Get current user endpoint
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const user = req.user as SelectUser;
+    res.json({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role
+    });
+  });
+}
+
+// Middleware to check authentication
+export const isAuthenticated = (req: any, res: any, next: any) => {
+  console.log('Authentication check - isAuthenticated():', req.isAuthenticated(), 'user:', !!req.user);
+  
+  // Check both passport authentication and user presence
+  if (req.isAuthenticated() && req.user) {
+    return next();
   }
   
-  next();
+  // Additional check for session-based authentication
+  if (req.user) {
+    return next();
+  }
+
+  console.log('Authentication failed - no valid session or user');
+  return res.status(401).json({ message: "Authentication required" });
 };
 
-// Alias for compatibility
-export const isAuthenticated = authenticateToken;
-
-// Setup authentication middleware
-export const setupAuth = (app: any) => {
-  // CORS middleware
-  app.use((req: any, res: any, next: any) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-    
-    if (req.method === 'OPTIONS') {
-      return res.sendStatus(200);
+// Middleware to check user role
+export const requireRole = (allowedRoles: string | string[]) => {
+  return (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ message: "Authentication required" });
     }
-    next();
-  });
+
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ 
+        message: "Insufficient permissions",
+        required: allowedRoles,
+        current: req.user.role
+      });
+    }
+
+    return next();
+  };
 };
 
-// Role-based access control
+// Middleware to check specific roles
 export const hasRole = (roles: string | string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+  return (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
     }
 
     const userRole = req.user.role;
     const allowedRoles = Array.isArray(roles) ? roles : [roles];
-
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
+    
+    console.log('Role check - User role:', userRole, 'Allowed roles:', allowedRoles);
+    
+    if (allowedRoles.includes(userRole)) {
+      console.log('Role check PASSED - calling next()');
+      return next();
     }
-
-    next();
+    
+    console.log('Role check FAILED - returning 403');
+    res.status(403).json({ message: "Insufficient permissions" });
   };
 };
-
-// Alias for compatibility
-export const requireRole = hasRole;
