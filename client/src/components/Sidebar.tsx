@@ -139,6 +139,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                 <span className="truncate">Create Course</span>
               </Link>
               
+              <Link href="/content-management" className={menuItemClass("/content-management")}>
+                <FileText className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Content Management</span>
+              </Link>
+              
               <Link href="/assessments" className={menuItemClass("/assessments")}>
                 <FileText className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                 <span className="truncate">Assessments</span>
