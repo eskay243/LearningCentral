@@ -347,17 +347,54 @@ router.post('/assignments/:assignmentId/submit', isAuthenticated, uploadAssignme
 // Quiz Routes
 router.post('/quizzes', isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
   try {
-    const validatedData = insertAdvancedQuizSchema.parse({
-      ...req.body,
+    // Transform the request data to match the expected schema
+    const transformedData = {
+      courseId: parseInt(req.body.courseId) || req.body.courseId,
+      lessonId: req.body.lessonId ? parseInt(req.body.lessonId) : null,
+      title: req.body.title,
+      description: req.body.description || null,
+      instructions: req.body.instructions || null,
+      timeLimit: req.body.timeLimit ? parseInt(req.body.timeLimit) : null,
+      attempts: req.body.attempts ? parseInt(req.body.attempts) : 1,
+      shuffleQuestions: Boolean(req.body.shuffleQuestions),
+      shuffleAnswers: Boolean(req.body.shuffleAnswers),
+      showResults: Boolean(req.body.showResults ?? true),
+      passingScore: req.body.passingScore ? parseFloat(req.body.passingScore) : 70,
+      availableFrom: req.body.availableFrom ? new Date(req.body.availableFrom) : null,
+      availableUntil: req.body.availableUntil ? new Date(req.body.availableUntil) : null,
+      isPublished: Boolean(req.body.isPublished),
+      gradingMethod: req.body.gradingMethod || 'highest',
+      proctored: Boolean(req.body.proctored),
+      randomizeFromPool: Boolean(req.body.randomizeFromPool),
+      questionsPerAttempt: req.body.questionsPerAttempt ? parseInt(req.body.questionsPerAttempt) : null,
       createdBy: req.user.id
-    });
+    };
 
+    const validatedData = insertAdvancedQuizSchema.parse(transformedData);
     const quiz = await storage.createAdvancedQuiz(validatedData);
+    
+    // If questions are provided, create them separately
+    if (req.body.questions && Array.isArray(req.body.questions)) {
+      for (const question of req.body.questions) {
+        if (question.question && question.question.trim()) {
+          await storage.createAdvancedQuizQuestion({
+            quizId: quiz.id,
+            questionType: question.type || 'multiple_choice',
+            questionText: question.question,
+            options: question.options || [],
+            correctAnswers: [question.correctAnswer] || [],
+            points: parseInt(question.points) || 1,
+            orderIndex: 0
+          });
+        }
+      }
+    }
+    
     res.status(201).json(quiz);
   } catch (error) {
     console.error('Failed to create quiz:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: 'Validation error', errors: error.errors });
+      return res.status(400).json({ message: JSON.stringify(error.errors) });
     }
     res.status(500).json({ message: 'Failed to create quiz' });
   }
