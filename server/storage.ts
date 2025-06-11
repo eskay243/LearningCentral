@@ -5058,6 +5058,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getAllQuizzes(): Promise<any[]> {
+    try {
+      const allQuizzes = await db.select().from(quizzes);
+      return allQuizzes;
+    } catch (error) {
+      console.error("Error fetching all quizzes:", error);
+      return [];
+    }
+  }
+
   async getQuizQuestions(quizId: number): Promise<any[]> {
     try {
       const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));

@@ -49,9 +49,7 @@ export function registerAssessmentRoutes(app: Express) {
   app.get("/api/quizzes", async (req, res) => {
     try {
       const { courseId } = req.query;
-      const quizzes = courseId 
-        ? await storage.getAutomatedQuizzesByCourse(Number(courseId))
-        : await storage.getAllAutomatedQuizzes();
+      const quizzes = await storage.getAllQuizzes();
       res.json(quizzes);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
