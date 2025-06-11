@@ -796,49 +796,7 @@ export class DatabaseStorage implements IStorage {
     return sessions;
   }
 
-  async deleteLiveSession(sessionId: number): Promise<boolean> {
-    // First delete related attendance records
-    await db
-      .delete(liveSessionAttendance)
-      .where(eq(liveSessionAttendance.sessionId, sessionId));
-    
-    // Delete roll call responses
-    const rollCalls = await db
-      .select()
-      .from(liveSessionRollCalls)
-      .where(eq(liveSessionRollCalls.sessionId, sessionId));
-    
-    for (const rollCall of rollCalls) {
-      await db
-        .delete(liveSessionRollCallResponses)
-        .where(eq(liveSessionRollCallResponses.rollCallId, rollCall.id));
-    }
-    
-    // Delete roll calls
-    await db
-      .delete(liveSessionRollCalls)
-      .where(eq(liveSessionRollCalls.sessionId, sessionId));
-    
-    // Delete Q&A entries
-    await db
-      .delete(liveSessionQA)
-      .where(eq(liveSessionQA.sessionId, sessionId));
-    
-    // Delete poll responses and polls would go here if they existed
-    // For now, skip as these tables aren't in the current schema
-    
-    // Delete messages
-    await db
-      .delete(liveSessionMessages)
-      .where(eq(liveSessionMessages.sessionId, sessionId));
-    
-    // Finally delete the session itself
-    const result = await db
-      .delete(liveSessions)
-      .where(eq(liveSessions.id, sessionId));
-    
-    return true;
-  }
+
 
   async enrollStudentsInSession(sessionId: number, courseId: number): Promise<void> {
     // This is a placeholder implementation
@@ -895,28 +853,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSessionMessages(sessionId: number, page: number, limit: number): Promise<any[]> {
-    const offset = (page - 1) * limit;
-    
-    const messages = await db
-      .select()
-      .from(liveSessionMessages)
-      .where(eq(liveSessionMessages.sessionId, sessionId))
-      .orderBy(desc(liveSessionMessages.timestamp))
-      .limit(limit)
-      .offset(offset);
-    
-    return messages;
-  }
 
-  async createSessionQuestion(qaData: any): Promise<any> {
-    const [question] = await db
-      .insert(liveSessionQA)
-      .values(qaData)
-      .returning();
-    
-    return question;
-  }
+
+
   
   async getLiveSessionAttendees(sessionId: number): Promise<LiveSessionAttendance[]> {
     const attendees = await db
@@ -1565,9 +1504,6 @@ export class DatabaseStorage implements IStorage {
   
   async createUser(userData: any): Promise<User> {
     try {
-      // If password is provided, we would hash it here
-      // For this implementation, we'll store it as is (not secure for production)
-      // In a real app, you would use bcrypt: const hashedPassword = await bcrypt.hash(userData.password, 10);
       
       // Create the user
       const [user] = await db
@@ -2220,14 +2156,7 @@ export class DatabaseStorage implements IStorage {
 
 
 
-  async deleteLiveSession(sessionId: number): Promise<void> {
-    try {
-      await db.delete(liveSessions).where(eq(liveSessions.id, sessionId));
-    } catch (error) {
-      console.error("Error deleting live session:", error);
-      throw error;
-    }
-  }
+
 
   async getLiveSessions(options?: { courseId?: number; status?: string; upcoming?: boolean }): Promise<LiveSession[]> {
     try {
