@@ -184,6 +184,8 @@ export default function CourseContentManagement() {
   const quizForm = useForm<Quiz>({
     resolver: zodResolver(quizSchema),
     defaultValues: {
+      courseId: selectedCourse || 0,
+      lessonId: 1,
       maxAttempts: 1,
       passingScore: 70,
       shuffleQuestions: false,
@@ -192,6 +194,13 @@ export default function CourseContentManagement() {
       questions: [{ type: "multiple_choice", question: "", points: 1, options: ["", "", "", ""] }],
     }
   });
+
+  // Update form courseId when selectedCourse changes
+  useEffect(() => {
+    if (selectedCourse) {
+      quizForm.setValue('courseId', selectedCourse);
+    }
+  }, [selectedCourse, quizForm]);
 
   // Video upload mutation
   const uploadVideoMutation = useMutation({
@@ -880,16 +889,18 @@ export default function CourseContentManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={quizForm.handleSubmit((data) => {
-                  console.log('Quiz form submitted with data:', data);
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = quizForm.getValues();
+                  console.log('Quiz form submitted with data:', formData);
                   const quizData = {
-                    ...data,
+                    ...formData,
                     courseId: selectedCourse!,
                     lessonId: 1 // Default lesson ID for now
                   };
                   console.log('Final quiz data:', quizData);
                   createQuizMutation.mutate(quizData);
-                })} className="space-y-4">
+                }} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="quiz-title">Quiz Title</Label>
