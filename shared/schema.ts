@@ -1814,7 +1814,11 @@ export const insertCodingChallengeSchema = createInsertSchema(codingChallenges);
 export const insertCodeExecutionSchema = createInsertSchema(codeExecutions);
 export const insertChallengeHintSchema = createInsertSchema(challengeHints);
 export const insertCodingSubmissionSchema = createInsertSchema(codingSubmissions);
-export const insertAdvancedQuizSchema = createInsertSchema(advancedQuizzes);
+export const insertAdvancedQuizSchema = createInsertSchema(advancedQuizzes).extend({
+  passingScore: z.coerce.number().min(0).max(100).default(70),
+  timeLimit: z.coerce.number().optional(),
+  attempts: z.coerce.number().min(1).default(1),
+});
 export const insertAdvancedQuizQuestionSchema = createInsertSchema(advancedQuizQuestions);
 export const insertAdvancedQuizAttemptSchema = createInsertSchema(advancedQuizAttempts);
 export const insertAdvancedQuizAnswerSchema = createInsertSchema(advancedQuizAnswers);
