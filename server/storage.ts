@@ -1401,17 +1401,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    try {
-      const [user] = await db.select().from(users).where(eq(users.email, email));
-      return user;
-    } catch (error) {
-      console.error("Error fetching user by email:", error);
-      return undefined;
-    }
-  }
-
-
   
   async createUser(userData: any): Promise<User> {
     try {
@@ -1479,31 +1468,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUsers(): Promise<User[]> {
-    try {
-      const userList = await db.select().from(users);
-      return userList;
-    } catch (error) {
-      console.error("Error fetching all users:", error);
-      return [];
-    }
-  }
 
-  async getUsersByRole(role?: string): Promise<User[]> {
-    try {
-      let query = db.select().from(users);
-      
-      if (role) {
-        query = query.where(eq(users.role, role));
-      }
-      
-      const userList = await query;
-      return userList;
-    } catch (error) {
-      console.error(`Error fetching users:`, error);
-      return [];
-    }
-  }
+
+
 
   // Interactive coding exercises
   async createCodingExercise(exerciseData: Omit<CodingExercise, "id" | "createdAt" | "updatedAt">): Promise<CodingExercise> {
@@ -2048,22 +2015,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Enhanced Live Session Methods with Video Conferencing
-  async createLiveSession(sessionData: any): Promise<LiveSession> {
-    try {
-      const [session] = await db
-        .insert(liveSessions)
-        .values({
-          ...sessionData,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-        .returning();
-      return session;
-    } catch (error) {
-      console.error("Error creating live session:", error);
-      throw error;
-    }
-  }
 
 
 
