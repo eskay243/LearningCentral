@@ -24,22 +24,19 @@ export function registerCodeExecutionRoutes(app: Express) {
     try {
       const { code, language } = executeCodeSchema.parse(req.body);
       
-      let result;
-      if (language === 'javascript') {
-        result = await codeExecutionService.executeJavaScript(code);
-      } else if (language === 'python') {
-        result = await codeExecutionService.executePython(code);
-      } else {
-        return res.status(400).json({ message: 'Unsupported language' });
-      }
-      
+      const result = await codeExecutionService.executeCode(code, language);
       res.json(result);
     } catch (error) {
       console.error('Code execution error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: 'Invalid request data', errors: error.errors });
       }
-      res.status(500).json({ message: 'Code execution failed' });
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Code execution failed',
+        success: false,
+        output: '',
+        executionTime: 0
+      });
     }
   });
 
@@ -83,6 +80,18 @@ export function registerCodeExecutionRoutes(app: Express) {
           name: 'Python',
           extension: 'py',
           monacoLanguage: 'python'
+        },
+        {
+          id: 'csharp',
+          name: 'C#',
+          extension: 'cs',
+          monacoLanguage: 'csharp'
+        },
+        {
+          id: 'typescript',
+          name: 'TypeScript',
+          extension: 'ts',
+          monacoLanguage: 'typescript'
         }
       ]
     });

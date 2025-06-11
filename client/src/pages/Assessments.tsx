@@ -93,17 +93,34 @@ const Assessments = () => {
   // Mutations for creating assessments
   const createQuizMutation = useMutation({
     mutationFn: async (quizData: any) => {
-      const response = await apiRequest("POST", "/api/quizzes", quizData);
-      return response.json();
+      try {
+        console.log('Creating quiz with data:', quizData);
+        const response = await apiRequest("POST", "/api/quizzes", quizData);
+        
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Quiz creation failed:', response.status, errorData);
+          throw new Error(`Server error: ${response.status} - ${errorData}`);
+        }
+        
+        return response.json();
+      } catch (error) {
+        console.error('Quiz creation error:', error);
+        throw error;
+      }
     },
     onSuccess: (newQuiz) => {
+      console.log('Quiz created successfully:', newQuiz);
       // Force refetch the data instead of just invalidating cache
       queryClient.refetchQueries({ queryKey: [`/api/mentors/${user?.id}/quizzes`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/quizzes"] });
+      
       toast({
         title: "Quiz Created",
         description: "Your quiz has been created successfully!",
       });
       setShowCreateDialog(false);
+      setCreateType('');
       setQuizForm({
         title: "",
         description: "",
@@ -114,9 +131,10 @@ const Assessments = () => {
       setActiveTab("quizzes");
     },
     onError: (error: any) => {
+      console.error('Quiz creation mutation error:', error);
       toast({
         title: "Error",
-        description: "Failed to create quiz. Please try again.",
+        description: error.message || "Failed to create quiz. Please try again.",
         variant: "destructive",
       });
     },
@@ -192,6 +210,8 @@ const Assessments = () => {
   });
 
   const handleCreateQuiz = () => {
+    console.log('handleCreateQuiz called with form data:', quizForm);
+    
     if (!quizForm.title || !quizForm.description) {
       toast({
         title: "Missing Information",
@@ -202,9 +222,16 @@ const Assessments = () => {
     }
 
     const quizData = {
-      ...quizForm,
+      title: quizForm.title,
+      description: quizForm.description,
       lessonId: parseInt(quizForm.lessonId) || 1, // Default to lesson 1 if not specified
+      timeLimit: quizForm.timeLimit || 30,
+      totalPoints: quizForm.totalPoints || 100,
+      isPublished: false, // Default to unpublished
+      showCorrectAnswers: true // Default to showing answers
     };
+
+    console.log('Final quiz data to submit:', quizData);
 
     if (editingQuiz) {
       // Update existing quiz
