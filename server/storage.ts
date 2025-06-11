@@ -5025,15 +5025,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAutomatedQuiz(quizId: number): Promise<any> {
-    try {
-      const [quiz] = await db.select().from(automatedQuizzes).where(eq(automatedQuizzes.id, quizId));
-      return quiz;
-    } catch (error) {
-      console.error("Error fetching automated quiz:", error);
-      return null;
-    }
-  }
+  // Method removed - using getQuiz instead for basic quiz structure
 
   async updateAutomatedQuiz(quizId: number, quizData: any): Promise<any> {
     try {
@@ -5052,6 +5044,30 @@ export class DatabaseStorage implements IStorage {
       await db.delete(automatedQuizzes).where(eq(automatedQuizzes.id, quizId));
     } catch (error) {
       console.error("Error deleting automated quiz:", error);
+      throw error;
+    }
+  }
+
+  async getQuiz(quizId: number): Promise<any> {
+    try {
+      const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, quizId));
+      return quiz;
+    } catch (error) {
+      console.error("Error fetching quiz:", error);
+      throw error;
+    }
+  }
+
+  async getQuizQuestions(quizId: number): Promise<any[]> {
+    try {
+      const questions = await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId));
+      return questions.map(q => ({
+        ...q,
+        options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+        correctAnswer: typeof q.correctAnswer === 'string' ? JSON.parse(q.correctAnswer) : q.correctAnswer
+      }));
+    } catch (error) {
+      console.error("Error fetching quiz questions:", error);
       throw error;
     }
   }

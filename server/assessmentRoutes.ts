@@ -60,12 +60,63 @@ export function registerAssessmentRoutes(app: Express) {
 
   app.get("/api/quizzes/:id", async (req, res) => {
     try {
-      const quiz = await storage.getAutomatedQuiz(Number(req.params.id));
+      const quiz = await storage.getQuiz(Number(req.params.id));
       if (!quiz) return res.status(404).json({ message: "Quiz not found" });
       
       const questions = await storage.getQuizQuestions(quiz.id);
       res.json({ ...quiz, questions });
     } catch (error: any) {
+      console.error('Error fetching quiz:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Add quiz submission endpoint
+  app.post("/api/quizzes/:id/submit", async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const quizId = Number(req.params.id);
+      const { answers } = req.body;
+      
+      const quiz = await storage.getQuiz(quizId);
+      if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+      
+      const questions = await storage.getQuizQuestions(quizId);
+      
+      // Calculate score
+      let correctAnswers = 0;
+      let totalQuestions = questions.length;
+      const results = [];
+      
+      for (const question of questions) {
+        const userAnswer = answers[question.id];
+        const correct = question.correctAnswer.includes(userAnswer);
+        if (correct) correctAnswers++;
+        
+        results.push({
+          questionId: question.id,
+          question: question.question,
+          userAnswer,
+          correctAnswer: question.correctAnswer,
+          correct,
+          points: correct ? question.points : 0
+        });
+      }
+      
+      const score = (correctAnswers / totalQuestions) * 100;
+      const passed = score >= quiz.passingScore;
+      
+      res.json({
+        score,
+        percentage: score,
+        passed,
+        correctAnswers,
+        totalQuestions,
+        results
+      });
+    } catch (error: any) {
+      console.error('Error submitting quiz:', error);
       res.status(500).json({ message: error.message });
     }
   });
