@@ -1972,6 +1972,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async createAdvancedQuizQuestion(questionData: any): Promise<any> {
+    try {
+      const [question] = await db
+        .insert(advancedQuizQuestions)
+        .values(questionData)
+        .returning();
+      return question;
+    } catch (error) {
+      console.error("Error creating advanced quiz question:", error);
+      throw error;
+    }
+  }
+
   async createAdvancedQuizAnswer(answerData: any): Promise<any> {
     try {
       // Create quiz answer record (implement based on your schema)

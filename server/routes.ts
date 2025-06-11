@@ -1617,33 +1617,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Quiz routes
+  // Quiz routes - Updated to use advanced quiz schema
   app.post('/api/quizzes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       console.log('Received quiz data:', req.body);
       
-      // Extract only the fields that exist in the basic quizzes table
-      const quizData = {
+      // Map form data to advanced quiz schema
+      const advancedQuizData = {
+        courseId: parseInt(req.body.courseId),
+        lessonId: parseInt(req.body.lessonId) || null,
         title: req.body.title,
         description: req.body.description || null,
-        lessonId: parseInt(req.body.lessonId) || parseInt(req.body.courseId) || 1,
-        passingScore: parseInt(req.body.passingScore) || 70
+        timeLimit: parseInt(req.body.timeLimit) || null,
+        attempts: parseInt(req.body.maxAttempts) || 1,
+        shuffleQuestions: req.body.shuffleQuestions || false,
+        showResults: req.body.showCorrectAnswers || true,
+        passingScore: parseFloat(req.body.passingScore) || 70,
+        isPublished: req.body.isPublished || false,
+        createdBy: req.user.id
       };
       
-      console.log('Processed quiz data:', quizData);
+      console.log('Processed advanced quiz data:', advancedQuizData);
       
-      const quiz = await storage.createQuiz(quizData);
+      const quiz = await storage.createAdvancedQuiz(advancedQuizData);
       
       // If questions are provided, create them separately
       if (req.body.questions && Array.isArray(req.body.questions)) {
         for (const question of req.body.questions) {
           if (question.question && question.question.trim()) {
-            await storage.addQuizQuestion({
+            await storage.createAdvancedQuizQuestion({
               quizId: quiz.id,
-              question: question.question,
-              type: question.type || 'multiple_choice',
+              questionType: question.type || 'multiple_choice',
+              questionText: question.question,
               options: question.options || [],
-              correctAnswer: question.correctAnswer || '',
+              correctAnswers: [question.correctAnswer] || [],
               points: parseInt(question.points) || 1,
               orderIndex: 0
             });
@@ -1654,13 +1661,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(quiz);
     } catch (error) {
       console.error("Error creating quiz:", error);
+      console.error("Full error details:", JSON.stringify(error, null, 2));
+      
       if (error.message?.includes('validation') || error.message?.includes('invalid')) {
         return res.status(400).json({ 
-          message: "Validation error", 
-          details: error.message 
+          message: error.message,
+          details: error 
         });
       }
-      res.status(500).json({ message: "Failed to create quiz" });
+      res.status(500).json({ message: "Failed to create quiz", error: error.message });
     }
   });
 
