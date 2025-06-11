@@ -5059,7 +5059,13 @@ export class DatabaseStorage implements IStorage {
   async createQuizQuestion(questionData: any): Promise<any> {
     try {
       const [question] = await db.insert(quizQuestions).values({
-        ...questionData
+        quizId: questionData.quizId,
+        question: questionData.question,
+        type: questionData.type,
+        options: JSON.stringify(questionData.options || []),
+        correctAnswer: JSON.stringify([questionData.correctAnswer]),
+        points: questionData.points || 1,
+        orderIndex: questionData.orderIndex || 0
       }).returning();
       return question;
     } catch (error) {
