@@ -306,6 +306,58 @@ export interface IStorage {
   getEnrollmentByUserAndCourse(userId: string, courseId: number): Promise<any>;
   createEnrollment(enrollmentData: any): Promise<any>;
 
+  // Assessment & Grading System Methods
+  createAutomatedQuiz(quizData: any): Promise<any>;
+  getAllAutomatedQuizzes(): Promise<any[]>;
+  getAutomatedQuizzesByCourse(courseId: number): Promise<any[]>;
+  getAutomatedQuiz(quizId: number): Promise<any>;
+  updateAutomatedQuiz(quizId: number, quizData: any): Promise<any>;
+  deleteAutomatedQuiz(quizId: number): Promise<void>;
+  
+  getQuizQuestions(quizId: number): Promise<any[]>;
+  createQuizQuestion(questionData: any): Promise<any>;
+  updateQuizQuestion(questionId: number, questionData: any): Promise<any>;
+  deleteQuizQuestion(questionId: number): Promise<void>;
+  
+  createQuizAttempt(attemptData: any): Promise<any>;
+  getQuizAttempts(quizId: number): Promise<any[]>;
+  getUserQuizAttempts(userId: string, quizId?: number): Promise<any[]>;
+  getQuizAttempt(attemptId: number): Promise<any>;
+  
+  createAssignmentRubric(rubricData: any): Promise<any>;
+  getAllRubrics(): Promise<any[]>;
+  getRubricsByCourse(courseId: number): Promise<any[]>;
+  getRubricsByAssignment(assignmentId: number): Promise<any[]>;
+  getAssignmentRubric(rubricId: number): Promise<any>;
+  
+  createRubricCriteria(criteriaData: any): Promise<any>;
+  getRubricCriteria(rubricId: number): Promise<any[]>;
+  
+  createAssignmentGrade(gradeData: any): Promise<any>;
+  getAssignmentGrades(assignmentId: number): Promise<any[]>;
+  
+  createPeerReview(reviewData: any): Promise<any>;
+  getPeerReviews(submissionId: number): Promise<any[]>;
+  
+  createStudentProgress(progressData: any): Promise<any>;
+  getStudentProgress(studentId: string, courseId: number): Promise<any>;
+  getAllStudentProgress(studentId: string): Promise<any[]>;
+  updateStudentProgress(progressId: number, progressData: any): Promise<any>;
+  
+  createLearningAnalytics(analyticsData: any): Promise<any>;
+  getLearningAnalytics(studentId: string, courseId: number): Promise<any>;
+  getAllLearningAnalytics(): Promise<any[]>;
+  
+  createCertificateTemplate(templateData: any): Promise<any>;
+  getAllCertificateTemplates(): Promise<any[]>;
+  getCertificateTemplatesByCourse(courseId: number): Promise<any[]>;
+  
+  createGeneratedCertificate(certificateData: any): Promise<any>;
+  getGeneratedCertificates(userId: string): Promise<any[]>;
+  
+  getAssignmentsByCourse(courseId: number): Promise<any[]>;
+  getAllAssignments(): Promise<any[]>;
+
   // Coupons and ratings
   createCoupon(couponData: Omit<Coupon, "id" | "createdAt">): Promise<Coupon>;
   validateCoupon(couponCode: string): Promise<Coupon | undefined>;

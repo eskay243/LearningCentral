@@ -422,6 +422,63 @@ export function registerAssessmentRoutes(app: Express) {
     }
   });
 
+  // Assessment Dashboard API endpoints
+  app.get("/api/assessments/quizzes", async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      const { courseId } = req.query;
+      const quizzes = courseId 
+        ? await storage.getAutomatedQuizzesByCourse(Number(courseId))
+        : await storage.getAllAutomatedQuizzes();
+      res.json(quizzes);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/assessments/assignments", async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      const { courseId } = req.query;
+      const assignments = courseId 
+        ? await storage.getAssignmentsByCourse(Number(courseId))
+        : await storage.getAllAssignments();
+      res.json(assignments);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/assessments/rubrics", async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      const { courseId } = req.query;
+      const rubrics = courseId 
+        ? await storage.getRubricsByCourse(Number(courseId))
+        : await storage.getAllRubrics();
+      res.json(rubrics);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/assessments/analytics", async (req, res) => {
+    try {
+      res.setHeader('Content-Type', 'application/json');
+      const { courseId, studentId } = req.query;
+      
+      if (studentId && courseId) {
+        const analytics = await storage.getLearningAnalytics(studentId as string, Number(courseId));
+        res.json(analytics);
+      } else {
+        const allAnalytics = await storage.getAllLearningAnalytics();
+        res.json(allAnalytics);
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Certificate Management
   app.post("/api/certificate-templates", async (req, res) => {
     try {
