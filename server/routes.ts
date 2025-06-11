@@ -490,7 +490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/mentor/courses", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       console.log('Fetching mentor courses for user:', userId);
       
       // Get courses where the user is assigned as a mentor
