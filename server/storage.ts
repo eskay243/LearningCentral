@@ -2538,23 +2538,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserQuizAttempts(userId: string, quizId?: number): Promise<QuizAttempt[]> {
-    try {
-      let query = db
-        .select()
-        .from(quizAttempts)
-        .where(eq(quizAttempts.userId, userId));
-      
-      if (quizId) {
-        query = query.where(eq(quizAttempts.quizId, quizId));
-      }
-      
-      return await query.orderBy(desc(quizAttempts.completedAt));
-    } catch (error) {
-      console.error("Error fetching user quiz attempts:", error);
-      return [];
-    }
-  }
+
 
   // New quiz attempt methods for quiz-taking system
   async startQuizAttempt(userId: string, quizId: number): Promise<any> {
@@ -2674,17 +2658,17 @@ export class DatabaseStorage implements IStorage {
 
         if (userAnswer && question.correctAnswer) {
           // Automatic grading for objective questions
-          switch (question.questionType) {
+          switch (question.type) {
             case 'multiple_choice':
             case 'true_false':
-              isCorrect = userAnswer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim();
+              isCorrect = userAnswer.toString().toLowerCase().trim() === question.correctAnswer.toString().toLowerCase().trim();
               earnedPoints = isCorrect ? points : 0;
               break;
             
             case 'short_answer':
               // Simple string comparison for short answers
-              const normalizedUser = userAnswer.toLowerCase().trim();
-              const normalizedCorrect = question.correctAnswer.toLowerCase().trim();
+              const normalizedUser = userAnswer.toString().toLowerCase().trim();
+              const normalizedCorrect = question.correctAnswer.toString().toLowerCase().trim();
               isCorrect = normalizedUser === normalizedCorrect;
               earnedPoints = isCorrect ? points : 0;
               break;
