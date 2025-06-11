@@ -1498,7 +1498,7 @@ export const assessmentQuizAttempts = pgTable("assessment_quiz_attempts", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const quizAnswers = pgTable("quiz_answers", {
+export const assessmentQuizAnswers = pgTable("assessment_quiz_answers", {
   id: serial("id").primaryKey(),
   attemptId: integer("attempt_id").references(() => assessmentQuizAttempts.id, { onDelete: 'cascade' }),
   questionId: integer("question_id").references(() => assessmentQuizQuestions.id),
@@ -1516,7 +1516,11 @@ export const quizAnswers = pgTable("quiz_answers", {
   
   answeredAt: timestamp("answered_at").defaultNow(),
   gradedAt: timestamp("graded_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const quizAnswers = assessmentQuizAnswers;
 
 // Assignment Rubrics System
 export const assignmentRubrics = pgTable("assignment_rubrics", {

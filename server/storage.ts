@@ -44,6 +44,8 @@ import {
   quizQuestions as newQuizQuestions,
   quizAttempts as newQuizAttempts,
   quizAnswers,
+  assessmentQuizAttempts,
+  assessmentQuizAnswers,
   assignmentRubrics,
   rubricCriteria,
   assignmentGrades,
@@ -2158,26 +2160,7 @@ export class DatabaseStorage implements IStorage {
 
 
 
-  async getLiveSessions(options?: { courseId?: number; status?: string; upcoming?: boolean }): Promise<LiveSession[]> {
-    try {
-      let query = db.select().from(liveSessions);
-      
-      if (options?.courseId) {
-        query = query.where(eq(liveSessions.courseId, options.courseId));
-      }
-      if (options?.status) {
-        query = query.where(eq(liveSessions.status, options.status));
-      }
-      if (options?.upcoming) {
-        query = query.where(gt(liveSessions.scheduledAt, new Date()));
-      }
-      
-      return await query.orderBy(desc(liveSessions.scheduledAt));
-    } catch (error) {
-      console.error("Error fetching live sessions:", error);
-      return [];
-    }
-  }
+
 
   // Session Attendance Methods
   async recordSessionAttendance(attendanceData: any): Promise<any> {
