@@ -5,12 +5,12 @@ import { isAuthenticated } from './auth';
 
 const executeCodeSchema = z.object({
   code: z.string(),
-  language: z.enum(['javascript', 'python']),
+  language: z.enum(['javascript', 'python', 'csharp', 'typescript', 'js', 'py', 'cs', 'ts', 'c#']),
 });
 
 const runTestsSchema = z.object({
   code: z.string(),
-  language: z.enum(['javascript', 'python']),
+  language: z.enum(['javascript', 'python', 'csharp', 'typescript', 'js', 'py', 'cs', 'ts', 'c#']),
   tests: z.array(z.object({
     test: z.string(),
     expected: z.any(),

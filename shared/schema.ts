@@ -119,7 +119,11 @@ export const lessons = pgTable("lessons", {
   contentType: text("content_type").notNull().default("text"), // text, video, audio, interactive
   videoUrl: text("video_url"),
   videoPoster: text("video_poster"), // thumbnail image for video
-  videoProvider: text("video_provider").default("native"), // native, youtube, vimeo, etc.
+  videoProvider: text("video_provider").default("native"), // native, youtube, vimeo, wistia, brightcove, jwplayer
+  videoId: text("video_id"), // For external providers (YouTube video ID, Vimeo ID, etc.)
+  videoEmbedUrl: text("video_embed_url"), // Direct embed URL for iframe
+  videoQuality: text("video_quality").default("720p"), // 480p, 720p, 1080p, 4k
+  videoMetadata: jsonb("video_metadata"), // Additional metadata like chapters, captions, etc.
   duration: integer("duration"), // in seconds
   isLive: boolean("is_live").notNull().default(false),
   scheduledAt: timestamp("scheduled_at"),
@@ -642,7 +646,7 @@ export const codingExercises = pgTable("coding_exercises", {
   instructions: text("instructions").notNull(),
   initialCode: text("initial_code").notNull(),
   solution: text("solution").notNull(),
-  language: text("language").notNull().default("javascript"),
+  language: text("language").notNull().default("javascript"), // javascript, python, java, csharp, cpp, go, rust, typescript, php, ruby
   difficulty: text("difficulty").notNull().default("beginner"),
   hints: jsonb("hints").notNull().default([]),
   tests: jsonb("tests").notNull().default([]),

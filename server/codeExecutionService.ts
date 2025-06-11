@@ -37,6 +37,29 @@ export class CodeExecutionService {
   }
 
   /**
+   * Execute code based on language
+   */
+  async executeCode(code: string, language: string): Promise<CodeExecutionResult> {
+    switch (language.toLowerCase()) {
+      case 'javascript':
+      case 'js':
+        return this.executeJavaScript(code);
+      case 'python':
+      case 'py':
+        return this.executePython(code);
+      case 'csharp':
+      case 'c#':
+      case 'cs':
+        return this.executeCSharp(code);
+      case 'typescript':
+      case 'ts':
+        return this.executeTypeScript(code);
+      default:
+        throw new Error(`Unsupported language: ${language}`);
+    }
+  }
+
+  /**
    * Execute JavaScript code in a sandboxed environment
    */
   async executeJavaScript(code: string): Promise<CodeExecutionResult> {
@@ -88,6 +111,80 @@ export class CodeExecutionService {
       };
     } finally {
       // Cleanup
+      try {
+        await fs.unlink(filePath);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+  }
+
+  /**
+   * Execute C# code in a sandboxed environment
+   */
+  async executeCSharp(code: string): Promise<CodeExecutionResult> {
+    const startTime = Date.now();
+    const sessionId = randomUUID();
+    const filePath = path.join(this.tempDir, `${sessionId}.cs`);
+
+    try {
+      await this.ensureTempDir();
+      await fs.writeFile(filePath, code);
+
+      const result = await this.runCommand('dotnet', ['script', filePath]);
+      const executionTime = Date.now() - startTime;
+
+      return {
+        success: result.success,
+        output: result.output,
+        error: result.error,
+        executionTime,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        output: '',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        executionTime: Date.now() - startTime,
+      };
+    } finally {
+      try {
+        await fs.unlink(filePath);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+  }
+
+  /**
+   * Execute TypeScript code in a sandboxed environment
+   */
+  async executeTypeScript(code: string): Promise<CodeExecutionResult> {
+    const startTime = Date.now();
+    const sessionId = randomUUID();
+    const filePath = path.join(this.tempDir, `${sessionId}.ts`);
+
+    try {
+      await this.ensureTempDir();
+      await fs.writeFile(filePath, code);
+
+      const result = await this.runCommand('npx', ['ts-node', filePath]);
+      const executionTime = Date.now() - startTime;
+
+      return {
+        success: result.success,
+        output: result.output,
+        error: result.error,
+        executionTime,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        output: '',
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        executionTime: Date.now() - startTime,
+      };
+    } finally {
       try {
         await fs.unlink(filePath);
       } catch (error) {
