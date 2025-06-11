@@ -1080,42 +1080,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async recordSessionAttendance(sessionId: number, userId: string): Promise<any> {
-    // Check if attendance record already exists
-    const [existingAttendance] = await db
-      .select()
-      .from(liveSessionAttendance)
-      .where(and(
-        eq(liveSessionAttendance.sessionId, sessionId),
-        eq(liveSessionAttendance.userId, userId)
-      ));
-    
-    if (existingAttendance) {
-      // Update the attendance record with new activity
-      return await db
-        .update(liveSessionAttendance)
-        .set({
-          lastActivity: new Date(),
-          updatedAt: new Date()
-        })
-        .where(eq(liveSessionAttendance.id, existingAttendance.id))
-        .returning();
-    }
-    
-    // Create new attendance record
-    const [attendance] = await db
-      .insert(liveSessionAttendance)
-      .values({
-        sessionId,
-        userId,
-        joinTime: new Date(),
-        status: "present",
-        lastActivity: new Date()
-      })
-      .returning();
-    
-    return attendance;
-  }
+
   
   async getLiveSessionAttendance(sessionId: number): Promise<LiveSessionAttendance[]> {
     return db
@@ -1132,56 +1097,18 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(liveSessionAttendance.createdAt));
   }
   // Communication - Conversations
-  async createConversation(conversationData: InsertConversation): Promise<Conversation> {
-    const [conversation] = await db.insert(conversations).values(conversationData).returning();
-    return conversation;
-  }
+
 
   async getConversation(conversationId: number): Promise<Conversation | undefined> {
     const [conversation] = await db.select().from(conversations).where(eq(conversations.id, conversationId));
     return conversation;
   }
 
-  async getUserConversations(userId: string): Promise<Conversation[]> {
-    // Get all conversations where the user is a participant
-    const userConversations = await db
-      .select({
-        conversationId: conversationParticipants.conversationId
-      })
-      .from(conversationParticipants)
-      .where(eq(conversationParticipants.userId, userId));
 
-    if (userConversations.length === 0) {
-      return [];
-    }
 
-    const conversationIds = userConversations.map(c => c.conversationId);
-    
-    return await db
-      .select()
-      .from(conversations)
-      .where(inArray(conversations.id, conversationIds));
-  }
 
-  async getCourseConversations(courseId: number): Promise<Conversation[]> {
-    return db
-      .select()
-      .from(conversations)
-      .where(eq(conversations.courseId, courseId));
-  }
 
-  async updateConversation(conversationId: number, updateData: Partial<Conversation>): Promise<Conversation> {
-    const [conversation] = await db
-      .update(conversations)
-      .set({
-        ...updateData,
-        updatedAt: new Date()
-      })
-      .where(eq(conversations.id, conversationId))
-      .returning();
-    
-    return conversation;
-  }
+
 
   async deleteConversation(conversationId: number): Promise<void> {
     // First delete all participants
@@ -1484,25 +1411,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    try {
-      const [user] = await db
-        .insert(users)
-        .values(userData)
-        .onConflictDoUpdate({
-          target: users.id,
-          set: {
-            ...userData,
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
-      return user;
-    } catch (error) {
-      console.error("Error upserting user:", error);
-      throw error;
-    }
-  }
+
   
   async createUser(userData: any): Promise<User> {
     try {
