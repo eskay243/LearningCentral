@@ -5257,6 +5257,582 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Assessment & Grading System Implementation
+  async createAutomatedQuiz(quizData: any): Promise<any> {
+    try {
+      const [quiz] = await db.insert(automatedQuizzes).values({
+        ...quizData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return quiz;
+    } catch (error) {
+      console.error("Error creating automated quiz:", error);
+      throw error;
+    }
+  }
+
+  async getAllAutomatedQuizzes(): Promise<any[]> {
+    try {
+      return await db.select().from(automatedQuizzes);
+    } catch (error) {
+      console.error("Error fetching automated quizzes:", error);
+      return [];
+    }
+  }
+
+  async getAutomatedQuizzesByCourse(courseId: number): Promise<any[]> {
+    try {
+      return await db.select().from(automatedQuizzes).where(eq(automatedQuizzes.courseId, courseId));
+    } catch (error) {
+      console.error("Error fetching quizzes by course:", error);
+      return [];
+    }
+  }
+
+  async getAutomatedQuiz(quizId: number): Promise<any> {
+    try {
+      const [quiz] = await db.select().from(automatedQuizzes).where(eq(automatedQuizzes.id, quizId));
+      return quiz;
+    } catch (error) {
+      console.error("Error fetching automated quiz:", error);
+      return null;
+    }
+  }
+
+  async updateAutomatedQuiz(quizId: number, quizData: any): Promise<any> {
+    try {
+      const [quiz] = await db.update(automatedQuizzes)
+        .set({ ...quizData, updatedAt: new Date() })
+        .where(eq(automatedQuizzes.id, quizId)).returning();
+      return quiz;
+    } catch (error) {
+      console.error("Error updating automated quiz:", error);
+      throw error;
+    }
+  }
+
+  async deleteAutomatedQuiz(quizId: number): Promise<void> {
+    try {
+      await db.delete(automatedQuizzes).where(eq(automatedQuizzes.id, quizId));
+    } catch (error) {
+      console.error("Error deleting automated quiz:", error);
+      throw error;
+    }
+  }
+
+  async createQuizQuestion(questionData: any): Promise<any> {
+    try {
+      const [question] = await db.insert(assessmentQuizQuestions).values({
+        ...questionData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return question;
+    } catch (error) {
+      console.error("Error creating quiz question:", error);
+      throw error;
+    }
+  }
+
+  async createQuizAttempt(attemptData: any): Promise<any> {
+    try {
+      const [attempt] = await db.insert(assessmentQuizAttempts).values({
+        ...attemptData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return attempt;
+    } catch (error) {
+      console.error("Error creating quiz attempt:", error);
+      throw error;
+    }
+  }
+
+  async getQuizAttempts(quizId: number): Promise<any[]> {
+    try {
+      return await db.select().from(assessmentQuizAttempts).where(eq(assessmentQuizAttempts.quizId, quizId));
+    } catch (error) {
+      console.error("Error fetching quiz attempts:", error);
+      return [];
+    }
+  }
+
+  async getUserQuizAttempts(userId: string, quizId?: number): Promise<any[]> {
+    try {
+      let query = db.select().from(assessmentQuizAttempts).where(eq(assessmentQuizAttempts.userId, userId));
+      if (quizId) {
+        query = query.where(eq(assessmentQuizAttempts.quizId, quizId));
+      }
+      return await query;
+    } catch (error) {
+      console.error("Error fetching user quiz attempts:", error);
+      return [];
+    }
+  }
+
+  async getQuizAttempt(attemptId: number): Promise<any> {
+    try {
+      const [attempt] = await db.select().from(assessmentQuizAttempts).where(eq(assessmentQuizAttempts.id, attemptId));
+      return attempt;
+    } catch (error) {
+      console.error("Error fetching quiz attempt:", error);
+      return null;
+    }
+  }
+
+  async createAssignmentRubric(rubricData: any): Promise<any> {
+    try {
+      const [rubric] = await db.insert(assignmentRubrics).values({
+        ...rubricData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return rubric;
+    } catch (error) {
+      console.error("Error creating assignment rubric:", error);
+      throw error;
+    }
+  }
+
+  async getAllRubrics(): Promise<any[]> {
+    try {
+      return await db.select().from(assignmentRubrics);
+    } catch (error) {
+      console.error("Error fetching all rubrics:", error);
+      return [];
+    }
+  }
+
+  async getRubricsByCourse(courseId: number): Promise<any[]> {
+    try {
+      return await db.select().from(assignmentRubrics).where(eq(assignmentRubrics.courseId, courseId));
+    } catch (error) {
+      console.error("Error fetching rubrics by course:", error);
+      return [];
+    }
+  }
+
+  async getRubricsByAssignment(assignmentId: number): Promise<any[]> {
+    try {
+      return await db.select().from(assignmentRubrics).where(eq(assignmentRubrics.assignmentId, assignmentId));
+    } catch (error) {
+      console.error("Error fetching rubrics by assignment:", error);
+      return [];
+    }
+  }
+
+  async getAssignmentRubric(rubricId: number): Promise<any> {
+    try {
+      const [rubric] = await db.select().from(assignmentRubrics).where(eq(assignmentRubrics.id, rubricId));
+      return rubric;
+    } catch (error) {
+      console.error("Error fetching assignment rubric:", error);
+      return null;
+    }
+  }
+
+  async createRubricCriteria(criteriaData: any): Promise<any> {
+    try {
+      const [criteria] = await db.insert(rubricCriteria).values({
+        ...criteriaData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return criteria;
+    } catch (error) {
+      console.error("Error creating rubric criteria:", error);
+      throw error;
+    }
+  }
+
+  async getRubricCriteria(rubricId: number): Promise<any[]> {
+    try {
+      return await db.select().from(rubricCriteria).where(eq(rubricCriteria.rubricId, rubricId));
+    } catch (error) {
+      console.error("Error fetching rubric criteria:", error);
+      return [];
+    }
+  }
+
+  async createAssignmentGrade(gradeData: any): Promise<any> {
+    try {
+      const [grade] = await db.insert(assignmentGrades).values({
+        ...gradeData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return grade;
+    } catch (error) {
+      console.error("Error creating assignment grade:", error);
+      throw error;
+    }
+  }
+
+  async getAssignmentGrades(assignmentId: number): Promise<any[]> {
+    try {
+      return await db.select().from(assignmentGrades).where(eq(assignmentGrades.assignmentId, assignmentId));
+    } catch (error) {
+      console.error("Error fetching assignment grades:", error);
+      return [];
+    }
+  }
+
+  async createPeerReview(reviewData: any): Promise<any> {
+    try {
+      const [review] = await db.insert(peerReviews).values({
+        ...reviewData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return review;
+    } catch (error) {
+      console.error("Error creating peer review:", error);
+      throw error;
+    }
+  }
+
+  async getPeerReviews(submissionId: number): Promise<any[]> {
+    try {
+      return await db.select().from(peerReviews).where(eq(peerReviews.submissionId, submissionId));
+    } catch (error) {
+      console.error("Error fetching peer reviews:", error);
+      return [];
+    }
+  }
+
+  async createStudentProgress(progressData: any): Promise<any> {
+    try {
+      const [progress] = await db.insert(studentProgress).values({
+        ...progressData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return progress;
+    } catch (error) {
+      console.error("Error creating student progress:", error);
+      throw error;
+    }
+  }
+
+  async getStudentProgress(studentId: string, courseId: number): Promise<any> {
+    try {
+      const [progress] = await db.select().from(studentProgress)
+        .where(and(eq(studentProgress.studentId, studentId), eq(studentProgress.courseId, courseId)));
+      return progress;
+    } catch (error) {
+      console.error("Error fetching student progress:", error);
+      return null;
+    }
+  }
+
+  async getAllStudentProgress(studentId: string): Promise<any[]> {
+    try {
+      return await db.select().from(studentProgress).where(eq(studentProgress.studentId, studentId));
+    } catch (error) {
+      console.error("Error fetching all student progress:", error);
+      return [];
+    }
+  }
+
+  async updateStudentProgress(progressId: number, progressData: any): Promise<any> {
+    try {
+      const [progress] = await db.update(studentProgress)
+        .set({ ...progressData, updatedAt: new Date() })
+        .where(eq(studentProgress.id, progressId)).returning();
+      return progress;
+    } catch (error) {
+      console.error("Error updating student progress:", error);
+      throw error;
+    }
+  }
+
+  async createLearningAnalytics(analyticsData: any): Promise<any> {
+    try {
+      const [analytics] = await db.insert(learningAnalytics).values({
+        ...analyticsData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return analytics;
+    } catch (error) {
+      console.error("Error creating learning analytics:", error);
+      throw error;
+    }
+  }
+
+  async getLearningAnalytics(studentId: string, courseId: number): Promise<any> {
+    try {
+      const [analytics] = await db.select().from(learningAnalytics)
+        .where(and(eq(learningAnalytics.studentId, studentId), eq(learningAnalytics.courseId, courseId)));
+      return analytics;
+    } catch (error) {
+      console.error("Error fetching learning analytics:", error);
+      return null;
+    }
+  }
+
+  async getAllLearningAnalytics(): Promise<any[]> {
+    try {
+      return await db.select().from(learningAnalytics);
+    } catch (error) {
+      console.error("Error fetching all learning analytics:", error);
+      return [];
+    }
+  }
+
+  async createCertificateTemplate(templateData: any): Promise<any> {
+    try {
+      const [template] = await db.insert(certificateTemplates).values({
+        ...templateData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return template;
+    } catch (error) {
+      console.error("Error creating certificate template:", error);
+      throw error;
+    }
+  }
+
+  async getAllCertificateTemplates(): Promise<any[]> {
+    try {
+      return await db.select().from(certificateTemplates);
+    } catch (error) {
+      console.error("Error fetching certificate templates:", error);
+      return [];
+    }
+  }
+
+  async getCertificateTemplatesByCourse(courseId: number): Promise<any[]> {
+    try {
+      return await db.select().from(certificateTemplates).where(eq(certificateTemplates.courseId, courseId));
+    } catch (error) {
+      console.error("Error fetching certificate templates by course:", error);
+      return [];
+    }
+  }
+
+  async createGeneratedCertificate(certificateData: any): Promise<any> {
+    try {
+      const [certificate] = await db.insert(generatedCertificates).values({
+        ...certificateData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return certificate;
+    } catch (error) {
+      console.error("Error creating generated certificate:", error);
+      throw error;
+    }
+  }
+
+  async getGeneratedCertificates(userId: string): Promise<any[]> {
+    try {
+      return await db.select().from(generatedCertificates).where(eq(generatedCertificates.studentId, userId));
+    } catch (error) {
+      console.error("Error fetching generated certificates:", error);
+      return [];
+    }
+  }
+
+  async getAssignmentsByCourse(courseId: number): Promise<any[]> {
+    try {
+      return await db.select().from(assignments).where(eq(assignments.lessonId, courseId));
+    } catch (error) {
+      console.error("Error fetching assignments by course:", error);
+      return [];
+    }
+  }
+
+  async getAllAssignments(): Promise<any[]> {
+    try {
+      return await db.select().from(assignments);
+    } catch (error) {
+      console.error("Error fetching all assignments:", error);
+      return [];
+    }
+  }
+
+  // Additional missing methods for Assessment Routes
+  async createQuizAnswer(answerData: any): Promise<any> {
+    try {
+      const [answer] = await db.insert(assessmentQuizAnswers).values({
+        ...answerData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }).returning();
+      return answer;
+    } catch (error) {
+      console.error("Error creating quiz answer:", error);
+      throw error;
+    }
+  }
+
+  async updateQuizAttempt(attemptId: number, attemptData: any): Promise<any> {
+    try {
+      const [attempt] = await db.update(assessmentQuizAttempts)
+        .set({ ...attemptData, updatedAt: new Date() })
+        .where(eq(assessmentQuizAttempts.id, attemptId)).returning();
+      return attempt;
+    } catch (error) {
+      console.error("Error updating quiz attempt:", error);
+      throw error;
+    }
+  }
+
+  async getQuizAnswers(attemptId: number): Promise<any[]> {
+    try {
+      return await db.select().from(assessmentQuizAnswers).where(eq(assessmentQuizAnswers.attemptId, attemptId));
+    } catch (error) {
+      console.error("Error fetching quiz answers:", error);
+      return [];
+    }
+  }
+
+  async getAssignedPeerReviews(userId: string): Promise<any[]> {
+    try {
+      return await db.select().from(peerReviews).where(eq(peerReviews.reviewerId, userId));
+    } catch (error) {
+      console.error("Error fetching assigned peer reviews:", error);
+      return [];
+    }
+  }
+
+  async updatePeerReview(reviewId: number, reviewData: any): Promise<any> {
+    try {
+      const [review] = await db.update(peerReviews)
+        .set({ ...reviewData, updatedAt: new Date() })
+        .where(eq(peerReviews.id, reviewId)).returning();
+      return review;
+    } catch (error) {
+      console.error("Error updating peer review:", error);
+      throw error;
+    }
+  }
+
+  async getPeerReview(reviewId: number): Promise<any> {
+    try {
+      const [review] = await db.select().from(peerReviews).where(eq(peerReviews.id, reviewId));
+      return review;
+    } catch (error) {
+      console.error("Error fetching peer review:", error);
+      return null;
+    }
+  }
+
+  async getUserCourseCertificates(userId: string, courseId: number): Promise<any[]> {
+    try {
+      return await db.select().from(generatedCertificates)
+        .where(and(eq(generatedCertificates.studentId, userId), eq(generatedCertificates.courseId, courseId)));
+    } catch (error) {
+      console.error("Error fetching user course certificates:", error);
+      return [];
+    }
+  }
+
+  async getCertificateByVerificationCode(verificationCode: string): Promise<any> {
+    try {
+      const [certificate] = await db.select().from(generatedCertificates)
+        .where(eq(generatedCertificates.verificationCode, verificationCode));
+      return certificate;
+    } catch (error) {
+      console.error("Error fetching certificate by verification code:", error);
+      return null;
+    }
+  }
+
+  // Analytics methods for Assessment Dashboard
+  async countQuizzesByCourse(courseId: number): Promise<number> {
+    try {
+      const result = await db.select({ count: sql`count(*)` }).from(automatedQuizzes)
+        .where(eq(automatedQuizzes.courseId, courseId));
+      return Number(result[0]?.count || 0);
+    } catch (error) {
+      console.error("Error counting quizzes by course:", error);
+      return 0;
+    }
+  }
+
+  async countQuizAttemptsByCourse(courseId: number): Promise<number> {
+    try {
+      const result = await db.select({ count: sql`count(*)` }).from(assessmentQuizAttempts)
+        .innerJoin(automatedQuizzes, eq(assessmentQuizAttempts.quizId, automatedQuizzes.id))
+        .where(eq(automatedQuizzes.courseId, courseId));
+      return Number(result[0]?.count || 0);
+    } catch (error) {
+      console.error("Error counting quiz attempts by course:", error);
+      return 0;
+    }
+  }
+
+  async getAverageQuizScoreByCourse(courseId: number): Promise<number> {
+    try {
+      const result = await db.select({ avg: sql`avg(${assessmentQuizAttempts.score})` })
+        .from(assessmentQuizAttempts)
+        .innerJoin(automatedQuizzes, eq(assessmentQuizAttempts.quizId, automatedQuizzes.id))
+        .where(eq(automatedQuizzes.courseId, courseId));
+      return Number(result[0]?.avg || 0);
+    } catch (error) {
+      console.error("Error getting average quiz score by course:", error);
+      return 0;
+    }
+  }
+
+  async getQuizCompletionRate(courseId: number): Promise<number> {
+    try {
+      const totalQuizzes = await this.countQuizzesByCourse(courseId);
+      const completedAttempts = await db.select({ count: sql`count(*)` })
+        .from(assessmentQuizAttempts)
+        .innerJoin(automatedQuizzes, eq(assessmentQuizAttempts.quizId, automatedQuizzes.id))
+        .where(and(eq(automatedQuizzes.courseId, courseId), eq(assessmentQuizAttempts.status, 'completed')));
+      
+      const completed = Number(completedAttempts[0]?.count || 0);
+      return totalQuizzes > 0 ? (completed / totalQuizzes) * 100 : 0;
+    } catch (error) {
+      console.error("Error getting quiz completion rate:", error);
+      return 0;
+    }
+  }
+
+  async getTopPerformers(courseId: number, limit: number = 10): Promise<any[]> {
+    try {
+      return await db.select({
+        userId: assessmentQuizAttempts.userId,
+        averageScore: sql`avg(${assessmentQuizAttempts.score})`,
+        totalAttempts: sql`count(*)`
+      })
+        .from(assessmentQuizAttempts)
+        .innerJoin(automatedQuizzes, eq(assessmentQuizAttempts.quizId, automatedQuizzes.id))
+        .where(eq(automatedQuizzes.courseId, courseId))
+        .groupBy(assessmentQuizAttempts.userId)
+        .orderBy(sql`avg(${assessmentQuizAttempts.score}) desc`)
+        .limit(limit);
+    } catch (error) {
+      console.error("Error getting top performers:", error);
+      return [];
+    }
+  }
+
+  async getStrugglingStudents(courseId: number, threshold: number = 60): Promise<any[]> {
+    try {
+      return await db.select({
+        userId: assessmentQuizAttempts.userId,
+        averageScore: sql`avg(${assessmentQuizAttempts.score})`,
+        totalAttempts: sql`count(*)`
+      })
+        .from(assessmentQuizAttempts)
+        .innerJoin(automatedQuizzes, eq(assessmentQuizAttempts.quizId, automatedQuizzes.id))
+        .where(eq(automatedQuizzes.courseId, courseId))
+        .groupBy(assessmentQuizAttempts.userId)
+        .having(sql`avg(${assessmentQuizAttempts.score}) < ${threshold}`)
+        .orderBy(sql`avg(${assessmentQuizAttempts.score}) asc`);
+    } catch (error) {
+      console.error("Error getting struggling students:", error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
