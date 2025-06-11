@@ -617,28 +617,9 @@ export class DatabaseStorage implements IStorage {
   
   // Live Session Operations  
   async createLiveSession(sessionData: Omit<LiveSession, "id">): Promise<LiveSession> {
-    // Ensure dates are properly converted to Date objects
-    const processedData = { ...sessionData };
-    
-    if (processedData.startTime && typeof processedData.startTime === 'string') {
-      processedData.startTime = new Date(processedData.startTime);
-    }
-    if (processedData.endTime && typeof processedData.endTime === 'string') {
-      processedData.endTime = new Date(processedData.endTime);
-    }
-    
-    console.log('Storage layer - processed data:', {
-      startTime: processedData.startTime,
-      startTimeType: typeof processedData.startTime,
-      startTimeConstructor: processedData.startTime?.constructor?.name,
-      endTime: processedData.endTime,
-      endTimeType: typeof processedData.endTime,
-      endTimeConstructor: processedData.endTime?.constructor?.name
-    });
-    
     const [session] = await db
       .insert(liveSessions)
-      .values(processedData)
+      .values(sessionData)
       .returning();
     return session;
   }
@@ -1207,7 +1188,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(liveSessionAttendance)
       .where(eq(liveSessionAttendance.userId, userId))
-      .orderBy(desc(liveSessionAttendance.joinedAt));
+      .orderBy(desc(liveSessionAttendance.createdAt));
   }
   // Communication - Conversations
   async createConversation(conversationData: InsertConversation): Promise<Conversation> {
@@ -2021,10 +2002,7 @@ export class DatabaseStorage implements IStorage {
       const videos = await db
         .select()
         .from(lessons)
-        .where(and(
-          eq(lessons.courseId, courseId),
-          eq(lessons.type, 'video')
-        ));
+        .where(eq(lessons.moduleId, courseId));
       return videos;
     } catch (error) {
       console.error("Error fetching video content:", error);
@@ -2240,22 +2218,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateLiveSession(sessionId: number, updateData: any): Promise<LiveSession> {
-    try {
-      const [session] = await db
-        .update(liveSessions)
-        .set({
-          ...updateData,
-          updatedAt: new Date()
-        })
-        .where(eq(liveSessions.id, sessionId))
-        .returning();
-      return session;
-    } catch (error) {
-      console.error("Error updating live session:", error);
-      throw error;
-    }
-  }
+
 
   async deleteLiveSession(sessionId: number): Promise<void> {
     try {
@@ -2332,7 +2295,7 @@ export class DatabaseStorage implements IStorage {
           userId: liveSessionAttendance.userId,
           status: liveSessionAttendance.status,
           joinTime: liveSessionAttendance.joinTime,
-          leaveTime: liveSessionAttendance.leaveTime,
+          leaveTime: liveSessionAttendance.leave_time,
           userName: sql`${users.firstName} || ' ' || ${users.lastName}`,
           userEmail: users.email,
           userRole: users.role
