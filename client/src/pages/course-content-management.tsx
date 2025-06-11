@@ -1075,29 +1075,14 @@ export default function CourseContentManagement() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      type="button" 
-                      onClick={() => {
-                        console.log('Form values:', quizForm.getValues());
-                        console.log('Form errors:', quizForm.formState.errors);
-                        console.log('Form valid:', quizForm.formState.isValid);
-                        console.log('Selected course:', selectedCourse);
-                      }}
-                      variant="outline"
-                      className="w-auto"
-                    >
-                      Debug Form
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={createQuizMutation.isPending || !selectedCourse}
-                      className="w-full md:w-auto"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      {createQuizMutation.isPending ? "Creating..." : "Create Quiz"}
-                    </Button>
-                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={createQuizMutation.isPending || !selectedCourse}
+                    className="w-full md:w-auto"
+                  >
+                    <Save className="mr-2 h-4 w-4" />
+                    {createQuizMutation.isPending ? "Creating..." : "Create Quiz"}
+                  </Button>
                 </form>
               </CardContent>
             </Card>

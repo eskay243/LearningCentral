@@ -1620,10 +1620,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz routes
   app.post('/api/quizzes', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
-      const quiz = await storage.createQuiz(req.body);
+      console.log('Received quiz data:', req.body);
+      
+      // Basic validation and transformation
+      const quizData = {
+        ...req.body,
+        passingScore: parseInt(req.body.passingScore) || 70,
+        timeLimit: req.body.timeLimit ? parseInt(req.body.timeLimit) : null,
+        maxAttempts: parseInt(req.body.maxAttempts) || 1,
+        lessonId: parseInt(req.body.lessonId) || parseInt(req.body.courseId), // Use courseId as fallback
+        courseId: parseInt(req.body.courseId)
+      };
+      
+      console.log('Processed quiz data:', quizData);
+      
+      const quiz = await storage.createQuiz(quizData);
       res.status(201).json(quiz);
     } catch (error) {
       console.error("Error creating quiz:", error);
+      if (error.message?.includes('validation') || error.message?.includes('invalid')) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          details: error.message 
+        });
+      }
       res.status(500).json({ message: "Failed to create quiz" });
     }
   });
