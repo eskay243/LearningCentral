@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { storage } from "./storage";
 import { assessmentGradingService } from "./assessmentGradingService";
-import { insertAutomatedQuizSchema, insertQuizQuestionSchema, insertQuizAttemptSchema, insertQuizAnswerSchema, insertAssignmentRubricSchema, insertRubricCriteriaSchema, insertAssignmentGradeSchema, insertPeerReviewSchema, insertStudentProgressSchema, insertLearningAnalyticsSchema, insertCertificateTemplateSchema, insertGeneratedCertificateSchema } from "@shared/schema";
+import { insertQuizSchema, insertQuizQuestionSchema, insertQuizAttemptSchema, insertQuizAnswerSchema, insertAssignmentRubricSchema, insertRubricCriteriaSchema, insertAssignmentGradeSchema, insertPeerReviewSchema, insertStudentProgressSchema, insertLearningAnalyticsSchema, insertCertificateTemplateSchema, insertGeneratedCertificateSchema } from "@shared/schema";
 import { z } from "zod";
 
 export function registerAssessmentRoutes(app: Express) {
@@ -10,15 +10,15 @@ export function registerAssessmentRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
-      // Transform data to match basic quiz schema (existing table structure)
-      const transformedData = {
+      // Use the correct basic quiz schema that matches existing table
+      const validatedData = insertQuizSchema.parse({
         lessonId: parseInt(req.body.lessonId) || 1,
         title: req.body.title,
         description: req.body.description || null,
         passingScore: parseInt(req.body.passingScore) || 70  // Convert to integer to match existing table
-      };
+      });
 
-      const quiz = await storage.createQuiz(transformedData);
+      const quiz = await storage.createQuiz(validatedData);
       
       // If questions are provided, create them separately
       if (req.body.questions && Array.isArray(req.body.questions)) {
