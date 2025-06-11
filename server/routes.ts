@@ -1622,19 +1622,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Received quiz data:', req.body);
       
-      // Basic validation and transformation
+      // Extract only the fields that exist in the basic quizzes table
       const quizData = {
-        ...req.body,
-        passingScore: parseInt(req.body.passingScore) || 70,
-        timeLimit: req.body.timeLimit ? parseInt(req.body.timeLimit) : null,
-        maxAttempts: parseInt(req.body.maxAttempts) || 1,
-        lessonId: parseInt(req.body.lessonId) || parseInt(req.body.courseId), // Use courseId as fallback
-        courseId: parseInt(req.body.courseId)
+        title: req.body.title,
+        description: req.body.description || null,
+        lessonId: parseInt(req.body.lessonId) || parseInt(req.body.courseId) || 1,
+        passingScore: parseInt(req.body.passingScore) || 70
       };
       
       console.log('Processed quiz data:', quizData);
       
       const quiz = await storage.createQuiz(quizData);
+      
+      // If questions are provided, create them separately
+      if (req.body.questions && Array.isArray(req.body.questions)) {
+        for (const question of req.body.questions) {
+          if (question.question && question.question.trim()) {
+            await storage.addQuizQuestion({
+              quizId: quiz.id,
+              question: question.question,
+              type: question.type || 'multiple_choice',
+              options: question.options || [],
+              correctAnswer: question.correctAnswer || '',
+              points: parseInt(question.points) || 1,
+              orderIndex: 0
+            });
+          }
+        }
+      }
+      
       res.status(201).json(quiz);
     } catch (error) {
       console.error("Error creating quiz:", error);
