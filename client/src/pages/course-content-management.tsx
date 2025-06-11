@@ -880,7 +880,16 @@ export default function CourseContentManagement() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={quizForm.handleSubmit((data) => createQuizMutation.mutate(data))} className="space-y-4">
+                <form onSubmit={quizForm.handleSubmit((data) => {
+                  console.log('Quiz form submitted with data:', data);
+                  const quizData = {
+                    ...data,
+                    courseId: selectedCourse!,
+                    lessonId: 1 // Default lesson ID for now
+                  };
+                  console.log('Final quiz data:', quizData);
+                  createQuizMutation.mutate(quizData);
+                })} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="quiz-title">Quiz Title</Label>
@@ -889,6 +898,11 @@ export default function CourseContentManagement() {
                         {...quizForm.register("title")}
                         placeholder="Enter quiz title"
                       />
+                      {quizForm.formState.errors.title && (
+                        <p className="text-sm text-red-600 mt-1">
+                          {quizForm.formState.errors.title.message}
+                        </p>
+                      )}
                     </div>
                     
                     <div>
@@ -1050,14 +1064,29 @@ export default function CourseContentManagement() {
                     </div>
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    disabled={createQuizMutation.isPending}
-                    className="w-full md:w-auto"
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    {createQuizMutation.isPending ? "Creating..." : "Create Quiz"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button" 
+                      onClick={() => {
+                        console.log('Form values:', quizForm.getValues());
+                        console.log('Form errors:', quizForm.formState.errors);
+                        console.log('Form valid:', quizForm.formState.isValid);
+                        console.log('Selected course:', selectedCourse);
+                      }}
+                      variant="outline"
+                      className="w-auto"
+                    >
+                      Debug Form
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={createQuizMutation.isPending || !selectedCourse}
+                      className="w-full md:w-auto"
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      {createQuizMutation.isPending ? "Creating..." : "Create Quiz"}
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
