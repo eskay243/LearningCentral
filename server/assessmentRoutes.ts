@@ -10,14 +10,38 @@ export function registerAssessmentRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
-      const validatedData = insertAutomatedQuizSchema.parse({
-        ...req.body,
-        createdBy: req.user.id
-      });
+      // Transform data to match basic quiz schema (existing table structure)
+      const transformedData = {
+        lessonId: parseInt(req.body.lessonId) || 1,
+        title: req.body.title,
+        description: req.body.description || null,
+        passingScore: parseInt(req.body.passingScore) || 70  // Convert to integer to match existing table
+      };
+
+      const quiz = await storage.createQuiz(transformedData);
       
-      const quiz = await storage.createAutomatedQuiz(validatedData);
+      // If questions are provided, create them separately
+      if (req.body.questions && Array.isArray(req.body.questions)) {
+        for (const question of req.body.questions) {
+          if (question.question && question.question.trim()) {
+            await storage.createQuizQuestion({
+              quizId: quiz.id,
+              question: question.question,
+              type: question.type || 'multiple_choice',
+              options: question.options || [],
+              correctAnswer: question.correctAnswer || '',
+              points: parseInt(question.points) || 1
+            });
+          }
+        }
+      }
+      
       res.status(201).json(quiz);
     } catch (error: any) {
+      console.error('Quiz creation error:', error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: JSON.stringify(error.errors) });
+      }
       res.status(400).json({ message: error.message });
     }
   });
