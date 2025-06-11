@@ -41,6 +41,8 @@ import {
   courseMentors,
   // Assessment & Grading System schema
   automatedQuizzes,
+  advancedQuizzes,
+  advancedQuizQuestions,
   quizQuestions as newQuizQuestions,
   quizAttempts as newQuizAttempts,
   quizAnswers,
