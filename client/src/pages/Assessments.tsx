@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Clock, Users, Plus, Search, Filter, MoreVertical, Play, Upload } from "lucide-react";
+import { CheckCircle, Clock, Users, Plus, Search, Filter, MoreVertical, Play, Upload, Eye, BarChart3 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import useAuth from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -715,19 +715,44 @@ const Assessments = () => {
                       </span>
                     </div>
                     
-                    {/* Student action buttons */}
-                    {!isMentor && !isAdmin && quiz.isPublished && (
-                      <div className="mt-4 pt-3 border-t">
-                        <Button 
-                          onClick={() => window.location.href = `/quiz/${quiz.id}`}
-                          className="w-full bg-blue-600 hover:bg-blue-700"
-                          size="sm"
-                        >
-                          <Play className="w-4 h-4 mr-2" />
-                          Take Quiz
-                        </Button>
-                      </div>
-                    )}
+                    {/* Action buttons based on user role */}
+                    <div className="mt-4 pt-3 border-t">
+                      {isStudent && quiz.isPublished && (
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => window.location.href = `/quiz/${quiz.id}/view`}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            size="sm"
+                          >
+                            <Play className="w-4 h-4 mr-2" />
+                            Take Quiz
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {(isMentor || isAdmin) && (
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => window.location.href = `/quiz/${quiz.id}/view`}
+                            variant="outline"
+                            className="flex-1"
+                            size="sm"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            Preview
+                          </Button>
+                          <Button 
+                            onClick={() => window.location.href = `/quiz/${quiz.id}/results`}
+                            variant="outline"
+                            className="flex-1"
+                            size="sm"
+                          >
+                            <BarChart3 className="w-4 h-4 mr-2" />
+                            Results
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
