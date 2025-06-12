@@ -102,6 +102,8 @@ function Router() {
         <Route path="/assessment" component={AssessmentDashboard} />
         <Route path="/quiz/:id/take" component={QuizTaking} />
         <Route path="/quiz/:quizId/view" component={QuizViewer} />
+        <Route path="/quizzes" component={Assessments} />
+        <Route path="/assignments" component={Assessments} />
         <Route path="/quiz-results/:attemptId" component={QuizResults} />
         <Route path="/assignments/:assignmentId/submit" component={AssignmentSubmission} />
         <Route path="/assignment/:assignmentId/submissions" component={AssignmentSubmissions} />

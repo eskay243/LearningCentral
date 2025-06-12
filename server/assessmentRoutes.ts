@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { storage } from "./storage";
 import { assessmentGradingService } from "./assessmentGradingService";
+import { isAuthenticated } from "./auth";
 import { insertQuizSchema, insertQuizQuestionSchema, insertQuizAttemptSchema, insertQuizAnswerSchema, insertAssignmentRubricSchema, insertRubricCriteriaSchema, insertAssignmentGradeSchema, insertPeerReviewSchema, insertStudentProgressSchema, insertLearningAnalyticsSchema, insertCertificateTemplateSchema, insertGeneratedCertificateSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -665,6 +666,53 @@ export function registerAssessmentRoutes(app: Express) {
       };
       
       res.json(analytics);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Student-specific endpoints
+  app.get("/api/student/quizzes", isAuthenticated, async (req: any, res) => {
+    try {
+      const allQuizzes = await storage.getAllQuizzes();
+      // Return quizzes that are published and available to students
+      const studentQuizzes = allQuizzes.map(quiz => ({
+        id: quiz.id,
+        title: quiz.title,
+        description: quiz.description,
+        passingScore: quiz.passingScore,
+        lessonId: quiz.lessonId,
+        courseTitle: "Course", // TODO: Add course title lookup
+        isPublished: true // Assuming all quizzes are available to students
+      }));
+      res.json(studentQuizzes);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/student/assignments", isAuthenticated, async (req: any, res) => {
+    try {
+      // Return empty array for now - assignments not implemented yet
+      res.json([]);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/student/recent-activity", isAuthenticated, async (req: any, res) => {
+    try {
+      // Return empty array for now - activity tracking not implemented yet
+      res.json([]);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/student/enrolled-courses", isAuthenticated, async (req: any, res) => {
+    try {
+      // Return empty array for now - course enrollment not implemented yet
+      res.json([]);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

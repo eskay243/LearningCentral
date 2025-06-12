@@ -45,14 +45,14 @@ const Assessments = () => {
 
   // Fetch quizzes
   const { data: quizzes = [], isLoading: isQuizzesLoading } = useQuery({
-    queryKey: [isMentor ? `/api/mentors/${user?.id}/quizzes` : "/api/quizzes"],
-    enabled: !!user && (isMentor || isAdmin),
+    queryKey: isStudent ? ["/api/student/quizzes"] : [isMentor ? `/api/mentors/${user?.id}/quizzes` : "/api/quizzes"],
+    enabled: !!user,
   });
 
   // Fetch assignments
   const { data: assignments = [], isLoading: isAssignmentsLoading } = useQuery({
-    queryKey: [isMentor ? `/api/mentors/${user?.id}/assignments` : "/api/assignments"],
-    enabled: !!user && (isMentor || isAdmin),
+    queryKey: isStudent ? ["/api/student/assignments"] : [isMentor ? `/api/mentors/${user?.id}/assignments` : "/api/assignments"],
+    enabled: !!user,
   });
 
   // Fetch courses for filter dropdown
