@@ -81,6 +81,7 @@ import LiveSession from "@/pages/live-session";
 import KycMentorPage from "@/pages/kyc-mentor";
 import KycStudentPage from "@/pages/kyc-student";
 import AdminUserPermissions from "@/pages/admin-user-permissions";
+import AdminEditProfile from "@/pages/admin-edit-profile";
 
 function Router() {
   return (
@@ -161,6 +162,7 @@ function Router() {
         <Route path="/courses/:courseId/forums/:forumId/topics/:topicId" component={DiscussionForum} />
         <Route path="/content-management" component={CourseContentManagement} />
         <Route path="/admin/user-permissions" component={AdminUserPermissions} />
+        <Route path="/admin/edit-profile" component={AdminEditProfile} />
         <Route path="/kyc/mentor" component={KycMentorPage} />
         <Route path="/kyc/student" component={KycStudentPage} />
         <Route component={NotFound} />

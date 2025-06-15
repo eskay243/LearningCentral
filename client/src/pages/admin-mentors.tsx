@@ -527,7 +527,10 @@ export default function AdminMentors() {
                     variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => {
-                      setLocation(`/profile/${selectedMentor.id}`);
+                      const mentorName = selectedMentor.firstName && selectedMentor.lastName 
+                        ? `${selectedMentor.firstName} ${selectedMentor.lastName}`
+                        : selectedMentor.firstName || selectedMentor.lastName || selectedMentor.email;
+                      setLocation(`/admin/edit-profile?userId=${selectedMentor.id}&name=${encodeURIComponent(mentorName)}&email=${encodeURIComponent(selectedMentor.email)}&role=${selectedMentor.role}`);
                     }}
                   >
                     <Edit className="h-4 w-4" />

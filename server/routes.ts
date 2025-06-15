@@ -406,6 +406,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User profile update endpoint
+  app.put("/api/admin/users/:userId/profile", isAuthenticated, hasRole([UserRole.ADMIN]), async (req: any, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { firstName, lastName, email, bio, profileImageUrl, role } = req.body;
+      const adminId = req.user?.id;
+
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Update user profile
+      const updatedUser = await storage.updateUser(userId, {
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        email: email || existingUser.email,
+        bio: bio || undefined,
+        profileImageUrl: profileImageUrl || undefined,
+        role: role || existingUser.role,
+        updatedAt: new Date()
+      });
+
+      console.log(`User ${userId} profile updated by admin ${adminId}`);
+      
+      // Create notification for the user about profile changes
+      await storage.createNotification({
+        userId: userId,
+        title: 'Profile Updated',
+        content: 'Your profile information has been updated by an administrator.',
+        type: 'info',
+        isRead: false,
+        linkUrl: '/profile'
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Profile updated successfully",
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // User permissions management endpoint
   app.put("/api/admin/users/:userId/permissions", isAuthenticated, hasRole([UserRole.ADMIN]), async (req: any, res: Response) => {
     try {
