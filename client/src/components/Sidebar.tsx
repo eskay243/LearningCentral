@@ -161,6 +161,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                     <span className="truncate">User Management</span>
                   </Link>
                   
+                  <Link href="/admin/mentors" className={menuItemClass("/admin/mentors")}>
+                    <Users className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                    <span className="truncate">Mentor Management</span>
+                  </Link>
+                  
                   <Link href="/admin/oauth-settings" className={menuItemClass("/admin/oauth-settings")}>
                     <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                     <span className="truncate">OAuth Settings</span>
