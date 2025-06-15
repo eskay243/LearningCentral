@@ -59,6 +59,7 @@ import AdvancedQuizTaking from "@/pages/AdvancedQuizTaking";
 import AdvancedAssignmentSubmission from "@/pages/AdvancedAssignmentSubmission";
 import DiscussionForum from "@/pages/DiscussionForum";
 import AdminPayments from "@/pages/admin-payments";
+import AdminUsers from "@/pages/admin-users";
 import StudentInvoices from "@/pages/StudentInvoices";
 import StudentPayments from "@/pages/student-payments";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
@@ -123,6 +124,7 @@ function Router() {
         <Route path="/admin/oauth-settings" component={AdminOAuthSettings} />
         <Route path="/admin/video-settings" component={AdminVideoSettings} />
         <Route path="/admin/payments" component={AdminPayments} />
+        <Route path="/admin/users" component={AdminUsers} />
         <Route path="/payment/callback" component={PaymentCallback} />
         <Route path="/content-demo" component={ContentDemo} />
         <Route path="/interactive-learning" component={InteractiveLearning} />
