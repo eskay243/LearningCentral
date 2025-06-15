@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -73,6 +74,7 @@ export default function AdminMentors() {
   const [sortBy, setSortBy] = useState('newest');
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  const [, setLocation] = useLocation();
 
   // Fetch all mentors
   const { data: mentors = [], isLoading: mentorsLoading } = useQuery<Mentor[]>({
@@ -344,8 +346,7 @@ export default function AdminMentors() {
                           variant="outline" 
                           size="sm"
                           onClick={() => {
-                            // Navigate to profile page in same tab
-                            window.location.href = `/profile/${mentor.id}`;
+                            setLocation(`/profile/${mentor.id}`);
                           }}
                         >
                           View Profile
@@ -361,8 +362,7 @@ export default function AdminMentors() {
                           variant="outline" 
                           size="sm"
                           onClick={() => {
-                            // Navigate to messages in same tab
-                            window.location.href = `/messages?user=${mentor.id}`;
+                            setLocation(`/messages?user=${mentor.id}`);
                           }}
                         >
                           <MessageSquare className="h-4 w-4" />
@@ -527,8 +527,7 @@ export default function AdminMentors() {
                     variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => {
-                      // Navigate to profile page in same tab
-                      window.location.href = `/profile/${selectedMentor.id}`;
+                      setLocation(`/profile/${selectedMentor.id}`);
                     }}
                   >
                     <Edit className="h-4 w-4" />
@@ -538,8 +537,7 @@ export default function AdminMentors() {
                     variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => {
-                      // Navigate to permissions page in same tab
-                      window.location.href = `/admin/permissions/${selectedMentor.id}`;
+                      setLocation(`/admin/permissions/${selectedMentor.id}`);
                     }}
                   >
                     <Shield className="h-4 w-4" />
