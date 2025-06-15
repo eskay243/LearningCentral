@@ -536,8 +536,19 @@ export default function AdminMentors() {
                   <Button 
                     variant="outline" 
                     className="flex items-center gap-2"
-                    onClick={() => {
-                      setLocation(`/admin/permissions/${selectedMentor.id}`);
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`/api/users/${selectedMentor.id}`);
+                        if (response.ok) {
+                          const userData = await response.json();
+                          setLocation(`/admin/user-permissions?userId=${selectedMentor.id}&name=${encodeURIComponent(userData.firstName + ' ' + userData.lastName)}&email=${encodeURIComponent(userData.email)}`);
+                        } else {
+                          alert('User not found or unable to load user data');
+                        }
+                      } catch (error) {
+                        console.error('Error loading user:', error);
+                        alert('Error loading user data');
+                      }
                     }}
                   >
                     <Shield className="h-4 w-4" />
@@ -547,7 +558,10 @@ export default function AdminMentors() {
                     variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => {
-                      setLocation(`/messages?user=${selectedMentor.id}`);
+                      const mentorName = selectedMentor.firstName && selectedMentor.lastName 
+                        ? `${selectedMentor.firstName} ${selectedMentor.lastName}`
+                        : selectedMentor.email;
+                      setLocation(`/messages?user=${selectedMentor.id}&name=${encodeURIComponent(mentorName)}&email=${encodeURIComponent(selectedMentor.email)}&role=${selectedMentor.role}`);
                     }}
                   >
                     <MessageSquare className="h-4 w-4" />
@@ -556,10 +570,33 @@ export default function AdminMentors() {
                   <Button 
                     variant="outline" 
                     className="flex items-center gap-2 text-red-600 hover:text-red-700"
-                    onClick={() => {
-                      if (confirm('Are you sure you want to suspend this mentor?')) {
-                        // Handle mentor suspension
-                        console.log('Suspending mentor:', selectedMentor.id);
+                    onClick={async () => {
+                      if (confirm('Are you sure you want to suspend this mentor? This will prevent them from accessing their account.')) {
+                        try {
+                          const response = await fetch(`/api/admin/users/${selectedMentor.id}/suspend`, {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                              action: 'suspend',
+                              reason: 'Administrative action'
+                            })
+                          });
+
+                          if (response.ok) {
+                            alert('Mentor account has been suspended successfully');
+                            setSelectedMentor(null);
+                            // Refresh mentor list
+                            window.location.reload();
+                          } else {
+                            const error = await response.json();
+                            alert(`Failed to suspend account: ${error.message || 'Unknown error'}`);
+                          }
+                        } catch (error) {
+                          console.error('Error suspending mentor:', error);
+                          alert('Failed to suspend account. Please try again.');
+                        }
                       }
                     }}
                   >
