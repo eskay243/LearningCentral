@@ -343,7 +343,10 @@ export default function AdminMentors() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => window.open(`/profile/${mentor.id}`, '_blank')}
+                          onClick={() => {
+                            // Navigate to profile page in same tab
+                            window.location.href = `/profile/${mentor.id}`;
+                          }}
                         >
                           View Profile
                         </Button>
@@ -357,7 +360,10 @@ export default function AdminMentors() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => window.open(`/messages?user=${mentor.id}`, '_blank')}
+                          onClick={() => {
+                            // Navigate to messages in same tab
+                            window.location.href = `/messages?user=${mentor.id}`;
+                          }}
                         >
                           <MessageSquare className="h-4 w-4" />
                         </Button>
@@ -411,7 +417,7 @@ export default function AdminMentors() {
                           </div>
                         </div>
                         <div className="text-right space-y-1">
-                          <p className="font-medium text-green-600">${perf.totalEarnings.toLocaleString()}</p>
+                          <p className="font-medium text-green-600">₦{perf.totalEarnings.toLocaleString()}</p>
                           <p className="text-sm text-muted-foreground">
                             Avg response: {perf.responseTime}h
                           </p>
@@ -501,7 +507,7 @@ export default function AdminMentors() {
                 </div>
                 <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-2xl font-bold text-purple-600">
-                    ${selectedMentor.totalEarnings?.toLocaleString() || '0'}
+                    ₦{selectedMentor.totalEarnings?.toLocaleString() || '0'}
                   </div>
                   <div className="text-sm text-muted-foreground">Earnings</div>
                 </div>
@@ -520,7 +526,10 @@ export default function AdminMentors() {
                   <Button 
                     variant="outline" 
                     className="flex items-center gap-2"
-                    onClick={() => window.open(`/profile/${selectedMentor.id}`, '_blank')}
+                    onClick={() => {
+                      // Navigate to profile page in same tab
+                      window.location.href = `/profile/${selectedMentor.id}`;
+                    }}
                   >
                     <Edit className="h-4 w-4" />
                     Edit Profile
@@ -528,7 +537,10 @@ export default function AdminMentors() {
                   <Button 
                     variant="outline" 
                     className="flex items-center gap-2"
-                    onClick={() => window.open(`/admin/permissions/${selectedMentor.id}`, '_blank')}
+                    onClick={() => {
+                      // Navigate to permissions page in same tab
+                      window.location.href = `/admin/permissions/${selectedMentor.id}`;
+                    }}
                   >
                     <Shield className="h-4 w-4" />
                     Manage Permissions
@@ -536,7 +548,10 @@ export default function AdminMentors() {
                   <Button 
                     variant="outline" 
                     className="flex items-center gap-2"
-                    onClick={() => window.open(`/messages?user=${selectedMentor.id}`, '_blank')}
+                    onClick={() => {
+                      // Navigate to messages in same tab
+                      window.location.href = `/messages?user=${selectedMentor.id}`;
+                    }}
                   >
                     <MessageSquare className="h-4 w-4" />
                     Send Message
@@ -574,7 +589,10 @@ export default function AdminMentors() {
                 <Button variant="outline" onClick={() => setSelectedMentor(null)}>
                   Close
                 </Button>
-                <Button onClick={() => window.open(`/admin/mentor-details/${selectedMentor.id}`, '_blank')}>
+                <Button onClick={() => {
+                  // Navigate to mentor details in same tab
+                  window.location.href = `/admin/mentor-details/${selectedMentor.id}`;
+                }}>
                   View Full Details
                 </Button>
               </div>
