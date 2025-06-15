@@ -925,8 +925,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Course Enrollment Routes
-  // Get all enrolled courses for the current user
-  app.get('/api/user/enrollments', isAuthenticated, async (req, res) => {
+  // Get all enrolled courses for the current user (or all courses for admin)
+  app.get('/api/user/enrollments', isAuthenticated, async (req: any, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -934,9 +934,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user ID from either the user object directly or from claims
       const userId = req.user.id || (req.user.claims && req.user.claims.sub);
+      const userRole = req.user.role;
       
       if (!userId) {
         return res.status(400).json({ message: "Invalid user data" });
+      }
+
+      // For admin users, show all courses instead of just enrolled courses
+      if (userRole === 'admin') {
+        const allCourses = await storage.getCourses({ published: true });
+        const coursesWithEnrollmentData = await Promise.all(
+          allCourses.map(async (course) => {
+            return {
+              ...course,
+              progress: 100, // Admin has full access
+              enrollmentId: `admin-${course.id}`,
+              enrolledAt: new Date(),
+              paymentStatus: 'admin_access'
+            };
+          })
+        );
+        return res.json(coursesWithEnrollmentData);
       }
       
       // Get all enrollments for this user
@@ -1564,16 +1582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/user/enrollments', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const enrollments = await storage.getEnrolledCourses(userId);
-      res.json(enrollments);
-    } catch (error) {
-      console.error("Error fetching enrollments:", error);
-      res.status(500).json({ message: "Failed to fetch enrollments" });
-    }
-  });
+
 
   // Individual lesson routes
   app.get('/api/courses/:courseId/lessons/:lessonId', async (req, res) => {
