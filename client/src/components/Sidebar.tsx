@@ -108,7 +108,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           
           <Link href="/courses" className={menuItemClass("/courses")}>
             <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="truncate">My Courses</span>
+            <span className="truncate">{isAdmin ? "Course List" : "My Courses"}</span>
           </Link>
           
           <Link href="/schedule" className={menuItemClass("/schedule")}>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import StableStudentDashboard from '@/pages/stable-student-dashboard';
 import {
   DropdownMenu,
@@ -95,6 +96,7 @@ interface CourseOverview {
 
 export default function Dashboard() {
   const { user, isLoading: isAuthLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const isAdmin = user?.role === 'admin';
   const isMentor = user?.role === 'mentor';
   const isStudent = user?.role === 'student';
@@ -479,7 +481,10 @@ export default function Dashboard() {
             Revenue Management
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              onClick={() => setLocation('/admin/payments')}
+            >
               <CardHeader>
                 <CardTitle className="text-sm font-medium">Total Platform Earnings</CardTitle>
               </CardHeader>
@@ -493,7 +498,10 @@ export default function Dashboard() {
               </CardContent>
             </Card>
             
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              onClick={() => setLocation('/admin/payments')}
+            >
               <CardHeader>
                 <CardTitle className="text-sm font-medium">Mentor Payouts</CardTitle>
               </CardHeader>
@@ -507,7 +515,10 @@ export default function Dashboard() {
               </CardContent>
             </Card>
             
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              onClick={() => setLocation('/admin/payments')}
+            >
               <CardHeader>
                 <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
               </CardHeader>
@@ -530,7 +541,10 @@ export default function Dashboard() {
             User Management
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              onClick={() => setLocation('/admin/users')}
+            >
               <CardHeader>
                 <CardTitle className="text-sm">Total Users</CardTitle>
               </CardHeader>
@@ -539,7 +553,10 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">All registered users</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              onClick={() => setLocation('/admin/users')}
+            >
               <CardHeader>
                 <CardTitle className="text-sm">Students</CardTitle>
               </CardHeader>
@@ -548,7 +565,10 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">Learning on platform</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              onClick={() => setLocation('/admin/users')}
+            >
               <CardHeader>
                 <CardTitle className="text-sm">Mentors</CardTitle>
               </CardHeader>
@@ -557,7 +577,10 @@ export default function Dashboard() {
                 <p className="text-xs text-muted-foreground">Teaching courses</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              onClick={() => setLocation('/admin/users')}
+            >
               <CardHeader>
                 <CardTitle className="text-sm">Active Users</CardTitle>
               </CardHeader>
