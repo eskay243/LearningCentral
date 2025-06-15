@@ -21,7 +21,11 @@ import {
   Award,
   Activity,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  X,
+  Edit,
+  Shield,
+  Ban
 } from 'lucide-react';
 
 interface Mentor {
@@ -68,6 +72,7 @@ export default function AdminMentors() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
 
   // Fetch all mentors
   const { data: mentors = [], isLoading: mentorsLoading } = useQuery<Mentor[]>({
@@ -335,13 +340,25 @@ export default function AdminMentors() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(`/profile/${mentor.id}`, '_blank')}
+                        >
                           View Profile
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedMentor(mentor)}
+                        >
                           Manage
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(`/messages?user=${mentor.id}`, '_blank')}
+                        >
                           <MessageSquare className="h-4 w-4" />
                         </Button>
                       </div>
@@ -428,6 +445,143 @@ export default function AdminMentors() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Mentor Management Dialog */}
+      {selectedMentor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-2xl font-bold">Manage Mentor</h2>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setSelectedMentor(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Mentor Profile Section */}
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center text-white text-xl font-bold">
+                  {selectedMentor.firstName?.[0] || selectedMentor.email[0].toUpperCase()}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold">
+                    {selectedMentor.firstName && selectedMentor.lastName 
+                      ? `${selectedMentor.firstName} ${selectedMentor.lastName}`
+                      : selectedMentor.email
+                    }
+                  </h3>
+                  <p className="text-muted-foreground">{selectedMentor.email}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={getStatusBadgeVariant(selectedMentor)}>
+                      {selectedMentor.totalStudents && selectedMentor.totalStudents > 0 ? 'Active' : 'Inactive'}
+                    </Badge>
+                    {selectedMentor.rating && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <Star className="h-3 w-3" />
+                        {selectedMentor.rating.toFixed(1)}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{selectedMentor.totalStudents || 0}</div>
+                  <div className="text-sm text-muted-foreground">Students</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{selectedMentor.activeCourses || 0}</div>
+                  <div className="text-sm text-muted-foreground">Courses</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    ${selectedMentor.totalEarnings?.toLocaleString() || '0'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Earnings</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">
+                    {selectedMentor.rating?.toFixed(1) || 'N/A'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Rating</div>
+                </div>
+              </div>
+
+              {/* Management Actions */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold">Management Actions</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => window.open(`/profile/${selectedMentor.id}`, '_blank')}
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Profile
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => window.open(`/admin/permissions/${selectedMentor.id}`, '_blank')}
+                  >
+                    <Shield className="h-4 w-4" />
+                    Manage Permissions
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    onClick={() => window.open(`/messages?user=${selectedMentor.id}`, '_blank')}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Send Message
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to suspend this mentor?')) {
+                        // Handle mentor suspension
+                        console.log('Suspending mentor:', selectedMentor.id);
+                      }
+                    }}
+                  >
+                    <Ban className="h-4 w-4" />
+                    Suspend Account
+                  </Button>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold">Recent Activity</h4>
+                <div className="space-y-2">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <p className="text-sm">No recent activity data available</p>
+                    <p className="text-xs text-muted-foreground">Activity tracking will be implemented soon</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t bg-gray-50 dark:bg-gray-800">
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setSelectedMentor(null)}>
+                  Close
+                </Button>
+                <Button onClick={() => window.open(`/admin/mentor-details/${selectedMentor.id}`, '_blank')}>
+                  View Full Details
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
