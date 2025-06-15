@@ -359,18 +359,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createNotification({
           userId: userId,
           title: 'Account Suspended',
-          message: `Your account has been suspended. Reason: ${reason || 'Administrative action'}. Please contact support for assistance.`,
+          content: `Your account has been suspended. Reason: ${reason || 'Administrative action'}. Please contact support for assistance.`,
           type: 'warning',
-          read: false,
+          isRead: false,
           linkUrl: '/support'
         });
       } else {
         await storage.createNotification({
           userId: userId,
           title: 'Account Reactivated',
-          message: 'Your account has been reactivated. You can now access all platform features.',
+          content: 'Your account has been reactivated. You can now access all platform features.',
           type: 'success',
-          read: false,
+          isRead: false,
           linkUrl: '/dashboard'
         });
       }
@@ -448,9 +448,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createNotification({
           userId: userId,
           title: 'Role Updated',
-          message: `Your account role has been updated to ${role}. You may need to log out and log back in to see the changes.`,
+          content: `Your account role has been updated to ${role}. You may need to log out and log back in to see the changes.`,
           type: 'info',
-          read: false,
+          isRead: false,
           linkUrl: '/profile'
         });
       }

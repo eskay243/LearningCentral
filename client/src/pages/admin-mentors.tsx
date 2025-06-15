@@ -541,7 +541,10 @@ export default function AdminMentors() {
                         const response = await fetch(`/api/users/${selectedMentor.id}`);
                         if (response.ok) {
                           const userData = await response.json();
-                          setLocation(`/admin/user-permissions?userId=${selectedMentor.id}&name=${encodeURIComponent(userData.firstName + ' ' + userData.lastName)}&email=${encodeURIComponent(userData.email)}`);
+                          const userName = userData.firstName && userData.lastName 
+                            ? `${userData.firstName} ${userData.lastName}`
+                            : userData.firstName || userData.lastName || userData.email;
+                          setLocation(`/admin/user-permissions?userId=${selectedMentor.id}&name=${encodeURIComponent(userName)}&email=${encodeURIComponent(userData.email)}`);
                         } else {
                           alert('User not found or unable to load user data');
                         }
