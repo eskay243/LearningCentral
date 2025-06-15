@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatNaira } from '@/lib/currencyUtils';
 import { 
   Users, 
   Search, 
@@ -447,7 +448,7 @@ export default function AdminMentors() {
                           </div>
                         </div>
                         <div className="text-right space-y-1">
-                          <p className="font-medium text-green-600">₦{perf.totalEarnings.toLocaleString()}</p>
+                          <p className="font-medium text-green-600">{formatNaira(perf.totalEarnings)}</p>
                           <p className="text-sm text-muted-foreground">
                             Avg response: {perf.responseTime}h
                           </p>

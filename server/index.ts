@@ -96,6 +96,33 @@ async function initializeDemoData() {
         timeSpent: 45
       });
       
+      // Create demo mentors with proper course assignments
+      const mentorUsers = await storage.getUsers();
+      const existingMentors = mentorUsers.filter(user => user.role === 'mentor');
+      
+      if (existingMentors.length === 0) {
+        // Create demo mentors
+        const mentor1 = await storage.createUser({
+          email: "john.mentor@example.com",
+          firstName: "John",
+          lastName: "Smith",
+          role: "mentor"
+        });
+        
+        const mentor2 = await storage.createUser({
+          email: "sarah.dev@example.com", 
+          firstName: "Sarah",
+          lastName: "Johnson",
+          role: "mentor"
+        });
+        
+        // Assign mentors to courses
+        await storage.updateCourse(webDevCourse.id, { mentorId: mentor1.id });
+        await storage.updateCourse(javaCourse.id, { mentorId: mentor2.id });
+        
+        console.log("Demo mentors created and assigned to courses");
+      }
+
       console.log("Demo data initialized successfully");
     } else {
       console.log("Demo data already exists");
