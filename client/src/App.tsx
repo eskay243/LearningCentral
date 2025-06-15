@@ -28,7 +28,7 @@ import AssignmentSubmission from "@/pages/AssignmentSubmission";
 import QuizResultsOld from "@/pages/QuizResults";
 import QuizViewer from "@/pages/quiz-viewer";
 import QuizResults from "@/pages/quiz-results";
-import Messages from "@/pages/Messages";
+import MessagesPage from "@/pages/messages";
 import Analytics from "@/pages/Analytics";
 import Earnings from "@/pages/Earnings";
 import Settings from "@/pages/Settings";
@@ -114,7 +114,7 @@ function Router() {
         <Route path="/quiz-results/:attemptId" component={QuizResultsOld} />
         <Route path="/assignments/:assignmentId/submit" component={AssignmentSubmission} />
         <Route path="/assignment/:assignmentId/submissions" component={AssignmentSubmissions} />
-        <Route path="/messages" component={Messages} />
+        <Route path="/messages" component={MessagesPage} />
         <Route path="/analytics" component={Analytics} />
         <Route path="/earnings" component={Earnings} />
         <Route path="/invoices" component={StudentInvoices} />

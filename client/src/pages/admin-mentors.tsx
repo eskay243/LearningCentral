@@ -547,8 +547,7 @@ export default function AdminMentors() {
                     variant="outline" 
                     className="flex items-center gap-2"
                     onClick={() => {
-                      // Navigate to messages in same tab
-                      window.location.href = `/messages?user=${selectedMentor.id}`;
+                      setLocation(`/messages?user=${selectedMentor.id}`);
                     }}
                   >
                     <MessageSquare className="h-4 w-4" />
@@ -588,8 +587,7 @@ export default function AdminMentors() {
                   Close
                 </Button>
                 <Button onClick={() => {
-                  // Navigate to mentor details in same tab
-                  window.location.href = `/admin/mentor-details/${selectedMentor.id}`;
+                  setLocation(`/admin/mentor-details/${selectedMentor.id}`);
                 }}>
                   View Full Details
                 </Button>
