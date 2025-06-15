@@ -2069,3 +2069,177 @@ export type InsertPaymentTransaction = z.infer<typeof insertPaymentTransactionSc
 // Create select types
 export type Invoice = typeof invoices.$inferSelect;
 export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
+
+// KYC (Know Your Customer) Tables for comprehensive user verification
+export const kycDocuments = pgTable("kyc_documents", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  userRole: text("user_role").notNull(), // mentor, student
+  
+  // Personal Information
+  fullName: text("full_name").notNull(),
+  dateOfBirth: timestamp("date_of_birth"),
+  nationality: text("nationality"),
+  phoneNumber: text("phone_number"),
+  alternateEmail: text("alternate_email"),
+  gender: text("gender"),
+  maritalStatus: text("marital_status"),
+  
+  // Address Information
+  streetAddress: text("street_address"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
+  country: text("country"),
+  
+  // Identification Documents
+  idType: text("id_type"), // passport, drivers_license, national_id, voters_card
+  idNumber: text("id_number"),
+  idExpiryDate: timestamp("id_expiry_date"),
+  idFrontImage: text("id_front_image"),
+  idBackImage: text("id_back_image"),
+  
+  // Profile Photo
+  profilePhoto: text("profile_photo"),
+  
+  // Bank/Financial Information
+  bankName: text("bank_name"),
+  accountNumber: text("account_number"),
+  accountName: text("account_name"),
+  bankCode: text("bank_code"),
+  bvn: text("bvn"), // Bank Verification Number for Nigerian users
+  
+  // Tax Information
+  taxIdNumber: text("tax_id_number"),
+  taxIdType: text("tax_id_type"), // tin, vat_number
+  
+  // Mentor-specific Information
+  educationLevel: text("education_level"), // bachelors, masters, phd, certification
+  educationField: text("education_field"),
+  yearsOfExperience: integer("years_of_experience"),
+  currentEmployer: text("current_employer"),
+  jobTitle: text("job_title"),
+  professionalCertifications: jsonb("professional_certifications"),
+  linkedinProfile: text("linkedin_profile"),
+  githubProfile: text("github_profile"),
+  portfolioWebsite: text("portfolio_website"),
+  mentorSpecializations: jsonb("mentor_specializations"),
+  teachingExperience: text("teaching_experience"),
+  previousMentoringExperience: text("previous_mentoring_experience"),
+  
+  // Student-specific Information
+  studentId: text("student_id"), // institutional student ID if applicable
+  currentInstitution: text("current_institution"),
+  courseOfStudy: text("course_of_study"),
+  graduationYear: integer("graduation_year"),
+  learningGoals: text("learning_goals"),
+  technicalBackground: text("technical_background"),
+  preferredLearningStyle: text("preferred_learning_style"),
+  availabilitySchedule: jsonb("availability_schedule"),
+  parentGuardianName: text("parent_guardian_name"), // for minors
+  parentGuardianPhone: text("parent_guardian_phone"),
+  parentGuardianEmail: text("parent_guardian_email"),
+  
+  // Verification Status
+  verificationStatus: text("verification_status").default("pending"), // pending, approved, rejected, requires_review
+  verificationLevel: text("verification_level").default("basic"), // basic, standard, enhanced
+  verifiedAt: timestamp("verified_at"),
+  verifiedBy: varchar("verified_by").references(() => users.id),
+  rejectionReason: text("rejection_reason"),
+  
+  // Document Status
+  documentsComplete: boolean("documents_complete").default(false),
+  documentsVerified: boolean("documents_verified").default(false),
+  backgroundCheckStatus: text("background_check_status").default("not_required"), // not_required, pending, passed, failed
+  
+  // Compliance and Legal
+  termsAccepted: boolean("terms_accepted").default(false),
+  privacyPolicyAccepted: boolean("privacy_policy_accepted").default(false),
+  dataProcessingConsent: boolean("data_processing_consent").default(false),
+  marketingConsent: boolean("marketing_consent").default(false),
+  
+  // Risk Assessment
+  riskScore: integer("risk_score").default(0), // 0-100
+  riskLevel: text("risk_level").default("low"), // low, medium, high
+  sanctionsCheckStatus: text("sanctions_check_status").default("not_checked"), // not_checked, clear, flagged
+  
+  // Metadata
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  geoLocation: jsonb("geo_location"),
+  
+  // Internal Notes
+  internalNotes: text("internal_notes"), // for admin use
+  reviewHistory: jsonb("review_history"), // audit trail of reviews
+});
+
+// KYC Document Uploads for file attachments
+export const kycDocumentFiles = pgTable("kyc_document_files", {
+  id: serial("id").primaryKey(),
+  kycDocumentId: integer("kyc_document_id").notNull().references(() => kycDocuments.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  documentType: text("document_type").notNull(), // id_front, id_back, profile_photo, bank_statement, etc.
+  fileName: text("file_name").notNull(),
+  originalFileName: text("original_file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileUrl: text("file_url"),
+  fileSize: integer("file_size"), // bytes
+  mimeType: text("mime_type"),
+  checksum: text("checksum"),
+  
+  verificationStatus: text("verification_status").default("pending"), // pending, verified, rejected
+  verificationNotes: text("verification_notes"),
+  verifiedAt: timestamp("verified_at"),
+  verifiedBy: varchar("verified_by").references(() => users.id),
+  
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  isActive: boolean("is_active").default(true),
+});
+
+// KYC Verification History for audit trail
+export const kycVerificationHistory = pgTable("kyc_verification_history", {
+  id: serial("id").primaryKey(),
+  kycDocumentId: integer("kyc_document_id").notNull().references(() => kycDocuments.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  action: text("action").notNull(), // submitted, approved, rejected, updated, reviewed
+  previousStatus: text("previous_status"),
+  newStatus: text("new_status"),
+  changedFields: jsonb("changed_fields"),
+  
+  performedBy: varchar("performed_by").notNull().references(() => users.id),
+  reason: text("reason"),
+  notes: text("notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+});
+
+// Create insert schemas for KYC tables
+export const insertKycDocumentSchema = createInsertSchema(kycDocuments).omit({
+  id: true,
+  submittedAt: true,
+  lastUpdated: true,
+});
+
+export const insertKycDocumentFileSchema = createInsertSchema(kycDocumentFiles).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export const insertKycVerificationHistorySchema = createInsertSchema(kycVerificationHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Export types
+export type KycDocument = typeof kycDocuments.$inferSelect;
+export type InsertKycDocument = z.infer<typeof insertKycDocumentSchema>;
+export type KycDocumentFile = typeof kycDocumentFiles.$inferSelect;
+export type InsertKycDocumentFile = z.infer<typeof insertKycDocumentFileSchema>;
+export type KycVerificationHistory = typeof kycVerificationHistory.$inferSelect;
+export type InsertKycVerificationHistory = z.infer<typeof insertKycVerificationHistorySchema>;

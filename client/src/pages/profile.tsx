@@ -39,9 +39,9 @@ export default function ProfilePage() {
   const { id } = useParams();
   
   const { data: user, isLoading, error } = useQuery({
-    queryKey: ['/api/admin/users', id],
+    queryKey: ['/api/users', id],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/users/${id}`);
+      const response = await fetch(`/api/users/${id}`);
       if (!response.ok) {
         throw new Error('Failed to fetch user profile');
       }
