@@ -1403,6 +1403,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getUsers(): Promise<User[]> {
+    try {
+      const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+      return allUsers;
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      return [];
+    }
+  }
+
   
   async createUser(userData: any): Promise<User> {
     try {
