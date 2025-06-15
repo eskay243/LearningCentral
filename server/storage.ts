@@ -39,6 +39,9 @@ import {
   courseAnnouncements,
   announcements,
   courseMentors,
+  // KYC (Know Your Customer) schema
+  kycDocuments,
+  kycVerificationHistory,
   // Assessment & Grading System schema
   automatedQuizzes,
   advancedQuizzes,
@@ -4086,6 +4089,207 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error verifying certificate:", error);
       return { valid: false };
+    }
+  }
+
+  // KYC (Know Your Customer) methods
+  async submitKycApplication(kycData: any): Promise<any> {
+    try {
+      const [kycRecord] = await db
+        .insert(kycDocuments)
+        .values(kycData)
+        .returning();
+      
+      // Create verification history entry
+      await db
+        .insert(kycVerificationHistory)
+        .values({
+          kycDocumentId: kycRecord.id,
+          userId: kycData.userId,
+          action: 'submitted',
+          newStatus: 'pending',
+          performedBy: kycData.userId,
+          reason: 'Initial KYC submission',
+          ipAddress: kycData.ipAddress,
+          userAgent: kycData.userAgent
+        });
+      
+      return kycRecord;
+    } catch (error) {
+      console.error("Error submitting KYC application:", error);
+      throw error;
+    }
+  }
+
+  async getKycStatus(userId: string): Promise<any> {
+    try {
+      const [kyc] = await db
+        .select()
+        .from(kycDocuments)
+        .where(eq(kycDocuments.userId, userId))
+        .orderBy(desc(kycDocuments.submittedAt))
+        .limit(1);
+      
+      if (!kyc) {
+        return {
+          hasSubmitted: false,
+          status: null,
+          verificationLevel: null
+        };
+      }
+      
+      return {
+        hasSubmitted: true,
+        status: kyc.verificationStatus,
+        verificationLevel: kyc.verificationLevel,
+        submittedAt: kyc.submittedAt,
+        verifiedAt: kyc.verifiedAt,
+        rejectionReason: kyc.rejectionReason,
+        documentsComplete: kyc.documentsComplete,
+        documentsVerified: kyc.documentsVerified
+      };
+    } catch (error) {
+      console.error("Error fetching KYC status:", error);
+      return {
+        hasSubmitted: false,
+        status: null,
+        verificationLevel: null
+      };
+    }
+  }
+
+  async getKycApplications(filters: {
+    status?: string;
+    userRole?: string;
+    page: number;
+    limit: number;
+  }): Promise<any> {
+    try {
+      const { status, userRole, page, limit } = filters;
+      const offset = (page - 1) * limit;
+      
+      let query = db
+        .select({
+          kyc: kycDocuments,
+          user: {
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+            role: users.role
+          }
+        })
+        .from(kycDocuments)
+        .leftJoin(users, eq(kycDocuments.userId, users.id));
+      
+      const conditions = [];
+      
+      if (status) {
+        conditions.push(eq(kycDocuments.verificationStatus, status));
+      }
+      
+      if (userRole) {
+        conditions.push(eq(kycDocuments.userRole, userRole));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      const applications = await query
+        .orderBy(desc(kycDocuments.submittedAt))
+        .limit(limit)
+        .offset(offset);
+      
+      // Get total count for pagination
+      let countQuery = db
+        .select({ count: count() })
+        .from(kycDocuments);
+      
+      if (conditions.length > 0) {
+        countQuery = countQuery.where(and(...conditions));
+      }
+      
+      const [{ count: totalCount }] = await countQuery;
+      
+      return {
+        applications: applications.map(item => ({
+          ...item.kyc,
+          user: item.user
+        })),
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit)
+        }
+      };
+    } catch (error) {
+      console.error("Error fetching KYC applications:", error);
+      return {
+        applications: [],
+        pagination: { page: 1, limit: 20, total: 0, totalPages: 0 }
+      };
+    }
+  }
+
+  async updateKycVerificationStatus(kycId: number, updateData: {
+    status: string;
+    reason?: string;
+    notes?: string;
+    verifiedBy: string;
+  }): Promise<any> {
+    try {
+      const { status, reason, notes, verifiedBy } = updateData;
+      
+      // Get current KYC record
+      const [currentKyc] = await db
+        .select()
+        .from(kycDocuments)
+        .where(eq(kycDocuments.id, kycId));
+      
+      if (!currentKyc) {
+        throw new Error('KYC application not found');
+      }
+      
+      // Update KYC record
+      const updateFields: any = {
+        verificationStatus: status,
+        lastUpdated: new Date()
+      };
+      
+      if (status === 'approved') {
+        updateFields.verifiedAt = new Date();
+        updateFields.verifiedBy = verifiedBy;
+        updateFields.documentsVerified = true;
+      } else if (status === 'rejected') {
+        updateFields.rejectionReason = reason;
+      }
+      
+      const [updatedKyc] = await db
+        .update(kycDocuments)
+        .set(updateFields)
+        .where(eq(kycDocuments.id, kycId))
+        .returning();
+      
+      // Create verification history entry
+      await db
+        .insert(kycVerificationHistory)
+        .values({
+          kycDocumentId: kycId,
+          userId: currentKyc.userId,
+          action: status === 'approved' ? 'approved' : 'rejected',
+          previousStatus: currentKyc.verificationStatus,
+          newStatus: status,
+          performedBy: verifiedBy,
+          reason: reason || null,
+          notes: notes || null
+        });
+      
+      return updatedKyc;
+    } catch (error) {
+      console.error("Error updating KYC verification status:", error);
+      throw error;
     }
   }
 

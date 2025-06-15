@@ -2984,6 +2984,152 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register course content management routes
   app.use('/api', courseContentRoutes);
   
+  // KYC (Know Your Customer) routes
+  app.post('/api/kyc/submit', isAuthenticated, upload.fields([
+    { name: 'idFrontImage', maxCount: 1 },
+    { name: 'idBackImage', maxCount: 1 },
+    { name: 'profilePhoto', maxCount: 1 }
+  ]), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      
+      // Extract form data
+      const kycData = {
+        userId,
+        userRole: req.body.userRole,
+        fullName: req.body.fullName,
+        dateOfBirth: req.body.dateOfBirth ? new Date(req.body.dateOfBirth) : null,
+        nationality: req.body.nationality,
+        phoneNumber: req.body.phoneNumber,
+        alternateEmail: req.body.alternateEmail || null,
+        gender: req.body.gender,
+        maritalStatus: req.body.maritalStatus,
+        streetAddress: req.body.streetAddress,
+        city: req.body.city,
+        state: req.body.state,
+        postalCode: req.body.postalCode,
+        country: req.body.country,
+        idType: req.body.idType,
+        idNumber: req.body.idNumber,
+        idExpiryDate: req.body.idExpiryDate ? new Date(req.body.idExpiryDate) : null,
+        bankName: req.body.bankName || null,
+        accountNumber: req.body.accountNumber || null,
+        accountName: req.body.accountName || null,
+        bankCode: req.body.bankCode || null,
+        bvn: req.body.bvn || null,
+        taxIdNumber: req.body.taxIdNumber || null,
+        taxIdType: req.body.taxIdType || null,
+        // Mentor-specific fields
+        educationLevel: req.body.educationLevel || null,
+        educationField: req.body.educationField || null,
+        yearsOfExperience: req.body.yearsOfExperience ? parseInt(req.body.yearsOfExperience) : null,
+        currentEmployer: req.body.currentEmployer || null,
+        jobTitle: req.body.jobTitle || null,
+        linkedinProfile: req.body.linkedinProfile || null,
+        githubProfile: req.body.githubProfile || null,
+        portfolioWebsite: req.body.portfolioWebsite || null,
+        teachingExperience: req.body.teachingExperience || null,
+        previousMentoringExperience: req.body.previousMentoringExperience || null,
+        // Student-specific fields
+        studentId: req.body.studentId || null,
+        currentInstitution: req.body.currentInstitution || null,
+        courseOfStudy: req.body.courseOfStudy || null,
+        graduationYear: req.body.graduationYear ? parseInt(req.body.graduationYear) : null,
+        learningGoals: req.body.learningGoals || null,
+        technicalBackground: req.body.technicalBackground || null,
+        preferredLearningStyle: req.body.preferredLearningStyle || null,
+        parentGuardianName: req.body.parentGuardianName || null,
+        parentGuardianPhone: req.body.parentGuardianPhone || null,
+        parentGuardianEmail: req.body.parentGuardianEmail || null,
+        // Legal compliance
+        termsAccepted: req.body.termsAccepted === 'true',
+        privacyPolicyAccepted: req.body.privacyPolicyAccepted === 'true',
+        dataProcessingConsent: req.body.dataProcessingConsent === 'true',
+        marketingConsent: req.body.marketingConsent === 'true',
+        // Metadata
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        geoLocation: null // Can be added later with IP geolocation
+      };
+
+      // Handle file uploads
+      const fileData: { [key: string]: string } = {};
+      
+      if (files.idFrontImage?.[0]) {
+        fileData.idFrontImage = `/uploads/${files.idFrontImage[0].filename}`;
+      }
+      if (files.idBackImage?.[0]) {
+        fileData.idBackImage = `/uploads/${files.idBackImage[0].filename}`;
+      }
+      if (files.profilePhoto?.[0]) {
+        fileData.profilePhoto = `/uploads/${files.profilePhoto[0].filename}`;
+      }
+
+      // Merge file paths with KYC data
+      const completeKycData = { ...kycData, ...fileData };
+
+      // Submit KYC data to storage (need to implement this method)
+      const kycSubmission = await storage.submitKycApplication(completeKycData);
+      
+      res.json({
+        message: "KYC application submitted successfully",
+        kycId: kycSubmission.id,
+        status: "pending"
+      });
+    } catch (error) {
+      console.error("Error submitting KYC application:", error);
+      res.status(500).json({ message: "Failed to submit KYC application" });
+    }
+  });
+
+  app.get('/api/kyc/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const kycStatus = await storage.getKycStatus(userId);
+      res.json(kycStatus);
+    } catch (error) {
+      console.error("Error fetching KYC status:", error);
+      res.status(500).json({ message: "Failed to fetch KYC status" });
+    }
+  });
+
+  app.get('/api/admin/kyc/applications', isAuthenticated, hasRole([UserRole.ADMIN]), async (req, res) => {
+    try {
+      const { status, userRole, page = 1, limit = 20 } = req.query;
+      const applications = await storage.getKycApplications({
+        status: status as string,
+        userRole: userRole as string,
+        page: parseInt(page as string),
+        limit: parseInt(limit as string)
+      });
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching KYC applications:", error);
+      res.status(500).json({ message: "Failed to fetch KYC applications" });
+    }
+  });
+
+  app.put('/api/admin/kyc/:kycId/verify', isAuthenticated, hasRole([UserRole.ADMIN]), async (req: any, res) => {
+    try {
+      const kycId = parseInt(req.params.kycId);
+      const { status, reason, notes } = req.body;
+      const adminId = req.user.claims.sub;
+      
+      const result = await storage.updateKycVerificationStatus(kycId, {
+        status,
+        reason,
+        notes,
+        verifiedBy: adminId
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating KYC verification:", error);
+      res.status(500).json({ message: "Failed to update KYC verification" });
+    }
+  });
+  
   // System settings routes
   app.get("/api/settings", isAuthenticated, async (req, res) => {
     try {
