@@ -77,18 +77,24 @@ export default function AdminMentors() {
   const [, setLocation] = useLocation();
 
   // Fetch all mentors
-  const { data: mentors = [], isLoading: mentorsLoading } = useQuery<Mentor[]>({
+  const { data: mentors = [], isLoading: mentorsLoading, refetch: refetchMentors } = useQuery<Mentor[]>({
     queryKey: ["/api/admin/mentors"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 0, // Always consider data stale for real-time updates
   });
 
   // Fetch mentor statistics
-  const { data: stats, isLoading: statsLoading } = useQuery<MentorStats>({
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<MentorStats>({
     queryKey: ["/api/admin/mentor-stats"],
+    refetchInterval: 30000,
+    staleTime: 0,
   });
 
   // Fetch mentor performance data
-  const { data: performance = [], isLoading: performanceLoading } = useQuery<MentorPerformance[]>({
+  const { data: performance = [], isLoading: performanceLoading, refetch: refetchPerformance } = useQuery<MentorPerformance[]>({
     queryKey: ["/api/admin/mentor-performance"],
+    refetchInterval: 30000,
+    staleTime: 0,
   });
 
   const formatDate = (dateString: string) => {
@@ -100,10 +106,33 @@ export default function AdminMentors() {
   };
 
   const getStatusBadgeVariant = (mentor: Mentor) => {
-    if (mentor.totalStudents && mentor.totalStudents > 0) {
+    // Check multiple criteria for active status
+    const hasStudents = mentor.totalStudents && mentor.totalStudents > 0;
+    const hasCourses = mentor.activeCourses && mentor.activeCourses > 0;
+    const recentActivity = mentor.updatedAt && 
+      (new Date().getTime() - new Date(mentor.updatedAt).getTime()) < (30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    if (hasStudents || hasCourses || recentActivity) {
       return 'default';
     }
     return 'secondary';
+  };
+
+  const getMentorStatus = (mentor: Mentor) => {
+    const hasStudents = mentor.totalStudents && mentor.totalStudents > 0;
+    const hasCourses = mentor.activeCourses && mentor.activeCourses > 0;
+    const recentActivity = mentor.updatedAt && 
+      (new Date().getTime() - new Date(mentor.updatedAt).getTime()) < (30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    if (hasStudents && hasCourses) {
+      return 'Active';
+    } else if (hasCourses && !hasStudents) {
+      return 'Available';
+    } else if (recentActivity) {
+      return 'Recent';
+    } else {
+      return 'Inactive';
+    }
   };
 
   const getPerformanceBadge = (rating: number) => {
@@ -121,9 +150,10 @@ export default function AdminMentors() {
         (mentor.firstName && mentor.firstName.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (mentor.lastName && mentor.lastName.toLowerCase().includes(searchTerm.toLowerCase()));
       
+      const mentorStatus = getMentorStatus(mentor).toLowerCase();
       const matchesStatus = statusFilter === 'all' || 
-        (statusFilter === 'active' && mentor.totalStudents && mentor.totalStudents > 0) ||
-        (statusFilter === 'inactive' && (!mentor.totalStudents || mentor.totalStudents === 0));
+        (statusFilter === 'active' && mentorStatus === 'active') ||
+        (statusFilter === 'inactive' && mentorStatus === 'inactive');
       
       return matchesSearch && matchesStatus;
     })
@@ -303,7 +333,7 @@ export default function AdminMentors() {
                               }
                             </p>
                             <Badge variant={getStatusBadgeVariant(mentor)} className="text-xs">
-                              {mentor.totalStudents && mentor.totalStudents > 0 ? 'Active' : 'Inactive'}
+                              {getMentorStatus(mentor)}
                             </Badge>
                             {mentor.rating && (
                               <Badge variant={getPerformanceBadge(mentor.rating).variant} className="text-xs flex items-center gap-1">
@@ -483,7 +513,7 @@ export default function AdminMentors() {
                   <p className="text-muted-foreground">{selectedMentor.email}</p>
                   <div className="flex items-center gap-2 mt-2">
                     <Badge variant={getStatusBadgeVariant(selectedMentor)}>
-                      {selectedMentor.totalStudents && selectedMentor.totalStudents > 0 ? 'Active' : 'Inactive'}
+                      {getMentorStatus(selectedMentor)}
                     </Badge>
                     {selectedMentor.rating && (
                       <Badge variant="secondary" className="flex items-center gap-1">
