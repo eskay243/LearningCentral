@@ -567,7 +567,7 @@ export default function Dashboard() {
             </Card>
             <Card 
               className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
-              onClick={() => setLocation('/admin/users')}
+              onClick={() => setLocation('/admin/mentors')}
             >
               <CardHeader>
                 <CardTitle className="text-sm">Mentors</CardTitle>
