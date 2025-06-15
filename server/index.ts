@@ -151,6 +151,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Global error handlers
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
 (async () => {
   let server;
   
@@ -197,4 +206,7 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
   });
-})();
+})().catch(error => {
+  console.error('Fatal error during server initialization:', error);
+  process.exit(1);
+});

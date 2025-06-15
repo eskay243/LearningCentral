@@ -3,8 +3,20 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
-// Configure Neon for serverless environment
-neonConfig.webSocketConstructor = ws;
+// Configure Neon for serverless environment with proper error handling
+try {
+  neonConfig.webSocketConstructor = ws;
+  neonConfig.useSecureWebSocket = true;
+  neonConfig.pipelineConnect = false;
+  neonConfig.fetchConnectionCache = true;
+} catch (error) {
+  console.warn("WebSocket configuration failed, using fallback:", error);
+}
+
+// Connection state tracking
+let connectionAttempts = 0;
+const MAX_CONNECTION_ATTEMPTS = 3;
+let lastConnectionError: any = null;
 
 // Helper function for logging database operations
 const logDbOperation = (operation: string, success: boolean, error?: any) => {
@@ -26,17 +38,36 @@ export const initializeDatabase = async () => {
       throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
     }
     
-    // Create connection pool
+    // Create connection pool with enhanced configuration
     console.log("Connecting to database...");
     const pool = new Pool({ 
       connectionString: process.env.DATABASE_URL,
-      connectionTimeoutMillis: 10000, // 10 second timeout
-      max: 10, // Maximum number of clients
+      connectionTimeoutMillis: 30000, // Increased timeout to 30 seconds
+      max: 5, // Reduced concurrent connections
+      idleTimeoutMillis: 30000,
+      maxUses: 7500,
+      allowExitOnIdle: false
     });
     
-    // Test the connection
-    await pool.query('SELECT NOW()');
-    logDbOperation("Connection", true);
+    // Test the connection with retry logic
+    let retries = 3;
+    let connected = false;
+    
+    while (retries > 0 && !connected) {
+      try {
+        const result = await pool.query('SELECT NOW()');
+        logDbOperation("Connection", true);
+        connected = true;
+      } catch (error) {
+        retries--;
+        if (retries > 0) {
+          console.log(`Connection attempt failed, retrying... (${retries} attempts left)`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+        } else {
+          throw error;
+        }
+      }
+    }
     
     // Create Drizzle ORM instance
     const db = drizzle({ client: pool, schema });
@@ -104,7 +135,7 @@ export let db: ReturnType<typeof drizzle> = {
   update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) })
 } as unknown as ReturnType<typeof drizzle>;
 
-// Initialize the database synchronously to avoid timing issues
+// Initialize the database with proper error handling
 const initPromise = initDb();
 initPromise.then(result => {
   pool = result.pool;
@@ -113,4 +144,11 @@ initPromise.then(result => {
 }).catch(error => {
   console.error("Failed to initialize database:", error);
   // Keep fallback implementations active
+  // No need to throw here as fallbacks are already in place
+});
+
+// Ensure unhandled promise rejections don't crash the app
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Don't exit the process in development
 });
