@@ -9,13 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import useAuth from "@/hooks/useAuth";
 import { formatDate } from "@/lib/utils";
-import { useCurrencyFormatter } from "@/lib/currencyUtils";
+import { formatNaira } from "@/lib/currencyUtils";
 
 const Earnings = () => {
   const { user, isMentor, isAdmin } = useAuth();
   const [timeFrame, setTimeFrame] = useState("month");
   const [courseFilter, setCourseFilter] = useState("all");
-  const formatCurrency = useCurrencyFormatter();
+  const formatCurrency = formatNaira;
 
   // Fetch earnings data
   const { data: earningsData, isLoading } = useQuery({
