@@ -321,6 +321,151 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User suspension/activation endpoint
+  app.post("/api/admin/users/:userId/suspend", isAuthenticated, hasRole([UserRole.ADMIN]), async (req: any, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { action, reason } = req.body;
+      const adminId = req.user.id;
+
+      // Get the user to be suspended
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent self-suspension
+      if (userId === adminId) {
+        return res.status(400).json({ message: "Cannot suspend your own account" });
+      }
+
+      // Prevent suspending other admins
+      if (user.role === UserRole.ADMIN) {
+        return res.status(400).json({ message: "Cannot suspend admin accounts" });
+      }
+
+      // Update user status
+      const newStatus = action === 'suspend' ? 'suspended' : 'active';
+      const updatedUser = await storage.updateUser(userId, { 
+        status: newStatus,
+        updatedAt: new Date()
+      });
+
+      // Log the suspension action
+      console.log(`User ${userId} ${action}ed by admin ${adminId}. Reason: ${reason}`);
+
+      // Create notification for the suspended user
+      if (action === 'suspend') {
+        await storage.createNotification({
+          userId: userId,
+          title: 'Account Suspended',
+          message: `Your account has been suspended. Reason: ${reason || 'Administrative action'}. Please contact support for assistance.`,
+          type: 'warning',
+          read: false,
+          linkUrl: '/support'
+        });
+      } else {
+        await storage.createNotification({
+          userId: userId,
+          title: 'Account Reactivated',
+          message: 'Your account has been reactivated. You can now access all platform features.',
+          type: 'success',
+          read: false,
+          linkUrl: '/dashboard'
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        message: `User ${action}ed successfully`,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error('Error suspending/activating user:', error);
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+
+  // Get individual user details for permissions management
+  app.get("/api/users/:userId", isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Remove sensitive information
+      const { password, ...userInfo } = user;
+      
+      res.json(userInfo);
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      res.status(500).json({ message: "Failed to fetch user details" });
+    }
+  });
+
+  // User permissions management endpoint
+  app.put("/api/admin/users/:userId/permissions", isAuthenticated, hasRole([UserRole.ADMIN]), async (req: any, res: Response) => {
+    try {
+      const { userId } = req.params;
+      const { role, status, notes, commissionRate, ...permissions } = req.body;
+      const adminId = req.user.id;
+
+      // Get the user to be updated
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent modifying admin permissions unless admin is updating themselves
+      if (user.role === UserRole.ADMIN && userId !== adminId) {
+        return res.status(400).json({ message: "Cannot modify other admin permissions" });
+      }
+
+      // Update user role and basic info
+      const updateData: any = {
+        updatedAt: new Date()
+      };
+
+      if (role && role !== user.role) {
+        updateData.role = role;
+      }
+
+      if (status) {
+        updateData.status = status;
+      }
+
+      // Update user in database
+      const updatedUser = await storage.updateUser(userId, updateData);
+
+      // Log the permission change
+      console.log(`User ${userId} permissions updated by admin ${adminId}. New role: ${role || user.role}`);
+
+      // Create notification for the user about permission changes
+      if (role && role !== user.role) {
+        await storage.createNotification({
+          userId: userId,
+          title: 'Role Updated',
+          message: `Your account role has been updated to ${role}. You may need to log out and log back in to see the changes.`,
+          type: 'info',
+          read: false,
+          linkUrl: '/profile'
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        message: `User permissions updated successfully`,
+        user: updatedUser
+      });
+    } catch (error) {
+      console.error('Error updating user permissions:', error);
+      res.status(500).json({ message: "Failed to update user permissions" });
+    }
+  });
+
   // Course Overview for Admin Dashboard
   app.get("/api/admin/course-overview", async (req: Request, res: Response) => {
     try {
