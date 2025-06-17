@@ -8,6 +8,7 @@ import {
   real,
   varchar,
   jsonb,
+  type PgTableWithColumns,
   index,
   primaryKey,
   decimal,
@@ -58,6 +59,7 @@ export const courses = pgTable("courses", {
   thumbnail: text("thumbnail"),
   price: real("price").notNull().default(0),
   isPublished: boolean("is_published").notNull().default(false),
+  mentorId: varchar("mentor_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   category: text("category"),
@@ -212,7 +214,7 @@ export const assignmentSubmissions = pgTable("assignment_submissions", {
 });
 
 // Enhanced LiveSessions table with video conferencing integration
-export const liveSessions: PgTableWithColumns<any> = pgTable("live_sessions", {
+export const liveSessions = pgTable("live_sessions", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id").notNull().references(() => lessons.id),
   courseId: integer("course_id").notNull().references(() => courses.id),
@@ -321,7 +323,7 @@ export const liveSessionMessages = pgTable("live_session_messages", {
   message: text("message").notNull(),
   messageType: text("message_type").notNull().default("text"), // text, question, poll, reaction
   isPrivate: boolean("is_private").default(false),
-  replyToId: integer("reply_to_id").references(() => liveSessionMessages.id),
+  replyToId: integer("reply_to_id").references((): any => liveSessionMessages.id),
   timestamp: timestamp("timestamp").defaultNow(),
   isModerated: boolean("is_moderated").default(false),
 });
@@ -1369,7 +1371,7 @@ export const discussionTopics = pgTable("discussion_topics", {
 export const discussionReplies = pgTable("discussion_replies", {
   id: serial("id").primaryKey(),
   topicId: integer("topic_id").notNull().references(() => discussionTopics.id),
-  parentReplyId: integer("parent_reply_id").references(() => discussionReplies.id),
+  parentReplyId: integer("parent_reply_id").references((): any => discussionReplies.id),
   userId: varchar("user_id").notNull().references(() => users.id),
   content: text("content").notNull(),
   contentType: text("content_type").default("text"),

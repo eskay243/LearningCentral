@@ -28,7 +28,7 @@ import AssignmentSubmission from "@/pages/AssignmentSubmission";
 import QuizResultsOld from "@/pages/QuizResults";
 import QuizViewer from "@/pages/quiz-viewer";
 import QuizResults from "@/pages/quiz-results";
-import MessagesPage from "@/pages/messages";
+import MessagesPage from "@/pages/Messages";
 import Analytics from "@/pages/Analytics";
 import Earnings from "@/pages/Earnings";
 import Settings from "@/pages/Settings";
