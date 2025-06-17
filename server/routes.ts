@@ -1552,18 +1552,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/courses', async (req, res) => {
     try {
       const published = req.query.published === 'true';
-      const testMentorId = req.query.mentor as string; // Allow testing with specific mentor ID
-      
       // Enhanced authentication context resolution
       let userId = (req as any).user?.id;
       let userRole = (req as any).user?.role;
-      
-      // For testing purposes, allow override with query parameter
-      if (testMentorId && testMentorId.length > 0) {
-        userId = testMentorId;
-        userRole = 'mentor';
-        console.log('Using test mentor ID:', testMentorId);
-      }
       
       // If no user from passport, check session directly
       if (!userId && (req as any).session?.passport?.user) {
@@ -1592,8 +1583,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId, 
         userRole, 
         isAuthenticated: !!userId, 
-        testMentorId,
-        queryParams: req.query,
         sessionUser: (req as any).session?.passport?.user,
         reqUserExists: !!(req as any).user,
         isAuthenticatedFn: req.isAuthenticated ? req.isAuthenticated() : 'not available'
