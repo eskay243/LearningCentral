@@ -852,6 +852,7 @@ export const studentKyc = pgTable("student_kyc", {
   
   // Verification Status
   status: text("status").default("pending"), // pending, approved, rejected, under_review
+  verificationStatus: text("verification_status").default("pending"), // pending, approved, rejected, under_review
   reviewedBy: varchar("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   reviewComments: text("review_comments"),

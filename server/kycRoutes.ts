@@ -251,13 +251,14 @@ export function registerKycRoutes(app: Express) {
       const { status, page = 1, limit = 50 } = req.query;
       const offset = (Number(page) - 1) * Number(limit);
 
-      let query = db.select({
+      // Build base query
+      const baseQuery = db.select({
         id: studentKyc.id,
         userId: studentKyc.userId,
         firstName: studentKyc.firstName,
         lastName: studentKyc.lastName,
         email: studentKyc.email,
-        status: studentKyc.status,
+        verificationStatus: studentKyc.verificationStatus,
         submittedAt: studentKyc.submittedAt,
         reviewedAt: studentKyc.reviewedAt,
         reviewComments: studentKyc.reviewComments,
@@ -266,15 +267,20 @@ export function registerKycRoutes(app: Express) {
         userLastName: users.lastName
       })
         .from(studentKyc)
-        .leftJoin(users, eq(studentKyc.userId, users.id))
-        .limit(Number(limit))
-        .offset(offset);
+        .leftJoin(users, eq(studentKyc.userId, users.id));
 
+      // Execute query with conditional filtering
+      let kycRecords;
       if (status && typeof status === 'string') {
-        query = query.where(eq(studentKyc.status, status));
+        kycRecords = await baseQuery
+          .where(eq(studentKyc.verificationStatus, status))
+          .limit(Number(limit))
+          .offset(offset);
+      } else {
+        kycRecords = await baseQuery
+          .limit(Number(limit))
+          .offset(offset);
       }
-
-      const kycRecords = await query;
 
       res.json({
         success: true,
