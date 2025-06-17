@@ -426,11 +426,20 @@ export default function MentorDashboard() {
     enabled: !!user && user.role === 'mentor',
   });
 
+  // Filter marketplace courses to exclude owned courses
+  const marketplaceCourses = allCourses.filter(course => {
+    // Exclude if this mentor created or is assigned to the course
+    const isOwned = courses.some(ownedCourse => ownedCourse.id === course.id);
+    return !isOwned && course.isPublished; // Only show published courses in marketplace
+  });
+
   console.log('Mentor courses debug:', { 
     courses, 
     coursesCount: Array.isArray(courses) ? courses.length : 0, 
     coursesLoading, 
     coursesError: coursesError?.message,
+    allCoursesCount: allCourses.length,
+    marketplaceCoursesCount: marketplaceCourses.length,
     firstCourse: Array.isArray(courses) ? courses[0] : null 
   });
 
@@ -823,17 +832,17 @@ export default function MentorDashboard() {
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : !allCourses || !Array.isArray(allCourses) || allCourses.length === 0 ? (
+              ) : !marketplaceCourses || marketplaceCourses.length === 0 ? (
                 <div className="text-center py-8">
                   <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400">No courses available in marketplace</p>
+                  <p className="text-gray-600 dark:text-gray-400">No additional courses available in marketplace</p>
                   <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                    Courses will appear here as they are published
+                    Other published courses will appear here
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {allCourses.map((course: any) => (
+                  {marketplaceCourses.map((course: any) => (
                     <Card key={course.id} className="border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">
