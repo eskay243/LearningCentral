@@ -167,6 +167,10 @@ function Router() {
         <Route path="/content-management" component={CourseContentManagement} />
         <Route path="/admin/user-permissions" component={AdminUserPermissions} />
         <Route path="/admin/edit-profile" component={AdminEditProfile} />
+        <Route path="/admin/mentor-payments" component={MentorPayments} />
+        <Route path="/admin/mentor-performance" component={MentorPerformance} />
+        <Route path="/admin/mentor-ratings" component={MentorRatings} />
+        <Route path="/admin/mentor-activities" component={MentorActivities} />
         <Route path="/kyc/mentor" component={KycMentorPage} />
         <Route path="/kyc/student" component={KycStudentPage} />
         <Route component={NotFound} />
