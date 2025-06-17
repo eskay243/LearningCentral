@@ -1,7 +1,6 @@
 import { type Express } from "express";
 import { storage } from "./storage";
 import { isAuthenticated, hasRole } from "./auth";
-import { notificationService } from "./notificationRoutes";
 import { z } from "zod";
 
 export function registerCommunicationRoutes(app: Express) {
