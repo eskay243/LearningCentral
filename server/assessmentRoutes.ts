@@ -12,12 +12,12 @@ export function registerAssessmentRoutes(app: Express) {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
       // Use the correct basic quiz schema that matches existing table
-      const validatedData = insertQuizSchema.parse({
+      const validatedData = {
         lessonId: parseInt(req.body.lessonId) || 1,
         title: req.body.title,
         description: req.body.description || null,
-        passingScore: parseInt(req.body.passingScore) || 70  // Convert to integer to match existing table
-      });
+        passingScore: parseInt(req.body.passingScore) || 70
+      };
 
       const quiz = await storage.createQuiz(validatedData);
       

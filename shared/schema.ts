@@ -214,7 +214,7 @@ export const assignmentSubmissions = pgTable("assignment_submissions", {
 });
 
 // Enhanced LiveSessions table with video conferencing integration
-export const liveSessions = pgTable("live_sessions", {
+export const liveSessions: any = pgTable("live_sessions", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id").notNull().references(() => lessons.id),
   courseId: integer("course_id").notNull().references(() => courses.id),
@@ -258,7 +258,7 @@ export const liveSessions = pgTable("live_sessions", {
   // Recurrence
   isRecurring: boolean("is_recurring").default(false),
   recurrencePattern: jsonb("recurrence_pattern"), // daily, weekly, monthly with config
-  parentSessionId: integer("parent_session_id").references(() => liveSessions.id),
+  parentSessionId: integer("parent_session_id").references((): any => liveSessions.id),
   
   // Notifications
   reminderSent: boolean("reminder_sent").default(false),

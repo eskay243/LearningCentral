@@ -80,7 +80,7 @@ export default function KycStudentPage() {
   const { data: kycStatus } = useQuery({
     queryKey: ['/api/kyc/student/status'],
     staleTime: 30000
-  }) as { data?: { status: string } };
+  }) as { data?: { status: string; reviewComments?: string } };
 
   const { data: kycDetails } = useQuery({
     queryKey: ['/api/kyc/student/details'],
