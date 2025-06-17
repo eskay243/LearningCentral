@@ -200,9 +200,15 @@ export function registerNotificationRoutes(app: Express) {
       res.set('Last-Modified', new Date().toUTCString());
       res.set('ETag', `"notif-${userId}-${Date.now()}"`);
 
+      console.log(`About to generate notifications for user ${userId} with role ${userRole}`);
+      
       // Generate dynamic notifications based on user role and recent activities
       const dynamicNotifications = await generateDynamicNotifications(userId, userRole || 'student');
       console.log(`Generated ${dynamicNotifications.length} notifications for user ${userId} (${userRole})`);
+      
+      if (dynamicNotifications.length === 0) {
+        console.log('No notifications generated - checking generateDynamicNotifications function');
+      }
       
       // Add timestamp to response to ensure uniqueness
       const response = {
