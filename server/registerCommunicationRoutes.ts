@@ -97,11 +97,25 @@ export function registerCommunicationRoutes(app: Express) {
         isGroup: participantIds.length > 1,
       });
 
+      // Validate participant IDs exist in database
+      const allParticipantIds = [userId, ...participantIds.filter((id: string) => id !== userId)];
+      const validParticipantIds = [];
+      
+      for (const participantId of allParticipantIds) {
+        const user = await storage.getUserById(participantId);
+        if (user) {
+          validParticipantIds.push(participantId);
+        } else {
+          console.warn(`Invalid user ID ${participantId} - skipping`);
+        }
+      }
+
+      if (validParticipantIds.length === 0) {
+        return res.status(400).json({ message: "No valid participants found" });
+      }
+
       // Add participants
-      await storage.addConversationParticipants(
-        conversation.id, 
-        [userId, ...participantIds.filter((id: string) => id !== userId)]
-      );
+      await storage.addConversationParticipants(conversation.id, validParticipantIds);
 
       // Send initial message
       if (content) {

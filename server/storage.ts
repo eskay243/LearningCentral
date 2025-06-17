@@ -1406,6 +1406,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getUserById(id: string): Promise<User | undefined> {
+    return this.getUser(id);
+  }
+
   async getUsers(): Promise<User[]> {
     try {
       const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
