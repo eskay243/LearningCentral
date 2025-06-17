@@ -6,6 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import useAuth from "@/hooks/useAuth";
 import { formatTimeFromNow, getInitials, getFullName } from "@/lib/utils";
 
@@ -16,6 +20,11 @@ const Messages = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [conversations, setConversations] = useState<any[]>([]);
   const [isConversationsLoading, setIsConversationsLoading] = useState(true);
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<any[]>([]);
+  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [newMessageTitle, setNewMessageTitle] = useState("");
+  const [newMessageContent, setNewMessageContent] = useState("");
 
   // Use fallback user for rendering
   const currentUser = user || {
@@ -86,14 +95,22 @@ const Messages = () => {
     const fetchMessages = async () => {
       try {
         setIsMessagesLoading(true);
-        const response = await fetch(`/api/conversations/${selectedConversation}/messages`, {
+        console.log(`Fetching messages for conversation ${selectedConversation}`);
+        const response = await fetch(`/api/messages/conversations/${selectedConversation}`, {
           credentials: "include",
         });
         
+        console.log('Messages response status:', response.status);
+        console.log('Messages response ok:', response.ok);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Successfully fetched messages:', data);
           setMessages(data || []);
         } else {
+          console.log('Messages response not ok, status:', response.status);
+          const errorText = await response.text();
+          console.log('Messages error response:', errorText);
           setMessages([]);
         }
       } catch (error) {
@@ -270,12 +287,89 @@ const Messages = () => {
   // Get messages for current conversation
   const currentMessages = messages || [];
   
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedConversation) return;
     
-    // Here you would use a mutation to send the message
-    // For now, just clear the input
-    setMessageText("");
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          conversationId: parseInt(selectedConversation),
+          content: messageText,
+        }),
+      });
+      
+      if (response.ok) {
+        setMessageText("");
+        // Refresh messages
+        const messagesResponse = await fetch(`/api/messages/conversations/${selectedConversation}`, {
+          credentials: "include",
+        });
+        if (messagesResponse.ok) {
+          const updatedMessages = await messagesResponse.json();
+          setMessages(updatedMessages || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const handleNewMessage = () => {
+    setShowNewMessageModal(true);
+    // Fetch available users
+    fetchAvailableUsers();
+  };
+
+  const fetchAvailableUsers = async () => {
+    try {
+      const response = await fetch('/api/messaging/available-users', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const users = await response.json();
+        setAvailableUsers(users || []);
+      }
+    } catch (error) {
+      console.error('Error fetching available users:', error);
+    }
+  };
+
+  const handleCreateConversation = async () => {
+    if (!newMessageContent.trim() || selectedRecipients.length === 0) return;
+    
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          recipients: selectedRecipients,
+          title: newMessageTitle || null,
+          content: newMessageContent,
+          type: 'individual',
+        }),
+      });
+      
+      if (response.ok) {
+        const conversation = await response.json();
+        setShowNewMessageModal(false);
+        setNewMessageTitle("");
+        setNewMessageContent("");
+        setSelectedRecipients([]);
+        setSelectedConversation(conversation.id.toString());
+        // Refresh conversations
+        fetchConversations();
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
   };
   
   return (
@@ -370,7 +464,7 @@ const Messages = () => {
           </ScrollArea>
           
           <div className="p-4 border-t border-gray-200">
-            <Button className="w-full" variant="outline">
+            <Button className="w-full" variant="outline" onClick={handleNewMessage}>
               <i className="ri-add-line mr-2"></i>
               New Message
             </Button>
