@@ -82,10 +82,7 @@ import KycMentorPage from "@/pages/kyc-mentor";
 import KycStudentPage from "@/pages/kyc-student";
 import AdminUserPermissions from "@/pages/admin-user-permissions";
 import AdminEditProfile from "@/pages/admin-edit-profile";
-import MentorPayments from "@/pages/MentorPayments";
-import MentorPerformance from "@/pages/MentorPerformance";
-import MentorRatings from "@/pages/MentorRatings";
-import MentorActivities from "@/pages/MentorActivities";
+import ComprehensiveMentorManagement from "@/pages/ComprehensiveMentorManagement";
 
 function Router() {
   return (
@@ -137,7 +134,7 @@ function Router() {
         <Route path="/admin/video-settings" component={AdminVideoSettings} />
         <Route path="/admin/payments" component={AdminPayments} />
         <Route path="/admin/users" component={AdminUsers} />
-        <Route path="/admin/mentors" component={AdminMentors} />
+        <Route path="/admin/mentors" component={ComprehensiveMentorManagement} />
         <Route path="/profile/:id" component={ProfilePage} />
         <Route path="/admin/permissions/:id" component={AdminPermissions} />
         <Route path="/admin/mentor-details/:id" component={AdminMentorDetails} />
@@ -167,10 +164,6 @@ function Router() {
         <Route path="/content-management" component={CourseContentManagement} />
         <Route path="/admin/user-permissions" component={AdminUserPermissions} />
         <Route path="/admin/edit-profile" component={AdminEditProfile} />
-        <Route path="/admin/mentor-payments" component={MentorPayments} />
-        <Route path="/admin/mentor-performance" component={MentorPerformance} />
-        <Route path="/admin/mentor-ratings" component={MentorRatings} />
-        <Route path="/admin/mentor-activities" component={MentorActivities} />
         <Route path="/kyc/mentor" component={KycMentorPage} />
         <Route path="/kyc/student" component={KycStudentPage} />
         <Route component={NotFound} />
