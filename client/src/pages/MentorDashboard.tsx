@@ -420,6 +420,12 @@ export default function MentorDashboard() {
     enabled: !!user && user.role === 'mentor', // Only run query when user is authenticated and is a mentor
   });
 
+  // Query for all general courses for the marketplace
+  const { data: allCourses = [], isLoading: allCoursesLoading } = useQuery<Course[]>({
+    queryKey: ["/api/courses"],
+    enabled: !!user && user.role === 'mentor',
+  });
+
   console.log('Mentor courses debug:', { 
     courses, 
     coursesCount: Array.isArray(courses) ? courses.length : 0, 
@@ -708,6 +714,7 @@ export default function MentorDashboard() {
         </TabsContent>
 
         <TabsContent value="courses" className="space-y-6">
+          {/* My Courses Section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>My Courses</CardTitle>
@@ -726,26 +733,35 @@ export default function MentorDashboard() {
                 </div>
               ) : coursesError ? (
                 <div className="text-center py-8">
-                  <p className="text-red-600">Error loading courses</p>
+                  <p className="text-red-600">Error loading your courses</p>
                 </div>
               ) : !courses || !Array.isArray(courses) || courses.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-600">No courses assigned yet</p>
+                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400">No courses created or assigned yet</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                    Start by creating your first course or wait for admin assignment
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {courses.map((course: any) => (
-                    <Card key={course.id} className="border">
+                    <Card key={course.id} className="border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800">
                       <CardContent className="p-4">
-                        <h3 className="font-semibold mb-2">{course.title || 'Untitled Course'}</h3>
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="font-semibold text-green-800 dark:text-green-200">{course.title || 'Untitled Course'}</h3>
+                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                            Owned
+                          </Badge>
+                        </div>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Price:</span>
+                            <span className="text-gray-600 dark:text-gray-400">Price:</span>
                             <span className="font-medium">{formatCurrency(course.price || 0)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Your Earnings:</span>
-                            <span className="font-medium text-green-600">
+                            <span className="text-gray-600 dark:text-gray-400">Your Earnings:</span>
+                            <span className="font-medium text-green-600 dark:text-green-400">
                               {formatCurrency((course.price || 0) * 0.37)}
                             </span>
                           </div>
@@ -782,6 +798,75 @@ export default function MentorDashboard() {
                               <EditCourseForm course={editingCourse!} />
                             </DialogContent>
                           </Dialog>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Course Marketplace Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                Course Marketplace
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Browse all available courses in the platform
+              </p>
+            </CardHeader>
+            <CardContent>
+              {allCoursesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : !allCourses || !Array.isArray(allCourses) || allCourses.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400">No courses available in marketplace</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                    Courses will appear here as they are published
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allCourses.map((course: any) => (
+                    <Card key={course.id} className="border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="font-semibold text-blue-800 dark:text-blue-200">{course.title || 'Untitled Course'}</h3>
+                          <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                            Marketplace
+                          </Badge>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Price:</span>
+                            <span className="font-medium">{formatCurrency(course.price || 0)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Category:</span>
+                            <span className="font-medium text-blue-600 dark:text-blue-400">
+                              {course.category || 'General'}
+                            </span>
+                          </div>
+                          <Badge variant={course.isPublished ? "default" : "secondary"} className="w-full justify-center mb-3">
+                            {course.isPublished ? "Published" : "Draft"}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => navigate(`/course/${course.id}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Details
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
