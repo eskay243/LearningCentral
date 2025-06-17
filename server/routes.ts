@@ -2015,7 +2015,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               questionType: question.type || 'multiple_choice',
               questionText: question.question,
               options: question.options || [],
-              correctAnswers: [question.correctAnswer] || [],
+              correctAnswers: question.correctAnswer ? [question.correctAnswer] : [],
               points: parseInt(question.points) || 1,
               orderIndex: 0
             });
@@ -2176,8 +2176,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/messages/:id/read', isAuthenticated, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);
-      const message = await storage.markMessagesAsRead(req.user?.id || "", messageId.toString());
-      res.json(message);
+      await storage.markMessagesAsRead(messageId, req.user?.id || "");
+      res.json({ success: true, message: "Messages marked as read" });
     } catch (error) {
       console.error("Error marking message as read:", error);
       res.status(500).json({ message: "Failed to mark message as read" });
@@ -2968,7 +2968,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const assignments = await storage.getAssignmentsByCourse(enrollment.courseId);
         
         for (const assignment of assignments) {
-          const submissions = await storage.getAssignmentSubmissions(assignment.id);
+          const submissions = await storage.getAssignmentSubmissions(assignment.id.toString());
           const submission = submissions.find(s => s.userId === userId);
           
           allAssignments.push({
@@ -3148,7 +3148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get recent assignment submissions
         const assignments = await storage.getAssignmentsByCourse(course.id);
         for (const assignment of assignments) {
-          const submissions = await storage.getAssignmentSubmissions(assignment.id);
+          const submissions = await storage.getAssignmentSubmissions(assignment.id.toString());
           const submission = submissions.find(s => s.userId === userId);
           if (submission && submission.submittedAt) {
             activities.push({
