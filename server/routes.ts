@@ -2968,7 +2968,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const assignments = await storage.getAssignmentsByCourse(enrollment.courseId);
         
         for (const assignment of assignments) {
-          const submission = await storage.getAssignmentSubmission(assignment.id, userId);
+          const submissions = await storage.getAssignmentSubmissions(assignment.id);
+          const submission = submissions.find(s => s.userId === userId);
           
           allAssignments.push({
             id: assignment.id,
@@ -3147,7 +3148,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get recent assignment submissions
         const assignments = await storage.getAssignmentsByCourse(course.id);
         for (const assignment of assignments) {
-          const submission = await storage.getAssignmentSubmission(assignment.id, userId);
+          const submissions = await storage.getAssignmentSubmissions(assignment.id);
+          const submission = submissions.find(s => s.userId === userId);
           if (submission && submission.submittedAt) {
             activities.push({
               id: `assignment-${submission.id}`,
