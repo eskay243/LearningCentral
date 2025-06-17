@@ -4123,6 +4123,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register invoice and payment routes
   registerInvoiceRoutes(app);
+  
+  // Register mentor management routes
+  registerMentorManagementRoutes(app);
 
   return httpServer;
 }

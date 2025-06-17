@@ -82,6 +82,10 @@ import KycMentorPage from "@/pages/kyc-mentor";
 import KycStudentPage from "@/pages/kyc-student";
 import AdminUserPermissions from "@/pages/admin-user-permissions";
 import AdminEditProfile from "@/pages/admin-edit-profile";
+import MentorPayments from "@/pages/MentorPayments";
+import MentorPerformance from "@/pages/MentorPerformance";
+import MentorRatings from "@/pages/MentorRatings";
+import MentorActivities from "@/pages/MentorActivities";
 
 function Router() {
   return (
