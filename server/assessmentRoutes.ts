@@ -755,8 +755,55 @@ export function registerAssessmentRoutes(app: Express) {
 
   app.get("/api/student/recent-activity", isAuthenticated, async (req: any, res) => {
     try {
-      // Return empty array for now - activity tracking not implemented yet
-      res.json([]);
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const activities = [];
+      const enrollments = await storage.getEnrollmentsByUser(req.user.id);
+      
+      // Get recent quiz attempts
+      for (const enrollment of enrollments) {
+        const course = await storage.getCourse(enrollment.courseId);
+        if (!course) continue;
+        
+        const lessons = await storage.getLessonsByCourse(enrollment.courseId);
+        for (const lesson of lessons) {
+          const quizzes = await storage.getQuizzesByLesson(lesson.id);
+          for (const quiz of quizzes) {
+            const attempts = await storage.getQuizAttempts(quiz.id);
+            const userAttempts = attempts.filter(attempt => attempt.userId === req.user.id);
+            
+            for (const attempt of userAttempts.slice(-3)) { // Last 3 attempts
+              activities.push({
+                id: attempt.id,
+                type: 'quiz_taken',
+                title: quiz.title,
+                courseTitle: course.title,
+                timestamp: attempt.completedAt.toISOString()
+              });
+            }
+          }
+        }
+        
+        // Get recent assignment submissions
+        const assignments = await storage.getAssignmentsByCourse(enrollment.courseId);
+        for (const assignment of assignments) {
+          const submissions = await storage.getUserAssignmentSubmissions(req.user.id, assignment.id);
+          
+          for (const submission of submissions.slice(-2)) { // Last 2 submissions
+            activities.push({
+              id: submission.id,
+              type: 'assignment_submitted',
+              title: assignment.title,
+              courseTitle: course.title,
+              timestamp: submission.submittedAt.toISOString()
+            });
+          }
+        }
+      }
+      
+      // Sort by timestamp and return latest 10
+      activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      res.json(activities.slice(0, 10));
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
