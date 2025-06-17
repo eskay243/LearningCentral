@@ -2232,17 +2232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Notification routes
-  app.get('/api/notifications', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const notifications = await storage.getUserNotifications(userId);
-      res.json(notifications);
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-      res.status(500).json({ message: "We're having trouble loading your notifications right now. Please try refreshing the page." });
-    }
-  });
+  // Notification routes are handled in notificationRoutes.ts
   
   // Bookmark routes
   app.get('/api/bookmarks', isAuthenticated, async (req: any, res) => {
