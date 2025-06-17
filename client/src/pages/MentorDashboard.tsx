@@ -415,32 +415,32 @@ export default function MentorDashboard() {
     queryKey: ["/api/mentor/withdrawal-methods"],
   });
 
-  const { data: courses = [], isLoading: coursesLoading, error: coursesError } = useQuery<Course[]>({
-    queryKey: ["/api/mentor/courses"],
-    enabled: !!user && user.role === 'mentor', // Only run query when user is authenticated and is a mentor
-  });
-
-  // Query for all general courses for the marketplace
-  const { data: allCourses = [], isLoading: allCoursesLoading } = useQuery<Course[]>({
+  // Query for all general courses 
+  const { data: allCourses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
     enabled: !!user && user.role === 'mentor',
   });
 
-  // Filter marketplace courses to exclude owned courses
+  // Filter courses to separate owned vs marketplace
+  const ownedCourses = allCourses.filter(course => {
+    // Show courses created by this mentor or assigned to them via mentor_courses table
+    return (course as any).isAssignedToMe === true;
+  });
+
   const marketplaceCourses = allCourses.filter(course => {
-    // Exclude if this mentor created or is assigned to the course
-    const isOwned = courses.some(ownedCourse => ownedCourse.id === course.id);
-    return !isOwned && course.isPublished; // Only show published courses in marketplace
+    // Show published courses not owned by this mentor
+    return (course as any).isAssignedToMe !== true && course.isPublished;
   });
 
   console.log('Mentor courses debug:', { 
-    courses, 
-    coursesCount: Array.isArray(courses) ? courses.length : 0, 
-    coursesLoading, 
-    coursesError: coursesError?.message,
+    allCourses, 
     allCoursesCount: allCourses.length,
+    ownedCourses,
+    ownedCoursesCount: ownedCourses.length,
+    marketplaceCourses,
     marketplaceCoursesCount: marketplaceCourses.length,
-    firstCourse: Array.isArray(courses) ? courses[0] : null 
+    coursesLoading,
+    userId: user?.id
   });
 
   const withdrawalForm = useForm<WithdrawalForm>({
@@ -740,11 +740,7 @@ export default function MentorDashboard() {
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              ) : coursesError ? (
-                <div className="text-center py-8">
-                  <p className="text-red-600">Error loading your courses</p>
-                </div>
-              ) : !courses || !Array.isArray(courses) || courses.length === 0 ? (
+              ) : !ownedCourses || ownedCourses.length === 0 ? (
                 <div className="text-center py-8">
                   <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400">No courses created or assigned yet</p>
@@ -754,7 +750,7 @@ export default function MentorDashboard() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {courses.map((course: any) => (
+                  {ownedCourses.map((course: any) => (
                     <Card key={course.id} className="border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-2">

@@ -1562,12 +1562,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Course routes
+  // Course routes with mentor assignment information
   app.get('/api/courses', async (req, res) => {
     try {
       const published = req.query.published === 'true';
+      const userId = (req as any).user?.id; // Get authenticated user ID if available
+      
+      // Get base courses
       const courses = await storage.getCourses({ published });
-      res.json(courses);
+      
+      // If user is authenticated and is a mentor, add assignment information
+      if (userId && (req as any).user?.role === 'mentor') {
+        // Get courses assigned to this mentor via mentor_courses table
+        const assignedCourseIds = await db
+          .select({ courseId: mentorCourses.courseId })
+          .from(mentorCourses)
+          .where(eq(mentorCourses.mentorId, userId));
+        
+        const assignedIds = new Set(assignedCourseIds.map(ac => ac.courseId));
+        
+        // Add isAssignedToMe flag to each course
+        const coursesWithAssignment = courses.map(course => ({
+          ...course,
+          isAssignedToMe: course.mentorId === userId || assignedIds.has(course.id)
+        }));
+        
+        res.json(coursesWithAssignment);
+      } else {
+        res.json(courses);
+      }
     } catch (error) {
       console.error("Error fetching courses:", error);
       res.status(500).json({ message: "Failed to fetch courses" });
