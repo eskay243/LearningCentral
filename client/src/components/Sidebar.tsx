@@ -213,11 +213,6 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span className="truncate">Code Companion</span>
           </Link>
           
-          <Link href="/profile" className={menuItemClass("/profile")}>
-            <User className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-            <span className="truncate">Profile</span>
-          </Link>
-          
           {!isAdmin && !isMentor && (
             <Link href="/kyc/student" className={menuItemClass("/kyc/student")}>
               <Shield className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
