@@ -20,6 +20,7 @@ const Assessments = () => {
   const { user, isMentor, isAdmin, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const isStudent = user?.role === 'student';
   const [activeTab, setActiveTab] = useState("quizzes");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourse, setFilterCourse] = useState("all");

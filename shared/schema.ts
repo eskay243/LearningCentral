@@ -212,7 +212,7 @@ export const assignmentSubmissions = pgTable("assignment_submissions", {
 });
 
 // Enhanced LiveSessions table with video conferencing integration
-export const liveSessions = pgTable("live_sessions", {
+export const liveSessions: PgTableWithColumns<any> = pgTable("live_sessions", {
   id: serial("id").primaryKey(),
   lessonId: integer("lesson_id").notNull().references(() => lessons.id),
   courseId: integer("course_id").notNull().references(() => courses.id),
@@ -1872,7 +1872,6 @@ export type AdvancedAssignmentSubmission = typeof advancedAssignmentSubmissions.
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type DiscussionForum = typeof discussionForums.$inferSelect;
 export type DiscussionTopic = typeof discussionTopics.$inferSelect;
-export type DiscussionReply = typeof discussionReplies.$inferSelect;
 export type DiscussionVote = typeof discussionVotes.$inferSelect;
 export type VideoSession = typeof videoSessions.$inferSelect;
 export type VideoSessionParticipant = typeof videoSessionParticipants.$inferSelect;
