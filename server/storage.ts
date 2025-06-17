@@ -473,6 +473,7 @@ export interface IStorage {
   // Course operations
   getCourse(id: number): Promise<Course | undefined>;
   getCourses(options?: { isPublished?: boolean; mentorId?: string }): Promise<Course[]>;
+  getCoursesByMentor(mentorId: string): Promise<Course[]>;
   createCourse(courseData: Omit<Course, "id">): Promise<Course>;
   updateCourse(id: number, courseData: Partial<Course>): Promise<Course | undefined>;
   deleteCourse(id: number): Promise<boolean>;
