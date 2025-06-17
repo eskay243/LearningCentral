@@ -568,6 +568,73 @@ const Messages = () => {
           )}
         </div>
       </div>
+      
+      {/* New Message Modal */}
+      <Dialog open={showNewMessageModal} onOpenChange={setShowNewMessageModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>New Message</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Subject (Optional)</Label>
+              <Input
+                id="title"
+                value={newMessageTitle}
+                onChange={(e) => setNewMessageTitle(e.target.value)}
+                placeholder="Enter message subject"
+              />
+            </div>
+            
+            <div>
+              <Label>Recipients</Label>
+              <ScrollArea className="h-32 border rounded p-2">
+                {availableUsers.map((user) => (
+                  <div key={user.id} className="flex items-center space-x-2 py-1">
+                    <Checkbox
+                      id={user.id}
+                      checked={selectedRecipients.includes(user.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedRecipients([...selectedRecipients, user.id]);
+                        } else {
+                          setSelectedRecipients(selectedRecipients.filter(id => id !== user.id));
+                        }
+                      }}
+                    />
+                    <label htmlFor={user.id} className="text-sm">
+                      {user.firstName} {user.lastName} ({user.role})
+                    </label>
+                  </div>
+                ))}
+              </ScrollArea>
+            </div>
+            
+            <div>
+              <Label htmlFor="content">Message</Label>
+              <Textarea
+                id="content"
+                value={newMessageContent}
+                onChange={(e) => setNewMessageContent(e.target.value)}
+                placeholder="Type your message here..."
+                rows={4}
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setShowNewMessageModal(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateConversation}
+                disabled={!newMessageContent.trim() || selectedRecipients.length === 0}
+              >
+                Send Message
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
