@@ -61,7 +61,7 @@ export function NotificationCenter() {
 
   // Fetch notifications with cache-busting
   const { data: notificationResponse, isLoading, error } = useQuery({
-    queryKey: ['/api/notifications', Date.now()], // Include timestamp to force fresh requests
+    queryKey: ['/api/notifications'],
     queryFn: async () => {
       const response = await fetch(`/api/notifications?t=${Date.now()}`, {
         method: 'GET',
@@ -76,13 +76,11 @@ export function NotificationCenter() {
       }
       return response.json();
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
-    retry: false,
+    refetchInterval: 15000, // Refetch every 15 seconds
+    retry: 1,
     staleTime: 0, // Always consider data stale
-    cacheTime: 0, // Don't cache at all
-    onError: () => {
-      console.log("Unable to load notifications at the moment. Please try again later.");
-    }
+    gcTime: 0, // Don't cache at all (updated from cacheTime for v5)
+    enabled: !!user // Only fetch when user is authenticated
   });
 
   // Extract notifications from response
@@ -158,15 +156,18 @@ export function NotificationCenter() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="sm" className="relative hover:bg-muted">
+          <Bell className={`h-5 w-5 transition-colors ${unreadCount > 0 ? 'text-blue-600' : 'text-muted-foreground'}`} />
           {unreadCount > 0 && (
             <Badge 
               variant={urgentCount > 0 ? "destructive" : "default"}
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
+              className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0 font-bold shadow-lg animate-pulse"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
+          )}
+          {isLoading && (
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full animate-ping opacity-75" />
           )}
         </Button>
       </DropdownMenuTrigger>
