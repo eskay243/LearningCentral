@@ -38,14 +38,23 @@ const Messages = () => {
     queryKey: ["/api/conversations"],
     queryFn: async () => {
       try {
+        console.log('Fetching conversations from /api/conversations...');
         const response = await fetch("/api/conversations", {
           credentials: "include",
         });
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
         if (response.ok) {
-          return await response.json();
+          const data = await response.json();
+          console.log('Successfully fetched conversations:', data);
+          return data;
+        } else {
+          console.log('Response not ok, status:', response.status);
+          const errorText = await response.text();
+          console.log('Error response:', errorText);
+          return [];
         }
-        // Return empty array if auth fails instead of throwing
-        return [];
       } catch (error) {
         console.error('Error fetching conversations:', error);
         return [];
