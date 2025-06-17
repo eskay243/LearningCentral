@@ -15,7 +15,7 @@ export function registerAssessmentRoutes(app: Express) {
       const validatedData = {
         lessonId: parseInt(req.body.lessonId) || 1,
         title: req.body.title,
-        description: req.body.description || null,
+        description: req.body.description ? String(req.body.description) : null,
         passingScore: parseInt(req.body.passingScore) || 70
       };
 
@@ -90,7 +90,7 @@ export function registerAssessmentRoutes(app: Express) {
       
       for (const question of questions) {
         const userAnswer = answers[question.id];
-        const correct = question.correctAnswer.includes(userAnswer);
+        const correct = String(question.correctAnswer || '').includes(userAnswer);
         if (correct) correctAnswers++;
         
         results.push({
@@ -193,7 +193,7 @@ export function registerAssessmentRoutes(app: Express) {
     try {
       if (!req.user) return res.status(401).json({ message: "Not authenticated" });
       
-      const quiz = await storage.getAutomatedQuiz(Number(req.params.id));
+      const quiz = await storage.getQuizzes().then(quizzes => quizzes.find(q => q.id === Number(req.params.id)));
       if (!quiz) return res.status(404).json({ message: "Quiz not found" });
       
       // Check if quiz is available

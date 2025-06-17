@@ -48,19 +48,19 @@ const Assessments = () => {
   const { data: quizzes = [], isLoading: isQuizzesLoading } = useQuery({
     queryKey: isStudent ? ["/api/student/quizzes"] : [isMentor ? `/api/mentors/${user?.id}/quizzes` : "/api/quizzes"],
     enabled: !!user,
-  });
+  }) as { data: any[], isLoading: boolean };
 
   // Fetch assignments
   const { data: assignments = [], isLoading: isAssignmentsLoading } = useQuery({
     queryKey: isStudent ? ["/api/student/assignments"] : [isMentor ? `/api/mentors/${user?.id}/assignments` : "/api/assignments"],
     enabled: !!user,
-  });
+  }) as { data: any[], isLoading: boolean };
 
   // Fetch courses for filter dropdown
   const { data: courses = [] } = useQuery({
     queryKey: ["/api/courses"],
     enabled: !!user,
-  });
+  }) as { data: any[] };
 
   // Early return if still loading auth
   if (authLoading) {
