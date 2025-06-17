@@ -14,6 +14,8 @@ const Messages = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [isConversationsLoading, setIsConversationsLoading] = useState(true);
 
   // Use fallback user for rendering
   const currentUser = user || {
@@ -33,12 +35,12 @@ const Messages = () => {
     }
   }, []);
   
-  // Fetch conversations with custom query function that handles auth
-  const { data: conversations, isLoading: isConversationsLoading, error: conversationsError } = useQuery({
-    queryKey: ["/api/conversations"],
-    queryFn: async () => {
+  // Fetch conversations directly with useEffect
+  useEffect(() => {
+    const fetchConversations = async () => {
       try {
         console.log('Fetching conversations from /api/conversations...');
+        setIsConversationsLoading(true);
         const response = await fetch("/api/conversations", {
           credentials: "include",
         });
@@ -48,25 +50,23 @@ const Messages = () => {
         if (response.ok) {
           const data = await response.json();
           console.log('Successfully fetched conversations:', data);
-          return data;
+          setConversations(data || []);
         } else {
           console.log('Response not ok, status:', response.status);
           const errorText = await response.text();
           console.log('Error response:', errorText);
-          return [];
+          setConversations([]);
         }
       } catch (error) {
         console.error('Error fetching conversations:', error);
-        return [];
+        setConversations([]);
+      } finally {
+        setIsConversationsLoading(false);
       }
-    },
-    enabled: true,
-    retry: 1,
-    staleTime: 0,
-    refetchOnWindowFocus: false,
-  });
-  
-  console.log('Query error:', conversationsError);
+    };
+
+    fetchConversations();
+  }, []);
   
   // Fetch messages for selected conversation
   const { data: messages, isLoading: isMessagesLoading } = useQuery({
@@ -218,8 +218,9 @@ const Messages = () => {
     }
   }, [conversations, selectedConversation]);
   
-  // Filter conversations based on search term
-  const filteredConversations = (conversations || []).filter(
+  // Filter conversations based on search term - ensure conversations is an array
+  const conversationsArray = Array.isArray(conversations) ? conversations : [];
+  const filteredConversations = conversationsArray.filter(
     (conv) => {
       const searchableText = conv.title?.toLowerCase() || '';
       return searchableText.includes(searchTerm.toLowerCase());
@@ -228,6 +229,8 @@ const Messages = () => {
   
   // Debug log to check data
   console.log('Conversations data:', conversations);
+  console.log('Conversations is array:', Array.isArray(conversations));
+  console.log('Conversations array:', conversationsArray);
   console.log('Filtered conversations:', filteredConversations);
   
   // Get current conversation
