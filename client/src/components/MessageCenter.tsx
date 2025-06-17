@@ -64,9 +64,10 @@ export function MessageCenter() {
   const [recipientType, setRecipientType] = useState<'individual' | 'course' | 'sitewide'>('individual');
   const [selectedCourse, setSelectedCourse] = useState('');
 
-  // Fetch conversations
+  // Fetch conversations only when user is authenticated
   const { data: conversations = [], isLoading } = useQuery<Conversation[]>({
     queryKey: ['/api/conversations'],
+    enabled: !!user,
     refetchInterval: 30000,
     retry: false,
   });

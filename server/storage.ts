@@ -3533,6 +3533,202 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  async getMentorConversations(mentorId: string): Promise<any[]> {
+    try {
+      console.log('Getting mentor conversations for:', mentorId);
+      
+      // Mentors can only see conversations with:
+      // 1. Students enrolled in their courses
+      // 2. Admin users
+      // 3. Direct conversations they're part of
+      const conversationsQuery = `
+        SELECT DISTINCT c.id, c.title, c.type, c.course_id, c.created_at, c.updated_at
+        FROM conversations c
+        JOIN conversation_participants cp ON c.id = cp.conversation_id
+        WHERE cp.user_id = $1
+        AND (
+          -- Direct conversations the mentor is part of
+          c.id IN (
+            SELECT cp2.conversation_id 
+            FROM conversation_participants cp2 
+            WHERE cp2.user_id = $1
+          )
+          OR
+          -- Course-related conversations where mentor teaches the course
+          (c.course_id IS NOT NULL AND c.course_id IN (
+            SELECT mc.course_id 
+            FROM mentor_courses mc 
+            WHERE mc.mentor_id = $1
+          ))
+        )
+        ORDER BY c.updated_at DESC
+      `;
+
+      const conversationsResult = await pool.query(conversationsQuery, [mentorId]);
+      console.log('Found mentor conversations:', conversationsResult.rows.length);
+
+      const results = [];
+
+      for (const conv of conversationsResult.rows) {
+        // Get participants
+        const participantsQuery = `
+          SELECT cp.user_id, cp.joined_at, u.first_name, u.last_name, u.role
+          FROM conversation_participants cp
+          JOIN users u ON cp.user_id = u.id
+          WHERE cp.conversation_id = $1
+        `;
+        const participantsResult = await pool.query(participantsQuery, [conv.id]);
+
+        // Filter to only show conversations with enrolled students or admins
+        const participants = participantsResult.rows.map(p => ({
+          userId: p.user_id,
+          joinedAt: p.joined_at,
+          firstName: p.first_name,
+          lastName: p.last_name,
+          role: p.role
+        }));
+
+        // Check if conversation has valid participants for this mentor
+        const hasValidParticipants = participants.some(p => 
+          p.role === 'admin' || 
+          (p.role === 'student' && p.userId !== mentorId) ||
+          p.userId === mentorId
+        );
+
+        if (!hasValidParticipants) {
+          continue; // Skip this conversation
+        }
+
+        // Get last message
+        const lastMessageQuery = `
+          SELECT cm.id, cm.content, cm.sender_id, cm.sent_at, 
+                 u.first_name || ' ' || u.last_name as sender_name
+          FROM chat_messages cm
+          JOIN users u ON cm.sender_id = u.id
+          WHERE cm.conversation_id = $1
+          ORDER BY cm.sent_at DESC
+          LIMIT 1
+        `;
+        const lastMessageResult = await pool.query(lastMessageQuery, [conv.id]);
+
+        // Get unread count
+        const unreadQuery = `
+          SELECT COUNT(*)::integer as count
+          FROM chat_messages cm
+          WHERE cm.conversation_id = $1 
+          AND cm.sender_id != $2 
+          AND cm.is_read = false
+        `;
+        const unreadResult = await pool.query(unreadQuery, [conv.id, mentorId]);
+
+        const lastMessage = lastMessageResult.rows[0] ? {
+          id: lastMessageResult.rows[0].id,
+          content: lastMessageResult.rows[0].content,
+          senderId: lastMessageResult.rows[0].sender_id,
+          sentAt: lastMessageResult.rows[0].sent_at,
+          senderName: lastMessageResult.rows[0].sender_name
+        } : null;
+
+        const otherUser = participants.find(p => p.userId !== mentorId);
+
+        results.push({
+          id: conv.id,
+          title: conv.title,
+          type: conv.type,
+          courseId: conv.course_id,
+          createdAt: conv.created_at,
+          updatedAt: conv.updated_at,
+          participants: participants,
+          lastMessage: lastMessage,
+          unreadCount: unreadResult.rows[0]?.count || 0,
+          otherUser: otherUser || null
+        });
+      }
+
+      console.log('Processed mentor conversations:', results.length);
+      return results;
+    } catch (error) {
+      console.error("Error fetching mentor conversations:", error);
+      return [];
+    }
+  }
+
+  async getAllConversations(): Promise<any[]> {
+    try {
+      console.log('Getting all conversations for admin');
+      
+      // Admin can see all conversations
+      const conversationsQuery = `
+        SELECT DISTINCT c.id, c.title, c.type, c.course_id, c.created_at, c.updated_at
+        FROM conversations c
+        ORDER BY c.updated_at DESC
+      `;
+
+      const conversationsResult = await pool.query(conversationsQuery);
+      console.log('Found all conversations:', conversationsResult.rows.length);
+
+      const results = [];
+
+      for (const conv of conversationsResult.rows) {
+        // Get participants
+        const participantsQuery = `
+          SELECT cp.user_id, cp.joined_at, u.first_name, u.last_name, u.role
+          FROM conversation_participants cp
+          JOIN users u ON cp.user_id = u.id
+          WHERE cp.conversation_id = $1
+        `;
+        const participantsResult = await pool.query(participantsQuery, [conv.id]);
+
+        // Get last message
+        const lastMessageQuery = `
+          SELECT cm.id, cm.content, cm.sender_id, cm.sent_at, 
+                 u.first_name || ' ' || u.last_name as sender_name
+          FROM chat_messages cm
+          JOIN users u ON cm.sender_id = u.id
+          WHERE cm.conversation_id = $1
+          ORDER BY cm.sent_at DESC
+          LIMIT 1
+        `;
+        const lastMessageResult = await pool.query(lastMessageQuery, [conv.id]);
+
+        const participants = participantsResult.rows.map(p => ({
+          userId: p.user_id,
+          joinedAt: p.joined_at,
+          firstName: p.first_name,
+          lastName: p.last_name,
+          role: p.role
+        }));
+
+        const lastMessage = lastMessageResult.rows[0] ? {
+          id: lastMessageResult.rows[0].id,
+          content: lastMessageResult.rows[0].content,
+          senderId: lastMessageResult.rows[0].sender_id,
+          sentAt: lastMessageResult.rows[0].sent_at,
+          senderName: lastMessageResult.rows[0].sender_name
+        } : null;
+
+        results.push({
+          id: conv.id,
+          title: conv.title,
+          type: conv.type,
+          courseId: conv.course_id,
+          createdAt: conv.created_at,
+          updatedAt: conv.updated_at,
+          participants: participants,
+          lastMessage: lastMessage,
+          unreadCount: 0, // Admin doesn't track unread for overview
+          otherUser: participants[0] || null
+        });
+      }
+
+      console.log('Processed all conversations for admin:', results.length);
+      return results;
+    } catch (error) {
+      console.error("Error fetching all conversations:", error);
+      return [];
+    }
+  }
   
   async getConversationMessages(conversationId: number): Promise<any[]> {
     try {

@@ -5,14 +5,28 @@ import { z } from "zod";
 
 export function registerCommunicationRoutes(app: Express) {
   // Get all conversations for a user (used by header MessageCenter)
-  app.get('/api/conversations', async (req: any, res) => {
+  app.get('/api/conversations', isAuthenticated, async (req: any, res) => {
     try {
-      // Use default demo user for now until authentication is fixed
-      const userId = 'demo-oyinkonsola-789';
+      const userId = req.user.id;
+      const userRole = req.user.role;
       
-      console.log('Fetching conversations for user:', userId);
-      const conversations = await storage.getUserConversations(userId);
-      console.log('Found conversations:', conversations.length);
+      console.log(`Fetching conversations for user: ${userId} with role: ${userRole}`);
+      
+      // Get conversations based on user role and permissions
+      let conversations = [];
+      
+      if (userRole === 'admin') {
+        // Admin can see all conversations
+        conversations = await storage.getAllConversations();
+      } else if (userRole === 'mentor') {
+        // Mentors can only see conversations they're part of or from their enrolled students
+        conversations = await storage.getMentorConversations(userId);
+      } else {
+        // Students can only see their own conversations
+        conversations = await storage.getUserConversations(userId);
+      }
+      
+      console.log(`Found ${conversations.length} conversations for ${userRole} ${userId}`);
       res.json(conversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
