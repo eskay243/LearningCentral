@@ -33,11 +33,31 @@ const Messages = () => {
     }
   }, []);
   
-  // Fetch conversations
-  const { data: conversations, isLoading: isConversationsLoading } = useQuery({
+  // Fetch conversations with custom query function that handles auth
+  const { data: conversations, isLoading: isConversationsLoading, error: conversationsError } = useQuery({
     queryKey: ["/api/conversations"],
+    queryFn: async () => {
+      try {
+        const response = await fetch("/api/conversations", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          return await response.json();
+        }
+        // Return empty array if auth fails instead of throwing
+        return [];
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        return [];
+      }
+    },
     enabled: true,
+    retry: 1,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
+  
+  console.log('Query error:', conversationsError);
   
   // Fetch messages for selected conversation
   const { data: messages, isLoading: isMessagesLoading } = useQuery({
