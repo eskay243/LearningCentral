@@ -13,6 +13,7 @@ import {
   MessageSquare, 
   DollarSign, 
   Settings,
+  Bell,
   User,
   UsersRound,
   Award,
@@ -238,7 +239,12 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-primary rounded-full">5</span>
           </Link>
           
-
+          <Link href="/notifications" className={menuItemClass("/notifications")}>
+            <Bell className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">Notifications</span>
+            <span className="ml-auto inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">3</span>
+          </Link>
+          
           
           <Link href="/certificates" className={menuItemClass("/certificates")}>
             <Award className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
