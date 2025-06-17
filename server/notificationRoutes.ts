@@ -175,10 +175,10 @@ export const notificationService = {
 };
 
 export function registerNotificationRoutes(app: Express) {
-  // Get user notifications
+  // Get user notifications with timestamp to force fresh responses
   app.get('/api/notifications', async (req: any, res: Response) => {
     try {
-      console.log('Notification request - isAuthenticated:', req.isAuthenticated?.(), 'user:', !!req.user);
+      console.log('Notification request - isAuthenticated:', req.isAuthenticated?.(), 'user:', !!req.user, 'userRole:', req.user?.role);
       
       if (!req.isAuthenticated || !req.isAuthenticated()) {
         console.log('Not authenticated - returning 401');
@@ -197,12 +197,22 @@ export function registerNotificationRoutes(app: Express) {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
+      res.set('Last-Modified', new Date().toUTCString());
+      res.set('ETag', `"notif-${userId}-${Date.now()}"`);
 
       // Generate dynamic notifications based on user role and recent activities
       const dynamicNotifications = await generateDynamicNotifications(userId, userRole || 'student');
       console.log(`Generated ${dynamicNotifications.length} notifications for user ${userId} (${userRole})`);
       
-      return res.json(dynamicNotifications);
+      // Add timestamp to response to ensure uniqueness
+      const response = {
+        notifications: dynamicNotifications,
+        timestamp: Date.now(),
+        totalCount: dynamicNotifications.length,
+        unreadCount: dynamicNotifications.filter(n => !n.read).length
+      };
+      
+      return res.status(200).json(response);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       res.status(500).json({ message: 'Failed to fetch notifications' });

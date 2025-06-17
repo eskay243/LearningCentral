@@ -3799,6 +3799,64 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Messaging access control methods
+  async getMentorsFromEnrolledCourses(studentId: string): Promise<User[]> {
+    try {
+      // Get courses the student is enrolled in
+      const enrolledCourses = await db
+        .select({ courseId: courseEnrollments.courseId })
+        .from(courseEnrollments)
+        .where(eq(courseEnrollments.userId, studentId));
+
+      if (enrolledCourses.length === 0) {
+        return [];
+      }
+
+      const courseIds = enrolledCourses.map(ec => ec.courseId);
+
+      // Get mentors for those courses
+      const mentors = await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          role: users.role
+        })
+        .from(users)
+        .innerJoin(courseMentors, eq(users.id, courseMentors.mentorId))
+        .where(
+          and(
+            inArray(courseMentors.courseId, courseIds),
+            eq(users.role, 'mentor')
+          )
+        );
+
+      return mentors;
+    } catch (error) {
+      console.error("Error fetching mentors from enrolled courses:", error);
+      return [];
+    }
+  }
+
+  async getAdminUsers(): Promise<User[]> {
+    try {
+      return await db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          role: users.role
+        })
+        .from(users)
+        .where(eq(users.role, 'admin'));
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      return [];
+    }
+  }
+
   // Certificate methods
   async issueCertificate(certificateData: any): Promise<Certificate> {
     const verificationCode = await this.generateVerificationCode();

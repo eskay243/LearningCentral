@@ -59,16 +59,34 @@ export function NotificationCenter() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'high'>('all');
   const queryClient = useQueryClient();
 
-  // Fetch notifications
-  const { data: notifications = [], isLoading, error } = useQuery<Notification[]>({
-    queryKey: ['/api/notifications'],
+  // Fetch notifications with cache-busting
+  const { data: notificationResponse, isLoading, error } = useQuery({
+    queryKey: ['/api/notifications', Date.now()], // Include timestamp to force fresh requests
+    queryFn: async () => {
+      const response = await fetch(`/api/notifications?t=${Date.now()}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+      return response.json();
+    },
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: false,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache at all
     onError: () => {
-      // Show a user-friendly error message
       console.log("Unable to load notifications at the moment. Please try again later.");
     }
   });
+
+  // Extract notifications from response
+  const notifications = notificationResponse?.notifications || [];
 
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({

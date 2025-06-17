@@ -35,8 +35,10 @@ export function registerCommunicationRoutes(app: Express) {
         // Mentors can only message students enrolled in their courses
         availableUsers = await storage.getEnrolledStudentsForMentor(userId);
       } else {
-        // Students can message mentors and admins
-        availableUsers = await storage.getMentorsAndAdmins();
+        // Students can only message mentors from courses they're enrolled in, plus admins
+        const enrolledCourseMentors = await storage.getMentorsFromEnrolledCourses(userId);
+        const admins = await storage.getAdminUsers();
+        availableUsers = [...enrolledCourseMentors, ...admins];
       }
 
       // Filter out the current user
