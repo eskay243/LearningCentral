@@ -15,15 +15,24 @@ const Messages = () => {
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   
+  // Handle URL parameters for conversation selection
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const conversationId = urlParams.get('conversation');
+    if (conversationId) {
+      setSelectedConversation(conversationId);
+    }
+  }, []);
+  
   // Fetch conversations
   const { data: conversations, isLoading: isConversationsLoading } = useQuery({
-    queryKey: ["/api/messages/conversations"],
+    queryKey: ["/api/conversations"],
     enabled: !!user,
   });
   
   // Fetch messages for selected conversation
   const { data: messages, isLoading: isMessagesLoading } = useQuery({
-    queryKey: [`/api/messages/conversations/${selectedConversation}`],
+    queryKey: [`/api/conversations/${selectedConversation}/messages`],
     enabled: !!user && !!selectedConversation,
   });
   
@@ -166,28 +175,26 @@ const Messages = () => {
   
   // Set first conversation as selected by default when data loads
   useEffect(() => {
-    if ((conversations || mockConversations).length > 0 && !selectedConversation) {
-      setSelectedConversation((conversations || mockConversations)[0].id);
+    if (conversations && conversations.length > 0 && !selectedConversation) {
+      setSelectedConversation(conversations[0].id.toString());
     }
   }, [conversations, selectedConversation]);
   
   // Filter conversations based on search term
-  const filteredConversations = (conversations || mockConversations).filter(
+  const filteredConversations = (conversations || []).filter(
     (conv) => {
-      const fullName = `${conv.otherUser.firstName} ${conv.otherUser.lastName}`.toLowerCase();
-      return fullName.includes(searchTerm.toLowerCase());
+      const searchableText = conv.title?.toLowerCase() || '';
+      return searchableText.includes(searchTerm.toLowerCase());
     }
   );
   
   // Get current conversation
   const currentConversation = filteredConversations.find(
-    (conv) => conv.id === selectedConversation
+    (conv) => conv.id.toString() === selectedConversation
   );
   
   // Get messages for current conversation
-  const currentMessages = selectedConversation 
-    ? (messages || mockMessages).filter(msg => msg.conversationId === selectedConversation)
-    : [];
+  const currentMessages = messages || [];
   
   const handleSendMessage = () => {
     if (!messageText.trim() || !selectedConversation) return;
@@ -230,40 +237,42 @@ const Messages = () => {
                   <div
                     key={conversation.id}
                     className={`p-4 cursor-pointer transition-colors ${
-                      selectedConversation === conversation.id 
+                      selectedConversation === conversation.id.toString() 
                         ? "bg-primary-50" 
                         : "hover:bg-gray-50"
                     }`}
-                    onClick={() => setSelectedConversation(conversation.id)}
+                    onClick={() => setSelectedConversation(conversation.id.toString())}
                   >
                     <div className="flex items-start gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={conversation.otherUser.profileImageUrl} />
+                        <AvatarImage src={conversation.participants?.[0]?.profileImageUrl} />
                         <AvatarFallback>
-                          {getInitials(`${conversation.otherUser.firstName} ${conversation.otherUser.lastName}`)}
+                          {getInitials(conversation.participants?.[0] ? 
+                            `${conversation.participants[0].firstName} ${conversation.participants[0].lastName}` : 
+                            conversation.title || 'Unknown')}
                         </AvatarFallback>
                       </Avatar>
                       
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-start">
                           <p className="font-medium truncate">
-                            {conversation.otherUser.firstName} {conversation.otherUser.lastName}
+                            {conversation.title}
                           </p>
                           <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                            {formatTimeFromNow(conversation.lastMessage.sentAt)}
+                            {conversation.lastMessageAt ? formatTimeFromNow(conversation.lastMessageAt) : ''}
                           </span>
                         </div>
                         
                         <div className="flex justify-between items-center mt-1">
                           <p className={`text-sm truncate ${
-                            conversation.unreadCount > 0 && conversation.lastMessage.senderId !== "currentUser"
+                            conversation.unreadCount > 0
                               ? "font-medium text-gray-900" 
                               : "text-gray-500"
                           }`}>
-                            {conversation.lastMessage.content}
+                            {conversation.lastMessage || 'No messages yet'}
                           </p>
                           
-                          {conversation.unreadCount > 0 && conversation.lastMessage.senderId !== "currentUser" && (
+                          {conversation.unreadCount > 0 && (
                             <Badge className="ml-2 h-5 w-5 flex items-center justify-center p-0 rounded-full">
                               {conversation.unreadCount}
                             </Badge>
@@ -301,18 +310,20 @@ const Messages = () => {
               {/* Conversation Header */}
               <div className="p-4 border-b border-gray-200 flex items-center">
                 <Avatar className="h-10 w-10 mr-3">
-                  <AvatarImage src={currentConversation.otherUser.profileImageUrl} />
+                  <AvatarImage src={currentConversation.participants?.[0]?.profileImageUrl} />
                   <AvatarFallback>
-                    {getInitials(`${currentConversation.otherUser.firstName} ${currentConversation.otherUser.lastName}`)}
+                    {getInitials(currentConversation.participants?.[0] ? 
+                      `${currentConversation.participants[0].firstName} ${currentConversation.participants[0].lastName}` : 
+                      currentConversation.title || 'Unknown')}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div>
                   <h3 className="font-medium">
-                    {currentConversation.otherUser.firstName} {currentConversation.otherUser.lastName}
+                    {currentConversation.title}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {currentConversation.otherUser.role}
+                    {currentConversation.participants?.[0]?.role || 'Conversation'}
                   </p>
                 </div>
               </div>
