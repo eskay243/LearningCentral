@@ -44,6 +44,24 @@ export function registerCommunicationRoutes(app: Express) {
     }
   });
 
+  // Get mentor courses for role-based messaging
+  app.get('/api/mentor/courses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const userRole = req.user.role;
+
+      if (userRole !== 'mentor') {
+        return res.status(403).json({ message: "Only mentors can access this endpoint" });
+      }
+
+      const mentorCourses = await storage.getCoursesByMentor(userId);
+      res.json(mentorCourses);
+    } catch (error) {
+      console.error("Error fetching mentor courses:", error);
+      res.status(500).json({ message: "Failed to fetch mentor courses" });
+    }
+  });
+
   // Create a new conversation with role-based messaging
   app.post('/api/conversations', isAuthenticated, async (req: any, res) => {
     try {
