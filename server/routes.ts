@@ -581,6 +581,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register Invoice routes
   registerInvoiceRoutes(app);
 
+  // Mentor-specific courses endpoint
+  app.get("/api/mentor/courses", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+    try {
+      const mentorId = req.user.id;
+      
+      // Get courses created by or assigned to this mentor
+      const mentorCourses = await storage.getCoursesByMentor(mentorId);
+      
+      res.json(mentorCourses);
+    } catch (error) {
+      console.error("Error fetching mentor courses:", error);
+      res.status(500).json({ message: "Failed to fetch mentor courses" });
+    }
+  });
+
   // Mentor-specific earnings endpoints
   app.get("/api/mentor/earnings", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
     try {
