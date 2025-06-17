@@ -69,7 +69,7 @@ import StudentPayments from "@/pages/student-payments";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import CodeCompanion from "@/pages/CodeCompanion";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
-import StudentProfile from "@/pages/StudentProfile";
+
 import DemoUsers from "@/pages/DemoUsers";
 import CustomizableDashboard from "@/pages/CustomizableDashboard";
 import StudentDashboard from "@/pages/student-dashboard";
@@ -106,7 +106,7 @@ function Router() {
         <Route path="/create-course" component={CreateCourse} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/students" component={Students} />
-        <Route path="/student-profile/:id" component={StudentProfile} />
+
         <Route path="/assessments" component={Assessments} />
         <Route path="/assessment-dashboard" component={AssessmentDashboard} />
         <Route path="/assessment" component={AssessmentDashboard} />
