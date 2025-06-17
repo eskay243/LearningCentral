@@ -3019,29 +3019,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getCoursesByMentor(mentorId: string): Promise<Course[]> {
-    try {
-      // Get all course-mentor assignments for this mentor
-      const mentorAssignments = await db
-        .select()
-        .from(courseMentors)
-        .where(eq(courseMentors.mentorId, mentorId));
 
-      // Get the actual courses
-      const courseIds = mentorAssignments.map(assignment => assignment.courseId);
-      if (courseIds.length === 0) return [];
-
-      const courses = await db
-        .select()
-        .from(coursesTable)
-        .where(inArray(coursesTable.id, courseIds));
-
-      return courses;
-    } catch (error) {
-      console.error("Error fetching courses by mentor:", error);
-      return [];
-    }
-  }
   
   // Course Management
   async createCourse(courseData: Omit<Course, "id" | "createdAt" | "updatedAt">): Promise<Course> {
@@ -3114,14 +3092,14 @@ export class DatabaseStorage implements IStorage {
 
   async getCoursesByMentor(mentorId: string): Promise<Course[]> {
     try {
-      // Use courseMentors table (course_mentors in database) instead of mentorCourses
+      // Use mentorCourses table (mentor_courses in database) to match the assignment logic
       const coursesWithMentor = await db
         .select({
           course: courses
         })
-        .from(courseMentors)
-        .innerJoin(courses, eq(courseMentors.courseId, courses.id))
-        .where(eq(courseMentors.mentorId, mentorId));
+        .from(mentorCourses)
+        .innerJoin(courses, eq(mentorCourses.courseId, courses.id))
+        .where(eq(mentorCourses.mentorId, mentorId));
       
       return coursesWithMentor.map(row => row.course);
     } catch (error) {
