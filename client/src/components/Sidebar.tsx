@@ -29,6 +29,7 @@ import {
   GraduationCap,
   BarChart3,
   Star,
+  Activity,
 } from "lucide-react";
 
 interface SidebarProps {
