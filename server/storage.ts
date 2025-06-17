@@ -5811,6 +5811,75 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+  // Role-based messaging methods
+  async getAllUsers(): Promise<User[]> {
+    try {
+      return await db.select().from(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      return [];
+    }
+  }
+
+  async getEnrolledStudentsForMentor(mentorId: string): Promise<User[]> {
+    try {
+      // Get courses taught by this mentor
+      const mentorCourseList = await db
+        .select({ courseId: courseMentors.courseId })
+        .from(courseMentors)
+        .where(eq(courseMentors.mentorId, mentorId));
+      
+      const courseIds = mentorCourseList.map(mc => mc.courseId);
+      
+      if (courseIds.length === 0) {
+        return [];
+      }
+      
+      // Get students enrolled in these courses
+      const enrolledStudentData = await db
+        .select({
+          user: users
+        })
+        .from(courseEnrollments)
+        .innerJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(inArray(courseEnrollments.courseId, courseIds))
+        .groupBy(users.id);
+      
+      return enrolledStudentData.map(row => row.user);
+    } catch (error) {
+      console.error("Error fetching enrolled students for mentor:", error);
+      return [];
+    }
+  }
+
+  async getMentorsAndAdmins(): Promise<User[]> {
+    try {
+      return await db
+        .select()
+        .from(users)
+        .where(or(eq(users.role, 'mentor'), eq(users.role, 'admin')));
+    } catch (error) {
+      console.error("Error fetching mentors and admins:", error);
+      return [];
+    }
+  }
+
+  async getCourseStudents(courseId: number): Promise<User[]> {
+    try {
+      const enrolledStudentData = await db
+        .select({
+          user: users
+        })
+        .from(courseEnrollments)
+        .innerJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(eq(courseEnrollments.courseId, courseId));
+      
+      return enrolledStudentData.map(row => row.user);
+    } catch (error) {
+      console.error("Error fetching course students:", error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

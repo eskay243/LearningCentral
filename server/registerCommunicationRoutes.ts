@@ -4,6 +4,103 @@ import { isAuthenticated } from "./simpleAuth";
 import { z } from "zod";
 
 export function registerCommunicationRoutes(app: Express) {
+  // Get all conversations for a user (used by header MessageCenter)
+  app.get('/api/conversations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const conversations = await storage.getUserConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  // Get available users for messaging based on role permissions
+  app.get('/api/messaging/available-users', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const userRole = req.user.role;
+      let availableUsers = [];
+
+      if (userRole === 'admin') {
+        // Admin can message everyone
+        availableUsers = await storage.getAllUsers();
+      } else if (userRole === 'mentor') {
+        // Mentors can only message students enrolled in their courses
+        availableUsers = await storage.getEnrolledStudentsForMentor(userId);
+      } else {
+        // Students can message mentors and admins
+        availableUsers = await storage.getMentorsAndAdmins();
+      }
+
+      // Filter out the current user
+      availableUsers = availableUsers.filter((user: any) => user.id !== userId);
+      
+      res.json(availableUsers);
+    } catch (error) {
+      console.error("Error fetching available users:", error);
+      res.status(500).json({ message: "Failed to fetch available users" });
+    }
+  });
+
+  // Create a new conversation with role-based messaging
+  app.post('/api/conversations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const userRole = req.user.role;
+      const { recipients, title, content, type, courseId } = req.body;
+
+      let participantIds = [];
+
+      if (type === 'sitewide' && userRole === 'admin') {
+        // Admin sending sitewide message
+        const allUsers = await storage.getAllUsers();
+        participantIds = allUsers.map((user: any) => user.id).filter((id: string) => id !== userId);
+      } else if (type === 'course' && userRole === 'mentor' && courseId) {
+        // Mentor sending to course students
+        const courseStudents = await storage.getCourseStudents(parseInt(courseId));
+        participantIds = courseStudents.map((student: any) => student.id);
+      } else if (type === 'individual') {
+        // Individual messaging
+        participantIds = recipients || [];
+      } else {
+        return res.status(403).json({ message: "You are not authorized to send this type of message" });
+      }
+
+      if (participantIds.length === 0) {
+        return res.status(400).json({ message: "No recipients found" });
+      }
+
+      // Create conversation
+      const conversation = await storage.createConversation({
+        creatorId: userId,
+        title: title || null,
+        isGroup: participantIds.length > 1,
+      });
+
+      // Add participants
+      await storage.addConversationParticipants(
+        conversation.id, 
+        [userId, ...participantIds.filter((id: string) => id !== userId)]
+      );
+
+      // Send initial message
+      if (content) {
+        await storage.sendMessage({
+          conversationId: conversation.id,
+          senderId: userId,
+          content: content,
+        });
+      }
+
+      res.status(201).json(conversation);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
   // Get all conversations for a user
   app.get('/api/messages/conversations', isAuthenticated, async (req: any, res) => {
     try {
