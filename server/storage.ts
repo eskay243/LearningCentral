@@ -5811,6 +5811,103 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+  // Conversation and messaging methods
+  async createConversation(conversationData: { creatorId: string; title?: string | null; isGroup: boolean }): Promise<any> {
+    try {
+      const [conversation] = await db
+        .insert(conversations)
+        .values({
+          title: conversationData.title,
+          type: conversationData.isGroup ? "group" : "direct"
+        })
+        .returning();
+      return conversation;
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      throw new Error("Failed to create conversation");
+    }
+  }
+
+  async addConversationParticipants(conversationId: number, participantIds: string[]): Promise<void> {
+    try {
+      const participantData = participantIds.map(userId => ({
+        conversationId,
+        userId,
+        joinedAt: new Date()
+      }));
+      
+      await db.insert(conversationParticipants).values(participantData);
+    } catch (error) {
+      console.error("Error adding conversation participants:", error);
+      throw new Error("Failed to add participants");
+    }
+  }
+
+  async sendMessage(messageData: { conversationId: number; senderId: string; content: string }): Promise<any> {
+    try {
+      const [message] = await db
+        .insert(chatMessages)
+        .values({
+          conversationId: messageData.conversationId,
+          senderId: messageData.senderId,
+          content: messageData.content,
+          sentAt: new Date()
+        })
+        .returning();
+      return message;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      throw new Error("Failed to send message");
+    }
+  }
+
+  async isConversationParticipant(userId: string, conversationId: number): Promise<boolean> {
+    try {
+      const [participant] = await db
+        .select()
+        .from(conversationParticipants)
+        .where(
+          and(
+            eq(conversationParticipants.userId, userId),
+            eq(conversationParticipants.conversationId, conversationId)
+          )
+        );
+      return !!participant;
+    } catch (error) {
+      console.error("Error checking conversation participant:", error);
+      return false;
+    }
+  }
+
+  async getConversationMessages(conversationId: number): Promise<any[]> {
+    try {
+      return await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.conversationId, conversationId))
+        .orderBy(chatMessages.sentAt);
+    } catch (error) {
+      console.error("Error fetching conversation messages:", error);
+      return [];
+    }
+  }
+
+  async markMessagesAsRead(conversationId: number, userId: string): Promise<void> {
+    try {
+      await db
+        .update(chatMessages)
+        .set({ isRead: true })
+        .where(
+          and(
+            eq(chatMessages.conversationId, conversationId),
+            not(eq(chatMessages.senderId, userId))
+          )
+        );
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  }
+
   // Role-based messaging methods
   async getAllUsers(): Promise<User[]> {
     try {
