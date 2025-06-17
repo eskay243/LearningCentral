@@ -219,7 +219,7 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
           </Link>
           
           {!isAdmin && !isMentor && (
-            <Link href="/kyc-student" className={menuItemClass("/kyc-student")}>
+            <Link href="/kyc/student" className={menuItemClass("/kyc/student")}>
               <Shield className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
               <span className="truncate">KYC Verification</span>
             </Link>
