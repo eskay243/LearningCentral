@@ -197,7 +197,8 @@ const Assessments = () => {
         description: "",
         instructions: "",
         dueDate: "",
-        totalPoints: 100
+        totalPoints: 100,
+        lessonId: 1
       });
       setActiveTab("assignments");
     },

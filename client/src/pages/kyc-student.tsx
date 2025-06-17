@@ -80,13 +80,13 @@ export default function KycStudentPage() {
   const { data: kycStatus } = useQuery({
     queryKey: ['/api/kyc/student/status'],
     staleTime: 30000
-  });
+  }) as { data?: { status: string } };
 
   const { data: kycDetails } = useQuery({
     queryKey: ['/api/kyc/student/details'],
     staleTime: 30000,
     enabled: kycStatus?.status !== 'not_submitted'
-  });
+  }) as { data?: { data: any } };
 
   // Load existing data into form
   useEffect(() => {
@@ -743,7 +743,7 @@ export default function KycStudentPage() {
             <div>
               <p className="text-sm font-medium text-red-800">Verification Required</p>
               <p className="text-xs text-red-600">Please update your information and resubmit</p>
-              {kycStatus.reviewComments && (
+              {kycStatus?.reviewComments && (
                 <p className="text-xs text-red-700 mt-1">{kycStatus.reviewComments}</p>
               )}
             </div>
