@@ -10,7 +10,7 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [location, navigate] = useLocation();
 
   // Public pages that don't require authentication
@@ -22,11 +22,12 @@ const Layout = ({ children }: LayoutProps) => {
   const shouldNotRedirect = noRedirectPages.includes(location);
 
   // Redirect unauthenticated users to login page (except for public pages and coding playground)
+  // Only redirect after auth loading is complete to avoid premature redirects
   useEffect(() => {
-    if (!isAuthenticated && !isPublicPage && !shouldNotRedirect) {
+    if (!isLoading && !isAuthenticated && !isPublicPage && !shouldNotRedirect) {
       navigate('/login');
     }
-  }, [isAuthenticated, isPublicPage, shouldNotRedirect, navigate]);
+  }, [isAuthenticated, isLoading, isPublicPage, shouldNotRedirect, navigate]);
 
   // Close sidebar when screen resizes to desktop
   useEffect(() => {
