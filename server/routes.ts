@@ -1552,41 +1552,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/courses', async (req, res) => {
     try {
       const published = req.query.published === 'true';
-      // Enhanced authentication context resolution
-      let userId = (req as any).user?.id;
-      let userRole = (req as any).user?.role;
+      // Simplified authentication context resolution
+      let userId: string | undefined;
+      let userRole: string | undefined;
       
-      // If no user from passport, check session directly
-      if (!userId && (req as any).session?.passport?.user) {
-        const sessionUserId = (req as any).session.passport.user;
-        try {
-          const user = await storage.getUser(sessionUserId);
-          if (user) {
-            userId = user.id;
-            userRole = user.role;
-          }
-        } catch (error) {
-          console.log('Error retrieving user from session:', error);
-        }
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        userId = (req as any).user?.id;
+        userRole = (req as any).user?.role;
       }
-      
-      // If still no user, check if authentication is available via isAuthenticated
-      if (!userId && req.isAuthenticated && req.isAuthenticated()) {
-        const authUser = req.user as any;
-        if (authUser) {
-          userId = authUser.id;
-          userRole = authUser.role;
-        }
-      }
-      
-      console.log('Courses API - User context:', { 
-        userId, 
-        userRole, 
-        isAuthenticated: !!userId, 
-        sessionUser: (req as any).session?.passport?.user,
-        reqUserExists: !!(req as any).user,
-        isAuthenticatedFn: req.isAuthenticated ? req.isAuthenticated() : 'not available'
-      });
       
       // Get base courses
       const courses = await storage.getCourses({ published });
