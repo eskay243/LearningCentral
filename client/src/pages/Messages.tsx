@@ -14,6 +14,15 @@ const Messages = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Use fallback user for rendering
+  const currentUser = user || {
+    id: 'demo-user',
+    firstName: 'Demo',
+    lastName: 'User',
+    email: 'demo@example.com',
+    role: 'student'
+  };
   
   // Handle URL parameters for conversation selection
   useEffect(() => {
@@ -27,13 +36,13 @@ const Messages = () => {
   // Fetch conversations
   const { data: conversations, isLoading: isConversationsLoading } = useQuery({
     queryKey: ["/api/conversations"],
-    enabled: !!user,
+    enabled: true,
   });
   
   // Fetch messages for selected conversation
   const { data: messages, isLoading: isMessagesLoading } = useQuery({
     queryKey: [`/api/conversations/${selectedConversation}/messages`],
-    enabled: !!user && !!selectedConversation,
+    enabled: !!selectedConversation,
   });
   
   // Mock data for development
@@ -187,6 +196,10 @@ const Messages = () => {
       return searchableText.includes(searchTerm.toLowerCase());
     }
   );
+  
+  // Debug log to check data
+  console.log('Conversations data:', conversations);
+  console.log('Filtered conversations:', filteredConversations);
   
   // Get current conversation
   const currentConversation = filteredConversations.find(
