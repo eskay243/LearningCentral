@@ -674,18 +674,42 @@ export function registerAssessmentRoutes(app: Express) {
   // Student-specific endpoints
   app.get("/api/student/quizzes", isAuthenticated, async (req: any, res) => {
     try {
-      const allQuizzes = await storage.getAllQuizzes();
-      // Return quizzes that are published and available to students
-      const studentQuizzes = allQuizzes.map(quiz => ({
-        id: quiz.id,
-        title: quiz.title,
-        description: quiz.description,
-        passingScore: quiz.passingScore,
-        lessonId: quiz.lessonId,
-        courseTitle: "Course", // TODO: Add course title lookup
-        isPublished: true // Assuming all quizzes are available to students
-      }));
-      res.json(studentQuizzes);
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const enrollments = await storage.getEnrollmentsByUser(req.user.id);
+      const quizzes = [];
+      
+      for (const enrollment of enrollments) {
+        const course = await storage.getCourse(enrollment.courseId);
+        if (!course) continue;
+        
+        const lessons = await storage.getLessonsByCourse(enrollment.courseId);
+        
+        for (const lesson of lessons) {
+          const lessonQuizzes = await storage.getQuizzesByLesson(lesson.id);
+          
+          for (const quiz of lessonQuizzes) {
+            const attempts = await storage.getQuizAttempts(quiz.id);
+            const latestAttempt = attempts.length > 0 ? attempts[attempts.length - 1] : null;
+            
+            quizzes.push({
+              id: quiz.id,
+              title: quiz.title,
+              description: quiz.description,
+              passingScore: quiz.passingScore,
+              lessonId: quiz.lessonId,
+              courseTitle: course.title,
+              isPublished: true,
+              score: latestAttempt?.score || null,
+              passed: latestAttempt?.isPassed || false,
+              attempts: attempts.length,
+              lastAttempt: latestAttempt?.completedAt || null
+            });
+          }
+        }
+      }
+      
+      res.json(quizzes);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -693,8 +717,37 @@ export function registerAssessmentRoutes(app: Express) {
 
   app.get("/api/student/assignments", isAuthenticated, async (req: any, res) => {
     try {
-      // Return empty array for now - assignments not implemented yet
-      res.json([]);
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const enrollments = await storage.getEnrollmentsByUser(req.user.id);
+      const assignments = [];
+      
+      for (const enrollment of enrollments) {
+        const course = await storage.getCourse(enrollment.courseId);
+        if (!course) continue;
+        
+        const courseAssignments = await storage.getAssignmentsByCourse(enrollment.courseId);
+        
+        for (const assignment of courseAssignments) {
+          const submissions = await storage.getUserAssignmentSubmissions(req.user.id, assignment.id);
+          const latestSubmission = submissions.length > 0 ? submissions[submissions.length - 1] : null;
+          
+          assignments.push({
+            id: assignment.id,
+            title: assignment.title,
+            description: assignment.description,
+            courseTitle: course.title,
+            dueDate: assignment.dueDate,
+            status: latestSubmission ? 
+              (latestSubmission.gradedAt ? 'graded' : 'submitted') : 
+              'pending',
+            score: latestSubmission?.grade || null,
+            submittedAt: latestSubmission?.submittedAt || null
+          });
+        }
+      }
+      
+      res.json(assignments);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -711,8 +764,43 @@ export function registerAssessmentRoutes(app: Express) {
 
   app.get("/api/student/enrolled-courses", isAuthenticated, async (req: any, res) => {
     try {
-      // Return empty array for now - course enrollment not implemented yet
-      res.json([]);
+      if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+      
+      const enrollments = await storage.getEnrollmentsByUser(req.user.id);
+      const enrolledCourses = await Promise.all(
+        enrollments.map(async (enrollment) => {
+          const course = await storage.getCourse(enrollment.courseId);
+          if (!course) return null;
+          
+          // Get lessons count for the course
+          const lessons = await storage.getLessonsByCourse(enrollment.courseId);
+          const totalLessons = lessons.length;
+          
+          // Get completed lessons for progress
+          const completedLessons = Math.floor((enrollment.progress / 100) * totalLessons);
+          
+          // Find next lesson
+          const nextLesson = lessons.find((lesson, index) => index >= completedLessons);
+          
+          return {
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            coverImage: course.thumbnail || "/api/placeholder/400/200",
+            progress: enrollment.progress || 0,
+            instructor: "Instructor", // TODO: Add instructor lookup
+            totalLessons,
+            completedLessons,
+            nextLesson: nextLesson ? {
+              id: nextLesson.id,
+              title: nextLesson.title,
+              moduleTitle: "Module" // TODO: Add module lookup
+            } : null
+          };
+        })
+      );
+      
+      res.json(enrolledCourses.filter(course => course !== null));
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
