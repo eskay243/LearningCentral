@@ -7,6 +7,7 @@ import {
   announcements,
   users,
   courseMentors,
+  mentorCourses,
   courseEnrollments
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
@@ -4023,19 +4024,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email: users.email,
         profileImageUrl: users.profileImageUrl,
         bio: users.bio,
-        role: courseMentors.role,
-        assignedAt: courseMentors.assignedAt
+        commission: mentorCourses.commission,
+        assignedAt: mentorCourses.assignedAt
       })
-      .from(courseMentors)
-      .innerJoin(users, eq(courseMentors.mentorId, users.id))
-      .where(eq(courseMentors.courseId, parseInt(courseId)));
+      .from(mentorCourses)
+      .innerJoin(users, eq(mentorCourses.mentorId, users.id))
+      .where(eq(mentorCourses.courseId, parseInt(courseId)));
       
       console.log(`Found ${mentorsData.length} mentors:`, mentorsData);
       
       // Transform data to match frontend expectations
       const mentors = mentorsData.map(mentor => ({
         ...mentor,
-        name: `${mentor.firstName || ''} ${mentor.lastName || ''}`.trim()
+        name: `${mentor.firstName || ''} ${mentor.lastName || ''}`.trim(),
+        role: 'mentor' // Set default role since mentorCourses doesn't have role field
       }));
       
       console.log('Transformed mentors:', mentors);
