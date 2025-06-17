@@ -2176,7 +2176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/messages/:id/read', isAuthenticated, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);
-      const message = await storage.markMessagesAsRead(req.user?.id || "", messageId);
+      const message = await storage.markMessagesAsRead(req.user?.id || "", messageId.toString());
       res.json(message);
     } catch (error) {
       console.error("Error marking message as read:", error);
@@ -2335,7 +2335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Search query must be at least 2 characters" });
       }
       
-      const searchResults = await storage.searchContent(query, courseId);
+      const searchResults = await storage.searchContent(query);
       res.json(searchResults);
     } catch (error) {
       console.error("Error searching content:", error);
@@ -2393,7 +2393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update access count and last accessed time
-      await storage.updateContentShareAccess(share.id);
+      await storage.updateContentShareAccess(share.id, new Date());
       
       // Get the lesson and course info
       const lesson = await storage.getLesson(share.lessonId);
@@ -2636,7 +2636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/course/:courseId', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const courseId = parseInt(req.params.courseId);
-      const stats = await storage.getCourseStats(courseId);
+      const stats = await storage.getCourseStats();
       res.json(stats);
     } catch (error) {
       console.error("Error fetching course stats:", error);
@@ -2655,7 +2655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized to view these stats" });
       }
       
-      const stats = await storage.getMentorStats(mentorId);
+      const stats = await storage.getMentorStats();
       res.json(stats);
     } catch (error) {
       console.error("Error fetching mentor stats:", error);
@@ -2674,7 +2674,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized to view these stats" });
       }
       
-      const stats = await storage.getStudentStats(studentId);
+      const stats = await storage.getStudentStats();
       res.json(stats);
     } catch (error) {
       console.error("Error fetching student stats:", error);
@@ -2785,11 +2785,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Certificate routes
   app.post('/api/certificates', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req: any, res) => {
     try {
-      const certificate = await storage.generateCertificate(
-        req.body.userId,
-        req.body.courseId,
-        req.body.template
-      );
+      const certificate = await storage.generateCertificate({
+        userId: req.body.userId,
+        courseId: req.body.courseId,
+        template: req.body.template,
+        verificationCode: `CERT-${Date.now().toString().slice(-8)}`
+      });
       
       res.status(201).json(certificate);
     } catch (error) {
