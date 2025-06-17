@@ -21,6 +21,7 @@ import { registerEnhancedLiveSessionRoutes } from "./enhancedLiveSessionRoutes";
 import { registerKycRoutes } from "./kycRoutes";
 import { courseContentRoutes } from "./courseContentRoutes";
 import { registerMentorManagementRoutes } from "./mentorManagementRoutes";
+import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 
 
 // Mock data for UI display when database is not fully connected
@@ -2813,6 +2814,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register analytics routes
   registerAnalyticsRoutes(app);
+  
+  // Register communication routes
+  registerCommunicationRoutes(app);
 
   // Create HTTP server
   // Course Discussion Routes
