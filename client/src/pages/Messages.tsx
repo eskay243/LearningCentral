@@ -50,7 +50,9 @@ const Messages = () => {
         if (response.ok) {
           const data = await response.json();
           console.log('Successfully fetched conversations:', data);
+          console.log('Setting conversations state to:', data || []);
           setConversations(data || []);
+          console.log('State should be updated now');
         } else {
           console.log('Response not ok, status:', response.status);
           const errorText = await response.text();
@@ -67,6 +69,12 @@ const Messages = () => {
 
     fetchConversations();
   }, []);
+  
+  // Debug effect to track conversations state changes
+  useEffect(() => {
+    console.log('Conversations state changed:', conversations);
+    console.log('Length:', conversations.length);
+  }, [conversations]);
   
   // Fetch messages for selected conversation
   const { data: messages, isLoading: isMessagesLoading } = useQuery({
