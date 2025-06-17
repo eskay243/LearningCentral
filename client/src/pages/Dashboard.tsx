@@ -137,8 +137,8 @@ export default function Dashboard() {
     retry: false
   });
 
-  // Show student dashboard for student users - moved after all hooks
-  if (isStudent && !isAuthLoading) {
+  // Show student dashboard for student users or when authentication fails (default to student view)
+  if ((isStudent && !isAuthLoading) || (!user && !isAuthLoading)) {
     return <StableStudentDashboard />;
   }
 
