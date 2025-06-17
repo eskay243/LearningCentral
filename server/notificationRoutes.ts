@@ -178,12 +178,18 @@ export function registerNotificationRoutes(app: Express) {
   // Get user notifications
   app.get('/api/notifications', async (req: any, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: 'Unauthorized: Not authenticated' });
+      console.log('Notification request - isAuthenticated:', req.isAuthenticated?.(), 'user:', !!req.user);
+      
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        console.log('Not authenticated - returning 401');
+        return res.status(401).json({ message: 'Authentication required' });
       }
 
       const userId = req.user?.id;
+      const userRole = req.user?.role;
+      
       if (!userId) {
+        console.log('No userId found - returning 401');
         return res.status(401).json({ message: 'User not authenticated' });
       }
 
@@ -193,8 +199,8 @@ export function registerNotificationRoutes(app: Express) {
       res.set('Expires', '0');
 
       // Generate dynamic notifications based on user role and recent activities
-      const dynamicNotifications = await generateDynamicNotifications(userId, req.user.role);
-      console.log(`Generated ${dynamicNotifications.length} notifications for user ${userId} (${req.user.role})`);
+      const dynamicNotifications = await generateDynamicNotifications(userId, userRole || 'student');
+      console.log(`Generated ${dynamicNotifications.length} notifications for user ${userId} (${userRole})`);
       
       return res.json(dynamicNotifications);
     } catch (error) {
