@@ -20,6 +20,7 @@ import {
   Receipt,
   CreditCard,
   Video,
+  Shield,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -216,6 +217,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <User className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Profile</span>
           </Link>
+          
+          {!isAdmin && !isMentor && (
+            <Link href="/kyc-student" className={menuItemClass("/kyc-student")}>
+              <Shield className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="truncate">KYC Verification</span>
+            </Link>
+          )}
           
           <Link href="/settings" className={menuItemClass("/settings")}>
             <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
