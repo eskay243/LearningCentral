@@ -419,6 +419,7 @@ export default function MentorDashboard() {
   const { data: allCourses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
     enabled: !!user && user.role === 'mentor',
+    staleTime: 0, // Always fetch fresh data
   });
 
   // Filter courses to separate owned vs marketplace
