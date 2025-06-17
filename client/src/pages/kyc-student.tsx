@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
-import { Upload, FileText, Shield, User, Phone, MapPin, GraduationCap, CreditCard, AlertCircle } from 'lucide-react';
+import { Upload, FileText, Shield, User, Phone, MapPin, GraduationCap, CreditCard, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function KycStudentPage() {
   const [formData, setFormData] = useState({
@@ -72,6 +74,65 @@ export default function KycStudentPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch existing KYC data
+  const { data: kycStatus } = useQuery({
+    queryKey: ['/api/kyc/student/status'],
+    staleTime: 30000
+  });
+
+  const { data: kycDetails } = useQuery({
+    queryKey: ['/api/kyc/student/details'],
+    staleTime: 30000,
+    enabled: kycStatus?.status !== 'not_submitted'
+  });
+
+  // Load existing data into form
+  useEffect(() => {
+    if (kycDetails?.data) {
+      setFormData(prev => ({
+        ...prev,
+        ...kycDetails.data
+      }));
+    }
+  }, [kycDetails]);
+
+  // Submit KYC mutation
+  const submitKycMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const response = await fetch('/api/kyc/student/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit KYC information');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/kyc/student/status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/kyc/student/details'] });
+      toast({
+        title: "KYC Information Submitted",
+        description: "Your KYC information has been submitted for review. You will receive a confirmation email within 24-48 hours.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Submission Failed",
+        description: error?.message || "Failed to submit KYC information. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,10 +155,7 @@ export default function KycStudentPage() {
       return;
     }
     
-    toast({
-      title: "KYC Information Submitted",
-      description: "Your KYC information has been submitted for review. You will receive a confirmation email within 24-48 hours.",
-    });
+    submitKycMutation.mutate(formData);
   };
 
   const nextStep = () => {
@@ -653,6 +711,49 @@ export default function KycStudentPage() {
     }
   };
 
+  // Status badge component
+  const renderStatusBadge = () => {
+    if (!kycStatus) return null;
+    
+    switch (kycStatus.status) {
+      case 'approved':
+        return (
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="text-sm font-medium text-green-800">KYC Approved</p>
+              <p className="text-xs text-green-600">Your verification has been completed</p>
+            </div>
+          </div>
+        );
+      case 'pending':
+        return (
+          <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+            <Clock className="h-5 w-5 text-yellow-600" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800">Under Review</p>
+              <p className="text-xs text-yellow-600">Your KYC submission is being reviewed</p>
+            </div>
+          </div>
+        );
+      case 'rejected':
+        return (
+          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+            <AlertCircle className="h-5 w-5 text-red-600" />
+            <div>
+              <p className="text-sm font-medium text-red-800">Verification Required</p>
+              <p className="text-xs text-red-600">Please update your information and resubmit</p>
+              {kycStatus.reviewComments && (
+                <p className="text-xs text-red-700 mt-1">{kycStatus.reviewComments}</p>
+              )}
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-4xl mx-auto">
@@ -669,6 +770,8 @@ export default function KycStudentPage() {
                 Step {currentStep} of {totalSteps}
               </Badge>
             </div>
+            
+            {renderStatusBadge()}
             
             {/* Progress Bar */}
             <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
@@ -704,8 +807,12 @@ export default function KycStudentPage() {
                       Next
                     </Button>
                   ) : (
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                      Submit KYC Application
+                    <Button 
+                      type="submit" 
+                      className="bg-blue-600 hover:bg-blue-700"
+                      disabled={submitKycMutation.isPending}
+                    >
+                      {submitKycMutation.isPending ? 'Submitting...' : 'Submit KYC Application'}
                     </Button>
                   )}
                 </div>
