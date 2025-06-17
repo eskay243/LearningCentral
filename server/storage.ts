@@ -3446,128 +3446,73 @@ export class DatabaseStorage implements IStorage {
   // Communication operations
   async getUserConversations(userId: string): Promise<any[]> {
     try {
-      // Get all conversations where the user is a participant
-      const participantData = await db
-        .select({
-          conversationId: conversationParticipants.conversationId
-        })
-        .from(conversationParticipants)
-        .where(eq(conversationParticipants.userId, userId));
+      console.log('Getting conversations for user:', userId);
       
-      const conversationIds = participantData.map(p => p.conversationId);
-      
-      if (conversationIds.length === 0) {
-        return [];
-      }
-      
-      // Get all conversations with their last message
-      const conversationsWithData = await db
-        .select({
-          conversation: conversations,
-          participants: conversationParticipants,
-          lastMessage: db
-            .select()
-            .from(chatMessages)
-            .where(eq(chatMessages.conversationId, conversations.id))
-            .orderBy(desc(chatMessages.sentAt))
-            .limit(1)
-            .as("lastMessage")
-        })
-        .from(conversations)
-        .leftJoin(
-          conversationParticipants,
-          eq(conversations.id, conversationParticipants.conversationId)
-        )
-        .where(inArray(conversations.id, conversationIds));
-      
-      // Group by conversation and format the result
-      const conversationMap = new Map();
-      
-      for (const row of conversationsWithData) {
-        const { conversation, participants, lastMessage } = row;
-        
-        if (!conversationMap.has(conversation.id)) {
-          conversationMap.set(conversation.id, {
-            ...conversation,
-            participants: [],
-            lastMessage: lastMessage ? lastMessage[0] : null,
-            unreadCount: 0
-          });
-        }
-        
-        const currentConv = conversationMap.get(conversation.id);
-        
-        if (participants && !currentConv.participants.some(p => p.userId === participants.userId)) {
-          currentConv.participants.push(participants);
-        }
-      }
-      
-      // Get unread count for each conversation
-      for (const conversationId of conversationIds) {
-        const unreadCount = await db
-          .select({ count: count() })
-          .from(chatMessages)
-          .where(
-            and(
-              eq(chatMessages.conversationId, conversationId),
-              not(eq(chatMessages.senderId, userId)),
-              eq(chatMessages.isRead, false)
+      // Use direct SQL query to avoid Drizzle ORM recursion issues
+      const query = `
+        SELECT DISTINCT
+          c.id,
+          c.title,
+          c.type,
+          c.course_id,
+          c.created_at,
+          c.updated_at,
+          (
+            SELECT json_agg(
+              json_build_object(
+                'userId', cp.user_id,
+                'joinedAt', cp.joined_at,
+                'firstName', u.first_name,
+                'lastName', u.last_name,
+                'role', u.role
+              )
             )
-          );
-        
-        if (conversationMap.has(conversationId)) {
-          conversationMap.get(conversationId).unreadCount = unreadCount[0]?.count || 0;
-        }
-      }
-      
-      // Get user data for all participants
-      const allParticipantIds = [...new Set(
-        Array.from(conversationMap.values())
-          .flatMap(conv => conv.participants.map(p => p.userId))
-      )];
-      
-      const userData = await db
-        .select()
-        .from(users)
-        .where(inArray(users.id, allParticipantIds));
-      
-      const userMap = new Map(userData.map(user => [user.id, user]));
-      
-      // Format conversations for client use
-      const result = Array.from(conversationMap.values()).map(conv => {
-        // For one-on-one conversations, include other user info
-        let otherUser = null;
-        
-        if (!conv.isGroup) {
-          const otherParticipant = conv.participants.find(p => p.userId !== userId);
-          if (otherParticipant) {
-            otherUser = userMap.get(otherParticipant.userId) || null;
-          }
-        }
-        
-        return {
-          id: conv.id,
-          title: conv.title,
-          isGroup: conv.isGroup,
-          createdAt: conv.createdAt,
-          participants: conv.participants.map(p => ({
-            ...p,
-            user: userMap.get(p.userId) || null
-          })),
-          otherUser,
-          lastMessage: conv.lastMessage,
-          unreadCount: conv.unreadCount
-        };
-      });
-      
-      // Sort by last message date (most recent first)
-      result.sort((a, b) => {
-        const dateA = a.lastMessage ? new Date(a.lastMessage.sentAt).getTime() : 0;
-        const dateB = b.lastMessage ? new Date(b.lastMessage.sentAt).getTime() : 0;
-        return dateB - dateA;
-      });
-      
-      return result;
+            FROM conversation_participants cp
+            JOIN users u ON cp.user_id = u.id
+            WHERE cp.conversation_id = c.id
+          ) as participants,
+          (
+            SELECT json_build_object(
+              'id', cm.id,
+              'content', cm.content,
+              'senderId', cm.sender_id,
+              'sentAt', cm.sent_at,
+              'senderName', u.first_name || ' ' || u.last_name
+            )
+            FROM chat_messages cm
+            JOIN users u ON cm.sender_id = u.id
+            WHERE cm.conversation_id = c.id
+            ORDER BY cm.sent_at DESC
+            LIMIT 1
+          ) as last_message,
+          (
+            SELECT COUNT(*)::integer
+            FROM chat_messages cm2
+            WHERE cm2.conversation_id = c.id
+            AND cm2.sender_id != $1
+            AND cm2.is_read = false
+          ) as unread_count
+        FROM conversations c
+        JOIN conversation_participants cp ON c.id = cp.conversation_id
+        WHERE cp.user_id = $1
+        ORDER BY c.updated_at DESC
+      `;
+
+      const result = await pool.query(query, [userId]);
+      console.log('Raw conversation query result:', result.rows);
+
+      return result.rows.map(row => ({
+        id: row.id,
+        title: row.title,
+        type: row.type,
+        courseId: row.course_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        participants: row.participants || [],
+        lastMessage: row.last_message,
+        unreadCount: row.unread_count || 0,
+        otherUser: row.participants ? row.participants.find(p => p.userId !== userId) : null
+      }));
     } catch (error) {
       console.error("Error fetching user conversations:", error);
       return [];
