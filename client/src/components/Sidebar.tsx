@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -21,6 +22,11 @@ import {
   CreditCard,
   Video,
   Shield,
+  ChevronDown,
+  ChevronRight,
+  Building2,
+  UserCog,
+  GraduationCap,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -31,6 +37,7 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const [location] = useLocation();
   const { user, isAdmin, isMentor } = useAuth();
+  const [isOfficeManagementOpen, setIsOfficeManagementOpen] = useState(false);
   
   const sidebarClass = cn(
     "sidebar fixed left-0 top-16 bottom-0 w-72 sm:w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 z-30 overflow-y-auto transition-transform duration-300 ease-in-out shadow-lg rounded-tr-3xl rounded-br-3xl",
@@ -157,15 +164,52 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               
               {isAdmin && (
                 <>
-                  <Link href="/users" className={menuItemClass("/users")}>
-                    <UsersRound className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="truncate">User Management</span>
-                  </Link>
-                  
-                  <Link href="/admin/mentors" className={menuItemClass("/admin/mentors")}>
-                    <Users className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                    <span className="truncate">Mentor Management</span>
-                  </Link>
+                  {/* Office Management Dropdown */}
+                  <div className="my-1.5 mx-3">
+                    <button
+                      onClick={() => setIsOfficeManagementOpen(!isOfficeManagementOpen)}
+                      className={cn(
+                        "flex items-center justify-between w-full px-4 py-3 text-sm rounded-xl transition-all duration-200",
+                        "hover:bg-primary/10 hover:text-primary text-gray-700 dark:text-gray-300"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        <Building2 className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                        <span className="truncate">Office Management</span>
+                      </div>
+                      {isOfficeManagementOpen ? (
+                        <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                      )}
+                    </button>
+                    
+                    {isOfficeManagementOpen && (
+                      <div className="ml-4 mt-2 space-y-1">
+                        <Link href="/users" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/users"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/users")
+                          }
+                        )}>
+                          <UserCog className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">User Management</span>
+                        </Link>
+                        
+                        <Link href="/admin/mentors" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/mentors"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/mentors")
+                          }
+                        )}>
+                          <GraduationCap className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">Mentor Management</span>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                   
                   <Link href="/admin/oauth-settings" className={menuItemClass("/admin/oauth-settings")}>
                     <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
