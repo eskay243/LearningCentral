@@ -125,9 +125,12 @@ export function MessageCenter() {
       return availableUsers;
     } else if (user?.role === 'mentor') {
       // Mentors can only message students enrolled in their courses
-      return availableUsers.filter(u => u.role === 'student');
+      return availableUsers;
+    } else if (user?.role === 'student') {
+      // Students can message mentors and admins
+      return availableUsers.filter(u => u.role === 'mentor' || u.role === 'admin');
     }
-    return [];
+    return availableUsers;
   };
 
   const handleSendMessage = () => {
