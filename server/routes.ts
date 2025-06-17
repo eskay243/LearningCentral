@@ -1016,21 +1016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Course Management Routes
-  app.get('/api/courses', async (req, res) => {
-    try {
-      const { published } = req.query;
-      const isPublished = published === 'true' ? true : 
-                        published === 'false' ? false : 
-                        undefined;
-      
-      const courses = await storage.getCourses({ published: isPublished });
-      res.json(courses);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      res.status(500).json({ message: "Failed to fetch courses" });
-    }
-  });
+  // Course Management Routes - removed duplicate, using enhanced version below
 
   app.get('/api/courses/:id', async (req, res) => {
     try {
@@ -1567,12 +1553,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const published = req.query.published === 'true';
       const userId = (req as any).user?.id; // Get authenticated user ID if available
+      const userRole = (req as any).user?.role;
+      
+      console.log('Courses API - User context:', { userId, userRole, isAuthenticated: !!(req as any).user });
       
       // Get base courses
       const courses = await storage.getCourses({ published });
       
       // If user is authenticated and is a mentor, add assignment information
-      if (userId && (req as any).user?.role === 'mentor') {
+      if (userId && userRole === 'mentor') {
+        console.log('Adding mentor assignment info for user:', userId);
+        
         // Get courses assigned to this mentor via mentor_courses table
         const assignedCourseIds = await db
           .select({ courseId: mentorCourses.courseId })
@@ -1580,6 +1571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .where(eq(mentorCourses.mentorId, userId));
         
         const assignedIds = new Set(assignedCourseIds.map(ac => ac.courseId));
+        console.log('Assigned course IDs:', Array.from(assignedIds));
         
         // Add isAssignedToMe flag to each course
         const coursesWithAssignment = courses.map(course => ({
@@ -1587,8 +1579,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isAssignedToMe: course.mentorId === userId || assignedIds.has(course.id)
         }));
         
+        console.log('Courses with assignment flags:', coursesWithAssignment.map(c => ({ id: c.id, title: c.title, isAssignedToMe: c.isAssignedToMe })));
+        
         res.json(coursesWithAssignment);
       } else {
+        console.log('No mentor context, returning base courses');
         res.json(courses);
       }
     } catch (error) {
