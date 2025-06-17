@@ -91,6 +91,87 @@ export const mentorCourses = pgTable("mentor_courses", {
   assignedAt: timestamp("assigned_at").defaultNow(),
 });
 
+// Mentor Payments table
+export const mentorPayments = pgTable("mentor_payments", {
+  id: serial("id").primaryKey(),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  amount: real("amount").notNull(),
+  commissionType: text("commission_type").notNull(), // course, live_session, assignment_grading
+  sourceId: integer("source_id"), // course_id, session_id, assignment_id
+  enrollmentId: integer("enrollment_id").references(() => courseEnrollments.id),
+  status: text("status").notNull().default("pending"), // pending, paid, cancelled
+  paymentMethod: text("payment_method"), // bank_transfer, mobile_money, crypto
+  transactionRef: varchar("transaction_ref"),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Mentor Performance table
+export const mentorPerformance = pgTable("mentor_performance", {
+  id: serial("id").primaryKey(),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  courseId: integer("course_id").references(() => courses.id),
+  month: integer("month").notNull(),
+  year: integer("year").notNull(),
+  studentsEnrolled: integer("students_enrolled").default(0),
+  studentsCompleted: integer("students_completed").default(0),
+  averageRating: real("average_rating").default(0),
+  totalEarnings: real("total_earnings").default(0),
+  liveSessionsHeld: integer("live_sessions_held").default(0),
+  assignmentsGraded: integer("assignments_graded").default(0),
+  responseTime: real("response_time").default(0), // in hours
+  completionRate: real("completion_rate").default(0),
+  studentSatisfaction: real("student_satisfaction").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Mentor Ratings table
+export const mentorRatings = pgTable("mentor_ratings", {
+  id: serial("id").primaryKey(),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  studentId: varchar("student_id").notNull().references(() => users.id),
+  courseId: integer("course_id").references(() => courses.id),
+  rating: integer("rating").notNull(), // 1-5 scale
+  review: text("review"),
+  category: text("category"), // teaching_quality, responsiveness, knowledge, communication
+  isAnonymous: boolean("is_anonymous").default(false),
+  status: text("status").default("active"), // active, hidden, flagged
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Mentor Activity Log table
+export const mentorActivityLog = pgTable("mentor_activity_log", {
+  id: serial("id").primaryKey(),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  activityType: text("activity_type").notNull(), // login, course_creation, student_interaction, grading, live_session
+  description: text("description"),
+  metadata: jsonb("metadata"), // Additional context data
+  courseId: integer("course_id").references(() => courses.id),
+  studentId: varchar("student_id").references(() => users.id),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Mentor Bank Details table
+export const mentorBankDetails = pgTable("mentor_bank_details", {
+  id: serial("id").primaryKey(),
+  mentorId: varchar("mentor_id").notNull().references(() => users.id),
+  bankName: text("bank_name").notNull(),
+  accountNumber: text("account_number").notNull(),
+  accountName: text("account_name").notNull(),
+  bankCode: text("bank_code"),
+  bvn: text("bvn"),
+  isDefault: boolean("is_default").default(true),
+  isVerified: boolean("is_verified").default(false),
+  verifiedAt: timestamp("verified_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // AffiliateCommissions table
 export const affiliateCommissions = pgTable("affiliate_commissions", {
   id: serial("id").primaryKey(),
@@ -886,6 +967,11 @@ export const insertAssessmentAttemptSchema = createInsertSchema(assessmentAttemp
 export const insertAssessmentAnswerSchema = createInsertSchema(assessmentAnswers);
 export const insertRubricSchema = createInsertSchema(rubrics);
 export const insertGradeCategorySchema = createInsertSchema(gradeCategories);
+export const insertMentorPaymentSchema = createInsertSchema(mentorPayments);
+export const insertMentorPerformanceSchema = createInsertSchema(mentorPerformance);
+export const insertMentorRatingSchema = createInsertSchema(mentorRatings);
+export const insertMentorActivityLogSchema = createInsertSchema(mentorActivityLog);
+export const insertMentorBankDetailsSchema = createInsertSchema(mentorBankDetails);
 
 // Type definitions for the schema
 export type UpsertUser = typeof users.$inferInsert;
@@ -924,6 +1010,16 @@ export type NotificationSetting = typeof notificationSettings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CodingExercise = typeof codingExercises.$inferSelect;
 export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
+export type MentorPayment = typeof mentorPayments.$inferSelect;
+export type InsertMentorPayment = z.infer<typeof insertMentorPaymentSchema>;
+export type MentorPerformance = typeof mentorPerformance.$inferSelect;
+export type InsertMentorPerformance = z.infer<typeof insertMentorPerformanceSchema>;
+export type MentorRating = typeof mentorRatings.$inferSelect;
+export type InsertMentorRating = z.infer<typeof insertMentorRatingSchema>;
+export type MentorActivityLog = typeof mentorActivityLog.$inferSelect;
+export type InsertMentorActivityLog = z.infer<typeof insertMentorActivityLogSchema>;
+export type MentorBankDetails = typeof mentorBankDetails.$inferSelect;
+export type InsertMentorBankDetails = z.infer<typeof insertMentorBankDetailsSchema>;
 
 // Enhanced Interactive Coding Exercises with Real-time Feedback
 export const codingChallenges = pgTable("coding_challenges", {

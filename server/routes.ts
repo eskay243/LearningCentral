@@ -20,6 +20,7 @@ import { registerLiveSessionRoutes } from "./liveSessionRoutes";
 import { registerEnhancedLiveSessionRoutes } from "./enhancedLiveSessionRoutes";
 import { registerKycRoutes } from "./kycRoutes";
 import { courseContentRoutes } from "./courseContentRoutes";
+import { registerMentorManagementRoutes } from "./mentorManagementRoutes";
 
 
 // Mock data for UI display when database is not fully connected
