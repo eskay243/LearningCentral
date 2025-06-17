@@ -27,7 +27,8 @@ import {
   X,
   Edit,
   Shield,
-  Ban
+  Ban,
+  CreditCard
 } from 'lucide-react';
 
 interface Mentor {
@@ -255,10 +256,12 @@ export default function AdminMentors() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Mentor Overview</TabsTrigger>
-          <TabsTrigger value="performance">Performance Analytics</TabsTrigger>
-          <TabsTrigger value="activities">Recent Activities</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="ratings">Ratings</TabsTrigger>
+          <TabsTrigger value="activities">Activities</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -458,6 +461,47 @@ export default function AdminMentors() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="payments" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Mentor Payments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-center py-8">
+                  <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Payment Management</h3>
+                  <p className="text-muted-foreground">Mentor payment records and commission tracking will be displayed here.</p>
+                  <p className="text-sm text-muted-foreground mt-2">Integration with Paystack for Naira transactions</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ratings" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Mentor Ratings & Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-center py-8">
+                  <Star className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Rating Management</h3>
+                  <p className="text-muted-foreground">Student ratings and feedback for mentors will be displayed here.</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

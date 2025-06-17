@@ -134,7 +134,7 @@ function Router() {
         <Route path="/admin/video-settings" component={AdminVideoSettings} />
         <Route path="/admin/payments" component={AdminPayments} />
         <Route path="/admin/users" component={AdminUsers} />
-        <Route path="/admin/mentors" component={ComprehensiveMentorManagement} />
+        <Route path="/admin/mentors" component={AdminMentors} />
         <Route path="/profile/:id" component={ProfilePage} />
         <Route path="/admin/permissions/:id" component={AdminPermissions} />
         <Route path="/admin/mentor-details/:id" component={AdminMentorDetails} />
