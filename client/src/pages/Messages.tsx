@@ -343,7 +343,7 @@ const Messages = () => {
                               ? "font-medium text-gray-900" 
                               : "text-gray-500"
                           }`}>
-                            {conversation.lastMessage || 'No messages yet'}
+                            {conversation.lastMessage?.content || 'No messages yet'}
                           </p>
                           
                           {conversation.unreadCount > 0 && (
