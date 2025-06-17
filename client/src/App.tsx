@@ -61,7 +61,7 @@ import DiscussionForum from "@/pages/DiscussionForum";
 import AdminPayments from "@/pages/admin-payments";
 import AdminUsers from "@/pages/admin-users";
 import AdminMentors from "@/pages/admin-mentors";
-import ProfilePage from "@/pages/profile";
+import ProfilePage from "@/pages/Profile";
 import AdminPermissions from "@/pages/admin-permissions";
 import AdminMentorDetails from "@/pages/admin-mentor-details";
 import StudentInvoices from "@/pages/StudentInvoices";

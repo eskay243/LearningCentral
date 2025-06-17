@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           revenue,
           price: course.price,
           category: course.category,
-          thumbnailUrl: course.thumbnailUrl,
+          thumbnailUrl: course.thumbnail,
           mentorName,
           lastUpdated: course.updatedAt || course.createdAt || new Date().toISOString()
         });
@@ -1042,6 +1042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         thumbnail: req.body.thumbnail,
         price: parseFloat(req.body.price) || 0,
         isPublished: req.body.isPublished || false,
+        mentorId: req.user?.id || null,
         category: req.body.category,
         tags: req.body.tags ? (typeof req.body.tags === 'string' ? req.body.tags.split(',').map((tag: string) => tag.trim()) : req.body.tags) : [],
       };
@@ -1256,6 +1257,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         videoUrl: req.body.videoUrl || null,
         videoPoster: req.body.videoPoster || null,
         videoProgress: null,
+        videoId: req.body.videoId || null,
+        videoEmbedUrl: req.body.videoEmbedUrl || null,
+        videoQuality: req.body.videoQuality || "720p",
+        videoMetadata: req.body.videoMetadata || null,
         completionCriteria: req.body.completionCriteria || null,
         estimatedTime: req.body.estimatedTime || null,
         difficulty: req.body.difficulty || "beginner",
