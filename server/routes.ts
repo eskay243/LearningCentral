@@ -1999,7 +1999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         showResults: req.body.showCorrectAnswers || true,
         passingScore: parseFloat(req.body.passingScore) || 70,
         isPublished: req.body.isPublished || false,
-        createdBy: req.user.id
+        createdBy: req.user?.id || ""
       };
       
       console.log('Processed advanced quiz data:', advancedQuizData);
@@ -2028,13 +2028,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error creating quiz:", error);
       console.error("Full error details:", JSON.stringify(error, null, 2));
       
-      if (error.message?.includes('validation') || error.message?.includes('invalid')) {
+      if ((error as Error).message?.includes('validation') || (error as Error).message?.includes('invalid')) {
         return res.status(400).json({ 
-          message: error.message,
+          message: (error as Error).message,
           details: error 
         });
       }
-      res.status(500).json({ message: "Failed to create quiz", error: error.message });
+      res.status(500).json({ message: "Failed to create quiz", error: (error as Error).message });
     }
   });
 
@@ -2176,7 +2176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/messages/:id/read', isAuthenticated, async (req, res) => {
     try {
       const messageId = parseInt(req.params.id);
-      const message = await storage.markMessagesAsRead(parseInt(messageId), req.user.id);
+      const message = await storage.markMessagesAsRead(req.user?.id || "");
       res.json(message);
     } catch (error) {
       console.error("Error marking message as read:", error);
@@ -2544,9 +2544,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify payment with Paystack
       const paymentData = await verifyPayment(reference);
       
-      if (paymentData.status === 'success') {
+      if (paymentData.status === true) {
         // Extract course ID from metadata
-        const courseId = paymentData.metadata?.courseId;
+        const courseId = (paymentData.data as any)?.metadata?.courseId;
         
         if (courseId) {
           // Enroll the user in the course
@@ -2554,7 +2554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             courseId,
             userId,
             paymentReference: reference,
-            paymentAmount: paymentData.amount / 100, // Convert from kobo to naira
+            paymentAmount: ((paymentData.data as any)?.amount || 0) / 100, // Convert from kobo to naira
             paymentStatus: 'completed',
             paymentMethod: 'paystack',
             paymentProvider: 'paystack',
@@ -2567,7 +2567,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createNotification({
             userId: userId,
             title: 'Enrollment Successful',
-            message: `You have successfully enrolled in the course: ${paymentData.metadata?.courseName || 'Course'}`,
+            message: `You have successfully enrolled in the course: ${(paymentData.data as any)?.metadata?.courseName || 'Course'}`,
             type: 'success',
             read: false,
             linkUrl: `/courses/${courseId}`
@@ -2699,8 +2699,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Format the data for the frontend
       const totalExercises = await storage.getCodingExercisesCount();
-      const completedExercises = progress.filter(p => p.completionStatus === "completed").length;
-      const inProgressExercises = progress.filter(p => p.completionStatus === "in-progress").length;
+      const completedExercises = progress.filter(p => p.status === "completed").length;
+      const inProgressExercises = progress.filter(p => p.status === "in-progress").length;
       
       // Get progress by difficulty
       const exercisesByDifficulty = await storage.getCodingExercisesByDifficulty();
