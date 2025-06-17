@@ -318,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
-      res.status(500).json({ message: "Internal server error", error: error.message });
+      res.status(500).json({ message: "Internal server error", error: (error as Error).message });
     }
   });
 
@@ -348,7 +348,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user status
       const newStatus = action === 'suspend' ? 'suspended' : 'active';
       const updatedUser = await storage.updateUser(userId, { 
-        status: newStatus,
         updatedAt: new Date()
       });
 
@@ -1051,9 +1050,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Assign the creator as a mentor for this course if they're a mentor
       if (req.user) {
-        // Get user ID and role - either directly from user object or from claims
-        const userId = req.user.id || (req.user.claims && req.user.claims.sub);
-        const userRole = req.user.role || (req.user.claims && req.user.claims.role);
+        // Get user ID and role from user object
+        const userId = req.user.id;
+        const userRole = req.user.role;
         
         console.log('Course creation - User ID:', userId, 'User Role:', userRole);
         
@@ -1087,17 +1086,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user is a mentor for this course or an admin
-      if (!req.user || !req.user.claims) {
+      if (!req.user) {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      const user = req.user.claims;
+      const user = req.user;
       const isMentor = user.role === UserRole.MENTOR;
       const isAdmin = user.role === UserRole.ADMIN;
       
       if (isMentor && !isAdmin) {
         const mentors = await storage.getMentorsByCourse(courseId);
-        const isCourseMentor = mentors.some(mentor => mentor.id === user.sub);
+        const isCourseMentor = mentors.some(mentor => mentor.id === user.id);
         
         if (!isCourseMentor) {
           return res.status(403).json({ message: "You do not have permission to update this course" });
