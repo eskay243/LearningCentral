@@ -76,11 +76,36 @@ const Messages = () => {
     console.log('Length:', conversations.length);
   }, [conversations]);
   
-  // Fetch messages for selected conversation
-  const { data: messages, isLoading: isMessagesLoading } = useQuery({
-    queryKey: [`/api/conversations/${selectedConversation}/messages`],
-    enabled: !!selectedConversation,
-  });
+  // Fetch messages for selected conversation using direct state
+  const [messages, setMessages] = useState<any[]>([]);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(false);
+  
+  useEffect(() => {
+    if (!selectedConversation) return;
+    
+    const fetchMessages = async () => {
+      try {
+        setIsMessagesLoading(true);
+        const response = await fetch(`/api/conversations/${selectedConversation}/messages`, {
+          credentials: "include",
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setMessages(data || []);
+        } else {
+          setMessages([]);
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        setMessages([]);
+      } finally {
+        setIsMessagesLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedConversation]);
   
   // Mock data for development
   const mockConversations = [
@@ -235,11 +260,7 @@ const Messages = () => {
     }
   );
   
-  // Debug log to check data
-  console.log('Conversations data:', conversations);
-  console.log('Conversations is array:', Array.isArray(conversations));
-  console.log('Conversations array:', conversationsArray);
-  console.log('Filtered conversations:', filteredConversations);
+  // Debug log to check data - moved to useEffect to avoid render loops
   
   // Get current conversation
   const currentConversation = filteredConversations.find(
