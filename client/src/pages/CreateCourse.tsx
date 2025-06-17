@@ -88,7 +88,7 @@ const CreateCourse = () => {
       price: "0",
       isPublished: false,
       category: "",
-      tags: undefined,
+      tags: "",
     },
   });
 
