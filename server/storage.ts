@@ -124,7 +124,7 @@ import {
   type GeneratedCertificate,
   UserRole,
 } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { randomBytes } from 'crypto';
 import { eq, and, or, like, desc, asc, isNull, count, sql, not, inArray, lt, gt, gte } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -3448,71 +3448,86 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Getting conversations for user:', userId);
       
-      // Use direct SQL query to avoid Drizzle ORM recursion issues
-      const query = `
-        SELECT DISTINCT
-          c.id,
-          c.title,
-          c.type,
-          c.course_id,
-          c.created_at,
-          c.updated_at,
-          (
-            SELECT json_agg(
-              json_build_object(
-                'userId', cp.user_id,
-                'joinedAt', cp.joined_at,
-                'firstName', u.first_name,
-                'lastName', u.last_name,
-                'role', u.role
-              )
-            )
-            FROM conversation_participants cp
-            JOIN users u ON cp.user_id = u.id
-            WHERE cp.conversation_id = c.id
-          ) as participants,
-          (
-            SELECT json_build_object(
-              'id', cm.id,
-              'content', cm.content,
-              'senderId', cm.sender_id,
-              'sentAt', cm.sent_at,
-              'senderName', u.first_name || ' ' || u.last_name
-            )
-            FROM chat_messages cm
-            JOIN users u ON cm.sender_id = u.id
-            WHERE cm.conversation_id = c.id
-            ORDER BY cm.sent_at DESC
-            LIMIT 1
-          ) as last_message,
-          (
-            SELECT COUNT(*)::integer
-            FROM chat_messages cm2
-            WHERE cm2.conversation_id = c.id
-            AND cm2.sender_id != $1
-            AND cm2.is_read = false
-          ) as unread_count
+      // First get basic conversation data
+      const conversationsQuery = `
+        SELECT DISTINCT c.id, c.title, c.type, c.course_id, c.created_at, c.updated_at
         FROM conversations c
         JOIN conversation_participants cp ON c.id = cp.conversation_id
         WHERE cp.user_id = $1
         ORDER BY c.updated_at DESC
       `;
 
-      const result = await pool.query(query, [userId]);
-      console.log('Raw conversation query result:', result.rows);
+      const conversationsResult = await pool.query(conversationsQuery, [userId]);
+      console.log('Found conversations:', conversationsResult.rows.length);
 
-      return result.rows.map(row => ({
-        id: row.id,
-        title: row.title,
-        type: row.type,
-        courseId: row.course_id,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        participants: row.participants || [],
-        lastMessage: row.last_message,
-        unreadCount: row.unread_count || 0,
-        otherUser: row.participants ? row.participants.find(p => p.userId !== userId) : null
-      }));
+      const results = [];
+
+      for (const conv of conversationsResult.rows) {
+        // Get participants
+        const participantsQuery = `
+          SELECT cp.user_id, cp.joined_at, u.first_name, u.last_name, u.role
+          FROM conversation_participants cp
+          JOIN users u ON cp.user_id = u.id
+          WHERE cp.conversation_id = $1
+        `;
+        const participantsResult = await pool.query(participantsQuery, [conv.id]);
+
+        // Get last message
+        const lastMessageQuery = `
+          SELECT cm.id, cm.content, cm.sender_id, cm.sent_at, 
+                 u.first_name || ' ' || u.last_name as sender_name
+          FROM chat_messages cm
+          JOIN users u ON cm.sender_id = u.id
+          WHERE cm.conversation_id = $1
+          ORDER BY cm.sent_at DESC
+          LIMIT 1
+        `;
+        const lastMessageResult = await pool.query(lastMessageQuery, [conv.id]);
+
+        // Get unread count
+        const unreadQuery = `
+          SELECT COUNT(*)::integer as count
+          FROM chat_messages cm
+          WHERE cm.conversation_id = $1 
+          AND cm.sender_id != $2 
+          AND cm.is_read = false
+        `;
+        const unreadResult = await pool.query(unreadQuery, [conv.id, userId]);
+
+        const participants = participantsResult.rows.map(p => ({
+          userId: p.user_id,
+          joinedAt: p.joined_at,
+          firstName: p.first_name,
+          lastName: p.last_name,
+          role: p.role
+        }));
+
+        const lastMessage = lastMessageResult.rows[0] ? {
+          id: lastMessageResult.rows[0].id,
+          content: lastMessageResult.rows[0].content,
+          senderId: lastMessageResult.rows[0].sender_id,
+          sentAt: lastMessageResult.rows[0].sent_at,
+          senderName: lastMessageResult.rows[0].sender_name
+        } : null;
+
+        const otherUser = participants.find(p => p.userId !== userId);
+
+        results.push({
+          id: conv.id,
+          title: conv.title,
+          type: conv.type,
+          courseId: conv.course_id,
+          createdAt: conv.created_at,
+          updatedAt: conv.updated_at,
+          participants: participants,
+          lastMessage: lastMessage,
+          unreadCount: unreadResult.rows[0]?.count || 0,
+          otherUser: otherUser || null
+        });
+      }
+
+      console.log('Processed conversations:', results.length);
+      return results;
     } catch (error) {
       console.error("Error fetching user conversations:", error);
       return [];

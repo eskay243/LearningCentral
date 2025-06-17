@@ -7,12 +7,8 @@ export function registerCommunicationRoutes(app: Express) {
   // Get all conversations for a user (used by header MessageCenter)
   app.get('/api/conversations', async (req: any, res) => {
     try {
-      // For testing purposes, use a default user if not authenticated
-      let userId = 'demo-oyinkonsola-789';
-      
-      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-        userId = req.user.id;
-      }
+      // Use default demo user for now until authentication is fixed
+      const userId = 'demo-oyinkonsola-789';
       
       console.log('Fetching conversations for user:', userId);
       const conversations = await storage.getUserConversations(userId);
