@@ -68,6 +68,8 @@ export function registerCommunicationRoutes(app: Express) {
       const userId = req.user.id;
       const userRole = req.user.role;
       const { recipients, title, content, type, courseId } = req.body;
+      
+      console.log('Creating conversation - userId:', userId, 'userRole:', userRole, 'body:', req.body);
 
       let participantIds = [];
 
@@ -80,8 +82,23 @@ export function registerCommunicationRoutes(app: Express) {
         const courseStudents = await storage.getCourseStudents(parseInt(courseId));
         participantIds = courseStudents.map((student: any) => student.id);
       } else if (type === 'individual') {
-        // Individual messaging
+        // Individual messaging - validate permissions
         participantIds = recipients || [];
+        
+        // Check if user is allowed to message these recipients
+        if (userRole === 'student') {
+          // Students can only message mentors and admins
+          const validRecipients = await storage.getMentorsAndAdmins();
+          const validIds = validRecipients.map((user: any) => user.id);
+          participantIds = participantIds.filter((id: string) => validIds.includes(id));
+        } else if (userRole === 'mentor') {
+          // Mentors can message their enrolled students, other mentors, and admins
+          const enrolledStudents = await storage.getEnrolledStudentsForMentor(userId);
+          const mentorsAndAdmins = await storage.getMentorsAndAdmins();
+          const validIds = [...enrolledStudents.map((user: any) => user.id), ...mentorsAndAdmins.map((user: any) => user.id)];
+          participantIds = participantIds.filter((id: string) => validIds.includes(id));
+        }
+        // Admin can message anyone (no filtering needed)
       } else {
         return res.status(403).json({ message: "You are not authorized to send this type of message" });
       }
