@@ -207,6 +207,50 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                           <GraduationCap className="mr-3 h-4 w-4 flex-shrink-0" />
                           <span className="truncate">Mentor Management</span>
                         </Link>
+                        
+                        <Link href="/admin/mentor-payments" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/mentor-payments"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/mentor-payments")
+                          }
+                        )}>
+                          <CreditCard className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">Mentor Payments</span>
+                        </Link>
+                        
+                        <Link href="/admin/mentor-performance" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/mentor-performance"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/mentor-performance")
+                          }
+                        )}>
+                          <BarChart3 className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">Performance</span>
+                        </Link>
+                        
+                        <Link href="/admin/mentor-ratings" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/mentor-ratings"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/mentor-ratings")
+                          }
+                        )}>
+                          <Star className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">Ratings</span>
+                        </Link>
+                        
+                        <Link href="/admin/mentor-activities" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/mentor-activities"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/mentor-activities")
+                          }
+                        )}>
+                          <Activity className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">Activities</span>
+                        </Link>
                       </div>
                     )}
                   </div>
