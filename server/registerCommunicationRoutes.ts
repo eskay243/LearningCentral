@@ -1,6 +1,7 @@
 import { type Express } from "express";
 import { storage } from "./storage";
 import { isAuthenticated, hasRole } from "./auth";
+import { notificationService } from "./notificationRoutes";
 import { z } from "zod";
 
 export function registerCommunicationRoutes(app: Express) {
@@ -145,6 +146,21 @@ export function registerCommunicationRoutes(app: Express) {
           senderId: userId,
           content: content,
         });
+
+        // Create notifications for message recipients
+        const senderName = `${req.user.firstName} ${req.user.lastName}`;
+        for (const recipientId of participantIds) {
+          if (recipientId !== userId) {
+            await notificationService.createNotification({
+              userId: recipientId,
+              type: 'message',
+              priority: 'medium',
+              title: 'New Message',
+              message: `${senderName} sent you a message: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
+              actionUrl: '/messages'
+            });
+          }
+        }
       }
 
       res.status(201).json(conversation);
