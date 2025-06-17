@@ -458,21 +458,35 @@ export default function CourseDetail() {
                     </Dialog>
                   </>
                 )}
-                <Button 
-                  size="lg" 
-                  className={isEnrolled ? "bg-green-600 hover:bg-green-700" : "bg-purple-600 hover:bg-purple-700"}
-                  onClick={handleEnroll}
-                  disabled={enrollMutation.isPending || isEnrollmentLoading}
-                >
-                  <PlayIcon className="h-5 w-5 mr-2" />
-                  {enrollMutation.isPending 
-                    ? "Processing..." 
-                    : isEnrollmentLoading
-                      ? "Loading..."
-                      : isEnrolled 
-                        ? "Continue Learning" 
-                        : "Start Learning"}
-                </Button>
+                {/* Show Start Learning button only for students, not for admins/mentors */}
+                {!isAdmin && !isMentor && isAuthenticated && (
+                  <Button 
+                    size="lg" 
+                    className={isEnrolled ? "bg-green-600 hover:bg-green-700" : "bg-purple-600 hover:bg-purple-700"}
+                    onClick={handleEnroll}
+                    disabled={enrollMutation.isPending || isEnrollmentLoading}
+                  >
+                    <PlayIcon className="h-5 w-5 mr-2" />
+                    {enrollMutation.isPending 
+                      ? "Processing..." 
+                      : isEnrollmentLoading
+                        ? "Loading..."
+                        : isEnrolled 
+                          ? "Continue Learning" 
+                          : "Start Learning"}
+                  </Button>
+                )}
+                {/* Show info for non-students when not authenticated */}
+                {!isAuthenticated && (
+                  <Button 
+                    size="lg" 
+                    className="bg-purple-600 hover:bg-purple-700"
+                    onClick={() => setLocation('/login')}
+                  >
+                    <PlayIcon className="h-5 w-5 mr-2" />
+                    Login to Start Learning
+                  </Button>
+                )}
               </div>
             </div>
           </div>

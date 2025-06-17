@@ -96,16 +96,16 @@ const CreateCourse = () => {
   useEffect(() => {
     if (existingCourse && isEditMode) {
       form.reset({
-        title: existingCourse.title || "",
-        description: existingCourse.description || "",
-        thumbnail: existingCourse.thumbnail || "",
-        price: existingCourse.price?.toString() || "0",
-        isPublished: existingCourse.status === 'published',
-        category: existingCourse.category || "",
-        tags: existingCourse.tags?.join(", ") || "",
+        title: (existingCourse as any).title || "",
+        description: (existingCourse as any).description || "",
+        thumbnail: (existingCourse as any).thumbnail || "",
+        price: (existingCourse as any).price?.toString() || "0",
+        isPublished: (existingCourse as any).isPublished || false,
+        category: (existingCourse as any).category || "",
+        tags: Array.isArray((existingCourse as any).tags) ? (existingCourse as any).tags.join(", ") : "",
       });
-      if (existingCourse.thumbnail) {
-        setUploadedImage(existingCourse.thumbnail);
+      if ((existingCourse as any).thumbnail) {
+        setUploadedImage((existingCourse as any).thumbnail);
       }
     }
   }, [existingCourse, isEditMode, form]);
