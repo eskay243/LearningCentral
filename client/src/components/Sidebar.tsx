@@ -27,6 +27,7 @@ import {
   Building2,
   UserCog,
   GraduationCap,
+  BarChart3,
 } from "lucide-react";
 
 interface SidebarProps {
