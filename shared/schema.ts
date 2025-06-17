@@ -791,9 +791,80 @@ export const courseGrades = pgTable("course_grades", {
   lastUpdated: timestamp("last_updated").defaultNow(),
 });
 
+// KYC (Know Your Customer) table for student verification
+export const studentKyc = pgTable("student_kyc", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  // Personal Information
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  middleName: text("middle_name"),
+  dateOfBirth: text("date_of_birth").notNull(),
+  gender: text("gender").notNull(),
+  nationality: text("nationality").notNull(),
+  phoneNumber: text("phone_number").notNull(),
+  alternatePhone: text("alternate_phone"),
+  email: text("email").notNull(),
+  
+  // Address Information
+  currentAddress: text("current_address").notNull(),
+  permanentAddress: text("permanent_address"),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  postalCode: text("postal_code"),
+  country: text("country").default("Nigeria"),
+  
+  // Educational Background
+  highestEducation: text("highest_education"),
+  institutionName: text("institution_name"),
+  graduationYear: text("graduation_year"),
+  fieldOfStudy: text("field_of_study"),
+  currentEmployment: text("current_employment"),
+  
+  // Emergency Contact
+  emergencyContactName: text("emergency_contact_name").notNull(),
+  emergencyContactRelation: text("emergency_contact_relation"),
+  emergencyContactPhone: text("emergency_contact_phone").notNull(),
+  emergencyContactAddress: text("emergency_contact_address"),
+  
+  // Financial Information
+  bankName: text("bank_name"),
+  accountNumber: text("account_number"),
+  accountName: text("account_name"),
+  bvn: text("bvn"),
+  
+  // Document Information
+  identificationDocument: text("identification_document"),
+  proofOfAddress: text("proof_of_address"),
+  educationalCertificate: text("educational_certificate"),
+  
+  // Additional Information
+  learningGoals: text("learning_goals"),
+  priorExperience: text("prior_experience"),
+  referralSource: text("referral_source"),
+  specialNeeds: text("special_needs"),
+  
+  // Consent and Status
+  dataProcessingConsent: boolean("data_processing_consent").notNull(),
+  marketingConsent: boolean("marketing_consent").default(false),
+  termsAccepted: boolean("terms_accepted").notNull(),
+  
+  // Verification Status
+  status: text("status").default("pending"), // pending, approved, rejected, under_review
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewComments: text("review_comments"),
+  
+  // Timestamps
+  submittedAt: timestamp("submitted_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Create Zod schemas for insert operations
 export const insertUserSchema = createInsertSchema(users);
 export const insertCourseSchema = createInsertSchema(courses);
+export const insertStudentKycSchema = createInsertSchema(studentKyc).omit({ id: true, submittedAt: true, updatedAt: true });
 export const insertModuleSchema = createInsertSchema(modules);
 export const insertLessonSchema = createInsertSchema(lessons);
 export const insertQuizSchema = createInsertSchema(quizzes);

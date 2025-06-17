@@ -18,6 +18,7 @@ import { registerAssessmentRoutes } from "./assessmentRoutes";
 import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
 import { registerLiveSessionRoutes } from "./liveSessionRoutes";
 import { registerEnhancedLiveSessionRoutes } from "./enhancedLiveSessionRoutes";
+import { registerKycRoutes } from "./kycRoutes";
 import { courseContentRoutes } from "./courseContentRoutes";
 
 
@@ -4108,6 +4109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register assessment routes
   registerAssessmentRoutes(app);
+  
+  // Register KYC routes
+  registerKycRoutes(app);
   
   // Register code execution routes
   registerCodeExecutionRoutes(app);
