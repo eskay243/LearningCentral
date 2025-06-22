@@ -90,8 +90,12 @@ export default function CourseDetail() {
       }
 
       // For free courses, enroll directly
-      const response = await apiRequest("POST", "/api/enroll", {
-        courseId: course.id,
+      const response = await fetch(`/api/courses/${course.id}/enroll`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
       if (response.ok) {
