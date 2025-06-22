@@ -32,11 +32,17 @@ export default function CourseView() {
     enabled: !!id,
   });
 
-  // Check enrollment
-  const { data: enrollment } = useQuery({
-    queryKey: [`/api/courses/${id}/enrollment`],
-    enabled: !!id && isAuthenticated,
+  // Check enrollment by getting student's enrolled courses
+  const { data: enrolledCourses } = useQuery({
+    queryKey: ['/api/student/enrolled-courses'],
+    enabled: !!isAuthenticated,
   });
+
+  // Check if current course is in enrolled courses
+  const enrollment = enrolledCourses?.find((course: any) => course.id === parseInt(id || '0'));
+  
+  // Check if user is the course owner
+  const isOwner = course && user && course.mentorId === user.id;
 
   // Fetch modules
   const { data: modules } = useQuery({
@@ -71,9 +77,9 @@ export default function CourseView() {
     }
   }, [isAuthenticated, setLocation]);
 
-  // Check if enrolled
+  // Check if enrolled or owner
   useEffect(() => {
-    if (!enrollment && !courseLoading && course) {
+    if (enrolledCourses && !enrollment && !isOwner && !courseLoading && course) {
       toast({
         title: "Access Denied",
         description: "You need to enroll in this course to access the content.",
@@ -81,7 +87,7 @@ export default function CourseView() {
       });
       setLocation(`/courses/${id}`);
     }
-  }, [enrollment, courseLoading, course, id, setLocation, toast]);
+  }, [enrollment, isOwner, enrolledCourses, courseLoading, course, id, setLocation, toast]);
 
   const currentLesson = lessons?.find(lesson => lesson.id === currentLessonId);
   const currentModule = modules?.find(module => module.id === currentModuleId);
@@ -94,7 +100,7 @@ export default function CourseView() {
     );
   }
 
-  if (!course || !enrollment) {
+  if (!course || (!enrollment && !isOwner)) {
     return null;
   }
 
