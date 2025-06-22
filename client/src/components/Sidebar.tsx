@@ -41,6 +41,7 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
   const [location] = useLocation();
   const { user, isAdmin, isMentor } = useAuth();
+  const isStudent = user?.role === 'student';
   const [isOfficeManagementOpen, setIsOfficeManagementOpen] = useState(false);
   
   const sidebarClass = cn(

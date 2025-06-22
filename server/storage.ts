@@ -178,6 +178,11 @@ export interface IStorage {
   getStudentEnrollments(userId: string): Promise<CourseEnrollment[]>;
   getEnrollmentsByUser(userId: string): Promise<CourseEnrollment[]>;
   
+  // Additional enrollment methods
+  getEnrollment(userId: string, courseId: number): Promise<CourseEnrollment | undefined>;
+  createEnrollment(enrollmentData: any): Promise<CourseEnrollment>;
+  getEnrolledCourses(userId: string): Promise<any[]>;
+  
   // Mentor operations
   assignMentorToCourse(mentorCourse: Omit<MentorCourse, "id" | "assignedAt">): Promise<MentorCourse>;
   getMentorsByCourse(courseId: number): Promise<User[]>;
@@ -3134,16 +3139,77 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getEnrolledCourses(userId: string): Promise<CourseEnrollment[]> {
+  async getEnrolledCourses(userId: string): Promise<any[]> {
     try {
-      return await db
-        .select()
+      // Get enrollments with course details
+      const enrollments = await db
+        .select({
+          id: courseEnrollments.id,
+          courseId: courseEnrollments.courseId,
+          userId: courseEnrollments.userId,
+          enrolledAt: courseEnrollments.enrolledAt,
+          progress: courseEnrollments.progress,
+          status: courseEnrollments.status,
+          course: {
+            id: courses.id,
+            title: courses.title,
+            description: courses.description,
+            price: courses.price,
+            category: courses.category,
+            isPublished: courses.isPublished,
+            thumbnail: courses.thumbnail
+          }
+        })
         .from(courseEnrollments)
+        .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
         .where(eq(courseEnrollments.userId, userId))
         .orderBy(desc(courseEnrollments.enrolledAt));
+
+      // Transform to match expected format
+      return enrollments.map(enrollment => ({
+        ...enrollment.course,
+        isEnrolled: true,
+        progress: enrollment.progress || 0,
+        enrollmentDate: enrollment.enrolledAt?.toISOString()
+      }));
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
       return [];
+    }
+  }
+
+  async getEnrollment(userId: string, courseId: number): Promise<CourseEnrollment | undefined> {
+    try {
+      const [enrollment] = await db
+        .select()
+        .from(courseEnrollments)
+        .where(and(
+          eq(courseEnrollments.userId, userId),
+          eq(courseEnrollments.courseId, courseId)
+        ));
+      return enrollment;
+    } catch (error) {
+      console.error("Error fetching enrollment:", error);
+      return undefined;
+    }
+  }
+
+  async createEnrollment(enrollmentData: any): Promise<CourseEnrollment> {
+    try {
+      const [enrollment] = await db
+        .insert(courseEnrollments)
+        .values({
+          userId: enrollmentData.userId,
+          courseId: enrollmentData.courseId,
+          enrolledAt: enrollmentData.enrolledAt || new Date(),
+          progress: enrollmentData.progress || 0,
+          status: enrollmentData.status || 'active'
+        })
+        .returning();
+      return enrollment;
+    } catch (error) {
+      console.error("Error creating enrollment:", error);
+      throw new Error("Failed to create enrollment");
     }
   }
 
