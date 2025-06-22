@@ -45,11 +45,27 @@ export function setupAuth(app: Express) {
     cookie: {
       httpOnly: true,
       secure: false, // Set to true in production with HTTPS
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+      sameSite: 'lax' // Allow cookies to be sent with same-site requests
     }
   };
 
   app.set("trust proxy", 1);
+  
+  // Add CORS headers for session handling
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Origin', req.headers.origin || 'http://localhost:5000');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization,Cache-Control,Pragma');
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+    } else {
+      next();
+    }
+  });
+  
   app.use(session(sessionSettings));
   app.use(passport.initialize());
   app.use(passport.session());

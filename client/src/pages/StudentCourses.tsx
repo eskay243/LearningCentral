@@ -45,10 +45,15 @@ export default function StudentCourses() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('enrolled');
 
-  // Fetch enrolled courses
-  const { data: enrolledCourses = [], isLoading: enrolledLoading } = useQuery<Course[]>({
+  // Fetch enrolled courses with authentication
+  const { data: enrolledCourses = [], isLoading: enrolledLoading, error: enrolledError } = useQuery<Course[]>({
     queryKey: ['/api/student/enrolled-courses'],
     enabled: !!user,
+    retry: (failureCount, error: any) => {
+      // Don't retry on authentication errors
+      if (error?.status === 401) return false;
+      return failureCount < 3;
+    },
   });
 
   // Fetch marketplace courses
