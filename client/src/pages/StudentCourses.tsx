@@ -46,13 +46,13 @@ export default function StudentCourses() {
   const [activeTab, setActiveTab] = useState('enrolled');
 
   // Fetch enrolled courses
-  const { data: enrolledCourses = [], isLoading: enrolledLoading } = useQuery({
+  const { data: enrolledCourses = [], isLoading: enrolledLoading } = useQuery<Course[]>({
     queryKey: ['/api/student/enrolled-courses'],
     enabled: !!user,
   });
 
   // Fetch marketplace courses
-  const { data: marketplaceCourses = [], isLoading: marketplaceLoading } = useQuery({
+  const { data: marketplaceCourses = [], isLoading: marketplaceLoading } = useQuery<Course[]>({
     queryKey: ['/api/courses'],
     enabled: !!user,
   });
@@ -90,6 +90,17 @@ export default function StudentCourses() {
 
   const handleEnrollCourse = async (courseId: number) => {
     try {
+      // First check if this is a paid course
+      const course = marketplaceCourses.find(c => c.id === courseId);
+      if (!course) return;
+
+      if (course.price > 0) {
+        // For paid courses, redirect to course detail page to handle payment
+        setLocation(`/course-detail/${courseId}`);
+        return;
+      }
+
+      // For free courses, enroll directly
       const response = await fetch(`/api/courses/${courseId}/enroll`, {
         method: 'POST',
         credentials: 'include',
@@ -101,6 +112,8 @@ export default function StudentCourses() {
       if (response.ok) {
         // Refresh both queries
         window.location.reload();
+      } else {
+        console.error('Enrollment failed');
       }
     } catch (error) {
       console.error('Enrollment failed:', error);
@@ -263,7 +276,7 @@ export default function StudentCourses() {
                           variant="default" 
                           size="sm" 
                           className="flex-1"
-                          onClick={() => setLocation(`/courses/${course.id}/learn`)}
+                          onClick={() => setLocation(`/course-detail/${course.id}`)}
                         >
                           <Play className="w-4 h-4 mr-2" />
                           {course.progress > 0 ? 'Continue' : 'Start'}
@@ -380,7 +393,7 @@ export default function StudentCourses() {
                           className="flex-1"
                           onClick={() => handleEnrollCourse(course.id)}
                         >
-                          Enroll Now
+                          {course.price > 0 ? `Enroll - ${formatCurrency(course.price)}` : 'Enroll Free'}
                         </Button>
                         <Button 
                           variant="outline" 

@@ -95,11 +95,11 @@ export default function CourseDetail() {
         <div className="max-w-4xl mx-auto">
           <Button
             variant="ghost"
-            onClick={() => setLocation('/courses')}
+            onClick={() => setLocation('/student-courses')}
             className="mb-6"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Courses
+            Back to My Courses
           </Button>
           <Card>
             <CardContent className="p-6 text-center">
@@ -118,11 +118,11 @@ export default function CourseDetail() {
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          onClick={() => setLocation('/courses')}
+          onClick={() => setLocation('/student-courses')}
           className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Courses
+          Back to My Courses
         </Button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
