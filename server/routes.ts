@@ -1551,7 +1551,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Course routes with mentor assignment information
   app.get('/api/courses', async (req, res) => {
     try {
-      const published = req.query.published === 'true';
+      // Only filter by published status if explicitly provided in query
+      const publishedFilter = req.query.published;
+      const options: { published?: boolean } = {};
+      
+      if (publishedFilter === 'true') {
+        options.published = true;
+      } else if (publishedFilter === 'false') {
+        options.published = false;
+      }
+      // If no published parameter provided, return all courses (don't set options.published)
+      
       // Enhanced authentication context resolution for courses API
       let userId: string | undefined;
       let userRole: string | undefined;
@@ -1576,7 +1586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get base courses
-      const courses = await storage.getCourses({ published });
+      const courses = await storage.getCourses(options);
       
       // If user is authenticated and is a mentor, add assignment information
       if (userId && userRole === 'mentor') {
