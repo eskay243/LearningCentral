@@ -3080,10 +3080,15 @@ export class DatabaseStorage implements IStorage {
       let query = db.select().from(courses);
       
       if (options?.published !== undefined) {
+        console.log(`Filtering courses by published: ${options.published}`);
         query = query.where(eq(courses.isPublished, options.published));
+      } else {
+        console.log('Fetching all courses without published filter');
       }
       
       const result = await query;
+      console.log(`getCourses returned ${result.length} courses`);
+      console.log('Course IDs:', result.map(c => c.id));
       return result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     } catch (error) {
       console.error("Error fetching courses:", error);
