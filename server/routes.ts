@@ -1636,6 +1636,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Course enrollment endpoint
+  app.post('/api/courses/:id/enroll', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user.id;
+      
+      // Check if course exists and is published
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      if (!course.isPublished) {
+        return res.status(400).json({ message: "Course is not available for enrollment" });
+      }
+      
+      // Check if already enrolled
+      const existingEnrollment = await storage.getEnrollment(userId, courseId);
+      if (existingEnrollment) {
+        return res.status(400).json({ message: "Already enrolled in this course" });
+      }
+      
+      // Create enrollment
+      const enrollment = await storage.createEnrollment({
+        userId,
+        courseId,
+        enrolledAt: new Date(),
+        status: 'active',
+        progress: 0
+      });
+      
+      res.status(201).json(enrollment);
+    } catch (error) {
+      console.error("Error enrolling in course:", error);
+      res.status(500).json({ message: "Failed to enroll in course" });
+    }
+  });
+
+  // Get enrollment status for a course
+  app.get('/api/courses/:id/enrollment', isAuthenticated, async (req: any, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const userId = req.user.id;
+      
+      const enrollment = await storage.getEnrollment(userId, courseId);
+      
+      res.json({
+        isEnrolled: !!enrollment,
+        enrollment: enrollment || null
+      });
+    } catch (error) {
+      console.error("Error checking enrollment:", error);
+      res.status(500).json({ message: "Failed to check enrollment status" });
+    }
+  });
+
+  // Get student's enrolled courses
+  app.get("/api/student/enrolled-courses", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const enrolledCourses = await storage.getEnrolledCourses(userId);
+      
+      res.json(enrolledCourses);
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error);
+      res.status(500).json({ message: "Failed to fetch enrolled courses" });
+    }
+  });
+
   app.post('/api/courses', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const course = await storage.createCourse(req.body);

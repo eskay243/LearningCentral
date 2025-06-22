@@ -130,6 +130,13 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             </Link>
           )}
           
+          {isStudent && (
+            <Link href="/student-courses" className={menuItemClass("/student-courses")}>
+              <BookOpen className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-600" />
+              <span className="truncate">My Courses</span>
+            </Link>
+          )}
+          
           <Link href="/schedule" className={menuItemClass("/schedule")}>
             <Calendar className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
             <span className="truncate">Schedule</span>

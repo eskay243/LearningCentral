@@ -11,6 +11,7 @@ import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Courses from "@/pages/Courses";
 import CourseView from "@/pages/CourseView";
+import StudentCourses from "@/pages/StudentCourses";
 import CourseExercises from "@/pages/CourseExercises";
 import CreateCourse from "@/pages/CreateCourse";
 import CourseCurriculum from "@/pages/CourseCurriculum";
@@ -97,6 +98,7 @@ function Router() {
         <Route path="/student-dashboard" component={StableStudentDashboard} />
         <Route path="/courses" component={Courses} />
         <Route path="/my-courses" component={MyCoursesFixed} />
+        <Route path="/student-courses" component={StudentCourses} />
         <Route path="/courses/:id" component={CourseDetail} />
         <Route path="/courses/:id/edit" component={CreateCourse} />
         <Route path="/courses/:id/exercises" component={CourseExercises} />
