@@ -326,7 +326,7 @@ export default function CourseDetail() {
                     <Button 
                       className="w-full" 
                       size="lg"
-                      onClick={() => setLocation(`/course-player/${courseId}`)}
+                      onClick={() => setLocation(`/courses/${courseId}/view`)}
                       variant="default"
                     >
                       {enrollmentProgress > 0 ? "Continue Learning" : "Start Learning"}
