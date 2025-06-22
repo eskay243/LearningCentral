@@ -75,7 +75,8 @@ export default function CourseDetail() {
 
     const checkEnrollmentStatus = async () => {
       try {
-        const response = await fetch(`/api/courses/${courseId}/enrollment`, {
+        // Check enrollment by getting student's enrolled courses
+        const response = await fetch('/api/student/enrolled-courses', {
           method: 'GET',
           credentials: 'include',
           headers: {
@@ -84,11 +85,17 @@ export default function CourseDetail() {
         });
         
         if (response.ok) {
-          const enrollmentData = await response.json();
-          setIsEnrolled(enrollmentData.isEnrolled);
-          if (enrollmentData.enrollment) {
-            // Calculate progress based on enrollment data
-            setEnrollmentProgress(enrollmentData.enrollment.progress || 0);
+          const enrolledCourses = await response.json();
+          const currentCourseEnrollment = enrolledCourses.find((course: any) => 
+            course.id === parseInt(courseId)
+          );
+          
+          if (currentCourseEnrollment) {
+            setIsEnrolled(true);
+            setEnrollmentProgress(currentCourseEnrollment.progress || 0);
+          } else {
+            setIsEnrolled(false);
+            setEnrollmentProgress(0);
           }
         }
       } catch (err) {
