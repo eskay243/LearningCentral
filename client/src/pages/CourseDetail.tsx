@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Edit, Clock, Users, BookOpen } from 'lucide-react';
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Course {
   id: number;
@@ -26,7 +28,9 @@ export default function CourseDetail() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -71,6 +75,49 @@ export default function CourseDetail() {
       currency: 'NGN',
       minimumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const handleEnrollCourse = async () => {
+    if (!course || !user) return;
+
+    try {
+      setEnrolling(true);
+
+      if (course.price > 0) {
+        // For paid courses, redirect to payment page
+        setLocation(`/courses/${course.id}/payment`);
+        return;
+      }
+
+      // For free courses, enroll directly
+      const response = await apiRequest("POST", "/api/enroll", {
+        courseId: course.id,
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Enrollment Successful",
+          description: "You have been enrolled in this course!",
+        });
+        
+        // Redirect to student courses after successful enrollment
+        setTimeout(() => {
+          setLocation('/student-courses');
+        }, 1000);
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to enroll in course");
+      }
+    } catch (error) {
+      console.error("Enrollment error:", error);
+      toast({
+        title: "Enrollment Failed",
+        description: error instanceof Error ? error.message : "Failed to enroll in course",
+        variant: "destructive",
+      });
+    } finally {
+      setEnrolling(false);
+    }
   };
 
   if (loading) {
@@ -233,8 +280,14 @@ export default function CourseDetail() {
             {!isOwner && (
               <Card>
                 <CardContent className="p-6">
-                  <Button className="w-full" size="lg">
-                    Enroll Now - {formatCurrency(course.price || 0)}
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleEnrollCourse}
+                    disabled={enrolling}
+                  >
+                    {enrolling ? "Processing..." : 
+                     course.price > 0 ? `Enroll Now - ${formatCurrency(course.price)}` : "Enroll Free"}
                   </Button>
                 </CardContent>
               </Card>

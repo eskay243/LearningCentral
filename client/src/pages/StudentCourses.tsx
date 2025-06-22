@@ -96,7 +96,7 @@ export default function StudentCourses() {
 
       if (course.price > 0) {
         // For paid courses, redirect to course detail page to handle payment
-        setLocation(`/course-detail/${courseId}`);
+        setLocation(`/courses/${courseId}`);
         return;
       }
 
@@ -277,7 +277,7 @@ export default function StudentCourses() {
                           variant="default" 
                           size="sm" 
                           className="flex-1"
-                          onClick={() => setLocation(`/course-detail/${course.id}`)}
+                          onClick={() => setLocation(`/courses/${course.id}`)}
                         >
                           <Play className="w-4 h-4 mr-2" />
                           {(course.progress || 0) > 0 ? 'Continue' : 'Start'}
