@@ -214,8 +214,12 @@ export default function MyCoursesFixed() {
                           {formatCurrency((course.price || 0) * 0.37)}
                         </span>
                       </div>
-                      <Badge variant={course.isPublished ? "default" : "secondary"} className="w-full justify-center mb-3">
-                        {course.isPublished ? "Published" : "Draft"}
+                      <Badge 
+                        variant={course.isPublished ? "default" : "secondary"} 
+                        className="w-full justify-center mb-3"
+                        title={course.isPublished ? "Course is live and visible to students" : "Course is hidden from students and still being developed"}
+                      >
+                        {course.isPublished ? "✓ Published" : "📝 Draft"}
                       </Badge>
                     </div>
                     <div className="flex gap-2 pt-2">
@@ -223,7 +227,7 @@ export default function MyCoursesFixed() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => setLocation(`/course/${course.id}`)}
+                        onClick={() => setLocation(`/courses/${course.id}`)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
@@ -232,7 +236,7 @@ export default function MyCoursesFixed() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => setLocation(`/edit-course/${course.id}`)}
+                        onClick={() => setLocation(`/courses/${course.id}/edit`)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
@@ -291,8 +295,12 @@ export default function MyCoursesFixed() {
                           {course.category || 'General'}
                         </span>
                       </div>
-                      <Badge variant={course.isPublished ? "default" : "secondary"} className="w-full justify-center mb-3">
-                        {course.isPublished ? "Published" : "Draft"}
+                      <Badge 
+                        variant={course.isPublished ? "default" : "secondary"} 
+                        className="w-full justify-center mb-3"
+                        title={course.isPublished ? "Course is live and visible to students" : "Course is hidden from students and still being developed"}
+                      >
+                        {course.isPublished ? "✓ Published" : "📝 Draft"}
                       </Badge>
                     </div>
                     <div className="flex gap-2 pt-2">
@@ -300,7 +308,7 @@ export default function MyCoursesFixed() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => setLocation(`/course/${course.id}`)}
+                        onClick={() => setLocation(`/courses/${course.id}`)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
