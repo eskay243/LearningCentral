@@ -113,7 +113,8 @@ export default function StudentCourses() {
         // Refresh both queries
         window.location.reload();
       } else {
-        console.error('Enrollment failed');
+        const errorData = await response.json();
+        console.error('Enrollment failed:', errorData.message);
       }
     } catch (error) {
       console.error('Enrollment failed:', error);
@@ -197,7 +198,7 @@ export default function StudentCourses() {
             {enrolledLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse">
+                  <Card key={`enrolled-skeleton-${i}`} className="animate-pulse">
                     <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
                     <CardContent className="p-4">
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
@@ -225,7 +226,7 @@ export default function StudentCourses() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredEnrolledCourses.map((course: EnrolledCourse) => (
+                {filteredEnrolledCourses.map((course) => (
                   <Card key={course.id} className="border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800 overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="relative">
                       <img 
@@ -279,7 +280,7 @@ export default function StudentCourses() {
                           onClick={() => setLocation(`/course-detail/${course.id}`)}
                         >
                           <Play className="w-4 h-4 mr-2" />
-                          {course.progress > 0 ? 'Continue' : 'Start'}
+                          {(course.progress || 0) > 0 ? 'Continue' : 'Start'}
                         </Button>
                         <Button 
                           variant="outline" 
@@ -310,7 +311,7 @@ export default function StudentCourses() {
             {marketplaceLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Card key={i} className="animate-pulse">
+                  <Card key={`marketplace-skeleton-${i}`} className="animate-pulse">
                     <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
                     <CardContent className="p-4">
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>

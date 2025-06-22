@@ -1412,17 +1412,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(201).json(enrollment);
       }
       
-      // For paid courses, handle payment or create pending enrollment
-      // For now we'll create a pending enrollment that will be updated after payment
-      enrollmentData.paymentStatus = "pending";
-      enrollmentData.paymentAmount = course.price;
-      
-      const enrollment = await storage.enrollUserInCourse(enrollmentData);
-      
-      res.status(201).json({
-        enrollment,
+      // For paid courses, do not create enrollment - redirect to payment
+      res.status(400).json({
+        message: "This is a paid course. Please complete payment to enroll.",
         requiresPayment: true,
-        amount: course.price
+        amount: course.price,
+        courseId: courseId
       });
     } catch (error) {
       console.error("Error enrolling in course:", error);
