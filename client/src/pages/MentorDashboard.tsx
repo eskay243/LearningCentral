@@ -438,16 +438,37 @@ export default function MentorDashboard() {
     refetchOnWindowFocus: true,
   });
 
+  // Debug: Log course data for troubleshooting
+  console.log('Debug - All courses data:', allCourses?.map(c => ({
+    id: c.id,
+    title: c.title,
+    mentorId: (c as any).mentorId,
+    isAssignedToMe: (c as any).isAssignedToMe,
+    isPublished: c.isPublished
+  })));
+  console.log('Debug - Current user ID:', user?.id);
+
   // Filter courses to separate owned vs marketplace
   const ownedCourses = allCourses.filter(course => {
-    // Show courses created by this mentor or assigned to them via mentor_courses table
-    return (course as any).isAssignedToMe === true;
+    // Primary: Use isAssignedToMe flag from API
+    if ((course as any).isAssignedToMe === true) return true;
+    
+    // Fallback: Check if mentor ID matches (for when API authentication fails)
+    if (user && (course as any).mentorId === user.id) return true;
+    
+    return false;
   });
 
   const marketplaceCourses = allCourses.filter(course => {
     // Show published courses not owned by this mentor
-    return (course as any).isAssignedToMe !== true && course.isPublished;
+    const isOwned = (course as any).isAssignedToMe === true || 
+                   (user && (course as any).mentorId === user.id);
+    return !isOwned && course.isPublished;
   });
+
+  // Debug: Log filtered results
+  console.log('Debug - Owned courses:', ownedCourses.length, ownedCourses.map(c => c.id));
+  console.log('Debug - Marketplace courses:', marketplaceCourses.length, marketplaceCourses.map(c => c.id));
 
   console.log('Mentor courses debug:', { 
     allCourses, 
@@ -850,7 +871,7 @@ export default function MentorDashboard() {
               </p>
             </CardHeader>
             <CardContent>
-              {allCoursesLoading ? (
+              {coursesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
