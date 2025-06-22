@@ -76,6 +76,7 @@ import CustomizableDashboard from "@/pages/CustomizableDashboard";
 import StudentDashboard from "@/pages/student-dashboard";
 import StableStudentDashboard from "@/pages/stable-student-dashboard";
 import MentorDashboard from "@/pages/MentorDashboard";
+import MyCourses from "@/pages/MyCourses";
 import CourseDiscussion from "@/pages/CourseDiscussion";
 import CourseContentManagement from "@/pages/course-content-management";
 import LiveSession from "@/pages/live-session";
