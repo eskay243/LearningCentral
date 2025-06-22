@@ -1687,18 +1687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get student's enrolled courses
-  app.get("/api/student/enrolled-courses", isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.id;
-      const enrolledCourses = await storage.getEnrolledCourses(userId);
-      
-      res.json(enrolledCourses);
-    } catch (error) {
-      console.error("Error fetching enrolled courses:", error);
-      res.status(500).json({ message: "Failed to fetch enrolled courses" });
-    }
-  });
+  // Removed duplicate endpoint - using the comprehensive one below
 
   app.post('/api/courses', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
