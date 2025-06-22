@@ -29,6 +29,8 @@ export default function CourseDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrollmentProgress, setEnrollmentProgress] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -58,6 +60,11 @@ export default function CourseDetail() {
         
         const courseData = await response.json();
         setCourse(courseData);
+        
+        // Check enrollment status if user is authenticated
+        if (user) {
+          await checkEnrollmentStatus();
+        }
       } catch (err) {
         console.error("Error fetching course:", err);
         setError("Failed to load course details");
@@ -66,8 +73,32 @@ export default function CourseDetail() {
       }
     };
 
+    const checkEnrollmentStatus = async () => {
+      try {
+        const response = await fetch(`/api/courses/${courseId}/enrollment`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          const enrollmentData = await response.json();
+          setIsEnrolled(enrollmentData.isEnrolled);
+          if (enrollmentData.enrollment) {
+            // Calculate progress based on enrollment data
+            setEnrollmentProgress(enrollmentData.enrollment.progress || 0);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking enrollment:", err);
+        // Don't set error state for enrollment check failure
+      }
+    };
+
     fetchCourse();
-  }, [courseId]);
+  }, [courseId, user]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -284,15 +315,26 @@ export default function CourseDetail() {
             {!isOwner && (
               <Card>
                 <CardContent className="p-6">
-                  <Button 
-                    className="w-full" 
-                    size="lg"
-                    onClick={handleEnrollCourse}
-                    disabled={enrolling}
-                  >
-                    {enrolling ? "Processing..." : 
-                     course.price > 0 ? `Enroll Now - ${formatCurrency(course.price)}` : "Enroll Free"}
-                  </Button>
+                  {isEnrolled ? (
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => setLocation(`/course-player/${courseId}`)}
+                      variant="default"
+                    >
+                      {enrollmentProgress > 0 ? "Continue Learning" : "Start Learning"}
+                    </Button>
+                  ) : (
+                    <Button 
+                      className="w-full" 
+                      size="lg"
+                      onClick={handleEnrollCourse}
+                      disabled={enrolling}
+                    >
+                      {enrolling ? "Processing..." : 
+                       course.price > 0 ? `Enroll Now - ${formatCurrency(course.price)}` : "Enroll Free"}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             )}
