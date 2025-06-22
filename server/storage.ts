@@ -3141,7 +3141,7 @@ export class DatabaseStorage implements IStorage {
 
   async getEnrolledCourses(userId: string): Promise<any[]> {
     try {
-      // Get enrollments with course details
+      // Get enrollments with course details - only completed enrollments
       const enrollments = await db
         .select({
           id: courseEnrollments.id,
@@ -3149,7 +3149,7 @@ export class DatabaseStorage implements IStorage {
           userId: courseEnrollments.userId,
           enrolledAt: courseEnrollments.enrolledAt,
           progress: courseEnrollments.progress,
-          status: courseEnrollments.status,
+          paymentStatus: courseEnrollments.paymentStatus,
           course: {
             id: courses.id,
             title: courses.title,
@@ -3162,7 +3162,18 @@ export class DatabaseStorage implements IStorage {
         })
         .from(courseEnrollments)
         .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
-        .where(eq(courseEnrollments.userId, userId))
+        .where(
+          and(
+            eq(courseEnrollments.userId, userId),
+            or(
+              eq(courseEnrollments.paymentStatus, 'completed'),
+              and(
+                eq(courses.price, 0),
+                isNull(courseEnrollments.paymentStatus)
+              )
+            )
+          )
+        )
         .orderBy(desc(courseEnrollments.enrolledAt));
 
       // Transform to match expected format
