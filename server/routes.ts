@@ -118,12 +118,18 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024, // 5MB file size limit
   },
   fileFilter: function(req: any, file: any, cb: any) {
-    // Accept images only
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
-      cb(new Error('Invalid file type. Only images are allowed.'), false);
-      return;
+    // Accept images only - check both MIME type and file extension
+    const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedExtensions = /\.(jpg|jpeg|png|gif|webp)$/i; // Case insensitive
+    
+    console.log('File validation - MIME type:', file.mimetype, 'Original name:', file.originalname);
+    
+    if (allowedMimes.includes(file.mimetype) && allowedExtensions.test(file.originalname.toLowerCase())) {
+      cb(null, true);
+    } else {
+      console.log('File rejected - MIME:', file.mimetype, 'Extension test:', allowedExtensions.test(file.originalname.toLowerCase()));
+      cb(new Error('Invalid file type. Only images (JPG, JPEG, PNG, GIF, WebP) are allowed.'), false);
     }
-    cb(null, true);
   }
 });
 
@@ -956,24 +962,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Course image upload endpoint
-  app.post('/api/upload/course-image', isAuthenticated, upload.single('image'), async (req: any, res) => {
-    try {
-      console.log('Upload request received:', req.file);
-      console.log('Request body:', req.body);
-      
-      if (!req.file) {
-        console.log('No file in request');
-        return res.status(400).json({ error: 'No image file provided' });
+  app.post('/api/upload/course-image', isAuthenticated, (req: any, res: any, next: any) => {
+    upload.single('image')(req, res, (error: any) => {
+      if (error) {
+        console.error('Multer validation error:', error.message);
+        if (error.message.includes('Invalid file type')) {
+          return res.status(400).json({ 
+            error: 'Invalid file type. Please upload a valid image file (JPG, JPEG, PNG, GIF, or WebP).' 
+          });
+        }
+        if (error.message.includes('File too large')) {
+          return res.status(400).json({ 
+            error: 'File too large. Please select an image smaller than 5MB.' 
+          });
+        }
+        return res.status(400).json({ error: error.message });
       }
+      
+      try {
+        console.log('Upload request received:', req.file);
+        console.log('Request body:', req.body);
+        
+        if (!req.file) {
+          console.log('No file in request');
+          return res.status(400).json({ error: 'No image file provided' });
+        }
 
-      // The file is already saved by multer, just return the URL
-      const imageUrl = `/uploads/${req.file.filename}`;
-      console.log('Image uploaded successfully:', imageUrl);
-      res.json({ url: imageUrl });
-    } catch (error) {
-      console.error('Image upload error:', error);
-      res.status(500).json({ error: 'Failed to upload image' });
-    }
+        // The file is already saved by multer, just return the URL
+        const imageUrl = `/uploads/${req.file.filename}`;
+        console.log('Image uploaded successfully:', imageUrl);
+        res.json({ url: imageUrl });
+      } catch (uploadError) {
+        console.error('Image upload error:', uploadError);
+        res.status(500).json({ error: 'Failed to upload image' });
+      }
+    });
   });
   
   // Categories management endpoints

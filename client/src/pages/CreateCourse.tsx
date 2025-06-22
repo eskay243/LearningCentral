@@ -146,7 +146,8 @@ const CreateCourse = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload image');
+        const errorData = await response.json().catch(() => ({ error: 'Failed to upload image' }));
+        throw new Error(errorData.error || 'Failed to upload image');
       }
 
       const data = await response.json();
@@ -158,9 +159,10 @@ const CreateCourse = () => {
         description: "Your course image has been uploaded.",
       });
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload image. Please try again.";
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
