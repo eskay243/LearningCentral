@@ -10,7 +10,6 @@ import NotFound from "@/pages/not-found";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import Courses from "@/pages/Courses";
-import CourseDetail from "@/pages/CourseDetail";
 import CourseView from "@/pages/CourseView";
 import CourseExercises from "@/pages/CourseExercises";
 import CreateCourse from "@/pages/CreateCourse";
@@ -78,6 +77,8 @@ import StableStudentDashboard from "@/pages/stable-student-dashboard";
 import MentorDashboard from "@/pages/MentorDashboard";
 import MyCoursesFixed from "@/pages/MyCoursesFixed";
 import CourseDiscussion from "@/pages/CourseDiscussion";
+import CourseDetail from "@/pages/CourseDetail";
+import CourseEdit from "@/pages/CourseEdit";
 import CourseContentManagement from "@/pages/course-content-management";
 import LiveSession from "@/pages/live-session";
 import KycMentorPage from "@/pages/kyc-mentor";
@@ -162,6 +163,8 @@ function Router() {
         <Route path="/coding-challenges/:challengeId" component={InteractiveCodingChallenge} />
         <Route path="/advanced-quizzes/:quizId" component={AdvancedQuizTaking} />
         <Route path="/advanced-assignments/:assignmentId" component={AdvancedAssignmentSubmission} />
+        <Route path="/courses/:courseId" component={CourseDetail} />
+        <Route path="/courses/:courseId/edit" component={CourseEdit} />
         <Route path="/courses/:courseId/forums" component={DiscussionForum} />
         <Route path="/courses/:courseId/forums/:forumId" component={DiscussionForum} />
         <Route path="/courses/:courseId/forums/:forumId/topics/:topicId" component={DiscussionForum} />
