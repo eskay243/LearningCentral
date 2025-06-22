@@ -76,7 +76,7 @@ import CustomizableDashboard from "@/pages/CustomizableDashboard";
 import StudentDashboard from "@/pages/student-dashboard";
 import StableStudentDashboard from "@/pages/stable-student-dashboard";
 import MentorDashboard from "@/pages/MentorDashboard";
-import MyCourses from "@/pages/MyCourses";
+import MyCoursesFixed from "@/pages/MyCoursesFixed";
 import CourseDiscussion from "@/pages/CourseDiscussion";
 import CourseContentManagement from "@/pages/course-content-management";
 import LiveSession from "@/pages/live-session";
@@ -95,7 +95,7 @@ function Router() {
         <Route path="/dashboard/customizable" component={CustomizableDashboard} />
         <Route path="/student-dashboard" component={StableStudentDashboard} />
         <Route path="/courses" component={Courses} />
-        <Route path="/my-courses" component={MyCourses} />
+        <Route path="/my-courses" component={MyCoursesFixed} />
         <Route path="/courses/:id" component={CourseDetail} />
         <Route path="/courses/:id/edit" component={CreateCourse} />
         <Route path="/courses/:id/exercises" component={CourseExercises} />

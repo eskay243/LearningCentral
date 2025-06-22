@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen, Plus, Eye, Edit, Search } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Course {
   id: number;
@@ -17,28 +17,40 @@ interface Course {
   category: string | null;
   isPublished: boolean;
   thumbnail: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  tags: string[] | null;
   mentorId?: string;
   isAssignedToMe?: boolean;
 }
 
-export default function MyCourses() {
+export default function MyCoursesFixed() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch all courses with proper cache handling
-  const { data: allCourses = [], isLoading: coursesLoading, error } = useQuery<Course[]>({
-    queryKey: ['/api/courses', 'my-courses-page'],
-    enabled: !!user,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false, // Prevent excessive refetching
-    staleTime: 30000, // Cache for 30 seconds
-    retry: 1,
-  });
+  // Fetch courses once when component mounts
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiRequest("GET", "/api/courses");
+        const courses = await response.json();
+        setAllCourses(courses || []);
+      } catch (err) {
+        console.error("Error fetching courses:", err);
+        setError("Failed to load courses");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [user]);
 
   // Format currency in Naira
   const formatCurrency = (amount: number) => {
@@ -49,7 +61,7 @@ export default function MyCourses() {
   };
 
   // Filter courses to separate owned vs marketplace
-  const ownedCourses = (allCourses as any[]).filter((course: any) => {
+  const ownedCourses = allCourses.filter((course: any) => {
     // Use isAssignedToMe flag from API (when authentication works)
     if (course.isAssignedToMe === true) return true;
     
@@ -59,7 +71,7 @@ export default function MyCourses() {
     return false;
   });
 
-  const marketplaceCourses = (allCourses as any[]).filter((course: any) => {
+  const marketplaceCourses = allCourses.filter((course: any) => {
     // Show courses not owned by this mentor
     const isOwned = course.isAssignedToMe === true || 
                    (user && course.mentorId === user.id);
@@ -82,14 +94,14 @@ export default function MyCourses() {
   });
 
   // Get unique categories
-  const categories = Array.from(new Set((allCourses as any[]).map((course: any) => course.category).filter(Boolean)));
+  const categories = Array.from(new Set(allCourses.map((course: any) => course.category).filter(Boolean)));
 
   // Handle error state
   if (error) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-12">
-          <p className="text-red-600 mb-4">Error loading courses</p>
+          <p className="text-red-600 mb-4">{error}</p>
           <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </div>
@@ -97,7 +109,7 @@ export default function MyCourses() {
   }
 
   // Show loading only for initial load
-  if (coursesLoading && (!allCourses || allCourses.length === 0)) {
+  if (loading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center py-12">
@@ -147,6 +159,15 @@ export default function MyCourses() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Debug Information */}
+      <div className="bg-blue-50 p-4 rounded-lg border">
+        <h3 className="font-semibold mb-2">Debug Information:</h3>
+        <p className="text-sm">Total Courses: {allCourses.length}</p>
+        <p className="text-sm">Owned Courses: {ownedCourses.length}</p>
+        <p className="text-sm">Marketplace Courses: {marketplaceCourses.length}</p>
+        <p className="text-sm">User ID: {user?.id}</p>
       </div>
 
       {/* My Courses Section */}
