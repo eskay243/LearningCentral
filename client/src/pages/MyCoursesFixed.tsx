@@ -192,14 +192,25 @@ export default function MyCoursesFixed() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredOwnedCourses.map((course: any) => (
-                <Card key={course.id} className="border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-green-800 dark:text-green-200">{course.title || 'Untitled Course'}</h3>
-                      <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                <Card key={course.id} className="border border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800 overflow-hidden">
+                  <div className="relative">
+                    <img 
+                      src={course.thumbnail || `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=160&q=80`}
+                      alt={course.title}
+                      className="w-full h-32 object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=160&q=80`;
+                      }}
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="outline" className="text-xs bg-green-100/90 text-green-700 border-green-300 backdrop-blur-sm">
                         Owned
                       </Badge>
                     </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-green-800 dark:text-green-200 mb-2">{course.title || 'Untitled Course'}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
                       {course.description || 'No description available'}
                     </p>
@@ -273,14 +284,25 @@ export default function MyCoursesFixed() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredMarketplaceCourses.map((course: any) => (
-                <Card key={course.id} className="border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-blue-800 dark:text-blue-200">{course.title || 'Untitled Course'}</h3>
-                      <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                <Card key={course.id} className="border border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800 overflow-hidden">
+                  <div className="relative">
+                    <img 
+                      src={course.thumbnail || `https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=160&q=80`}
+                      alt={course.title}
+                      className="w-full h-32 object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=160&q=80`;
+                      }}
+                    />
+                    <div className="absolute top-2 right-2">
+                      <Badge variant="outline" className="text-xs bg-blue-100/90 text-blue-700 border-blue-300 backdrop-blur-sm">
                         Marketplace
                       </Badge>
                     </div>
+                  </div>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">{course.title || 'Untitled Course'}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
                       {course.description || 'No description available'}
                     </p>
