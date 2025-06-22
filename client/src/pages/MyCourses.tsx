@@ -101,7 +101,7 @@ export default function MyCourses() {
           <p className="text-gray-600 dark:text-gray-400">Manage your courses and browse the marketplace</p>
         </div>
         <Button 
-          onClick={() => navigate('/create-course')}
+          onClick={() => setLocation('/create-course')}
           className="bg-primary hover:bg-primary/90"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -189,7 +189,7 @@ export default function MyCourses() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => navigate(`/course/${course.id}`)}
+                        onClick={() => setLocation(`/course/${course.id}`)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
@@ -198,7 +198,7 @@ export default function MyCourses() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => navigate(`/edit-course/${course.id}`)}
+                        onClick={() => setLocation(`/edit-course/${course.id}`)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
@@ -266,7 +266,7 @@ export default function MyCourses() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => navigate(`/course/${course.id}`)}
+                        onClick={() => setLocation(`/course/${course.id}`)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View

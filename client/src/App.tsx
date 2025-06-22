@@ -95,6 +95,7 @@ function Router() {
         <Route path="/dashboard/customizable" component={CustomizableDashboard} />
         <Route path="/student-dashboard" component={StableStudentDashboard} />
         <Route path="/courses" component={Courses} />
+        <Route path="/my-courses" component={MyCourses} />
         <Route path="/courses/:id" component={CourseDetail} />
         <Route path="/courses/:id/edit" component={CreateCourse} />
         <Route path="/courses/:id/exercises" component={CourseExercises} />
