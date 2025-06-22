@@ -1552,13 +1552,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/courses', async (req, res) => {
     try {
       const published = req.query.published === 'true';
-      // Simplified authentication context resolution
+      // Enhanced authentication context resolution for courses API
       let userId: string | undefined;
       let userRole: string | undefined;
       
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        userId = (req as any).user?.id;
-        userRole = (req as any).user?.role;
+      // Try multiple methods to get the authenticated user
+      if (req.isAuthenticated && req.isAuthenticated() && (req as any).user) {
+        userId = (req as any).user.id;
+        userRole = (req as any).user.role;
+      }
+      // If not found, try session directly (fallback for session issues)
+      else if ((req as any).session?.passport?.user) {
+        const sessionUserId = (req as any).session.passport.user;
+        try {
+          const sessionUser = await storage.getUser(sessionUserId);
+          if (sessionUser) {
+            userId = sessionUser.id;
+            userRole = sessionUser.role;
+          }
+        } catch (error) {
+          console.log('Error fetching user from session:', error);
+        }
       }
       
       // Get base courses

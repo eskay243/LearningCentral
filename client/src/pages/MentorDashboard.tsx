@@ -415,11 +415,27 @@ export default function MentorDashboard() {
     queryKey: ["/api/mentor/withdrawal-methods"],
   });
 
-  // Query for all general courses 
-  const { data: allCourses = [], isLoading: coursesLoading } = useQuery<Course[]>({
-    queryKey: ["/api/courses"],
+  // Query for all general courses with custom fetch to ensure authentication
+  const { data: allCourses = [], isLoading: coursesLoading, refetch: refetchCourses } = useQuery<Course[]>({
+    queryKey: ["/api/courses", user?.id], // Include user ID to force refresh when user changes
+    queryFn: async () => {
+      const response = await fetch('/api/courses', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch courses');
+      }
+      const data = await response.json();
+      console.log('Courses API response:', data.slice(0, 2).map((c: any) => ({ id: c.id, title: c.title, isAssignedToMe: c.isAssignedToMe })));
+      return data;
+    },
     enabled: !!user && user.role === 'mentor',
     staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 
   // Filter courses to separate owned vs marketplace
@@ -441,8 +457,17 @@ export default function MentorDashboard() {
     marketplaceCourses,
     marketplaceCoursesCount: marketplaceCourses.length,
     coursesLoading,
-    userId: user?.id
+    userId: user?.id,
+    firstCourseIsAssigned: allCourses[0] && (allCourses[0] as any).isAssignedToMe
   });
+
+  // Force refresh courses when user is authenticated
+  React.useEffect(() => {
+    if (user && user.role === 'mentor') {
+      console.log('Forcing courses refresh for authenticated mentor:', user.id);
+      refetchCourses();
+    }
+  }, [user?.id, refetchCourses]);
 
   const withdrawalForm = useForm<WithdrawalForm>({
     resolver: zodResolver(withdrawalSchema),
