@@ -2961,69 +2961,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Student Dashboard API Endpoints
-  app.get("/api/student/enrolled-courses", isAuthenticated, async (req: any, res: Response) => {
+  // Student Dashboard API Endpoints - Fixed authentication
+  app.get("/api/student/enrolled-courses", async (req: any, res: Response) => {
     try {
-      const userId = req.user?.id || req.user?.claims?.sub;
+      // Enhanced authentication check with detailed logging
+      console.log('Authentication check - isAuthenticated():', req.isAuthenticated(), 'user:', !!req.user);
+      
+      if (!req.isAuthenticated() || !req.user) {
+        console.log('Authentication failed - no valid session or user');
+        return res.status(401).json({ message: "Authentication required" });
+      }
 
-      // Get actual enrolled courses from database
+      const userId = req.user.id;
+      console.log('Fetching enrolled courses for user:', userId);
 
+      // Get actual enrolled courses from database with payment validation
       const enrollments = await storage.getStudentEnrollments(userId);
+      console.log('Found enrollments:', enrollments.length);
       
       const coursesWithProgress = await Promise.all(
-        enrollments.map(async (enrollment) => {
-          const course = await storage.getCourse(enrollment.courseId);
-          if (!course) return null;
-          
-          // Calculate progress based on completed lessons
-          const modules = await storage.getModulesByCourse(course.id);
-          let totalLessons = 0;
-          let completedLessons = 0;
-          
-          for (const module of modules) {
-            const lessons = await storage.getLessonsByModule(module.id);
-            totalLessons += lessons.length;
+        enrollments
+          .filter(enrollment => enrollment.paymentStatus === 'completed') // Only show completed payments
+          .map(async (enrollment) => {
+            const course = await storage.getCourse(enrollment.courseId);
+            if (!course) return null;
             
-            for (const lesson of lessons) {
-              const progress = await storage.getLessonProgress(lesson.id, userId);
-              if (progress && progress.status === 'completed') {
-                completedLessons++;
+            // Use enrollment progress from database or calculate from lessons
+            let progressPercentage = enrollment.progress || 0;
+            
+            // Get course modules and lessons for detailed progress
+            const modules = await storage.getModulesByCourse(course.id);
+            let totalLessons = 0;
+            let completedLessons = 0;
+            let nextLesson = null;
+            
+            for (const module of modules) {
+              const lessons = await storage.getLessonsByModule(module.id);
+              totalLessons += lessons.length;
+              
+              for (const lesson of lessons) {
+                const progress = await storage.getLessonProgress(lesson.id, userId);
+                if (progress && progress.status === 'completed') {
+                  completedLessons++;
+                } else if (!nextLesson && (!progress || progress.status !== 'completed')) {
+                  nextLesson = {
+                    id: lesson.id,
+                    title: lesson.title,
+                    moduleTitle: module.title
+                  };
+                }
               }
             }
-          }
-          
-          const progressPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-          
-          // Find next lesson
-          let nextLesson = null;
-          for (const module of modules) {
-            const lessons = await storage.getLessonsByModule(module.id);
-            for (const lesson of lessons) {
-              const progress = await storage.getLessonProgress(lesson.id, userId);
-              if (!progress || progress.status !== 'completed') {
-                nextLesson = {
-                  id: lesson.id,
-                  title: lesson.title,
-                  moduleTitle: module.title
-                };
-                break;
-              }
+            
+            // Update progress calculation if we have lesson data
+            if (totalLessons > 0) {
+              progressPercentage = Math.round((completedLessons / totalLessons) * 100);
             }
-            if (nextLesson) break;
-          }
-          
-          return {
-            id: course.id,
-            title: course.title,
-            description: course.description,
-            coverImage: course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80',
-            progress: progressPercentage,
-            instructor: 'Instructor Name',
-            totalLessons,
-            completedLessons,
-            nextLesson
-          };
-        })
+            
+            return {
+              id: course.id,
+              title: course.title,
+              description: course.description,
+              coverImage: course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80',
+              progress: progressPercentage,
+              instructor: 'Instructor',
+              totalLessons,
+              completedLessons,
+              nextLesson,
+              enrolledAt: enrollment.enrolledAt,
+              paymentStatus: enrollment.paymentStatus
+            };
+          })
       );
       
       res.json(coursesWithProgress.filter(course => course !== null));
