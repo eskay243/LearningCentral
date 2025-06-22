@@ -450,10 +450,10 @@ export default function MentorDashboard() {
 
   // Filter courses to separate owned vs marketplace
   const ownedCourses = allCourses.filter(course => {
-    // Primary: Use isAssignedToMe flag from API
+    // Primary: Use isAssignedToMe flag from API (when authentication works)
     if ((course as any).isAssignedToMe === true) return true;
     
-    // Fallback: Check if mentor ID matches (for when API authentication fails)
+    // Primary fallback: Check if mentor ID matches current user (reliable data)
     if (user && (course as any).mentorId === user.id) return true;
     
     return false;
@@ -463,7 +463,7 @@ export default function MentorDashboard() {
     // Show published courses not owned by this mentor
     const isOwned = (course as any).isAssignedToMe === true || 
                    (user && (course as any).mentorId === user.id);
-    return !isOwned && course.isPublished;
+    return !isOwned; // Show all non-owned courses regardless of published status for now
   });
 
   // Debug: Log filtered results
