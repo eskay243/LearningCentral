@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Save, ArrowLeft, Upload, Video, FileText, Code, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -101,15 +101,24 @@ export default function LessonEditor() {
     setIsSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
+    
+    // Get form values, handling both regular inputs and controlled components
+    const title = (formData.get('title') as string)?.trim();
+    const description = (formData.get('description') as string)?.trim();
+    const content = (formData.get('content') as string)?.trim();
+    const duration = formData.get('duration') as string;
+    const videoUrl = formData.get('videoUrl') as string;
+    const order = formData.get('order') as string;
+    
     const lessonData = {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      content: formData.get('content') as string,
+      title: title || null,
+      description: description || null,
+      content: content || null,
       type: selectedType,
-      duration: parseInt(formData.get('duration') as string) || null,
+      duration: duration ? parseInt(duration) : null,
       moduleId: selectedModuleId ? parseInt(selectedModuleId) : null,
-      videoUrl: uploadedVideo || formData.get('videoUrl') as string,
-      order: parseInt(formData.get('order') as string) || 0,
+      videoUrl: uploadedVideo || videoUrl || null,
+      order: order ? parseInt(order) : 0,
     };
 
     console.log('Lesson data being submitted:', lessonData);
@@ -142,19 +151,13 @@ export default function LessonEditor() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid grid-cols-3 w-full max-w-md">
-            <TabsTrigger value="basic">Basic Info</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="video">Video</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="basic">
-            <Card>
-              <CardHeader>
-                <CardTitle>Lesson Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        <div className="space-y-8">
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Lesson Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="title">Lesson Title*</Label>
                   <Input 
@@ -249,38 +252,36 @@ export default function LessonEditor() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="content">
-            <Card>
-              <CardHeader>
-                <CardTitle>Lesson Content</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div>
-                  <Label htmlFor="content">Content</Label>
-                  <Textarea 
-                    id="content"
-                    name="content"
-                    defaultValue={lesson?.content}
-                    placeholder="Enter lesson content (supports Markdown)"
-                    rows={15}
-                    className="font-mono"
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    You can use Markdown formatting for rich text content
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/* Content Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Lesson Content</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label htmlFor="content">Content</Label>
+                <Textarea 
+                  id="content"
+                  name="content"
+                  defaultValue={lesson?.content}
+                  placeholder="Enter lesson content (supports Markdown)"
+                  rows={15}
+                  className="font-mono"
+                />
+                <p className="text-sm text-gray-500 mt-2">
+                  You can use Markdown formatting for rich text content
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-          <TabsContent value="video">
-            <Card>
-              <CardHeader>
-                <CardTitle>Video Content</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Video Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Video Content</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="videoUrl">Video URL</Label>
                   <div className="flex space-x-2">
@@ -342,8 +343,7 @@ export default function LessonEditor() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
 
         <div className="flex justify-end space-x-2 mt-6">
           <Button 
