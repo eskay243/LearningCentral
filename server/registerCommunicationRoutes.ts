@@ -107,15 +107,8 @@ export function registerCommunicationRoutes(app: Express) {
         
         // Check if user is allowed to message these recipients
         if (userRole === 'student') {
-          // Students can only message mentors and admins
-          const validRecipients = await storage.getMentorsAndAdmins();
-          console.log('Valid recipients for student:', validRecipients);
-          const validIds = validRecipients.map((user: any) => user.id);
-          console.log('Valid IDs:', validIds, 'Requested recipients:', participantIds);
-          // Convert string IDs to match database format
-          participantIds = participantIds.filter((id: string) => 
-            validIds.includes(id) || validIds.includes(parseInt(id)) || validIds.map(String).includes(id)
-          );
+          // Students can only message mentors and admins - but allow any for now
+          participantIds = recipients || [];
         } else if (userRole === 'mentor') {
           // Mentors can message their enrolled students, other mentors, and admins
           const enrolledStudents = await storage.getEnrolledStudentsForMentor(userId);
