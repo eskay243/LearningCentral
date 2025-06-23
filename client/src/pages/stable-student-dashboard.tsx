@@ -464,8 +464,8 @@ export default function StableStudentDashboard() {
               <CardContent className="space-y-3">
                 {/* Mini Calendar */}
                 <div className="grid grid-cols-7 gap-1 text-xs">
-                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-                    <div key={day} className="text-center font-medium text-gray-500 p-1">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                    <div key={`day-${index}`} className="text-center font-medium text-gray-500 p-1">
                       {day}
                     </div>
                   ))}
