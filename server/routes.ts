@@ -3330,12 +3330,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Certificate generation endpoint - aligned with existing certificate system
-  app.get("/api/certificates/enrollment/:enrollmentId/download", async (req: Request, res: Response) => {
+  // Test route to verify routing works
+  app.get("/api/test-route", (req: Request, res: Response) => {
+    console.log("[TEST] Test route accessed successfully");
+    res.json({ message: "Route working", timestamp: new Date().toISOString() });
+  });
+
+  // Certificate download endpoint - working implementation
+  app.get("/api/certificate/:enrollmentId", async (req: Request, res: Response) => {
+    console.log(`[CERTIFICATE] Starting certificate request for enrollment ${req.params.enrollmentId}`);
+    
     try {
       const { enrollmentId } = req.params;
+      const enrollmentIdNum = parseInt(enrollmentId);
       
-      console.log(`Certificate request for enrollment ${enrollmentId}`);
+      if (isNaN(enrollmentIdNum)) {
+        console.log(`[CERTIFICATE] Invalid enrollment ID: ${enrollmentId}`);
+        return res.status(400).json({ error: "Invalid enrollment ID" });
+      }
+      
+      console.log(`[CERTIFICATE] Fetching enrollment data for ID: ${enrollmentIdNum}`);
       
       // Get enrollment with user and course data
       const enrollmentData = await db
@@ -3353,7 +3367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .from(courseEnrollments)
         .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
         .innerJoin(users, eq(courseEnrollments.userId, users.id))
-        .where(eq(courseEnrollments.id, parseInt(enrollmentId)));
+        .where(eq(courseEnrollments.id, enrollmentIdNum));
       
       console.log(`Found ${enrollmentData.length} enrollment records`);
       
