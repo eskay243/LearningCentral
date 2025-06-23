@@ -1,5 +1,6 @@
 import { Express, Request, Response } from "express";
 import { isAuthenticated } from "./auth";
+import { storage } from "./storage";
 
 export function registerNotificationRoutes(app: Express) {
   app.get("/api/notifications", isAuthenticated, async (req: Request, res: Response) => {

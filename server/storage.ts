@@ -6594,6 +6594,236 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // ==========================================
+  // NOTIFICATION SYSTEM METHODS
+  // ==========================================
+
+  async createNotification(notificationData: {
+    userId: string;
+    title: string;
+    message: string;
+    type?: string;
+    priority?: string;
+    actionUrl?: string;
+    metadata?: any;
+  }): Promise<any> {
+    try {
+      const [notification] = await db
+        .insert(notifications)
+        .values({
+          userId: notificationData.userId,
+          title: notificationData.title,
+          message: notificationData.message,
+          type: notificationData.type || 'info',
+          priority: notificationData.priority || 'medium',
+          actionUrl: notificationData.actionUrl,
+          metadata: notificationData.metadata,
+          isRead: false
+        })
+        .returning();
+      
+      return notification;
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw new Error("Failed to create notification");
+    }
+  }
+
+  async getNotifications(userId: string, options?: {
+    limit?: number;
+    offset?: number;
+    unreadOnly?: boolean;
+  }): Promise<any[]> {
+    try {
+      let query = db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId));
+      
+      if (options?.unreadOnly) {
+        query = query.where(eq(notifications.isRead, false));
+      }
+      
+      query = query.orderBy(desc(notifications.createdAt));
+      
+      if (options?.limit) {
+        query = query.limit(options.limit);
+      }
+      
+      if (options?.offset) {
+        query = query.offset(options.offset);
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return [];
+    }
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<any> {
+    try {
+      const [notification] = await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.id, notificationId))
+        .returning();
+      
+      return notification;
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw new Error("Failed to mark notification as read");
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    try {
+      await db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        ));
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      throw new Error("Failed to mark all notifications as read");
+    }
+  }
+
+  async deleteNotification(notificationId: number): Promise<void> {
+    try {
+      await db
+        .delete(notifications)
+        .where(eq(notifications.id, notificationId));
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      throw new Error("Failed to delete notification");
+    }
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    try {
+      const result = await db
+        .select({ count: sql`count(*)` })
+        .from(notifications)
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, false)
+        ));
+      
+      return parseInt(result[0]?.count as string) || 0;
+    } catch (error) {
+      console.error("Error getting unread notification count:", error);
+      return 0;
+    }
+  }
+
+  // Event-driven notification creation methods
+  async notifyPaymentSuccess(userId: string, courseTitle: string, amount: number): Promise<void> {
+    await this.createNotification({
+      userId,
+      title: "Payment Successful",
+      message: `Your payment of ₦${amount} for "${courseTitle}" was successful. You now have access to the course!`,
+      type: "success",
+      priority: "high",
+      actionUrl: "/student/courses",
+      metadata: { event: 'payment_success', courseTitle, amount }
+    });
+  }
+
+  async notifyEnrollmentConfirmed(userId: string, courseTitle: string): Promise<void> {
+    await this.createNotification({
+      userId,
+      title: "Enrollment Confirmed",
+      message: `You've successfully enrolled in "${courseTitle}". Start learning now!`,
+      type: "success",
+      priority: "medium",
+      actionUrl: "/student/courses",
+      metadata: { event: 'enrollment_confirmed', courseTitle }
+    });
+  }
+
+  async notifyMentorNewStudent(mentorId: string, studentName: string, courseTitle: string, commission: number): Promise<void> {
+    await this.createNotification({
+      userId: mentorId,
+      title: "New Student Enrolled",
+      message: `${studentName} has enrolled in your course "${courseTitle}". You earned ₦${commission.toFixed(2)} commission!`,
+      type: "success",
+      priority: "high",
+      actionUrl: "/mentor/earnings",
+      metadata: { event: 'new_student_enrollment', studentName, courseTitle, commission }
+    });
+  }
+
+  async notifyMentorCommissionEarned(mentorId: string, amount: number, courseTitle: string): Promise<void> {
+    await this.createNotification({
+      userId: mentorId,
+      title: "Commission Earned",
+      message: `You earned ₦${amount.toFixed(2)} commission from "${courseTitle}"`,
+      type: "success",
+      priority: "medium",
+      actionUrl: "/mentor/earnings",
+      metadata: { event: 'commission_earned', amount, courseTitle }
+    });
+  }
+
+  async notifyAdminNewPayment(studentName: string, courseTitle: string, amount: number): Promise<void> {
+    const admins = await this.getUsersByRole('admin');
+    
+    for (const admin of admins) {
+      await this.createNotification({
+        userId: admin.id,
+        title: "New Payment Received",
+        message: `${studentName} paid ₦${amount} for "${courseTitle}"`,
+        type: "info",
+        priority: "medium",
+        actionUrl: "/admin/payments",
+        metadata: { event: 'new_payment', studentName, courseTitle, amount }
+      });
+    }
+  }
+
+  async notifyAdminCoursePublished(mentorName: string, courseTitle: string): Promise<void> {
+    const admins = await this.getUsersByRole('admin');
+    
+    for (const admin of admins) {
+      await this.createNotification({
+        userId: admin.id,
+        title: "New Course Published",
+        message: `${mentorName} published a new course: "${courseTitle}"`,
+        type: "info",
+        priority: "medium",
+        actionUrl: "/admin/courses",
+        metadata: { event: 'course_published', mentorName, courseTitle }
+      });
+    }
+  }
+
+  async notifyMentorCourseUpdate(mentorId: string, courseTitle: string, updateType: string): Promise<void> {
+    await this.createNotification({
+      userId: mentorId,
+      title: "Course Update",
+      message: `Your course "${courseTitle}" has been ${updateType}`,
+      type: "info",
+      priority: "medium",
+      actionUrl: "/mentor/courses",
+      metadata: { event: 'course_update', courseTitle, updateType }
+    });
+  }
+
+  async notifyStudentCourseUpdate(userId: string, courseTitle: string, updateMessage: string): Promise<void> {
+    await this.createNotification({
+      userId,
+      title: "Course Update",
+      message: `Update for "${courseTitle}": ${updateMessage}`,
+      type: "info",
+      priority: "medium",
+      actionUrl: "/student/courses",
+      metadata: { event: 'course_update', courseTitle, updateMessage }
+    });
+  }
 }
 
 export const storage = new DatabaseStorage();
