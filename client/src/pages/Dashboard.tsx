@@ -223,7 +223,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(mentorEarnings?.totalEarnings || 0)}
+                {formatCurrency((mentorEarnings as any)?.totalEarnings || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 All-time earnings

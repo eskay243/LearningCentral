@@ -13,7 +13,9 @@ import {
   lessons,
   courses,
   certificateTemplates,
-  generatedCertificates
+  generatedCertificates,
+  courseDiscussions,
+  insertCourseDiscussionSchema
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";
@@ -1246,6 +1248,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting course:", error);
       res.status(500).json({ message: "Failed to delete course" });
+    }
+  });
+
+  // Course Discussions API Endpoints
+  app.get('/api/courses/:courseId/discussions', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+
+      const discussions = await db
+        .select({
+          id: courseDiscussions.id,
+          courseId: courseDiscussions.courseId,
+          studentId: courseDiscussions.studentId,
+          message: courseDiscussions.message,
+          parentId: courseDiscussions.parentId,
+          likes: courseDiscussions.likes,
+          createdAt: courseDiscussions.createdAt,
+          studentName: users.firstName,
+          studentLastName: users.lastName
+        })
+        .from(courseDiscussions)
+        .leftJoin(users, eq(courseDiscussions.studentId, users.id))
+        .where(eq(courseDiscussions.courseId, courseId))
+        .orderBy(desc(courseDiscussions.createdAt));
+
+      res.json(discussions);
+    } catch (error) {
+      console.error("Error fetching course discussions:", error);
+      res.status(500).json({ message: "Failed to fetch discussions" });
+    }
+  });
+
+  app.post('/api/courses/:courseId/discussions', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const { message, parentId } = req.body;
+      const studentId = req.user?.id;
+
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const [newDiscussion] = await db
+        .insert(courseDiscussions)
+        .values({
+          courseId,
+          studentId,
+          message: message.trim(),
+          parentId: parentId || null,
+          likes: 0
+        })
+        .returning();
+
+      res.status(201).json(newDiscussion);
+    } catch (error) {
+      console.error("Error creating course discussion:", error);
+      res.status(500).json({ message: "Failed to create discussion" });
     }
   });
 

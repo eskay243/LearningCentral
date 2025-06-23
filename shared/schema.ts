@@ -581,18 +581,19 @@ export const lessonProgress = pgTable("lesson_progress", {
 
 
 
-// CourseDiscussions table (keep existing simple version)
+// CourseDiscussions table with threading support
 export const courseDiscussions = pgTable("course_discussions", {
   id: serial("id").primaryKey(),
   courseId: integer("course_id").notNull().references(() => courses.id),
-  userId: varchar("user_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
+  studentId: varchar("student_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  parentId: integer("parent_id").references((): any => courseDiscussions.id), // for replies
+  likes: integer("likes").default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  isAnnouncement: boolean("is_announcement").notNull().default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Legacy discussion replies - replaced by enhanced discussionReplies table below
+// Quiz attempts table already exists below as assessmentQuizAttempts
 
 // NotificationSettings table
 // Define currency options
@@ -1002,6 +1003,9 @@ export type LessonProgress = typeof lessonProgress.$inferSelect;
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type MentorCourse = typeof mentorCourses.$inferSelect;
 export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
+
+export type CourseDiscussion = typeof courseDiscussions.$inferSelect;
+export type InsertCourseDiscussion = typeof courseDiscussions.$inferInsert;
 
 export type DiscussionReply = typeof discussionReplies.$inferSelect;
 export type NotificationSetting = typeof notificationSettings.$inferSelect;
@@ -2413,8 +2417,4 @@ export type InsertKycDocumentFile = z.infer<typeof insertKycDocumentFileSchema>;
 export type KycVerificationHistory = typeof kycVerificationHistory.$inferSelect;
 export type InsertKycVerificationHistory = z.infer<typeof insertKycVerificationHistorySchema>;
 
-// Discussion System Schemas
-export const insertCourseDiscussionSchema = createInsertSchema(courseDiscussions).omit({
-  id: true,
-  createdAt: true,
-});
+// Discussion System Schemas already defined above
