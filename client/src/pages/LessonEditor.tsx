@@ -23,6 +23,10 @@ export default function LessonEditor() {
   const [showVideoPreview, setShowVideoPreview] = useState(false);
 
   const isNewLesson = lessonId === 'new';
+  
+  // Get moduleId from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const moduleId = urlParams.get('moduleId');
 
   const { data: lesson } = useQuery({
     queryKey: [`/api/lessons/${lessonId}`],
@@ -193,7 +197,7 @@ export default function LessonEditor() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="moduleId">Module</Label>
-                    <Select name="moduleId" defaultValue={lesson?.moduleId?.toString()}>
+                    <Select name="moduleId" defaultValue={lesson?.moduleId?.toString() || moduleId || ""}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select module" />
                       </SelectTrigger>

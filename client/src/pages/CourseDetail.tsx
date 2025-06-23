@@ -258,10 +258,10 @@ export default function CourseDetail() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setLocation(`/course-content-management?courseId=${course.id}`)}
+                        onClick={() => setLocation(`/courses/${course.id}/curriculum`)}
                       >
                         <BookOpen className="w-4 h-4 mr-2" />
-                        Manage Content
+                        Manage Curriculum
                       </Button>
                     </div>
                   )}

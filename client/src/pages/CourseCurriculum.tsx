@@ -189,7 +189,7 @@ export default function CourseCurriculum() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => setLocation(`/courses/${id}/lessons/new`)}
+                    onClick={() => setLocation(`/courses/${id}/lessons/new?moduleId=${module.id}`)}
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Lesson to Module
