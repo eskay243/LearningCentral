@@ -3334,11 +3334,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { enrollmentId } = req.params;
       const userId = req.user.id;
       
-      // Get enrollment with course details
-      const enrollments = await storage.getEnrolledCourses(userId);
-      const enrollment = enrollments.find((e: any) => e.enrollmentId === parseInt(enrollmentId));
+      // Get enrollment directly from database
+      const enrollmentData = await db
+        .select({
+          id: courseEnrollments.id,
+          courseId: courseEnrollments.courseId,
+          progress: courseEnrollments.progress,
+          completedAt: courseEnrollments.completedAt,
+          title: courses.title,
+          description: courses.description
+        })
+        .from(courseEnrollments)
+        .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
+        .where(and(
+          eq(courseEnrollments.id, parseInt(enrollmentId)),
+          eq(courseEnrollments.userId, userId)
+        ));
       
-      if (!enrollment || enrollment.progress < 100) {
+      if (enrollmentData.length === 0) {
+        return res.status(404).json({ error: "Enrollment not found" });
+      }
+      
+      const enrollment = enrollmentData[0];
+      
+      if (enrollment.progress < 100) {
         return res.status(404).json({ error: "Certificate not available - course not completed" });
       }
       
