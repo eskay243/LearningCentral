@@ -164,6 +164,7 @@ export interface IStorage {
   
   // Module & Lesson operations
   createModule(moduleData: Omit<Module, "id">): Promise<Module>;
+  updateModule(moduleId: number, moduleData: Partial<Module>): Promise<Module>;
   getModulesByCourse(courseId: number): Promise<Module[]>;
   createLesson(lessonData: Omit<Lesson, "id">): Promise<Lesson>;
   getLessonsByModule(moduleId: number): Promise<Lesson[]>;
@@ -3253,6 +3254,25 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error creating module:", error);
       throw new Error("Failed to create module");
+    }
+  }
+
+  async updateModule(moduleId: number, moduleData: Partial<Module>): Promise<Module> {
+    try {
+      const [module] = await db
+        .update(modules)
+        .set(moduleData)
+        .where(eq(modules.id, moduleId))
+        .returning();
+      
+      if (!module) {
+        throw new Error("Module not found");
+      }
+      
+      return module;
+    } catch (error) {
+      console.error("Error updating module:", error);
+      throw new Error("Failed to update module");
     }
   }
 

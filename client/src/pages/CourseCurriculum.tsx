@@ -101,7 +101,7 @@ export default function CourseCurriculum() {
                 <Input 
                   id="title"
                   name="title"
-                  defaultValue={editingModule?.title}
+                  defaultValue={editingModule?.title || ""}
                   placeholder="Enter module title"
                   required
                 />
@@ -111,7 +111,7 @@ export default function CourseCurriculum() {
                 <Textarea 
                   id="description"
                   name="description"
-                  defaultValue={editingModule?.description}
+                  defaultValue={editingModule?.description || ""}
                   placeholder="Enter module description"
                   rows={3}
                 />
@@ -122,7 +122,7 @@ export default function CourseCurriculum() {
                   id="order"
                   name="order"
                   type="number"
-                  defaultValue={editingModule?.order || 0}
+                  defaultValue={editingModule?.order || "0"}
                   placeholder="1"
                 />
               </div>
