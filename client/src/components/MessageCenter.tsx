@@ -322,21 +322,46 @@ export function MessageCenter() {
             {recipientType === 'individual' && (
               <div>
                 <label className="text-sm font-medium">Recipients</label>
-                <Select 
-                  value={selectedRecipients.join(',')} 
-                  onValueChange={(value) => setSelectedRecipients(value ? value.split(',') : [])}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select recipients" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getAvailableRecipients().map((recipient) => (
-                      <SelectItem key={recipient.id} value={recipient.id}>
-                        {recipient.firstName} {recipient.lastName} ({recipient.role})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+                    {getAvailableRecipients().length > 0 ? (
+                      getAvailableRecipients().map((recipient) => (
+                        <div key={recipient.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded">
+                          <input
+                            type="checkbox"
+                            id={recipient.id}
+                            checked={selectedRecipients.includes(recipient.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedRecipients([...selectedRecipients, recipient.id]);
+                              } else {
+                                setSelectedRecipients(selectedRecipients.filter(id => id !== recipient.id));
+                              }
+                            }}
+                            className="rounded border-gray-300"
+                          />
+                          <label htmlFor={recipient.id} className="flex-1 cursor-pointer">
+                            <div className="font-medium">
+                              {recipient.firstName} {recipient.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {recipient.email} • {recipient.role}
+                            </div>
+                          </label>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-gray-500 p-2">
+                        {user?.role === 'mentor' ? 'No enrolled students found' : 'No recipients available'}
+                      </div>
+                    )}
+                  </div>
+                  {selectedRecipients.length > 0 && (
+                    <div className="text-sm text-gray-600">
+                      {selectedRecipients.length} recipient{selectedRecipients.length > 1 ? 's' : ''} selected
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
