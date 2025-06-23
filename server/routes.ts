@@ -3003,7 +3003,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           return res.json({
             success: true,
-            enrollment
+            enrollment,
+            courseId: courseId,
+            courseTitle: course.title,
+            paymentReference: reference,
+            invoiceNumber: `INV-${Date.now()}`,
+            message: "Payment verified and enrollment completed"
           });
         }
       }

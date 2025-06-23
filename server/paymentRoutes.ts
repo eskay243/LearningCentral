@@ -128,9 +128,13 @@ export function registerPaymentRoutes(app: Express) {
       });
 
       res.json({
+        success: true,
         message: "Payment verified and enrollment completed",
         enrollment,
-        invoice: invoice.invoiceNumber
+        invoice: invoice.invoiceNumber,
+        courseId: paymentRecord.courseId,
+        courseTitle: paymentRecord.courseTitle || "Course",
+        paymentReference: reference
       });
     } catch (error: any) {
       console.error("Payment verification error:", error);
