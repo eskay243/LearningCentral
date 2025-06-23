@@ -3386,63 +3386,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[CERTIFICATE] Generating PDF for completed enrollment`);
 
-      // Create simple PDF response
-      const certificateContent = `
-        CERTIFICATE OF COMPLETION
-        
-        This is to certify that
-        
-        ${enrollment.firstName} ${enrollment.lastName}
-        
-        has successfully completed the course
-        
-        "${enrollment.title}"
-        
-        Awarded on: ${new Date().toLocaleDateString()}
-        
-        Codelab Educare
-      `;
-
-      // Set headers for PDF response
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf"`);
-      
       // Generate PDF using PDFKit
       const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({
         size: 'A4',
-        layout: 'landscape'
+        layout: 'landscape',
+        margin: 50
       });
       
-      // Pipe to response
-      doc.pipe(res);
+      // Set headers for PDF response
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf"`);
       
-      // Add content
-      doc.fontSize(24)
-         .text('CERTIFICATE OF COMPLETION', 100, 100, { align: 'center' });
+      // Create PDF content without piping to response first
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        res.end(pdfBuffer);
+        console.log(`[CERTIFICATE] PDF generated successfully for enrollment ${enrollmentId}`);
+      });
       
-      doc.fontSize(18)
-         .text('This is to certify that', 100, 150, { align: 'center' });
+      // Add certificate content
+      doc.fontSize(28).text('CERTIFICATE OF COMPLETION', { align: 'center' });
+      doc.moveDown(2);
       
-      doc.fontSize(20)
-         .text(`${enrollment.firstName} ${enrollment.lastName}`, 100, 200, { align: 'center' });
+      doc.fontSize(16).text('This is to certify that', { align: 'center' });
+      doc.moveDown(1);
       
-      doc.fontSize(16)
-         .text('has successfully completed the course', 100, 250, { align: 'center' });
+      doc.fontSize(24).text(`${enrollment.firstName} ${enrollment.lastName}`, { align: 'center' });
+      doc.moveDown(1);
       
-      doc.fontSize(18)
-         .text(`"${enrollment.title}"`, 100, 300, { align: 'center' });
+      doc.fontSize(16).text('has successfully completed the course', { align: 'center' });
+      doc.moveDown(1);
       
-      doc.fontSize(14)
-         .text(`Awarded on: ${new Date().toLocaleDateString()}`, 100, 350, { align: 'center' });
+      doc.fontSize(20).text(`"${enrollment.title}"`, { align: 'center' });
+      doc.moveDown(2);
       
-      doc.fontSize(16)
-         .text('Codelab Educare', 100, 400, { align: 'center' });
+      doc.fontSize(14).text(`Awarded on: ${new Date().toLocaleDateString()}`, { align: 'center' });
+      doc.moveDown(1);
+      
+      doc.fontSize(16).text('Codelab Educare', { align: 'center' });
       
       // Finalize PDF
       doc.end();
-      
-      console.log(`[CERTIFICATE] PDF generated successfully for enrollment ${enrollmentId}`);
       
       // Student name
       doc.fillColor('#1a365d')
@@ -3506,11 +3493,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
          .text('Instructor Signature', 150, 490, { width: 150, align: 'center' });
       
       // Date area (right side)
-      doc.moveTo(pageWidth - 300, 480)
-         .lineTo(pageWidth - 150, 480)
+      doc.moveTo(550, 480)
+         .lineTo(700, 480)
          .stroke('#9ca3af', 1);
       
-      doc.text('Date', pageWidth - 300, 490, { width: 150, align: 'center' });
+      doc.text('Date', 550, 490, { width: 150, align: 'center' });
       
       // Finalize PDF
       doc.end();
