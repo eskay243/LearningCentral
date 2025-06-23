@@ -4681,7 +4681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get students for mentor - shows students enrolled in mentor's courses
-  app.get("/api/mentor/students", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+  app.get("/api/mentor/students", isAuthenticated, hasRole([UserRole.MENTOR, UserRole.ADMIN]), async (req: any, res: Response) => {
     console.log('=== MENTOR STUDENTS API CALLED ===');
     console.log('User authenticated:', req.isAuthenticated());
     console.log('User role:', req.user?.role);
