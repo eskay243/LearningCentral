@@ -45,6 +45,9 @@ export default function StudentCourses() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('enrolled');
+  const [completedCourses, setCompletedCourses] = useState<Set<number>>(new Set());
+  const [showCelebration, setShowCelebration] = useState<number | null>(null);
+  const { toast } = useToast();
 
   // Fetch enrolled courses with authentication
   const { data: enrolledCourses = [], isLoading: enrolledLoading, error: enrolledError } = useQuery<Course[]>({
@@ -56,6 +59,26 @@ export default function StudentCourses() {
       return failureCount < 3;
     },
   });
+
+  // Track course completion for celebrations
+  useEffect(() => {
+    if (enrolledCourses.length > 0) {
+      enrolledCourses.forEach((course: Course) => {
+        if (course.progress === 100 && !completedCourses.has(course.id)) {
+          setCompletedCourses(prev => new Set(prev.add(course.id)));
+          setShowCelebration(course.id);
+          toast({
+            title: "🎉 Congratulations!",
+            description: `You've completed "${course.title}"! Amazing work!`,
+            duration: 5000,
+          });
+          
+          // Auto-hide celebration after 3 seconds
+          setTimeout(() => setShowCelebration(null), 3000);
+        }
+      });
+    }
+  }, [enrolledCourses, completedCourses, toast]);
 
   // Fetch marketplace courses
   const { data: marketplaceCourses = [], isLoading: marketplaceLoading } = useQuery<Course[]>({
@@ -149,6 +172,20 @@ export default function StudentCourses() {
             Track your progress and discover new courses
           </p>
         </div>
+
+        {/* Celebration Banner for Completed Courses */}
+        {enrolledCourses.some((course: Course) => course.progress === 100) && (
+          <div className="mb-6 bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 text-white p-4 rounded-lg shadow-lg">
+            <div className="flex items-center gap-3">
+              <Trophy className="w-8 h-8 animate-bounce" />
+              <div>
+                <h3 className="font-bold text-lg">Congratulations!</h3>
+                <p className="text-white/90">You've completed {enrolledCourses.filter((course: Course) => course.progress === 100).length} course(s)! Keep up the amazing work!</p>
+              </div>
+              <Sparkles className="w-6 h-6 animate-spin ml-auto" />
+            </div>
+          </div>
+        )}
 
         {/* Search and Filters */}
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
