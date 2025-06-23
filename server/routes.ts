@@ -1258,22 +1258,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid course ID" });
       }
 
-      const discussions = await db
-        .select({
-          id: courseDiscussions.id,
-          courseId: courseDiscussions.courseId,
-          studentId: courseDiscussions.studentId,
-          message: courseDiscussions.message,
-          parentId: courseDiscussions.parentId,
-          likes: courseDiscussions.likes,
-          createdAt: courseDiscussions.createdAt,
-          studentName: users.firstName,
-          studentLastName: users.lastName
-        })
-        .from(courseDiscussions)
-        .leftJoin(users, eq(courseDiscussions.studentId, users.id))
-        .where(eq(courseDiscussions.courseId, courseId))
-        .orderBy(desc(courseDiscussions.createdAt));
+      // Query using the actual database schema
+      const discussions = await db.execute(`
+        SELECT 
+          cd.id,
+          cd.course_id as "courseId",
+          cd.user_id as "userId", 
+          cd.content as "message",
+          cd.created_at as "createdAt",
+          u.first_name as "userName",
+          u.last_name as "userLastName"
+        FROM course_discussions cd
+        LEFT JOIN users u ON cd.user_id = u.id
+        WHERE cd.course_id = $1
+        ORDER BY cd.created_at DESC
+      `, [courseId]);
 
       res.json(discussions);
     } catch (error) {
@@ -1285,8 +1284,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/courses/:courseId/discussions', isAuthenticated, async (req: any, res: Response) => {
     try {
       const courseId = parseInt(req.params.courseId);
-      const { message, parentId } = req.body;
-      const studentId = req.user?.id;
+      const { message } = req.body;
+      const userId = req.user?.id;
 
       if (isNaN(courseId)) {
         return res.status(400).json({ message: "Invalid course ID" });
@@ -1296,18 +1295,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message is required" });
       }
 
-      const [newDiscussion] = await db
-        .insert(courseDiscussions)
-        .values({
-          courseId,
-          studentId,
-          message: message.trim(),
-          parentId: parentId || null,
-          likes: 0
-        })
-        .returning();
+      // Insert using raw SQL to match existing database schema
+      const result = await db.execute(`
+        INSERT INTO course_discussions (course_id, user_id, title, content, created_at, is_announcement)
+        VALUES ($1, $2, $3, $4, NOW(), false)
+        RETURNING id, course_id as "courseId", user_id as "userId", content as "message", created_at as "createdAt"
+      `, [courseId, userId, 'Discussion Post', message.trim()]);
 
-      res.status(201).json(newDiscussion);
+      res.status(201).json(result.rows[0]);
     } catch (error) {
       console.error("Error creating course discussion:", error);
       res.status(500).json({ message: "Failed to create discussion" });
