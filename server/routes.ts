@@ -3336,20 +3336,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Route working", timestamp: new Date().toISOString() });
   });
 
-  // Certificate download endpoint - working implementation
+  // Certificate generation endpoint - single working implementation
   app.get("/api/certificate/:enrollmentId", async (req: Request, res: Response) => {
-    console.log(`[CERTIFICATE] Starting certificate request for enrollment ${req.params.enrollmentId}`);
+    console.log(`[CERTIFICATE] ===== CERTIFICATE REQUEST START =====`);
+    console.log(`[CERTIFICATE] Request for enrollment ID: ${req.params.enrollmentId}`);
     
     try {
       const { enrollmentId } = req.params;
       const enrollmentIdNum = parseInt(enrollmentId);
       
       if (isNaN(enrollmentIdNum)) {
-        console.log(`[CERTIFICATE] Invalid enrollment ID: ${enrollmentId}`);
+        console.log(`[CERTIFICATE] ERROR: Invalid enrollment ID: ${enrollmentId}`);
         return res.status(400).json({ error: "Invalid enrollment ID" });
       }
       
-      console.log(`[CERTIFICATE] Fetching enrollment data for ID: ${enrollmentIdNum}`);
+      console.log(`[CERTIFICATE] Querying database for enrollment ${enrollmentIdNum}`);
       
       // Get enrollment with user and course data
       const enrollmentData = await db
@@ -3369,67 +3370,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(users, eq(courseEnrollments.userId, users.id))
         .where(eq(courseEnrollments.id, enrollmentIdNum));
       
-      console.log(`Found ${enrollmentData.length} enrollment records`);
+      console.log(`[CERTIFICATE] Found ${enrollmentData.length} enrollment records`);
       
       if (enrollmentData.length === 0) {
-        console.log(`No enrollment found for ID ${enrollmentId}`);
+        console.log(`[CERTIFICATE] ERROR: No enrollment found for ID ${enrollmentId}`);
         return res.status(404).json({ error: "Enrollment not found" });
       }
       
       const enrollment = enrollmentData[0];
-      console.log(`Enrollment progress: ${enrollment.progress}%`);
+      console.log(`[CERTIFICATE] Enrollment progress: ${enrollment.progress}%`);
+      console.log(`[CERTIFICATE] Student: ${enrollment.firstName} ${enrollment.lastName}`);
+      console.log(`[CERTIFICATE] Course: ${enrollment.title}`);
       
       if (enrollment.progress < 100) {
-        console.log(`Course not completed - progress: ${enrollment.progress}%`);
-        return res.status(404).json({ error: "Certificate not available - course not completed" });
+        console.log(`[CERTIFICATE] ERROR: Course not completed - progress: ${enrollment.progress}%`);
+        return res.status(400).json({ error: "Certificate not available - course not completed" });
       }
       
-      console.log(`[CERTIFICATE] Generating PDF for completed enrollment`);
+      console.log(`[CERTIFICATE] Generating PDF certificate...`);
 
-      // Generate PDF using PDFKit
-      const PDFDocument = (await import('pdfkit')).default;
-      const doc = new PDFDocument({
-        size: 'A4',
-        layout: 'landscape',
-        margin: 50
-      });
+      // Create a simple text response first to test endpoint
+      const certificateText = `
+CERTIFICATE OF COMPLETION
+
+This is to certify that
+
+${enrollment.firstName} ${enrollment.lastName}
+
+has successfully completed the course
+
+"${enrollment.title}"
+
+Awarded on: ${new Date().toLocaleDateString()}
+
+Codelab Educare
+      `;
       
-      // Set headers for PDF response
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf"`);
+      // Set plain text response for now to debug
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.firstName}-${enrollment.lastName}.txt"`);
       
-      // Create PDF content without piping to response first
-      const chunks: Buffer[] = [];
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => {
-        const pdfBuffer = Buffer.concat(chunks);
-        res.end(pdfBuffer);
-        console.log(`[CERTIFICATE] PDF generated successfully for enrollment ${enrollmentId}`);
-      });
-      
-      // Add certificate content
-      doc.fontSize(28).text('CERTIFICATE OF COMPLETION', { align: 'center' });
-      doc.moveDown(2);
-      
-      doc.fontSize(16).text('This is to certify that', { align: 'center' });
-      doc.moveDown(1);
-      
-      doc.fontSize(24).text(`${enrollment.firstName} ${enrollment.lastName}`, { align: 'center' });
-      doc.moveDown(1);
-      
-      doc.fontSize(16).text('has successfully completed the course', { align: 'center' });
-      doc.moveDown(1);
-      
-      doc.fontSize(20).text(`"${enrollment.title}"`, { align: 'center' });
-      doc.moveDown(2);
-      
-      doc.fontSize(14).text(`Awarded on: ${new Date().toLocaleDateString()}`, { align: 'center' });
-      doc.moveDown(1);
-      
-      doc.fontSize(16).text('Codelab Educare', { align: 'center' });
-      
-      // Finalize PDF
-      doc.end();
+      console.log(`[CERTIFICATE] Sending certificate response...`);
+      res.send(certificateText);
+      console.log(`[CERTIFICATE] ===== CERTIFICATE REQUEST COMPLETE =====`);
       
       // Student name
       doc.fillColor('#1a365d')
