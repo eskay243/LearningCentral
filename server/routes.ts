@@ -3367,6 +3367,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Student Dashboard API Endpoints - Fixed authentication
   app.get("/api/student/enrolled-courses", async (req: any, res: Response) => {
     try {
+      // Enhanced authentication check with detailed logging
+      console.log('=== ENROLLED COURSES API CALLED ===');
+      console.log('Authentication check - isAuthenticated():', req.isAuthenticated(), 'user:', !!req.user);
+      
+      if (!req.isAuthenticated() || !req.user) {
+        console.log('Authentication failed - no valid session or user');
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const userId = req.user.id;
+      console.log('Fetching enrolled courses for user:', userId);
+
+      const enrollments = await storage.getEnrollmentsByUser(userId);
+      console.log('Found enrollments:', enrollments?.length || 0);
+
+      if (!enrollments || enrollments.length === 0) {
+        console.log('No enrollments found for user');
+        return res.json([]);
+      }
+
+      const coursesWithProgress = await Promise.all(
+        enrollments
+          .filter((enrollment: any) => enrollment.paymentStatus === 'completed')
+          .map(async (enrollment: any) => {
+            try {
+              const course = await storage.getCourseById(enrollment.courseId);
+              if (!course) {
+                console.log(`Course not found for ID: ${enrollment.courseId}`);
+                return null;
+              }
+
+              console.log(`Processing course: ${course.title} (ID: ${course.id})`);
+
+              const modules = await storage.getModulesByCourse(course.id);
+              console.log(`Found ${modules?.length || 0} modules for course ${course.id}`);
+
+              if (!modules || modules.length === 0) {
+                console.log(`No modules found for course ${course.id}`);
+                return {
+                  ...course,
+                  progress: 0,
+                  status: 'not_started',
+                  completedLessons: 0,
+                  totalLessons: 0,
+                  enrolled: true
+                };
+              }
+
+              const allLessons = await Promise.all(
+                modules.map(async (module: any) => {
+                  const lessons = await storage.getLessonsByModule(module.id);
+                  return lessons || [];
+                })
+              );
+
+              const flatLessons = allLessons.flat();
+              const totalLessons = flatLessons.length;
+              console.log(`Total lessons for course ${course.id}: ${totalLessons}`);
+
+              if (totalLessons === 0) {
+                console.log(`No lessons found for course ${course.id}`);
+                return {
+                  ...course,
+                  progress: 0,
+                  status: 'not_started',
+                  completedLessons: 0,
+                  totalLessons: 0,
+                  enrolled: true
+                };
+              }
+
+              const completedLessons = await Promise.all(
+                flatLessons.map(async (lesson: any) => {
+                  const progress = await storage.getLessonProgress(userId, lesson.id);
+                  console.log(`Lesson ${lesson.id} progress:`, progress);
+                  return progress && progress.progress === 100;
+                })
+              );
+
+              const completedCount = completedLessons.filter(Boolean).length;
+              const progressPercentage = Math.round((completedCount / totalLessons) * 100);
+              
+              console.log(`Course ${course.id} progress: ${completedCount}/${totalLessons} lessons completed (${progressPercentage}%)`);
+
+              return {
+                ...course,
+                progress: progressPercentage,
+                status: progressPercentage === 100 ? 'completed' : progressPercentage > 0 ? 'in_progress' : 'not_started',
+                completedLessons: completedCount,
+                totalLessons: totalLessons,
+                enrolled: true
+              };
+            } catch (error) {
+              console.error(`Error processing course ${enrollment.courseId}:`, error);
+              return null;
+            }
+          })
+      );
+      
+      const finalResult = coursesWithProgress.filter(course => course !== null);
+      console.log('=== FINAL ENROLLED COURSES RESULT ===');
+      console.log('Number of courses:', finalResult.length);
+      console.log('Course progress data:', JSON.stringify(finalResult, null, 2));
+      
+      res.json(finalResult);
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error);
+      res.status(500).json({ message: "Failed to fetch enrolled courses" });
+    }
+  });
+
+  app.get("/api/student/enrolled-courses-fresh", async (req: any, res: Response) => {
+    try {
       // Prevent caching to ensure fresh progress calculations
       res.set({
         'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -3449,7 +3562,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })
       );
       
-      res.json(coursesWithProgress.filter(course => course !== null));
+      const finalResult = coursesWithProgress.filter(course => course !== null);
+      console.log('=== FINAL ENROLLED COURSES RESULT ===');
+      console.log('Number of courses:', finalResult.length);
+      console.log('Course progress data:', JSON.stringify(finalResult, null, 2));
+      
+      res.json(finalResult);
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
       res.status(500).json({ message: "Failed to fetch enrolled courses" });
