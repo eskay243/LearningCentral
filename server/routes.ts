@@ -1311,6 +1311,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Create lesson for a specific course
+  app.post('/api/courses/:courseId/lessons', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      const lessonData = {
+        moduleId: req.body.moduleId,
+        title: req.body.title,
+        description: req.body.description,
+        content: req.body.content,
+        type: req.body.type || "text",
+        contentType: req.body.contentType || req.body.type || "text",
+        isPreview: req.body.isPreview || false,
+        order: req.body.order || 0,
+        orderIndex: req.body.order || 0,
+        published: true,
+        duration: req.body.duration || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        videoUrl: req.body.videoUrl || null,
+        videoPoster: req.body.videoPoster || null,
+        videoProgress: null,
+        videoId: req.body.videoId || null,
+        videoEmbedUrl: req.body.videoEmbedUrl || null,
+        videoQuality: req.body.videoQuality || "720p",
+        videoMetadata: req.body.videoMetadata || null,
+        completionCriteria: req.body.completionCriteria || null,
+        estimatedTime: req.body.estimatedTime || null,
+        difficulty: req.body.difficulty || "beginner",
+        prerequisites: req.body.prerequisites || null,
+        drm: req.body.drm || null,
+        videoProvider: req.body.videoProvider || null,
+        isLive: req.body.isLive || false,
+        scheduledAt: req.body.scheduledAt || null,
+        notes: req.body.notes || null,
+        requiresAuth: req.body.requiresAuth || false
+      };
+      
+      const lesson = await storage.createLesson(lessonData);
+      res.status(201).json(lesson);
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+      res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+
   app.post('/api/lessons', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const lessonData = {
