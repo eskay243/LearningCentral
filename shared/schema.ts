@@ -581,15 +581,41 @@ export const lessonProgress = pgTable("lesson_progress", {
 
 
 
-// CourseDiscussions table
+// Enhanced CourseDiscussions table with threading support
 export const courseDiscussions = pgTable("course_discussions", {
   id: serial("id").primaryKey(),
   courseId: integer("course_id").notNull().references(() => courses.id),
   userId: varchar("user_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  isAnnouncement: boolean("is_announcement").notNull().default(false),
+  parentId: integer("parent_id").references(() => courseDiscussions.id), // for threaded replies
+  
+  title: text("title"), // null for replies
+  content: text("content").notNull(), // markdown supported
+  contentType: text("content_type").default("markdown"), // markdown, plain_text
+  
+  // Discussion metadata
+  isSticky: boolean("is_sticky").default(false), // pinned discussions
+  isLocked: boolean("is_locked").default(false), // prevent replies
+  isResolved: boolean("is_resolved").default(false), // for Q&A discussions
+  isAnnouncement: boolean("is_announcement").default(false),
+  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  
+  // Engagement tracking
+  likes: integer("likes").default(0),
+  dislikes: integer("dislikes").default(0),
+  replyCount: integer("reply_count").default(0),
+  viewCount: integer("view_count").default(0),
+  
+  // Moderation
+  isFlagged: boolean("is_flagged").default(false),
+  flagReason: text("flag_reason"),
+  moderatedBy: varchar("moderated_by").references(() => users.id),
+  moderatedAt: timestamp("moderated_at"),
+  
+  // Timestamps
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastActivityAt: timestamp("last_activity_at").defaultNow(),
 });
 
 // Legacy discussion replies - replaced by enhanced discussionReplies table below
@@ -1869,6 +1895,8 @@ export const learningAnalytics = pgTable("learning_analytics", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+
+
 // Certificate Generation System
 export const certificateTemplates = pgTable("certificate_templates", {
   id: serial("id").primaryKey(),
@@ -2410,3 +2438,15 @@ export type KycDocumentFile = typeof kycDocumentFiles.$inferSelect;
 export type InsertKycDocumentFile = z.infer<typeof insertKycDocumentFileSchema>;
 export type KycVerificationHistory = typeof kycVerificationHistory.$inferSelect;
 export type InsertKycVerificationHistory = z.infer<typeof insertKycVerificationHistorySchema>;
+
+// Discussion System Schemas
+export const insertCourseDiscussionSchema = createInsertSchema(courseDiscussions).omit({
+  id: true,
+  likes: true,
+  dislikes: true,
+  replyCount: true,
+  viewCount: true,
+  createdAt: true,
+  updatedAt: true,
+  lastActivityAt: true,
+});
