@@ -1909,6 +1909,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mentorId: userId,
           commission: commissionRate, // Use mentor's custom rate or default
         });
+        
+        // Trigger notification events for course creation
+        try {
+          const mentorName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+          
+          // Notify all admins about new course submission
+          await storage.notifyAdminCoursePublished(mentorName, course.title);
+          
+          // Notify mentor about course creation success
+          await storage.notifyMentorCourseUpdate(userId, course.title, 'created successfully');
+          
+          console.log(`Sent course creation notifications for: ${course.title} by ${mentorName}`);
+        } catch (notificationError) {
+          console.error("Error sending course creation notifications:", notificationError);
+          // Continue even if notifications fail
+        }
       }
       
       res.status(201).json(course);
@@ -1935,6 +1951,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedCourse = await storage.updateCourse(courseId, req.body);
+      
+      // Trigger notification events for course updates
+      try {
+        const course = await storage.getCourse(courseId);
+        if (course) {
+          // If course is being published (status change to published)
+          if (req.body.published === true && course.published !== true) {
+            // Notify mentor about course approval/publishing
+            await storage.notifyMentorCourseUpdate(course.mentorId, course.title, 'approved and published');
+            
+            // Notify enrolled students about course updates
+            const enrollments = await storage.getCourseEnrollments(courseId);
+            for (const enrollment of enrollments) {
+              await storage.notifyStudentCourseUpdate(
+                enrollment.userId, 
+                course.title, 
+                'New content and updates are now available!'
+              );
+            }
+            
+            console.log(`Sent course publishing notifications for: ${course.title}`);
+          }
+          
+          // For other updates, notify relevant stakeholders
+          if (req.body.title || req.body.description || req.body.price) {
+            const enrollments = await storage.getCourseEnrollments(courseId);
+            for (const enrollment of enrollments) {
+              await storage.notifyStudentCourseUpdate(
+                enrollment.userId, 
+                course.title, 
+                'Course content has been updated with new information'
+              );
+            }
+          }
+        }
+      } catch (notificationError) {
+        console.error("Error sending course update notifications:", notificationError);
+      }
+      
       res.json(updatedCourse);
     } catch (error) {
       console.error("Error updating course:", error);

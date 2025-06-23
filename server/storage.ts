@@ -6616,9 +6616,7 @@ export class DatabaseStorage implements IStorage {
           title: notificationData.title,
           message: notificationData.message,
           type: notificationData.type || 'info',
-          priority: notificationData.priority || 'medium',
           actionUrl: notificationData.actionUrl,
-          metadata: notificationData.metadata,
           isRead: false
         })
         .returning();
