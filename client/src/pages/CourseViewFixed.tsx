@@ -61,7 +61,9 @@ export default function CourseView() {
   });
 
   // Check if current course is in enrolled courses
-  const enrollment = enrolledCourses?.find((course: any) => course.id === parseInt(id || '0'));
+  const enrollment = Array.isArray(enrolledCourses) ? 
+    enrolledCourses.find((course: any) => course.id === parseInt(id || '0')) : 
+    undefined;
   
   // Check if user is the course owner
   const isOwner = course && user && course.mentorId === user.id;
@@ -94,14 +96,14 @@ export default function CourseView() {
 
   // Set the first module as current when modules are loaded
   useEffect(() => {
-    if (modules && modules.length > 0 && !currentModuleId) {
+    if (Array.isArray(modules) && modules.length > 0 && !currentModuleId) {
       setCurrentModuleId(modules[0].id);
     }
   }, [modules, currentModuleId]);
 
   // Set the first lesson as current when lessons are loaded
   useEffect(() => {
-    if (lessons && lessons.length > 0 && !currentLessonId) {
+    if (Array.isArray(lessons) && lessons.length > 0 && !currentLessonId) {
       setCurrentLessonId(lessons[0].id);
     }
   }, [lessons, currentLessonId]);
@@ -125,23 +127,33 @@ export default function CourseView() {
     }
   }, [enrollment, isOwner, enrolledCourses, courseLoading, course, id, setLocation, toast]);
 
-  const currentLesson = lessons?.find(lesson => lesson.id === currentLessonId);
-  const currentModule = modules?.find(module => module.id === currentModuleId);
+  const currentLesson = Array.isArray(lessons) ? 
+    lessons.find((lesson: any) => lesson.id === currentLessonId) : 
+    undefined;
+  const currentModule = Array.isArray(modules) ? 
+    modules.find((module: any) => module.id === currentModuleId) : 
+    undefined;
 
   // Build complete lessons list for navigation
-  const allLessons = modules?.flatMap(module => 
-    module.lessons?.map(lesson => ({ ...lesson, moduleTitle: module.title })) || []
-  ).sort((a, b) => a.id - b.id) || [];
+  const allLessons = Array.isArray(modules) ? 
+    modules.flatMap((module: any) => 
+      Array.isArray(module.lessons) ? 
+        module.lessons.map((lesson: any) => ({ ...lesson, moduleTitle: module.title })) : 
+        []
+    ).sort((a: any, b: any) => a.id - b.id) : 
+    [];
 
   // Get current lesson index for navigation
-  const currentLessonIndex = allLessons.findIndex(lesson => lesson.id === currentLessonId);
+  const currentLessonIndex = allLessons.findIndex((lesson: any) => lesson.id === currentLessonId);
   const previousLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
   const nextLesson = currentLessonIndex >= 0 && currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
 
   const handleLessonNavigation = (lessonId: number) => {
-    const lesson = allLessons.find(l => l.id === lessonId);
-    if (lesson) {
-      const module = modules?.find(m => m.lessons?.some(l => l.id === lessonId));
+    const lesson = allLessons.find((l: any) => l.id === lessonId);
+    if (lesson && Array.isArray(modules)) {
+      const module = modules.find((m: any) => 
+        Array.isArray(m.lessons) && m.lessons.some((l: any) => l.id === lessonId)
+      );
       setCurrentLessonId(lessonId);
       setCurrentModuleId(module?.id || null);
     }
@@ -277,7 +289,7 @@ export default function CourseView() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {modules?.map((module: any, moduleIndex: number) => (
+                        {Array.isArray(modules) && modules.map((module: any, moduleIndex: number) => (
                           <div key={module.id}>
                             <div
                               className={`p-3 cursor-pointer hover:bg-gray-50 border-l-4 ${
@@ -309,7 +321,7 @@ export default function CourseView() {
                                     Failed to load lessons
                                   </div>
                                 ) : (
-                                  lessons?.map((lesson: any, lessonIndex: number) => (
+                                  Array.isArray(lessons) && lessons.map((lesson: any, lessonIndex: number) => (
                                     <div
                                       key={lesson.id}
                                       className={`p-2 cursor-pointer hover:bg-gray-50 ${
@@ -370,105 +382,96 @@ export default function CourseView() {
                           </div>
                         </CardHeader>
                         <CardContent>
-                  {/* Video Player */}
-                  {currentLesson.videoUrl && (
-                    <div className="mb-6">
-                      <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-                        <video
-                          controls
-                          className="w-full h-full rounded-lg"
-                          src={currentLesson.videoUrl}
-                        >
-                          Your browser does not support the video tag.
-                        </video>
-                      </div>
-                    </div>
-                  )}
+                          {/* Video Player */}
+                          {currentLesson.videoUrl && (
+                            <div className="mb-6">
+                              <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
+                                <video
+                                  controls
+                                  className="w-full h-full rounded-lg"
+                                  src={currentLesson.videoUrl}
+                                >
+                                  Your browser does not support the video tag.
+                                </video>
+                              </div>
+                            </div>
+                          )}
 
-                  {/* Lesson Content */}
-                  <div className="prose max-w-none">
-                    {currentLesson.content ? (
-                      <div dangerouslySetInnerHTML={{ __html: currentLesson.content }} />
+                          {/* Lesson Content */}
+                          <div className="space-y-4">
+                            {currentLesson.content ? (
+                              <div className="prose max-w-none">
+                                <div dangerouslySetInnerHTML={{ __html: currentLesson.content }} />
+                              </div>
+                            ) : (
+                              <div className="text-center py-12 text-gray-500">
+                                <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <p>Lesson content will be available soon.</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Navigation */}
+                          <div className="flex justify-between items-center mt-8 pt-6 border-t">
+                            <Button 
+                              variant="outline"
+                              onClick={() => {
+                                if (previousLesson) {
+                                  handleLessonNavigation(previousLesson.id);
+                                }
+                              }}
+                              disabled={!previousLesson}
+                            >
+                              <ArrowLeft className="h-4 w-4 mr-2" />
+                              Previous Lesson
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                if (nextLesson) {
+                                  handleLessonNavigation(nextLesson.id);
+                                } else {
+                                  toast({
+                                    title: "Course Completed!",
+                                    description: "Congratulations on completing this course!",
+                                  });
+                                  setLocation(`/courses/${id}`);
+                                }
+                              }}
+                              disabled={allLessons.length === 0}
+                            >
+                              {nextLesson ? (
+                                <>
+                                  Next Lesson
+                                  <ArrowRight className="h-4 w-4 ml-2" />
+                                </>
+                              ) : (
+                                <>
+                                  Finish Course
+                                  <CheckCircle className="h-4 w-4 ml-2" />
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ) : (
-                      <div className="text-center py-12 text-gray-500">
-                        <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Lesson content will be available soon.</p>
-                      </div>
+                      <Card>
+                        <CardContent className="text-center py-12">
+                          <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            Welcome to {course?.title}
+                          </h3>
+                          <p className="text-gray-600 mb-6">
+                            Select a module from the sidebar to start learning.
+                          </p>
+                          {Array.isArray(modules) && modules.length === 0 && (
+                            <div className="text-center text-gray-500">
+                              <p>Course content is being prepared. Check back soon!</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
                     )}
-                  </div>
-
-                  {/* Navigation */}
-                  <div className="flex justify-between items-center mt-8 pt-6 border-t">
-                    <Button 
-                      variant="outline"
-                      onClick={() => {
-                        console.log('Previous lesson clicked:', {
-                          previousLesson: previousLesson ? { id: previousLesson.id, title: previousLesson.title } : null,
-                          currentLessonIndex,
-                          allLessonsLength: allLessons.length
-                        });
-                        if (previousLesson) {
-                          handleLessonNavigation(previousLesson.id);
-                        }
-                      }}
-                      disabled={!previousLesson}
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Previous Lesson
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        console.log('Next/Finish lesson clicked:', {
-                          nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null,
-                          currentLessonIndex,
-                          allLessonsLength: allLessons.length,
-                          isLastLesson: !nextLesson
-                        });
-                        if (nextLesson) {
-                          handleLessonNavigation(nextLesson.id);
-                        } else {
-                          toast({
-                            title: "Course Completed!",
-                            description: "Congratulations on completing this course!",
-                          });
-                          setLocation(`/courses/${id}`);
-                        }
-                      }}
-                      disabled={allLessons.length === 0}
-                    >
-                      {nextLesson ? (
-                        <>
-                          Next Lesson
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </>
-                      ) : (
-                        <>
-                          Finish Course
-                          <CheckCircle className="h-4 w-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <BookOpen className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Welcome to {course.title}
-                  </h3>
-                  <p className="text-gray-600 mb-6">
-                    Select a module from the sidebar to start learning.
-                  </p>
-                  {modules && modules.length === 0 && (
-                    <div className="text-center text-gray-500">
-                      <p>Course content is being prepared. Check back soon!</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
                   </TabsContent>
 
                   <TabsContent value="discussions" className="mt-6">
