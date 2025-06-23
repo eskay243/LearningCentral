@@ -53,7 +53,13 @@ export default function LessonViewer() {
   });
 
   // Extract all lessons from modules for navigation
-  const lessons = modules.flatMap((module: any) => module.lessons || []).sort((a: any, b: any) => a.orderIndex - b.orderIndex);
+  const lessons = modules.flatMap((module: any) => module.lessons || []).sort((a: any, b: any) => {
+    // If orderIndex is the same, sort by ID to ensure consistent order
+    if (a.orderIndex === b.orderIndex) {
+      return a.id - b.id;
+    }
+    return a.orderIndex - b.orderIndex;
+  });
 
   // Video event handlers for progress tracking
   const handleVideoPlay = () => {
@@ -149,6 +155,15 @@ export default function LessonViewer() {
   const previousLesson = lessons?.[currentLessonIndex - 1];
   const nextLesson = lessons?.[currentLessonIndex + 1];
   const progress = ((currentLessonIndex + 1) / (lessons?.length || 1)) * 100;
+
+  // Debug logging for navigation
+  console.log('Navigation Debug:', {
+    lessonId,
+    lessons: lessons?.map(l => ({ id: l.id, title: l.title })),
+    currentLessonIndex,
+    previousLesson: previousLesson ? { id: previousLesson.id, title: previousLesson.title } : null,
+    nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null
+  });
 
   const handleNavigation = (targetLessonId: number) => {
     setLocation(`/courses/${courseId}/lessons/${targetLessonId}`);
