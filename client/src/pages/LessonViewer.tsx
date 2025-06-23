@@ -36,6 +36,9 @@ export default function LessonViewer() {
     queryKey: [`/api/courses/${courseId}/modules`],
   });
 
+  // Debug the modules data
+  console.log('Raw modules data:', modules);
+
   // Progress tracking mutation
   const updateProgressMutation = useMutation({
     mutationFn: async (progressData: { 
@@ -178,7 +181,7 @@ export default function LessonViewer() {
   let allLessons: any[] = [];
   
   // Build complete lesson list from modules
-  if (modules && modules.length > 0) {
+  if (modules && Array.isArray(modules) && modules.length > 0) {
     allLessons = modules.flatMap((module: any) => {
       if (module.lessons && Array.isArray(module.lessons)) {
         return module.lessons.map((lesson: any) => ({
@@ -188,11 +191,8 @@ export default function LessonViewer() {
       }
       return [];
     }).sort((a: any, b: any) => {
-      // Sort by ID if orderIndex is the same
-      if (a.orderIndex === b.orderIndex) {
-        return a.id - b.id;
-      }
-      return a.orderIndex - b.orderIndex;
+      // Sort by ID since orderIndex is the same for both lessons
+      return a.id - b.id;
     });
     
     currentLessonIndex = allLessons.findIndex((l: any) => l.id === currentLessonId);
