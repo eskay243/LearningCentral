@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, BookOpen, Trophy, Clock, PlayCircle, CheckCircle2, Code2, Brain, TrendingUp, Calendar, MessageCircle, Award, Zap } from "lucide-react";
+import { CalendarDays, BookOpen, Trophy, Clock, PlayCircle, CheckCircle2, Code2, Brain, TrendingUp, Calendar, MessageCircle, Award, Zap, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
@@ -242,50 +242,85 @@ export default function StableStudentDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4 pt-0">
                   {enrolledCourses.some(c => c.progress === 100) && (
-                    <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                    <div 
+                      className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg cursor-pointer hover:bg-white/80 transition-colors"
+                      onClick={() => {
+                        const completedCourse = enrolledCourses.find(c => c.progress === 100);
+                        if (completedCourse) {
+                          setLocation(`/courses/${completedCourse.id}`);
+                        }
+                      }}
+                    >
                       <Trophy className="w-5 h-5 text-yellow-500 flex-shrink-0" />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">Course completed!</p>
                         <p className="text-sm text-gray-600">Ready for a quiz to test your knowledge?</p>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   )}
                   {averageQuizScore > 0 && averageQuizScore < 70 && (
-                    <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                    <div 
+                      className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg cursor-pointer hover:bg-white/80 transition-colors"
+                      onClick={() => {
+                        const courseInProgress = enrolledCourses.find(c => (c.progress || 0) < 100);
+                        if (courseInProgress) {
+                          setLocation(`/courses/${courseInProgress.id}`);
+                        }
+                      }}
+                    >
                       <Zap className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">Practice recommended</p>
                         <p className="text-sm text-gray-600">Your quiz scores suggest reviewing fundamentals</p>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   )}
-                  {enrolledCourses.some(c => c.progress > 50 && c.progress < 100) && (
-                    <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                  {enrolledCourses.some(c => (c.progress || 0) > 50 && (c.progress || 0) < 100) && (
+                    <div 
+                      className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg cursor-pointer hover:bg-white/80 transition-colors"
+                      onClick={() => {
+                        const courseInProgress = enrolledCourses.find(c => (c.progress || 0) > 50 && (c.progress || 0) < 100);
+                        if (courseInProgress) {
+                          setLocation(`/courses/${courseInProgress.id}`);
+                        }
+                      }}
+                    >
                       <PlayCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">Great progress!</p>
                         <p className="text-sm text-gray-600">Complete the next lesson to maintain momentum</p>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   )}
                   {pendingAssignments.length > 0 && (
-                    <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                    <div 
+                      className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg cursor-pointer hover:bg-white/80 transition-colors"
+                      onClick={() => setLocation('/assignments')}
+                    >
                       <Clock className="w-5 h-5 text-red-500 flex-shrink-0" />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">Deadlines approaching</p>
                         <p className="text-sm text-gray-600">
                           {pendingAssignments.length} assignment{pendingAssignments.length > 1 ? 's' : ''} due soon
                         </p>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   )}
                   {averageQuizScore >= 80 && (
-                    <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
+                    <div 
+                      className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg cursor-pointer hover:bg-white/80 transition-colors"
+                      onClick={() => setLocation('/courses')}
+                    >
                       <Award className="w-5 h-5 text-purple-500 flex-shrink-0" />
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">Excellent performance!</p>
                         <p className="text-sm text-gray-600">Consider exploring advanced courses</p>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     </div>
                   )}
                 </CardContent>
