@@ -167,18 +167,18 @@ export default function StableStudentDashboard() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cream-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cream-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Welcome back, {user.firstName || 'Student'}! 👋
           </h1>
           <p className="text-xl text-gray-600">Ready to continue your learning journey?</p>
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Enrolled Courses</CardTitle>
@@ -228,19 +228,19 @@ export default function StableStudentDashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          <div className="lg:col-span-2 space-y-8">
             {/* AI Learning Assistant */}
             {enrolledCourses.length > 0 && (
               <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-lg">
-                <CardHeader>
+                <CardHeader className="pb-4">
                   <div className="flex items-center space-x-2">
                     <Brain className="w-5 h-5 text-blue-600" />
                     <CardTitle className="text-lg text-gray-900">Smart Learning Assistant</CardTitle>
                   </div>
                   <CardDescription>Personalized suggestions based on your progress</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4 pt-0">
                   {enrolledCourses.some(c => c.progress === 100) && (
                     <div className="flex items-center space-x-3 p-3 bg-white/60 rounded-lg">
                       <Trophy className="w-5 h-5 text-yellow-500 flex-shrink-0" />
@@ -294,11 +294,11 @@ export default function StableStudentDashboard() {
 
             {/* Quick Actions */}
             <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="text-lg text-gray-900">Quick Actions</CardTitle>
                 <CardDescription>Jump into your learning activities</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/coding-playground')}>
                     <CardContent className="p-4 text-center">
@@ -338,16 +338,16 @@ export default function StableStudentDashboard() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Interactive Calendar */}
             <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-5 h-5 text-purple-600" />
                   <CardTitle className="text-lg text-gray-900">Learning Calendar</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4 pt-0">
                 {/* Mini Calendar */}
                 <div className="grid grid-cols-7 gap-1 text-xs">
                   {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
@@ -402,13 +402,13 @@ export default function StableStudentDashboard() {
 
             {/* Visual Progress Analytics */}
             <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5 text-green-600" />
                   <CardTitle className="text-lg text-gray-900">Learning Progress</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 pt-0">
                 {/* Quiz Score Trend */}
                 {recentQuizzes.length > 0 && (
                   <div className="space-y-2">
@@ -468,13 +468,13 @@ export default function StableStudentDashboard() {
 
             {/* Message Center */}
             <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <div className="flex items-center space-x-2">
                   <MessageCircle className="w-5 h-5 text-blue-600" />
                   <CardTitle className="text-lg text-gray-900">Message Center</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4 pt-0">
                 <Button 
                   onClick={() => setLocation('/conversations')} 
                   className="w-full bg-blue-600 hover:bg-blue-700"
