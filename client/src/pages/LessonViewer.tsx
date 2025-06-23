@@ -135,6 +135,27 @@ export default function LessonViewer() {
     );
   }
 
+  if (!lesson || !course || !modules) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <h2 className="text-xl font-semibold mb-2">Content Not Found</h2>
+            <p className="text-gray-600 mb-4">Unable to load lesson content.</p>
+            <Button
+              variant="outline"
+              onClick={() => setLocation('/dashboard')}
+              className="p-0 h-auto hover:bg-transparent"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!lesson) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -158,8 +179,11 @@ export default function LessonViewer() {
 
   // Debug logging for navigation
   console.log('Navigation Debug:', {
-    lessonId,
+    lessonId: parseInt(lessonId || '0'),
+    lessonIdParam: lessonId,
+    modules: modules?.length,
     lessons: lessons?.map(l => ({ id: l.id, title: l.title })),
+    lessonsLength: lessons?.length,
     currentLessonIndex,
     previousLesson: previousLesson ? { id: previousLesson.id, title: previousLesson.title } : null,
     nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null
