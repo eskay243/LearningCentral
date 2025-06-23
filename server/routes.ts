@@ -3272,31 +3272,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Download payment receipt endpoint by enrollment ID
   app.get("/api/enrollments/:paymentId/receipt", isAuthenticated, async (req: any, res: Response) => {
     try {
-      console.log('[RECEIPT] Receipt endpoint called with params:', req.params);
-      console.log('[RECEIPT] User authenticated:', req.isAuthenticated());
-      console.log('[RECEIPT] User object:', req.user);
-      
-      if (!req.isAuthenticated() || !req.user) {
-        console.log('[RECEIPT] Authentication failed');
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
       const paymentId = parseInt(req.params.paymentId);
       const userId = req.user.id;
       
-      console.log('[RECEIPT] Looking for payment ID:', paymentId, 'for user:', userId);
-      
       // Get payment record and verify ownership
       const payment = await storage.getPaymentRecord(paymentId, userId);
-      console.log('[RECEIPT] Payment record result:', payment ? 'Found' : 'Not found');
-      
       if (!payment) {
-        console.log('[RECEIPT] Payment not found, returning 404');
         return res.status(404).json({ message: "Payment not found" });
       }
 
-      console.log('[RECEIPT] Generating receipt for payment:', payment.id);
-      
       // Generate and return receipt
       const receiptContent = await storage.generatePaymentReceipt(payment);
       
