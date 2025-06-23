@@ -23,16 +23,22 @@ interface Course {
   mentorId?: string;
   isEnrolled?: boolean;
   progress?: number;
+  status?: string;
   rating?: number;
   totalLessons?: number;
   completedLessons?: number;
   enrollmentDate?: string;
+  completedAt?: string;
+  certificateEligible?: boolean;
 }
 
 interface EnrolledCourse extends Course {
   isEnrolled: true;
   progress: number;
+  status?: string;
   enrollmentDate: string;
+  completedAt?: string;
+  certificateEligible?: boolean;
   nextLesson?: {
     id: number;
     title: string;
