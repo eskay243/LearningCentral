@@ -626,12 +626,10 @@ export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
-  message: text("message").notNull(),
+  content: text("content").notNull(), // Changed from message to content to match DB
   type: text("type").notNull().default("info"), // info, warning, success, error
-  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
-  isRead: boolean("read").notNull().default(false),
+  isRead: boolean("is_read").notNull().default(false), // Changed from read to is_read
   actionUrl: text("link_url"),
-  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
