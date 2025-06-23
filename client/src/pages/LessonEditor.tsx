@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,18 +17,19 @@ export default function LessonEditor() {
   const { courseId, lessonId } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
-  const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
-  const [showVideoPreview, setShowVideoPreview] = useState(false);
-  const [selectedModuleId, setSelectedModuleId] = useState<string>(moduleId || lesson?.moduleId?.toString() || "");
-  const [selectedType, setSelectedType] = useState<string>(lesson?.type || "video");
-
+  
   const isNewLesson = lessonId === 'new';
   
   // Get moduleId from URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const moduleId = urlParams.get('moduleId');
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState<string>(moduleId || "");
+  const [selectedType, setSelectedType] = useState<string>("video");
 
   const { data: lesson } = useQuery({
     queryKey: [`/api/courses/${courseId}/lessons/${lessonId}`],
@@ -38,6 +39,15 @@ export default function LessonEditor() {
   const { data: modules } = useQuery({
     queryKey: [`/api/courses/${courseId}/modules`],
   });
+
+  // Update state when lesson data loads (for editing existing lessons)
+  useEffect(() => {
+    if (lesson) {
+      setSelectedModuleId(lesson.moduleId?.toString() || "");
+      setSelectedType(lesson.type || "video");
+      setCurrentVideoUrl(lesson.videoUrl || "");
+    }
+  }, [lesson]);
 
   const saveLessonMutation = useMutation({
     mutationFn: async (data: any) => {
