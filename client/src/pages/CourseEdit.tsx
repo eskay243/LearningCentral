@@ -170,18 +170,28 @@ export default function CourseEdit() {
           Back to Course
         </Button>
         
-        <Button 
-          onClick={handleSave}
-          disabled={saving}
-          className="flex items-center gap-2"
-        >
-          {saving ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {saving ? "Saving..." : "Save Changes"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => setLocation(`/course-content-management?courseId=${courseId}`)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Manage Content
+          </Button>
+          <Button 
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2"
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        </div>
       </div>
 
       {/* Edit Form */}

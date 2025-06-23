@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,11 +119,24 @@ type Assignment = z.infer<typeof assignmentSchema>;
 type Quiz = z.infer<typeof quizSchema>;
 
 export default function CourseContentManagement() {
+  const [location] = useLocation();
   const [activeTab, setActiveTab] = useState("videos");
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+
+  // Parse courseId from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseIdParam = urlParams.get('courseId');
+    if (courseIdParam) {
+      const courseId = parseInt(courseIdParam);
+      if (!isNaN(courseId)) {
+        setSelectedCourse(courseId);
+      }
+    }
+  }, [location]);
 
   // Fetch courses for dropdown
   const { data: courses } = useQuery({

@@ -246,14 +246,24 @@ export default function CourseDetail() {
                     </Badge>
                   </div>
                   {isOwner && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setLocation(`/courses/${course.id}/edit`)}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocation(`/courses/${course.id}/edit`)}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocation(`/course-content-management?courseId=${course.id}`)}
+                      >
+                        <BookOpen className="w-4 h-4 mr-2" />
+                        Manage Content
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardHeader>

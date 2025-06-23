@@ -100,7 +100,7 @@ function Router() {
         <Route path="/my-courses" component={MyCoursesFixed} />
         <Route path="/student-courses" component={StudentCourses} />
         <Route path="/courses/:id" component={CourseDetail} />
-        <Route path="/courses/:id/edit" component={CreateCourse} />
+        <Route path="/courses/:id/edit" component={CourseEdit} />
         <Route path="/courses/:id/exercises" component={CourseExercises} />
         <Route path="/courses/:id/view" component={CourseView} />
         <Route path="/courses/:id/discussion" component={CourseDiscussion} />
@@ -171,6 +171,7 @@ function Router() {
         <Route path="/courses/:courseId/forums/:forumId" component={DiscussionForum} />
         <Route path="/courses/:courseId/forums/:forumId/topics/:topicId" component={DiscussionForum} />
         <Route path="/content-management" component={CourseContentManagement} />
+        <Route path="/course-content-management" component={CourseContentManagement} />
         <Route path="/admin/user-permissions" component={AdminUserPermissions} />
         <Route path="/admin/edit-profile" component={AdminEditProfile} />
         <Route path="/kyc/mentor" component={KycMentorPage} />
