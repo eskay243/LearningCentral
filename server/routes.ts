@@ -5008,6 +5008,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register invoice and payment routes
   registerInvoiceRoutes(app);
   
+  // Certificate download endpoint - clean implementation
+  app.get("/api/download-certificate/:enrollmentId", async (req: Request, res: Response) => {
+    console.log(`[CERTIFICATE] Request received for enrollment ${req.params.enrollmentId}`);
+    
+    try {
+      const { enrollmentId } = req.params;
+      const enrollmentIdNum = parseInt(enrollmentId);
+      
+      if (isNaN(enrollmentIdNum)) {
+        console.log(`[CERTIFICATE] Invalid enrollment ID: ${enrollmentId}`);
+        return res.status(400).json({ error: "Invalid enrollment ID" });
+      }
+      
+      console.log(`[CERTIFICATE] Querying database for enrollment ${enrollmentIdNum}`);
+      
+      // Get enrollment with user and course data
+      const enrollmentData = await db
+        .select({
+          id: courseEnrollments.id,
+          courseId: courseEnrollments.courseId,
+          userId: courseEnrollments.userId,
+          progress: courseEnrollments.progress,
+          completedAt: courseEnrollments.completedAt,
+          title: courses.title,
+          description: courses.description,
+          firstName: users.firstName,
+          lastName: users.lastName
+        })
+        .from(courseEnrollments)
+        .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
+        .innerJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(eq(courseEnrollments.id, enrollmentIdNum));
+      
+      console.log(`[CERTIFICATE] Found ${enrollmentData.length} enrollment records`);
+      
+      if (enrollmentData.length === 0) {
+        console.log(`[CERTIFICATE] No enrollment found for ID ${enrollmentId}`);
+        return res.status(404).json({ error: "Enrollment not found" });
+      }
+      
+      const enrollment = enrollmentData[0];
+      console.log(`[CERTIFICATE] Enrollment progress: ${enrollment.progress}%`);
+      
+      if (enrollment.progress < 100) {
+        console.log(`[CERTIFICATE] Course not completed - progress: ${enrollment.progress}%`);
+        return res.status(400).json({ error: "Certificate not available - course not completed" });
+      }
+      
+      console.log(`[CERTIFICATE] Generating PDF certificate for ${enrollment.firstName} ${enrollment.lastName}`);
+      
+      // Generate certificate PDF
+      const PDFDocument = require('pdfkit');
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'landscape',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+      
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.firstName}-${enrollment.lastName}.pdf"`);
+      
+      // Pipe the PDF to the response
+      doc.pipe(res);
+      
+      // Certificate design
+      const pageWidth = doc.page.width;
+      const pageHeight = doc.page.height;
+      
+      // Background and border
+      doc.rect(25, 25, pageWidth - 50, pageHeight - 50)
+         .stroke('#2E8B57', 3);
+      
+      doc.rect(40, 40, pageWidth - 80, pageHeight - 80)
+         .stroke('#32CD32', 1);
+      
+      // Header
+      doc.fontSize(36)
+         .fillColor('#2E8B57')
+         .text('CERTIFICATE OF COMPLETION', 0, 80, { align: 'center' });
+      
+      // Decorative line
+      doc.moveTo(150, 140)
+         .lineTo(pageWidth - 150, 140)
+         .stroke('#32CD32', 2);
+      
+      // Main content
+      doc.fontSize(18)
+         .fillColor('#333333')
+         .text('This is to certify that', 0, 180, { align: 'center' });
+      
+      doc.fontSize(28)
+         .fillColor('#2E8B57')
+         .text(`${enrollment.firstName} ${enrollment.lastName}`, 0, 220, { align: 'center' });
+      
+      doc.fontSize(18)
+         .fillColor('#333333')
+         .text('has successfully completed the course', 0, 280, { align: 'center' });
+      
+      doc.fontSize(24)
+         .fillColor('#2E8B57')
+         .text(`"${enrollment.title}"`, 0, 320, { align: 'center' });
+      
+      // Completion date
+      const completionDate = enrollment.completedAt ? new Date(enrollment.completedAt).toLocaleDateString() : new Date().toLocaleDateString();
+      doc.fontSize(16)
+         .fillColor('#333333')
+         .text(`Completed on: ${completionDate}`, 0, 380, { align: 'center' });
+      
+      // Institution info
+      doc.fontSize(18)
+         .fillColor('#2E8B57')
+         .text('Codelab Educare', 0, 440, { align: 'center' });
+      
+      doc.fontSize(14)
+         .fillColor('#666666')
+         .text('Digital Learning Platform', 0, 465, { align: 'center' });
+      
+      // Certificate ID
+      doc.fontSize(12)
+         .fillColor('#999999')
+         .text(`Certificate ID: CERT-${enrollment.id}-${Date.now()}`, 0, 510, { align: 'center' });
+      
+      // Signature line
+      doc.moveTo(500, 480)
+         .lineTo(650, 480)
+         .stroke('#999999', 1);
+      
+      doc.fontSize(12)
+         .fillColor('#666666')
+         .text('Authorized Signature', 500, 490, { width: 150, align: 'center' });
+      
+      // Finalize the PDF
+      doc.end();
+      
+      console.log(`[CERTIFICATE] PDF generation completed for enrollment ${enrollmentId}`);
+      
+    } catch (error) {
+      console.error("[CERTIFICATE] Error generating certificate:", error);
+      res.status(500).json({ error: "Failed to generate certificate" });
+    }
+  });
+
   // Register mentor management routes
   registerMentorManagementRoutes(app);
 
