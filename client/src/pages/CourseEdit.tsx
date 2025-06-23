@@ -39,7 +39,7 @@ const categories = [
 
 export default function CourseEdit() {
   const { courseId } = useParams();
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   
@@ -138,7 +138,8 @@ export default function CourseEdit() {
 
   const canEdit = user && course && (user.role === 'admin' || course.mentorId === user.id);
 
-  if (loading) {
+  // Show loading while fetching course data or while authentication is still loading
+  if (loading || isAuthLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
@@ -148,6 +149,23 @@ export default function CourseEdit() {
     );
   }
 
+  // Handle authentication required
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-red-600 mb-4">Please log in to edit courses</p>
+            <Button onClick={() => setLocation("/login")}>
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Handle course not found or permission denied
   if (error || !course || !canEdit) {
     return (
       <div className="container mx-auto px-4 py-8">
