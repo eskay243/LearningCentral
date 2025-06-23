@@ -6634,6 +6634,23 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`[DEBUG] Looking for payment ID: ${paymentId}, User ID: ${userId}`);
       
+      // First, let's check if the record exists with a simpler query
+      const [enrollment] = await db
+        .select()
+        .from(courseEnrollments)
+        .where(and(
+          eq(courseEnrollments.id, paymentId),
+          eq(courseEnrollments.userId, userId)
+        ));
+      
+      console.log(`[DEBUG] Found enrollment:`, enrollment);
+      
+      if (!enrollment) {
+        console.log(`[DEBUG] No enrollment found for ID ${paymentId} and user ${userId}`);
+        return undefined;
+      }
+      
+      // Now get the full payment record with course and user details
       const [payment] = await db
         .select({
           id: courseEnrollments.id,
@@ -6652,11 +6669,7 @@ export class DatabaseStorage implements IStorage {
         .from(courseEnrollments)
         .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
         .innerJoin(users, eq(courseEnrollments.userId, users.id))
-        .where(and(
-          eq(courseEnrollments.id, paymentId),
-          eq(courseEnrollments.userId, userId),
-          eq(courseEnrollments.paymentStatus, 'completed')
-        ));
+        .where(eq(courseEnrollments.id, paymentId));
 
       console.log(`[DEBUG] Query result:`, payment);
       return payment;
