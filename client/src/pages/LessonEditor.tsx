@@ -21,6 +21,8 @@ export default function LessonEditor() {
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
   const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState<string>(moduleId || lesson?.moduleId?.toString() || "");
+  const [selectedType, setSelectedType] = useState<string>(lesson?.type || "video");
 
   const isNewLesson = lessonId === 'new';
   
@@ -93,13 +95,26 @@ export default function LessonEditor() {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       content: formData.get('content') as string,
-      type: formData.get('type') as string,
+      type: selectedType,
       duration: parseInt(formData.get('duration') as string) || null,
-      moduleId: formData.get('moduleId') ? parseInt(formData.get('moduleId') as string) : null,
+      moduleId: selectedModuleId ? parseInt(selectedModuleId) : null,
       videoUrl: uploadedVideo || formData.get('videoUrl') as string,
       order: parseInt(formData.get('order') as string) || 0,
     };
 
+    console.log('Lesson data being submitted:', lessonData);
+    
+    // Validate required fields
+    if (!lessonData.title || !lessonData.moduleId) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields (title and module)",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+    
     saveLessonMutation.mutate(lessonData);
     setIsSubmitting(false);
   };
@@ -155,7 +170,7 @@ export default function LessonEditor() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="type">Lesson Type</Label>
-                    <Select name="type" defaultValue={lesson?.type || "video"}>
+                    <Select value={selectedType} onValueChange={setSelectedType}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select lesson type" />
                       </SelectTrigger>
@@ -197,7 +212,7 @@ export default function LessonEditor() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="moduleId">Module</Label>
-                    <Select name="moduleId" defaultValue={lesson?.moduleId?.toString() || moduleId || ""}>
+                    <Select value={selectedModuleId} onValueChange={setSelectedModuleId}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select module" />
                       </SelectTrigger>
