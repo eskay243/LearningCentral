@@ -39,6 +39,9 @@ const formSchema = z.object({
   isPublished: z.boolean().default(false),
   category: z.string().optional(),
   tags: z.string().optional(),
+  estimatedDuration: z.string().optional(),
+  skillLevel: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+  isPaid: z.boolean().default(false),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -103,6 +106,9 @@ const CreateCourse = () => {
         isPublished: (existingCourse as any).isPublished || false,
         category: (existingCourse as any).category || "",
         tags: Array.isArray((existingCourse as any).tags) ? (existingCourse as any).tags.join(", ") : "",
+        estimatedDuration: (existingCourse as any).estimatedDuration || "",
+        skillLevel: (existingCourse as any).skillLevel || undefined,
+        isPaid: (existingCourse as any).price > 0 || false,
       });
       if ((existingCourse as any).thumbnail) {
         setUploadedImage((existingCourse as any).thumbnail);
@@ -396,6 +402,51 @@ const CreateCourse = () => {
                   )}
                 />
                 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="skillLevel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Skill Level*</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select skill level" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="beginner">Beginner</SelectItem>
+                            <SelectItem value="intermediate">Intermediate</SelectItem>
+                            <SelectItem value="advanced">Advanced</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Who is this course designed for?
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="estimatedDuration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estimated Duration</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 4 weeks, 20 hours" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          How long will it take to complete?
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="tags"
@@ -492,26 +543,68 @@ const CreateCourse = () => {
               <TabsContent value="pricing" className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="price"
+                  name="isPaid"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price (₦)</FormLabel>
+                      <FormLabel>Course Type</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0"
-                          {...field}
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div 
+                            className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                              !field.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => {
+                              field.onChange(false);
+                              form.setValue('price', '0');
+                            }}
+                          >
+                            <h3 className="font-medium">Free Course</h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Build your audience and establish credibility
+                            </p>
+                          </div>
+                          <div 
+                            className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                              field.value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                            onClick={() => field.onChange(true)}
+                          >
+                            <h3 className="font-medium">Paid Course</h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Generate revenue from your expertise
+                            </p>
+                          </div>
+                        </div>
                       </FormControl>
-                      <FormDescription>
-                        Set to 0 for a free course
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {form.watch('isPaid') && (
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course Price (₦)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="0.01"
+                            placeholder="5000"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Set a competitive price for your course content
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 
                 <div className="pt-4">
                   <h3 className="text-lg font-medium mb-2">Pricing Strategy</h3>
@@ -569,25 +662,80 @@ const CreateCourse = () => {
                 </div>
               </TabsContent>
               
-              <div className="pt-4 flex justify-end space-x-2">
+              <div className="pt-4 flex flex-col sm:flex-row justify-between gap-4">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/courses")}
+                  onClick={() => navigate("/my-courses")}
+                  className="order-1 sm:order-none"
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="animate-spin mr-2">⟳</span> 
-                      {isEditMode ? "Updating..." : "Creating..."}
-                    </>
-                  ) : (isEditMode ? "Update Course" : "Create Course")}
-                </Button>
+                
+                <div className="flex flex-col sm:flex-row gap-2 order-2 sm:order-none">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      const values = form.getValues();
+                      const draftValues = { ...values, isPublished: false };
+                      
+                      try {
+                        setIsSubmitting(true);
+                        const finalValues = {
+                          ...draftValues,
+                          thumbnail: uploadedImage || values.thumbnail,
+                          tags: values.tags ? values.tags.split(",").map(tag => tag.trim()).filter(tag => tag.length > 0) : []
+                        };
+                        
+                        const url = isEditMode ? `/api/courses/${courseId}` : "/api/courses";
+                        const method = isEditMode ? "PUT" : "POST";
+                        const response = await apiRequest(method, url, finalValues);
+                        
+                        if (!response.ok) {
+                          throw new Error(`Failed to save draft`);
+                        }
+                        
+                        toast({
+                          title: "Draft saved successfully!",
+                          description: "Your course has been saved as a draft. You can continue editing anytime.",
+                        });
+                        
+                        queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/mentor/courses"] });
+                        navigate("/my-courses");
+                      } catch (error: any) {
+                        toast({
+                          title: "Failed to save draft",
+                          description: "Please check your details and try again.",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setIsSubmitting(false);
+                      }
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    Save as Draft
+                  </Button>
+                  
+                  <Button 
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <span className="animate-spin mr-2">⟳</span> 
+                        {isEditMode ? "Updating..." : "Creating..."}
+                      </>
+                    ) : (
+                      <>
+                        {isEditMode ? "Update & Continue" : "Create & Add Modules"}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </form>
           </Form>
