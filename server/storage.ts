@@ -6614,7 +6614,7 @@ export class DatabaseStorage implements IStorage {
         .values({
           userId: notificationData.userId,
           title: notificationData.title,
-          message: notificationData.message,
+          content: notificationData.message, // Use 'content' column name
           type: notificationData.type || 'info',
           actionUrl: notificationData.actionUrl,
           isRead: false
