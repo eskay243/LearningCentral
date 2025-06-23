@@ -137,6 +137,7 @@ export default function CourseContentManagement() {
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadType, setUploadType] = useState<"file" | "youtube">("file");
   const { toast } = useToast();
 
   // Parse courseId from URL parameters
@@ -180,6 +181,8 @@ export default function CourseContentManagement() {
       isPublic: false,
       allowDownload: false,
       accessLevel: "premium",
+      uploadType: "file",
+      youtubeUrl: "",
     }
   });
 
@@ -331,19 +334,32 @@ export default function CourseContentManagement() {
   });
 
   const handleVideoUpload = (data: VideoUpload) => {
-    const fileInput = document.getElementById('video-file') as HTMLInputElement;
-    const file = fileInput?.files?.[0];
-    
-    if (!file) {
-      toast({
-        title: "No File Selected",
-        description: "Please select a video file to upload.",
-        variant: "destructive",
-      });
-      return;
+    if (data.uploadType === "youtube") {
+      // Handle YouTube URL upload
+      if (!data.youtubeUrl) {
+        toast({
+          title: "YouTube URL Required",
+          description: "Please provide a valid YouTube URL.",
+          variant: "destructive",
+        });
+        return;
+      }
+      uploadVideoMutation.mutate({ ...data, file: null });
+    } else {
+      // Handle file upload
+      const fileInput = document.getElementById('video-file') as HTMLInputElement;
+      const file = fileInput?.files?.[0];
+      
+      if (!file) {
+        toast({
+          title: "No File Selected",
+          description: "Please select a video file to upload.",
+          variant: "destructive",
+        });
+        return;
+      }
+      uploadVideoMutation.mutate({ ...data, file });
     }
-
-    uploadVideoMutation.mutate({ ...data, file });
   };
 
   const addTestCase = () => {
@@ -488,15 +504,68 @@ export default function CourseContentManagement() {
                     />
                   </div>
 
+                  {/* Upload Type Selector */}
                   <div>
-                    <Label htmlFor="video-file">Video File</Label>
-                    <Input
-                      id="video-file"
-                      type="file"
-                      accept="video/*"
-                      className="mt-1"
-                    />
+                    <Label>Upload Type</Label>
+                    <div className="flex items-center space-x-4 mt-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="upload-file"
+                          name="uploadType"
+                          value="file"
+                          checked={videoForm.watch("uploadType") === "file"}
+                          onChange={() => videoForm.setValue("uploadType", "file")}
+                        />
+                        <Label htmlFor="upload-file" className="flex items-center space-x-1 cursor-pointer">
+                          <Upload className="w-4 h-4" />
+                          <span>File Upload</span>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="upload-youtube"
+                          name="uploadType"
+                          value="youtube"
+                          checked={videoForm.watch("uploadType") === "youtube"}
+                          onChange={() => videoForm.setValue("uploadType", "youtube")}
+                        />
+                        <Label htmlFor="upload-youtube" className="flex items-center space-x-1 cursor-pointer">
+                          <Youtube className="w-4 h-4" />
+                          <span>YouTube URL</span>
+                        </Label>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Conditional Upload Fields */}
+                  {videoForm.watch("uploadType") === "file" ? (
+                    <div>
+                      <Label htmlFor="video-file">Video File</Label>
+                      <Input
+                        id="video-file"
+                        type="file"
+                        accept="video/*"
+                        className="mt-1"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="youtube-url">YouTube URL</Label>
+                      <Input
+                        id="youtube-url"
+                        {...videoForm.register("youtubeUrl")}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="mt-1"
+                      />
+                      {videoForm.formState.errors.youtubeUrl && (
+                        <p className="text-sm text-red-600 mt-1">
+                          {videoForm.formState.errors.youtubeUrl.message}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
