@@ -84,7 +84,8 @@ const mockData = {
     }
   }))
 };
-import { setupAuth, isAuthenticated, hasRole } from "./auth";
+import { setupAuth } from "./auth";
+import { isAuthenticated, hasRole } from "./simpleAuth";
 import { z } from "zod";
 import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
