@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Plus, Eye, Edit, Search } from "lucide-react";
+import { BookOpen, Plus, Eye, Edit, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import { CourseDeleteDialog } from "@/components/CourseDeleteDialog";
 
 interface Course {
   id: number;
@@ -203,7 +204,7 @@ export default function MyCourses() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => setLocation(`/course/${course.id}`)}
+                        onClick={() => setLocation(`/courses/${course.id}`)}
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
@@ -212,11 +213,33 @@ export default function MyCourses() {
                         variant="outline" 
                         size="sm" 
                         className="flex-1"
-                        onClick={() => setLocation(`/edit-course/${course.id}`)}
+                        onClick={() => setLocation(`/courses/${course.id}/curriculum`)}
                       >
                         <Edit className="h-4 w-4 mr-1" />
-                        Edit
+                        Manage
                       </Button>
+                      <CourseDeleteDialog
+                        course={{
+                          id: course.id,
+                          title: course.title,
+                          isPublished: course.isPublished,
+                          enrollmentCount: 0, // You may need to fetch this data
+                        }}
+                        onDeleteSuccess={() => {
+                          // Refresh the course list after deletion
+                          window.location.reload();
+                        }}
+                        trigger={
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        }
+                      />
                     </div>
                   </CardContent>
                 </Card>

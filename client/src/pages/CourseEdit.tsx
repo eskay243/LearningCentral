@@ -200,11 +200,11 @@ export default function CourseEdit() {
         <div className="flex items-center gap-2">
           <Button 
             variant="outline"
-            onClick={() => setLocation(`/course-content-management?courseId=${courseId}`)}
+            onClick={() => setLocation(`/courses/${courseId}/curriculum`)}
             className="flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
-            Manage Content
+            Manage Curriculum
           </Button>
           <Button 
             onClick={handleSave}
