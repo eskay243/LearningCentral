@@ -66,7 +66,7 @@ export default function CourseView() {
     undefined;
   
   // Check if user is the course owner
-  const isOwner = course && user && course.mentorId === user.id;
+  const isOwner = course && user && (course as any)?.mentorId === user.id;
 
   // Fetch modules with error handling
   const { 

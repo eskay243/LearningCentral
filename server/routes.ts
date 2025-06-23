@@ -14,8 +14,7 @@ import {
   courses,
   certificateTemplates,
   generatedCertificates,
-  courseDiscussions,
-  insertCourseDiscussionSchema
+  courseDiscussions
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";

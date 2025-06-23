@@ -238,7 +238,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCurrency(mentorEarnings?.thisMonthEarnings || 0)}
+                {formatCurrency((mentorEarnings as any)?.thisMonthEarnings || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
                 Current month earnings
@@ -253,7 +253,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mentorEarnings?.totalEnrollments || 0}
+                {(mentorEarnings as any)?.totalEnrollments || 0}
               </div>
               <p className="text-xs text-muted-foreground">
                 Students enrolled
@@ -268,7 +268,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {mentorEarnings?.commissionRate || 37}%
+                {(mentorEarnings as any)?.commissionRate || 37}%
               </div>
               <p className="text-xs text-muted-foreground">
                 Per course sale
@@ -288,7 +288,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Available balance: {formatCurrency(mentorEarnings?.availableBalance || 0)}
+                Available balance: {formatCurrency((mentorEarnings as any)?.availableBalance || 0)}
               </p>
               <Button className="w-full">
                 Request Withdrawal
