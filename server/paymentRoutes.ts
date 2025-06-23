@@ -73,6 +73,86 @@ export function registerPaymentRoutes(app: Express) {
     }
   });
 
+  // Test payment verification endpoint for demo purposes
+  app.post("/api/payments/verify-demo", async (req, res) => {
+    try {
+      const { courseId, userId } = req.body;
+      
+      if (!courseId || !userId) {
+        return res.status(400).json({ message: "Course ID and User ID are required for demo" });
+      }
+
+      // Get course details
+      const course = await storage.getCourse(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      // Create demo enrollment
+      const enrollment = await storage.createEnrollment({
+        userId,
+        courseId,
+        progress: 0,
+        paymentStatus: "completed",
+        paymentMethod: "demo",
+        paymentAmount: course.price || 25000,
+        paymentReference: `DEMO-${Date.now()}`,
+        paymentProvider: "demo",
+        completedAt: null,
+        certificateId: null
+      });
+
+      // Calculate mentor commission
+      const paymentAmount = (course.price || 25000) / 100;
+      const commissionAmount = paymentAmount * 0.37;
+      
+      if (course.mentorId) {
+        await storage.createMentorCommission({
+          mentorId: course.mentorId,
+          enrollmentId: enrollment.id,
+          courseId,
+          amount: commissionAmount,
+          commissionType: 'course',
+          sourceId: courseId,
+          status: 'pending'
+        });
+      }
+
+      // Get student information
+      const student = await storage.getUser(userId);
+      const studentName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : 'Student';
+
+      // Create notifications
+      await storage.createNotification({
+        userId,
+        title: 'Payment Successful!',
+        message: `Your payment for "${course.title}" has been processed successfully. You are now enrolled!`,
+        type: 'success',
+        actionUrl: `/courses/${courseId}/view`
+      });
+
+      await storage.createNotification({
+        userId,
+        title: 'Course Enrollment Confirmed',
+        message: `Welcome to "${course.title}"! Start learning now.`,
+        type: 'enrollment',
+        actionUrl: `/courses/${courseId}/view`
+      });
+
+      res.json({
+        success: true,
+        message: "Demo payment verified and enrollment completed",
+        enrollment,
+        courseId,
+        courseTitle: course.title,
+        paymentReference: `DEMO-${Date.now()}`
+      });
+    } catch (error: any) {
+      console.error("Demo payment verification error:", error);
+      res.status(500).json({ message: error.message || "Failed to verify demo payment" });
+    }
+  });
+
   // Handle payment callback/verification
   app.post("/api/payments/verify", async (req, res) => {
     try {
@@ -104,6 +184,12 @@ export function registerPaymentRoutes(app: Express) {
         channel: transactionData?.channel || "card"
       });
 
+      // Get course details for enrollment and notifications
+      const course = await storage.getCourse(paymentRecord.courseId);
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
       // Enroll user in course
       const enrollment = await storage.createEnrollment({
         userId: paymentRecord.userId,
@@ -117,6 +203,79 @@ export function registerPaymentRoutes(app: Express) {
         completedAt: null,
         certificateId: null
       });
+
+      // Calculate and create mentor commission (37% of payment)
+      const paymentAmount = paymentRecord.amount / 100; // Convert from kobo to naira
+      const commissionAmount = paymentAmount * 0.37;
+      
+      if (course.mentorId) {
+        try {
+          await storage.createMentorCommission({
+            mentorId: course.mentorId,
+            enrollmentId: enrollment.id,
+            courseId: paymentRecord.courseId,
+            amount: commissionAmount,
+            commissionType: 'course',
+            sourceId: paymentRecord.courseId,
+            status: 'pending'
+          });
+          
+          console.log(`Created commission record: ₦${commissionAmount.toFixed(2)} for mentor ${course.mentorId}`);
+        } catch (commissionError) {
+          console.error("Error creating mentor commission:", commissionError);
+        }
+      }
+
+      // Get student information for notifications
+      const student = await storage.getUser(paymentRecord.userId);
+      const studentName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : 'A student';
+
+      // Create comprehensive notification events
+      try {
+        // Notify student of successful payment and enrollment
+        await storage.createNotification({
+          userId: paymentRecord.userId,
+          title: 'Payment Successful!',
+          message: `Your payment for "${course.title}" has been processed successfully. You are now enrolled!`,
+          type: 'success',
+          actionUrl: `/courses/${paymentRecord.courseId}/view`
+        });
+
+        await storage.createNotification({
+          userId: paymentRecord.userId,
+          title: 'Course Enrollment Confirmed',
+          message: `Welcome to "${course.title}"! Start learning now.`,
+          type: 'enrollment',
+          actionUrl: `/courses/${paymentRecord.courseId}/view`
+        });
+
+        // Notify mentor of new student and commission
+        if (course.mentorId) {
+          await storage.createNotification({
+            userId: course.mentorId,
+            title: 'New Student Enrolled',
+            message: `${studentName} has enrolled in your course "${course.title}". Commission earned: ₦${commissionAmount.toFixed(2)}`,
+            type: 'success',
+            actionUrl: '/mentor/earnings'
+          });
+        }
+
+        // Notify all admins of new payment
+        const adminUsers = await storage.getUsersByRole('admin');
+        for (const admin of adminUsers) {
+          await storage.createNotification({
+            userId: admin.id,
+            title: 'New Payment Received',
+            message: `${studentName} completed payment for "${course.title}" - ₦${paymentAmount.toLocaleString()}`,
+            type: 'payment',
+            actionUrl: '/admin/payments'
+          });
+        }
+
+        console.log(`Sent comprehensive notifications for enrollment: ${studentName} -> ${course.title}`);
+      } catch (notificationError) {
+        console.error("Error sending notifications:", notificationError);
+      }
 
       // Generate invoice
       const invoice = await generateInvoicePDF({

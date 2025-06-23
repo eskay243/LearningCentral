@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +46,15 @@ export default function PaymentCallback() {
           title: "Payment Successful!",
           description: "You have been successfully enrolled in the course.",
         });
+        
+        // Invalidate relevant caches to refresh course data
+        queryClient.invalidateQueries({ queryKey: ['/api/student/enrolled-courses'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+        
+        if (data.courseId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/courses', data.courseId] });
+        }
       } else {
         setPaymentStatus('failed');
         toast({
