@@ -3336,21 +3336,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Route working", timestamp: new Date().toISOString() });
   });
 
-  // Certificate generation endpoint - single working implementation
-  app.get("/api/certificate/:enrollmentId", async (req: Request, res: Response) => {
-    console.log(`[CERTIFICATE] ===== CERTIFICATE REQUEST START =====`);
-    console.log(`[CERTIFICATE] Request for enrollment ID: ${req.params.enrollmentId}`);
-    
+  // Enrollment data endpoint for certificate generation
+  app.get("/api/student/enrollment/:enrollmentId", isAuthenticated, async (req: any, res: Response) => {
     try {
       const { enrollmentId } = req.params;
       const enrollmentIdNum = parseInt(enrollmentId);
       
       if (isNaN(enrollmentIdNum)) {
-        console.log(`[CERTIFICATE] ERROR: Invalid enrollment ID: ${enrollmentId}`);
         return res.status(400).json({ error: "Invalid enrollment ID" });
       }
-      
-      console.log(`[CERTIFICATE] Querying database for enrollment ${enrollmentIdNum}`);
       
       // Get enrollment with user and course data
       const enrollmentData = await db
@@ -3370,120 +3364,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .innerJoin(users, eq(courseEnrollments.userId, users.id))
         .where(eq(courseEnrollments.id, enrollmentIdNum));
       
-      console.log(`[CERTIFICATE] Found ${enrollmentData.length} enrollment records`);
-      
       if (enrollmentData.length === 0) {
-        console.log(`[CERTIFICATE] ERROR: No enrollment found for ID ${enrollmentId}`);
         return res.status(404).json({ error: "Enrollment not found" });
       }
       
       const enrollment = enrollmentData[0];
-      console.log(`[CERTIFICATE] Enrollment progress: ${enrollment.progress}%`);
-      console.log(`[CERTIFICATE] Student: ${enrollment.firstName} ${enrollment.lastName}`);
-      console.log(`[CERTIFICATE] Course: ${enrollment.title}`);
       
-      if (enrollment.progress < 100) {
-        console.log(`[CERTIFICATE] ERROR: Course not completed - progress: ${enrollment.progress}%`);
-        return res.status(400).json({ error: "Certificate not available - course not completed" });
+      // Verify user has access to this enrollment
+      if (enrollment.userId !== req.user.id) {
+        return res.status(403).json({ error: "Access denied" });
       }
       
-      console.log(`[CERTIFICATE] Generating PDF certificate...`);
-
-      // Create a simple text response first to test endpoint
-      const certificateText = `
-CERTIFICATE OF COMPLETION
-
-This is to certify that
-
-${enrollment.firstName} ${enrollment.lastName}
-
-has successfully completed the course
-
-"${enrollment.title}"
-
-Awarded on: ${new Date().toLocaleDateString()}
-
-Codelab Educare
-      `;
-      
-      // Set plain text response for now to debug
-      res.setHeader('Content-Type', 'text/plain');
-      res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.firstName}-${enrollment.lastName}.txt"`);
-      
-      console.log(`[CERTIFICATE] Sending certificate response...`);
-      res.send(certificateText);
-      console.log(`[CERTIFICATE] ===== CERTIFICATE REQUEST COMPLETE =====`);
-      
-      // Student name
-      doc.fillColor('#1a365d')
-         .fontSize(32)
-         .font('Helvetica-Bold')
-         .text(`${enrollment.firstName} ${enrollment.lastName}`, 0, 260, { align: 'center' });
-      
-      // Has successfully completed
-      doc.fillColor('#4a5568')
-         .fontSize(18)
-         .font('Helvetica')
-         .text('has successfully completed the course', 0, 320, { align: 'center' });
-      
-      // Course title
-      doc.fillColor('#2d5a87')
-         .fontSize(28)
-         .font('Helvetica-Bold')
-         .text(enrollment.title, 0, 360, { align: 'center' });
-      
-      // Completion date
-      const completionDate = enrollment.completedAt 
-        ? new Date(enrollment.completedAt).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })
-        : new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          });
-      
-      doc.fillColor('#4a5568')
-         .fontSize(16)
-         .font('Helvetica')
-         .text(`Completed on ${completionDate}`, 0, 420, { align: 'center' });
-      
-      // Certificate ID
-      doc.fillColor('#718096')
-         .fontSize(12)
-         .text(`Certificate ID: CERT-${enrollmentId}-${Date.now()}`, 0, 460, { align: 'center' });
-      
-      // Footer - Organization info
-      doc.fillColor('#1a365d')
-         .fontSize(16)
-         .font('Helvetica-Bold')
-         .text('Codelab Educare', 0, 520, { align: 'center' });
-      
-      doc.fillColor('#4a5568')
-         .fontSize(12)
-         .font('Helvetica')
-         .text('Learning Management System', 0, 545, { align: 'center' });
-      
-      // Signature area (left side)
-      doc.moveTo(150, 480)
-         .lineTo(300, 480)
-         .stroke('#9ca3af', 1);
-      
-      doc.fillColor('#4a5568')
-         .fontSize(12)
-         .text('Instructor Signature', 150, 490, { width: 150, align: 'center' });
-      
-      // Date area (right side)
-      doc.moveTo(550, 480)
-         .lineTo(700, 480)
-         .stroke('#9ca3af', 1);
-      
-      doc.text('Date', 550, 490, { width: 150, align: 'center' });
-      
-      // Finalize PDF
-      doc.end();
+      res.json(enrollment);
       
     } catch (error) {
       console.error("Error generating certificate:", error);

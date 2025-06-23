@@ -71,6 +71,7 @@ import AdminMentorDetails from "@/pages/admin-mentor-details";
 import StudentInvoices from "@/pages/StudentInvoices";
 import StudentPayments from "@/pages/student-payments";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
+import Certificate from "@/pages/Certificate";
 import CodeCompanion from "@/pages/CodeCompanion";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
 
@@ -160,6 +161,7 @@ function Router() {
         <Route path="/interactive-coding" component={InteractiveCodingPage} />
         <Route path="/test-coding" component={TestCodingPage} />
         <Route path="/certificates" component={Certificates} />
+        <Route path="/certificate/:enrollmentId" component={Certificate} />
         <Route path="/certificate/verify/:id" component={CertificateVerification} />
         <Route path="/certificate/verify" component={CertificateVerification} />
         <Route path="/certificate/admin" component={CertificateAdmin} />

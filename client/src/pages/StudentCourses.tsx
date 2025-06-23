@@ -368,12 +368,12 @@ export default function StudentCourses() {
                                 onClick={() => {
                                   const enrollmentId = (course as any).enrollmentId;
                                   if (enrollmentId) {
-                                    window.open(`/api/enrollments/${enrollmentId}/certificate`, '_blank');
+                                    setLocation(`/certificate/${enrollmentId}`);
                                   }
                                 }}
                               >
                                 <Award className="w-3 h-3 mr-1" />
-                                Download Certificate
+                                Get Certificate
                               </Button>
                             </div>
                           )}
