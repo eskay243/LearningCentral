@@ -100,7 +100,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure multer for handling file uploads
+// Configure multer for handling different file types
 const storage_config = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadsDir);
@@ -112,30 +112,69 @@ const storage_config = multer.diskStorage({
   }
 });
 
-const upload = multer({ 
+// Image upload configuration
+const uploadImage = multer({ 
   storage: storage_config,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB file size limit
   },
   fileFilter: function(req: any, file: any, cb: any) {
-    // Accept images only - check both MIME type and file extension
     const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    const allowedExtensions = /\.(jpg|jpeg|png|gif|webp)$/i; // Case insensitive
-    
-    console.log('File validation - MIME type:', file.mimetype, 'Original name:', file.originalname);
+    const allowedExtensions = /\.(jpg|jpeg|png|gif|webp)$/i;
     
     if (allowedMimes.includes(file.mimetype) && allowedExtensions.test(file.originalname.toLowerCase())) {
       cb(null, true);
     } else {
-      console.log('File rejected - MIME:', file.mimetype, 'Extension test:', allowedExtensions.test(file.originalname.toLowerCase()));
       cb(new Error('Invalid file type. Only images (JPG, JPEG, PNG, GIF, WebP) are allowed.'), false);
     }
   }
 });
 
+// Video upload configuration
+const uploadVideo = multer({ 
+  storage: storage_config,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // 100MB file size limit
+  },
+  fileFilter: function(req: any, file: any, cb: any) {
+    const allowedMimes = ['video/mp4', 'video/webm', 'video/ogg', 'video/avi', 'video/mov'];
+    const allowedExtensions = /\.(mp4|webm|ogg|avi|mov)$/i;
+    
+    if (allowedMimes.includes(file.mimetype) && allowedExtensions.test(file.originalname.toLowerCase())) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only videos (MP4, WebM, OGG, AVI, MOV) are allowed.'), false);
+    }
+  }
+});
+
+// Document upload configuration
+const uploadDocument = multer({ 
+  storage: storage_config,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB file size limit
+  },
+  fileFilter: function(req: any, file: any, cb: any) {
+    const allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+    const allowedExtensions = /\.(pdf|doc|docx|txt|ppt|pptx)$/i;
+    
+    if (allowedMimes.includes(file.mimetype) && allowedExtensions.test(file.originalname.toLowerCase())) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only documents (PDF, DOC, DOCX, TXT, PPT, PPTX) are allowed.'), false);
+    }
+  }
+});
+
+// Backward compatibility - keep the original upload for existing functionality
+const upload = uploadImage;
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  
+  // Serve static files from uploads directory
+  app.use('/uploads', expressModule.static(uploadsDir));
 
   // Dashboard data endpoints with fallback to mock data
   app.get('/api/dashboard/stats', async (req, res) => {
@@ -1394,6 +1433,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating lesson:", error);
       res.status(500).json({ message: "Failed to create lesson" });
+    }
+  });
+
+  // File Upload Routes
+  app.post('/api/upload/video', uploadVideo.single('video'), async (req: any, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No video file provided' });
+      }
+
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      res.json({
+        message: 'Video uploaded successfully',
+        url: fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error: any) {
+      console.error('Video upload error:', error);
+      res.status(500).json({ message: error.message || 'Failed to upload video' });
+    }
+  });
+
+  app.post('/api/upload/image', uploadImage.single('image'), async (req: any, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No image file provided' });
+      }
+
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      res.json({
+        message: 'Image uploaded successfully',
+        url: fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      res.status(500).json({ message: error.message || 'Failed to upload image' });
+    }
+  });
+
+  app.post('/api/upload/document', uploadDocument.single('document'), async (req: any, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: 'No document file provided' });
+      }
+
+      const fileUrl = `/uploads/${req.file.filename}`;
+      
+      res.json({
+        message: 'Document uploaded successfully',
+        url: fileUrl,
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size
+      });
+    } catch (error: any) {
+      console.error('Document upload error:', error);
+      res.status(500).json({ message: error.message || 'Failed to upload document' });
     }
   });
   
