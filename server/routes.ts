@@ -1244,6 +1244,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete course" });
     }
   });
+
+  // Course statistics endpoint
+  app.get('/api/courses/:id/stats', async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+      
+      // Get enrollment count
+      const enrollments = await storage.getCourseEnrollments(courseId);
+      
+      // Get modules and lessons for this course
+      const modules = await storage.getModulesByCourse(courseId);
+      let totalLessons = 0;
+      let totalDuration = 0;
+      
+      for (const module of modules) {
+        const lessons = await storage.getLessonsByModule(module.id);
+        totalLessons += lessons.length;
+        totalDuration += lessons.reduce((sum, lesson) => sum + (lesson.duration || 0), 0);
+      }
+      
+      res.json({
+        enrolledStudents: enrollments.length,
+        totalLessons,
+        totalHours: totalDuration // Duration is already in minutes from the database
+      });
+    } catch (error) {
+      console.error("Error fetching course statistics:", error);
+      res.status(500).json({ message: "Failed to fetch course statistics" });
+    }
+  });
   
   // Course Module Routes
   app.get('/api/courses/:id/modules', async (req, res) => {
