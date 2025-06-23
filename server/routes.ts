@@ -3400,14 +3400,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               console.log(`Processing course: ${course.title} (ID: ${course.id})`);
 
-              const modules = await storage.getModulesByCourse(course.id);
-              console.log(`Found ${modules?.length || 0} modules for course ${course.id}`);
+              // Direct database queries to fix progress calculation
+              console.log(`[DIRECT FIX] Getting modules for course ${course.id}`);
               
-              if (course.id === 18) {
-                console.log(`[COURSE 18 DEBUG] Modules found:`, JSON.stringify(modules, null, 2));
-              }
+              const directModules = await db
+                .select()
+                .from(modules)
+                .where(eq(modules.courseId, course.id))
+                .orderBy(modules.orderIndex);
 
-              if (!modules || modules.length === 0) {
+              console.log(`[DIRECT FIX] Found ${directModules.length} modules for course ${course.id}`);
+
+              if (directModules.length === 0) {
                 console.log(`No modules found for course ${course.id}`);
                 return {
                   ...course,
@@ -3419,14 +3423,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 };
               }
 
-              const allLessons = await Promise.all(
-                modules.map(async (module: any) => {
-                  const lessons = await storage.getLessonsByModule(module.id);
-                  return lessons || [];
-                })
-              );
+              // Get all lessons for all modules directly
+              const allLessonsPromises = directModules.map(async (module: any) => {
+                const moduleLessons = await db
+                  .select()
+                  .from(lessons)
+                  .where(eq(lessons.moduleId, module.id))
+                  .orderBy(lessons.orderIndex);
+                console.log(`[DIRECT FIX] Module ${module.id} has ${moduleLessons.length} lessons`);
+                return moduleLessons;
+              });
 
-              const flatLessons = allLessons.flat();
+              const allLessonsArrays = await Promise.all(allLessonsPromises);
+              const flatLessons = allLessonsArrays.flat();
               const totalLessons = flatLessons.length;
               console.log(`Total lessons for course ${course.id}: ${totalLessons}`);
 
