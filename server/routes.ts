@@ -3385,7 +3385,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Generate certificate PDF
-      const PDFDocument = require('pdfkit');
+      const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({
         size: 'A4',
         layout: 'landscape',
@@ -5066,7 +5066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[CERTIFICATE] Generating PDF certificate for ${enrollment.firstName} ${enrollment.lastName}`);
       
       // Generate certificate PDF
-      const PDFDocument = require('pdfkit');
+      const PDFDocument = (await import('pdfkit')).default;
       const doc = new PDFDocument({
         size: 'A4',
         layout: 'landscape',

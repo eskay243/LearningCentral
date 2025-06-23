@@ -1,0 +1,13 @@
+HTTP/1.1 500 Internal Server Error
+X-Powered-By: Express
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Origin: http://localhost:5000
+Access-Control-Allow-Methods: GET,PUT,POST,DELETE,OPTIONS
+Access-Control-Allow-Headers: Origin,X-Requested-With,Content-Type,Accept,Authorization,Cache-Control,Pragma
+Content-Type: application/json; charset=utf-8
+Content-Length: 42
+ETag: W/"2a-ftfBmTd6aPi4+vuhh7RZpKUXtlU"
+Date: Mon, 23 Jun 2025 16:05:25 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
