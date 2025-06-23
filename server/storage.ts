@@ -3928,14 +3928,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
   
-  async createConversation(data: Partial<InsertConversation>): Promise<Conversation> {
+  async createConversation(data: { title?: string | null; isGroup: boolean }): Promise<any> {
     try {
       const [conversation] = await db
         .insert(conversations)
         .values({
-          creatorId: data.creatorId,
           title: data.title,
-          isGroup: data.isGroup || false,
+          type: data.isGroup ? "group" : "direct",
         })
         .returning();
       
