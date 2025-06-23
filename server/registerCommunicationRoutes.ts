@@ -41,12 +41,17 @@ export function registerCommunicationRoutes(app: Express) {
       const userRole = req.user.role;
       let availableUsers = [];
 
+      console.log(`=== MESSAGING AVAILABLE USERS DEBUG ===`);
+      console.log(`User ID: ${userId}, Role: ${userRole}`);
+
       if (userRole === 'admin') {
         // Admin can message everyone
         availableUsers = await storage.getAllUsers();
       } else if (userRole === 'mentor') {
         // Mentors can only message students enrolled in their courses
+        console.log('Fetching enrolled students for mentor...');
         availableUsers = await storage.getEnrolledStudentsForMentor(userId);
+        console.log(`Found ${availableUsers.length} enrolled students:`, availableUsers.map(u => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email })));
       } else {
         // Students can only message mentors from courses they're enrolled in, plus admins
         const enrolledCourseMentors = await storage.getMentorsFromEnrolledCourses(userId);
@@ -57,6 +62,7 @@ export function registerCommunicationRoutes(app: Express) {
       // Filter out the current user
       availableUsers = availableUsers.filter((user: any) => user.id !== userId);
       
+      console.log(`Final available users for messaging: ${availableUsers.length}`);
       res.json(availableUsers);
     } catch (error) {
       console.error("Error fetching available users:", error);
