@@ -264,80 +264,10 @@ export default function StableStudentDashboard() {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Enrolled Courses */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl text-gray-900">My Courses</CardTitle>
-                <CardDescription>Continue where you left off</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {enrolledCourses.length > 0 ? (
-                  enrolledCourses.map((course) => (
-                    <div key={course.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg relative">
-                      {/* Enrolled Badge */}
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          Enrolled
-                        </Badge>
-                      </div>
-                      
-                      <div className="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-8 h-8 text-purple-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">{course.title}</h3>
-                        <p className="text-sm text-gray-600 mb-3">by {course.instructor}</p>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <span className="text-sm text-gray-500">
-                              {course.completedLessons} of {course.totalLessons} lessons
-                            </span>
-                            {course.progress === 100 && (
-                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                <Trophy className="w-3 h-3 mr-1" />
-                                Completed
-                              </Badge>
-                            )}
-                          </div>
-                          
-                          {course.nextLesson ? (
-                            <Button 
-                              size="sm" 
-                              className="bg-purple-600 hover:bg-purple-700"
-                              onClick={() => setLocation(`/courses/${course.id}/lessons/${course.nextLesson?.id}`)}
-                            >
-                              <PlayCircle className="w-4 h-4 mr-2" />
-                              Continue Learning
-                            </Button>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => setLocation(`/course/${course.id}`)}
-                            >
-                              View Course
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <BookOpen className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>No enrolled courses yet</p>
-                    <p className="text-sm">Browse available courses below to start learning</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
             {/* AI Learning Assistant */}
             {enrolledCourses.length > 0 && (
-              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-lg mt-6">
+              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 shadow-lg">
                 <CardHeader>
                   <div className="flex items-center space-x-2">
                     <Brain className="w-5 h-5 text-blue-600" />
