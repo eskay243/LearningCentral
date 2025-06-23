@@ -3331,34 +3331,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Certificate generation endpoint
-  app.get("/api/enrollments/:enrollmentId/certificate", isAuthenticated, async (req: any, res: Response) => {
+  app.get("/api/enrollments/:enrollmentId/certificate", async (req: any, res: Response) => {
     try {
       const { enrollmentId } = req.params;
-      const userId = req.user.id;
       
-      console.log(`Certificate request for enrollment ${enrollmentId} by user ${userId}`);
+      console.log(`Certificate request for enrollment ${enrollmentId}`);
       
-      // Get enrollment directly from database
+      // Get enrollment with user and course data
       const enrollmentData = await db
         .select({
           id: courseEnrollments.id,
           courseId: courseEnrollments.courseId,
+          userId: courseEnrollments.userId,
           progress: courseEnrollments.progress,
           completedAt: courseEnrollments.completedAt,
           title: courses.title,
-          description: courses.description
+          description: courses.description,
+          firstName: users.firstName,
+          lastName: users.lastName
         })
         .from(courseEnrollments)
         .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
-        .where(and(
-          eq(courseEnrollments.id, parseInt(enrollmentId)),
-          eq(courseEnrollments.userId, userId)
-        ));
+        .innerJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(eq(courseEnrollments.id, parseInt(enrollmentId)));
       
       console.log(`Found ${enrollmentData.length} enrollment records`);
       
       if (enrollmentData.length === 0) {
-        console.log(`No enrollment found for ID ${enrollmentId} and user ${userId}`);
+        console.log(`No enrollment found for ID ${enrollmentId}`);
         return res.status(404).json({ error: "Enrollment not found" });
       }
       
@@ -3418,7 +3418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.fillColor('#1a365d')
          .fontSize(32)
          .font('Helvetica-Bold')
-         .text(`${req.user.firstName} ${req.user.lastName}`, 0, 260, { align: 'center' });
+         .text(`${enrollment.firstName} ${enrollment.lastName}`, 0, 260, { align: 'center' });
       
       // Has successfully completed
       doc.fillColor('#4a5568')
