@@ -24,12 +24,15 @@ export default function LessonViewer() {
     queryKey: [`/api/courses/${courseId}`],
   });
 
-  // Fetch lessons list for navigation
-  const { data: lessons = [], isLoading: lessonsLoading } = useQuery({
-    queryKey: [`/api/courses/${courseId}/lessons`],
+  // Fetch modules to get lessons for navigation
+  const { data: modules = [], isLoading: modulesLoading } = useQuery({
+    queryKey: [`/api/courses/${courseId}/modules`],
   });
 
-  if (lessonLoading || courseLoading || lessonsLoading) {
+  // Extract all lessons from modules for navigation
+  const lessons = modules.flatMap((module: any) => module.lessons || []).sort((a: any, b: any) => a.orderIndex - b.orderIndex);
+
+  if (lessonLoading || courseLoading || modulesLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="animate-pulse">
@@ -175,7 +178,11 @@ export default function LessonViewer() {
           <div className="flex justify-between">
             <Button
               variant="outline"
-              onClick={() => previousLesson && handleNavigation(previousLesson.id)}
+              onClick={() => {
+                if (previousLesson) {
+                  handleNavigation(previousLesson.id);
+                }
+              }}
               disabled={!previousLesson}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -183,7 +190,11 @@ export default function LessonViewer() {
             </Button>
             
             <Button
-              onClick={() => nextLesson && handleNavigation(nextLesson.id)}
+              onClick={() => {
+                if (nextLesson) {
+                  handleNavigation(nextLesson.id);
+                }
+              }}
               disabled={!nextLesson}
             >
               Next Lesson
