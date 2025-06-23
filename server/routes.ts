@@ -3330,8 +3330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Certificate generation endpoint
-  app.get("/api/enrollments/:enrollmentId/certificate", async (req: any, res: Response) => {
+  // Certificate generation endpoint - aligned with existing certificate system
+  app.get("/api/certificates/enrollment/:enrollmentId/download", async (req: Request, res: Response) => {
     try {
       const { enrollmentId } = req.params;
       
