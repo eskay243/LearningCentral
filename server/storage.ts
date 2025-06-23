@@ -6680,59 +6680,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generatePaymentReceipt(payment: any): Promise<Buffer> {
-    try {
-      // Import PDFKit for PDF generation
-      const PDFDocument = require('pdfkit');
-      const doc = new PDFDocument();
-      const buffers: Buffer[] = [];
-      
-      doc.on('data', (buffer: Buffer) => buffers.push(buffer));
-      
-      return new Promise((resolve, reject) => {
-        doc.on('end', () => {
-          const pdfData = Buffer.concat(buffers);
-          resolve(pdfData);
-        });
+    const receiptText = `
+===============================================
+            CODELAB EDUCARE
+         PAYMENT RECEIPT
+===============================================
 
-        doc.on('error', reject);
+Receipt Number: ${payment.paymentReference}
+Date: ${new Date(payment.createdAt).toLocaleDateString('en-GB')}
+Status: ${payment.status.toUpperCase()}
 
-        // Header
-        doc.fontSize(20).text('Payment Receipt', 50, 50);
-        doc.fontSize(10).text('Codelab Educare', 50, 75);
-        doc.text('receipt@codelabeducare.com', 50, 90);
-        
-        // Receipt details
-        const receiptY = 130;
-        doc.fontSize(12).text('Receipt Details', 50, receiptY);
-        doc.fontSize(10);
-        
-        doc.text(`Receipt #: ${payment.paymentReference}`, 50, receiptY + 25);
-        doc.text(`Date: ${new Date(payment.createdAt).toLocaleDateString()}`, 50, receiptY + 45);
-        doc.text(`Student: ${payment.studentName}`, 50, receiptY + 65);
-        doc.text(`Email: ${payment.studentEmail}`, 50, receiptY + 85);
-        
-        // Course details
-        const courseY = receiptY + 120;
-        doc.fontSize(12).text('Course Details', 50, courseY);
-        doc.fontSize(10);
-        
-        doc.text(`Course: ${payment.courseTitle}`, 50, courseY + 25);
-        doc.text(`Amount: ₦${(payment.amount / 100).toLocaleString()}`, 50, courseY + 45);
-        doc.text(`Payment Method: ${payment.paymentMethod}`, 50, courseY + 65);
-        doc.text(`Payment Provider: ${payment.paymentProvider}`, 50, courseY + 85);
-        doc.text(`Status: ${payment.status.toUpperCase()}`, 50, courseY + 105);
-        
-        // Footer
-        const footerY = 650;
-        doc.fontSize(8).text('This is an automatically generated receipt.', 50, footerY);
-        doc.text('For support, contact: support@codelabeducare.com', 50, footerY + 15);
-        
-        doc.end();
-      });
-    } catch (error) {
-      console.error("Error generating payment receipt:", error);
-      throw new Error("Failed to generate receipt");
-    }
+-----------------------------------------------
+STUDENT DETAILS
+-----------------------------------------------
+Name: ${payment.studentName}
+Email: ${payment.studentEmail}
+
+-----------------------------------------------
+COURSE DETAILS
+-----------------------------------------------
+Course: ${payment.courseTitle}
+Amount: ₦${(payment.amount / 100).toLocaleString()}
+Payment Method: ${payment.paymentMethod || 'Online Payment'}
+Provider: ${payment.paymentProvider || 'Paystack'}
+
+-----------------------------------------------
+TOTAL PAID: ₦${(payment.amount / 100).toLocaleString()}
+-----------------------------------------------
+
+Thank you for your payment!
+This is a computer-generated receipt.
+
+For support: support@codelabeducare.com
+Generated: ${new Date().toLocaleString('en-GB')}
+===============================================
+    `.trim();
+
+    return Buffer.from(receiptText, 'utf8');
   }
 
   // ==========================================

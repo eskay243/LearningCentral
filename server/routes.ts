@@ -3295,14 +3295,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Payment not found" });
       }
 
-      console.log('[RECEIPT] Generating PDF receipt for payment:', payment.id);
+      console.log('[RECEIPT] Generating receipt for payment:', payment.id);
       
-      // Generate and return PDF receipt
-      const receiptPDF = await storage.generatePaymentReceipt(payment);
+      // Generate and return receipt
+      const receiptContent = await storage.generatePaymentReceipt(payment);
       
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="receipt-${payment.paymentReference}.pdf"`);
-      res.send(receiptPDF);
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', `attachment; filename="receipt-${payment.paymentReference}.txt"`);
+      res.send(receiptContent);
     } catch (error: any) {
       console.error("Error generating receipt:", error);
       res.status(500).json({ message: "Failed to generate receipt" });
