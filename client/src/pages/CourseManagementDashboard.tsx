@@ -193,7 +193,7 @@ export default function CourseManagementDashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{enrollments.length}</div>
+                <div className="text-2xl font-bold">{enrollmentsData.length}</div>
                 <p className="text-xs text-muted-foreground">Enrolled students</p>
               </CardContent>
             </Card>
@@ -204,7 +204,7 @@ export default function CourseManagementDashboard() {
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">₦{(enrollments.length * (course.price || 0)).toLocaleString()}</div>
+                <div className="text-2xl font-bold">₦{(enrollmentsData.length * (courseData.price || 0)).toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">Total earnings</p>
               </CardContent>
             </Card>
@@ -299,9 +299,9 @@ export default function CourseManagementDashboard() {
                 </Button>
               </CardHeader>
               <CardContent>
-                {modules.length > 0 ? (
+                {modulesData.length > 0 ? (
                   <div className="space-y-3">
-                    {modules.map((module: any, index: number) => (
+                    {modulesData.map((module: any, index: number) => (
                       <div key={module.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
                           <h4 className="font-medium">Module {index + 1}: {module.title}</h4>
@@ -382,9 +382,9 @@ export default function CourseManagementDashboard() {
               <CardTitle>Enrolled Students</CardTitle>
             </CardHeader>
             <CardContent>
-              {enrollments.length > 0 ? (
+              {enrollmentsData.length > 0 ? (
                 <div className="space-y-4">
-                  {enrollments.map((enrollment: any) => (
+                  {enrollmentsData.map((enrollment: any) => (
                     <div key={enrollment.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <h4 className="font-medium">{enrollment.studentName || 'Student'}</h4>
@@ -428,7 +428,7 @@ export default function CourseManagementDashboard() {
                   </div>
                   <div className="flex justify-between">
                     <span>Total Revenue</span>
-                    <span className="font-medium">₦{(enrollments.length * (course.price || 0)).toLocaleString()}</span>
+                    <span className="font-medium">₦{(enrollmentsData.length * (courseData.price || 0)).toLocaleString()}</span>
                   </div>
                 </div>
               </CardContent>
@@ -444,13 +444,13 @@ export default function CourseManagementDashboard() {
                     <CheckCircle className="w-4 h-4 text-green-600" />
                     <span className="text-sm">Course created successfully</span>
                   </div>
-                  {modules.length > 0 && (
+                  {modulesData.length > 0 && (
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="w-4 h-4 text-green-600" />
                       <span className="text-sm">Modules added</span>
                     </div>
                   )}
-                  {course.isPublished ? (
+                  {courseData.isPublished ? (
                     <div className="flex items-center space-x-3">
                       <CheckCircle className="w-4 h-4 text-green-600" />
                       <span className="text-sm">Course published</span>
