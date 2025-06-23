@@ -121,10 +121,12 @@ export function registerCommunicationRoutes(app: Express) {
 
       // Validate participant IDs exist in database
       const allParticipantIds = [userId, ...participantIds.filter((id: string) => id !== userId)];
+      console.log('All participant IDs to validate:', allParticipantIds);
       const validParticipantIds = [];
       
       for (const participantId of allParticipantIds) {
         const user = await storage.getUserById(participantId);
+        console.log(`Validating participant ${participantId}:`, user ? 'FOUND' : 'NOT FOUND');
         if (user) {
           validParticipantIds.push(participantId);
         } else {
@@ -132,6 +134,7 @@ export function registerCommunicationRoutes(app: Express) {
         }
       }
 
+      console.log('Valid participant IDs:', validParticipantIds);
       if (validParticipantIds.length === 0) {
         return res.status(400).json({ message: "No valid participants found" });
       }
