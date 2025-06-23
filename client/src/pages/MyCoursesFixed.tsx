@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 // Removed Select components to fix empty string value error
-import { BookOpen, Plus, Eye, Edit, Search } from "lucide-react";
+import { BookOpen, Plus, Eye, Edit, Search, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { CourseDeleteDialog } from "@/components/CourseDeleteDialog";
 
 interface Course {
   id: number;
@@ -252,6 +253,28 @@ export default function MyCoursesFixed() {
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
+                      <CourseDeleteDialog
+                        course={{
+                          id: course.id,
+                          title: course.title,
+                          isPublished: course.isPublished,
+                          enrollmentCount: 0, // You may need to fetch this data
+                        }}
+                        onDeleteSuccess={() => {
+                          // Refresh the course list after deletion
+                          setAllCourses(prev => prev.filter(c => c.id !== course.id));
+                        }}
+                        trigger={
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        }
+                      />
                     </div>
                   </CardContent>
                 </Card>

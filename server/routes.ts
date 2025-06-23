@@ -2159,7 +2159,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Individual lesson routes
   app.get('/api/courses/:courseId/lessons/:lessonId', async (req, res) => {
     try {
-      const lessonId = parseInt(req.params.lessonId);
+      const lessonIdParam = req.params.lessonId;
+      
+      // Handle "new" case for lesson creation
+      if (lessonIdParam === 'new') {
+        return res.status(404).json({ message: "New lesson - no data to fetch" });
+      }
+      
+      const lessonId = parseInt(lessonIdParam);
+      if (isNaN(lessonId)) {
+        return res.status(400).json({ message: "Invalid lesson ID" });
+      }
+      
       const lesson = await storage.getLesson(lessonId);
       
       if (!lesson) {

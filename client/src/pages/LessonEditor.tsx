@@ -29,7 +29,7 @@ export default function LessonEditor() {
   const moduleId = urlParams.get('moduleId');
 
   const { data: lesson } = useQuery({
-    queryKey: [`/api/lessons/${lessonId}`],
+    queryKey: [`/api/courses/${courseId}/lessons/${lessonId}`],
     enabled: !isNewLesson,
   });
 
