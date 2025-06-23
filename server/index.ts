@@ -136,17 +136,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add session middleware for traditional authentication
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'default-session-secret-for-development',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+// Session middleware will be configured in auth.ts via setupAuth()
 
 app.use((req, res, next) => {
   const start = Date.now();
