@@ -51,7 +51,7 @@ export default function StudentCourses() {
 
   // Fetch enrolled courses with authentication
   const { data: enrolledCourses = [], isLoading: enrolledLoading, error: enrolledError } = useQuery<Course[]>({
-    queryKey: ['/api/student/enrolled-courses'],
+    queryKey: ['/api/student/enrolled-courses-fresh'],
     enabled: !!user,
     retry: (failureCount, error: any) => {
       // Don't retry on authentication errors
@@ -60,12 +60,7 @@ export default function StudentCourses() {
     },
   });
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Enrolled courses data:', enrolledCourses);
-    console.log('Loading state:', enrolledLoading);
-    console.log('Error:', enrolledError);
-  }, [enrolledCourses, enrolledLoading, enrolledError]);
+
 
   // Track course completion for celebrations
   useEffect(() => {

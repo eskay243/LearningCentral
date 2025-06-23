@@ -3394,7 +3394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .filter((enrollment: any) => enrollment.paymentStatus === 'completed')
           .map(async (enrollment: any) => {
             try {
-              const course = await storage.getCourseById(enrollment.courseId);
+              const course = await storage.getCourse(enrollment.courseId);
               if (!course) {
                 console.log(`Course not found for ID: ${enrollment.courseId}`);
                 return null;
@@ -3455,7 +3455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const completedLessons = await Promise.all(
                 flatLessons.map(async (lesson: any) => {
-                  const progress = await storage.getLessonProgress(userId, lesson.id);
+                  const progress = await storage.getLessonProgress(lesson.id, userId);
                   console.log(`Lesson ${lesson.id} progress:`, progress);
                   return progress && progress.progress === 100;
                 })
