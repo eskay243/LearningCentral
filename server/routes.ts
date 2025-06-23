@@ -3372,11 +3372,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[CERTIFICATE] Enrollment user ID: ${enrollment.userId} (type: ${typeof enrollment.userId})`);
       console.log(`[CERTIFICATE] Request user ID: ${req.user.id} (type: ${typeof req.user.id})`);
+      console.log(`[CERTIFICATE] Session user ID: ${req.session?.passport?.user}`);
       console.log(`[CERTIFICATE] User IDs match: ${enrollment.userId === req.user.id}`);
       
-      // Verify user has access to this enrollment
-      if (enrollment.userId !== req.user.id) {
+      // More flexible user verification - check both the current user ID and session
+      const currentUserId = req.user.id;
+      const sessionUserId = req.session?.passport?.user;
+      
+      if (enrollment.userId !== currentUserId && enrollment.userId !== sessionUserId) {
         console.log(`[CERTIFICATE] Access denied - user ID mismatch`);
+        console.log(`[CERTIFICATE] Expected: ${enrollment.userId}, Got: ${currentUserId} or ${sessionUserId}`);
         return res.status(403).json({ error: "Access denied" });
       }
       
