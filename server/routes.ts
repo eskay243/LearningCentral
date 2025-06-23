@@ -10,7 +10,8 @@ import {
   mentorCourses,
   courseEnrollments,
   modules,
-  lessons
+  lessons,
+  courses
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";
@@ -3334,6 +3335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { enrollmentId } = req.params;
       const userId = req.user.id;
       
+      console.log(`Certificate request for enrollment ${enrollmentId} by user ${userId}`);
+      
       // Get enrollment directly from database
       const enrollmentData = await db
         .select({
@@ -3351,13 +3354,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eq(courseEnrollments.userId, userId)
         ));
       
+      console.log(`Found ${enrollmentData.length} enrollment records`);
+      
       if (enrollmentData.length === 0) {
+        console.log(`No enrollment found for ID ${enrollmentId} and user ${userId}`);
         return res.status(404).json({ error: "Enrollment not found" });
       }
       
       const enrollment = enrollmentData[0];
+      console.log(`Enrollment progress: ${enrollment.progress}%`);
       
       if (enrollment.progress < 100) {
+        console.log(`Course not completed - progress: ${enrollment.progress}%`);
         return res.status(404).json({ error: "Certificate not available - course not completed" });
       }
       
