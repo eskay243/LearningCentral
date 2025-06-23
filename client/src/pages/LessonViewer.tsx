@@ -363,13 +363,26 @@ export default function LessonViewer() {
             </Button>
             
             <Button
-              onClick={() => {
+              onClick={async () => {
                 console.log('Next/Finish button clicked:', {
                   nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null,
                   currentLessonIndex,
                   allLessonsLength: allLessons.length,
                   isLastLesson: !nextLesson
                 });
+                
+                // Mark current lesson as completed before navigating
+                try {
+                  await updateProgressMutation.mutateAsync({
+                    completionPercentage: 100,
+                    status: "completed",
+                    timeSpent: lesson?.duration || 0,
+                    completedAt: new Date()
+                  });
+                } catch (error) {
+                  console.error('Error updating lesson progress:', error);
+                }
+                
                 if (nextLesson) {
                   handleNavigation(nextLesson.id);
                 } else {
