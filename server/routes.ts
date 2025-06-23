@@ -3567,7 +3567,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [updatedTemplate] = await db
         .update(certificateTemplates)
-        .set(updateData)
+        .set({
+          name: updateData.name,
+          description: updateData.description,
+          courseId: updateData.courseId,
+          credentialType: updateData.credentialType,
+          minPassingGrade: updateData.minPassingGrade,
+          validityPeriod: updateData.validityPeriod,
+          backgroundImage: updateData.backgroundImage,
+          logoUrl: updateData.logoUrl,
+          updatedAt: updateData.updatedAt
+        })
         .where(eq(certificateTemplates.id, templateId))
         .returning();
 
@@ -5280,11 +5290,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pageHeight = doc.page.height;
       
       // Background and border
-      doc.rect(25, 25, pageWidth - 50, pageHeight - 50)
-         .stroke('#2E8B57', 3);
+      doc.strokeColor('#2E8B57')
+         .rect(25, 25, pageWidth - 50, pageHeight - 50)
+         .stroke();
       
-      doc.rect(40, 40, pageWidth - 80, pageHeight - 80)
-         .stroke('#32CD32', 1);
+      doc.strokeColor('#32CD32')
+         .rect(40, 40, pageWidth - 80, pageHeight - 80)
+         .stroke();
       
       // Header
       doc.fontSize(36)
