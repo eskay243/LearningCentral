@@ -82,8 +82,8 @@ export function getColorClass(index: number) {
   return colors[index % colors.length] || colors[0];
 }
 
-export function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(amount: number, currency = "NGN"): string {
+  return new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency,
   }).format(amount);

@@ -6291,6 +6291,309 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+  // Commission tracking methods
+  async createMentorCommission(commissionData: any): Promise<any> {
+    try {
+      const [commission] = await db
+        .insert(mentorPayments)
+        .values({
+          mentorId: commissionData.mentorId,
+          amount: commissionData.amount,
+          commissionType: commissionData.commissionType,
+          sourceId: commissionData.sourceId,
+          enrollmentId: commissionData.enrollmentId,
+          status: commissionData.status || 'pending'
+        })
+        .returning();
+      return commission;
+    } catch (error) {
+      console.error("Error creating mentor commission:", error);
+      throw error;
+    }
+  }
+
+  async getMentorCommissions(mentorId: string): Promise<any[]> {
+    try {
+      const commissions = await db
+        .select({
+          id: mentorPayments.id,
+          amount: mentorPayments.amount,
+          commissionType: mentorPayments.commissionType,
+          sourceId: mentorPayments.sourceId,
+          enrollmentId: mentorPayments.enrollmentId,
+          status: mentorPayments.status,
+          createdAt: mentorPayments.createdAt,
+          courseTitle: courses.title,
+          studentName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+          studentEmail: users.email
+        })
+        .from(mentorPayments)
+        .leftJoin(courses, eq(mentorPayments.sourceId, courses.id))
+        .leftJoin(courseEnrollments, eq(mentorPayments.enrollmentId, courseEnrollments.id))
+        .leftJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(eq(mentorPayments.mentorId, mentorId))
+        .orderBy(desc(mentorPayments.createdAt));
+      return commissions;
+    } catch (error) {
+      console.error("Error getting mentor commissions:", error);
+      return [];
+    }
+  }
+
+  async getMentorCommissionsByStatus(mentorId: string, status: string): Promise<any[]> {
+    try {
+      const commissions = await db
+        .select()
+        .from(mentorPayments)
+        .where(and(
+          eq(mentorPayments.mentorId, mentorId),
+          eq(mentorPayments.status, status)
+        ))
+        .orderBy(desc(mentorPayments.createdAt));
+      return commissions;
+    } catch (error) {
+      console.error("Error getting mentor commissions by status:", error);
+      return [];
+    }
+  }
+
+  async updateCommissionStatus(commissionId: number, status: string): Promise<any> {
+    try {
+      const [commission] = await db
+        .update(mentorPayments)
+        .set({ 
+          status,
+          processedAt: status === 'paid' ? new Date() : null,
+          updatedAt: new Date()
+        })
+        .where(eq(mentorPayments.id, commissionId))
+        .returning();
+      return commission;
+    } catch (error) {
+      console.error("Error updating commission status:", error);
+      throw error;
+    }
+  }
+
+  async getMentorEarnings(mentorId: string): Promise<any> {
+    try {
+      const earnings = await db
+        .select({
+          totalEarnings: sql<number>`sum(${mentorPayments.amount})`,
+          pendingEarnings: sql<number>`sum(case when ${mentorPayments.status} = 'pending' then ${mentorPayments.amount} else 0 end)`,
+          paidEarnings: sql<number>`sum(case when ${mentorPayments.status} = 'paid' then ${mentorPayments.amount} else 0 end)`,
+          totalCommissions: sql<number>`count(*)`,
+          pendingCommissions: sql<number>`count(case when ${mentorPayments.status} = 'pending' then 1 end)`,
+          paidCommissions: sql<number>`count(case when ${mentorPayments.status} = 'paid' then 1 end)`
+        })
+        .from(mentorPayments)
+        .where(eq(mentorPayments.mentorId, mentorId));
+
+      return earnings[0] || {
+        totalEarnings: 0,
+        pendingEarnings: 0,
+        paidEarnings: 0,
+        totalCommissions: 0,
+        pendingCommissions: 0,
+        paidCommissions: 0
+      };
+    } catch (error) {
+      console.error("Error getting mentor earnings:", error);
+      return {
+        totalEarnings: 0,
+        pendingEarnings: 0,
+        paidEarnings: 0,
+        totalCommissions: 0,
+        pendingCommissions: 0,
+        paidCommissions: 0
+      };
+    }
+  }
+
+  async getTotalMentorEarnings(mentorId: string): Promise<number> {
+    try {
+      const result = await db
+        .select({
+          total: sql<number>`sum(${mentorPayments.amount})`
+        })
+        .from(mentorPayments)
+        .where(eq(mentorPayments.mentorId, mentorId));
+      
+      return result[0]?.total || 0;
+    } catch (error) {
+      console.error("Error getting total mentor earnings:", error);
+      return 0;
+    }
+  }
+
+  async getCommissionsByEnrollment(enrollmentId: number): Promise<any[]> {
+    try {
+      const commissions = await db
+        .select()
+        .from(mentorPayments)
+        .where(eq(mentorPayments.enrollmentId, enrollmentId));
+      return commissions;
+    } catch (error) {
+      console.error("Error getting commissions by enrollment:", error);
+      return [];
+    }
+  }
+
+  async getAllCommissions(): Promise<any[]> {
+    try {
+      const commissions = await db
+        .select({
+          id: mentorPayments.id,
+          mentorId: mentorPayments.mentorId,
+          mentorName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+          mentorEmail: users.email,
+          amount: mentorPayments.amount,
+          commissionType: mentorPayments.commissionType,
+          sourceId: mentorPayments.sourceId,
+          enrollmentId: mentorPayments.enrollmentId,
+          status: mentorPayments.status,
+          createdAt: mentorPayments.createdAt,
+          processedAt: mentorPayments.processedAt,
+          courseTitle: courses.title
+        })
+        .from(mentorPayments)
+        .leftJoin(users, eq(mentorPayments.mentorId, users.id))
+        .leftJoin(courses, eq(mentorPayments.sourceId, courses.id))
+        .orderBy(desc(mentorPayments.createdAt));
+      return commissions;
+    } catch (error) {
+      console.error("Error getting all commissions:", error);
+      return [];
+    }
+  }
+
+  async getCommissionStats(): Promise<any> {
+    try {
+      const stats = await db
+        .select({
+          totalCommissions: sql<number>`sum(${mentorPayments.amount})`,
+          pendingCommissions: sql<number>`sum(case when ${mentorPayments.status} = 'pending' then ${mentorPayments.amount} else 0 end)`,
+          paidCommissions: sql<number>`sum(case when ${mentorPayments.status} = 'paid' then ${mentorPayments.amount} else 0 end)`,
+          totalCount: sql<number>`count(*)`,
+          pendingCount: sql<number>`count(case when ${mentorPayments.status} = 'pending' then 1 end)`,
+          paidCount: sql<number>`count(case when ${mentorPayments.status} = 'paid' then 1 end)`
+        })
+        .from(mentorPayments);
+
+      return stats[0] || {
+        totalCommissions: 0,
+        pendingCommissions: 0,
+        paidCommissions: 0,
+        totalCount: 0,
+        pendingCount: 0,
+        paidCount: 0
+      };
+    } catch (error) {
+      console.error("Error getting commission stats:", error);
+      return {
+        totalCommissions: 0,
+        pendingCommissions: 0,
+        paidCommissions: 0,
+        totalCount: 0,
+        pendingCount: 0,
+        paidCount: 0
+      };
+    }
+  }
+
+  async processMentorPayout(mentorId: string, amount: number, paymentMethod: string): Promise<any> {
+    try {
+      // Update pending commissions to paid status
+      const updatedCommissions = await db
+        .update(mentorPayments)
+        .set({
+          status: 'paid',
+          paymentMethod: paymentMethod,
+          processedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(mentorPayments.mentorId, mentorId),
+          eq(mentorPayments.status, 'pending')
+        ))
+        .returning();
+
+      return {
+        processedCommissions: updatedCommissions.length,
+        totalAmount: amount,
+        paymentMethod: paymentMethod,
+        processedAt: new Date()
+      };
+    } catch (error) {
+      console.error("Error processing mentor payout:", error);
+      throw error;
+    }
+  }
+
+  async getCourseEnrollmentStats(courseId: number): Promise<any> {
+    try {
+      const stats = await db
+        .select({
+          totalEnrollments: sql<number>`count(*)`,
+          paidEnrollments: sql<number>`count(case when ${courseEnrollments.paymentStatus} = 'completed' then 1 end)`,
+          totalRevenue: sql<number>`sum(case when ${courseEnrollments.paymentStatus} = 'completed' then ${courseEnrollments.paymentAmount} else 0 end)`,
+          averageProgress: sql<number>`avg(${courseEnrollments.progress})`
+        })
+        .from(courseEnrollments)
+        .where(eq(courseEnrollments.courseId, courseId));
+
+      return stats[0] || {
+        totalEnrollments: 0,
+        paidEnrollments: 0,
+        totalRevenue: 0,
+        averageProgress: 0
+      };
+    } catch (error) {
+      console.error("Error getting course enrollment stats:", error);
+      return {
+        totalEnrollments: 0,
+        paidEnrollments: 0,
+        totalRevenue: 0,
+        averageProgress: 0
+      };
+    }
+  }
+
+  async getMentorCourseEnrollments(mentorId: string, courseId?: number): Promise<any[]> {
+    try {
+      let query = db
+        .select({
+          enrollmentId: courseEnrollments.id,
+          studentId: courseEnrollments.userId,
+          studentName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+          studentEmail: users.email,
+          courseId: courseEnrollments.courseId,
+          courseTitle: courses.title,
+          enrolledAt: courseEnrollments.enrolledAt,
+          progress: courseEnrollments.progress,
+          paymentStatus: courseEnrollments.paymentStatus,
+          paymentAmount: courseEnrollments.paymentAmount,
+          paymentReference: courseEnrollments.paymentReference
+        })
+        .from(courseEnrollments)
+        .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
+        .innerJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(eq(courses.mentorId, mentorId));
+
+      if (courseId) {
+        query = query.where(and(
+          eq(courses.mentorId, mentorId),
+          eq(courseEnrollments.courseId, courseId)
+        ));
+      }
+
+      const enrollments = await query.orderBy(desc(courseEnrollments.enrolledAt));
+      return enrollments;
+    } catch (error) {
+      console.error("Error getting mentor course enrollments:", error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
