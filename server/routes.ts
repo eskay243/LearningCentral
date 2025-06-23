@@ -4428,7 +4428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userAttempts = new Map();
       attempts.forEach(attempt => {
         const existing = userAttempts.get(attempt.userId);
-        if (!existing || new Date(attempt.submittedAt) > new Date(existing.submittedAt)) {
+        if (!existing || new Date(attempt.completedAt) > new Date(existing.completedAt)) {
           userAttempts.set(attempt.userId, attempt);
         }
       });
