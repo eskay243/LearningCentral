@@ -384,7 +384,7 @@ export default function StableStudentDashboard() {
               </CardHeader>
               <CardContent className="space-y-4 pt-0">
                 <Button 
-                  onClick={() => setLocation('/conversations')} 
+                  onClick={() => setLocation('/messages')} 
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   size="sm"
                 >
@@ -405,7 +405,7 @@ export default function StableStudentDashboard() {
                           size="sm" 
                           variant="outline" 
                           className="text-xs px-2 py-1"
-                          onClick={() => setLocation('/conversations')}
+                          onClick={() => setLocation('/messages')}
                         >
                           Message
                         </Button>
