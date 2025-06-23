@@ -8,7 +8,9 @@ import {
   users,
   courseMentors,
   mentorCourses,
-  courseEnrollments
+  courseEnrollments,
+  modules,
+  lessons
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";
