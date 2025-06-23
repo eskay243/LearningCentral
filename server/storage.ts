@@ -6632,6 +6632,8 @@ export class DatabaseStorage implements IStorage {
 
   async getPaymentRecord(paymentId: number, userId: string): Promise<any | undefined> {
     try {
+      console.log(`[DEBUG] Looking for payment ID: ${paymentId}, User ID: ${userId}`);
+      
       const [payment] = await db
         .select({
           id: courseEnrollments.id,
@@ -6656,6 +6658,7 @@ export class DatabaseStorage implements IStorage {
           eq(courseEnrollments.paymentStatus, 'completed')
         ));
 
+      console.log(`[DEBUG] Query result:`, payment);
       return payment;
     } catch (error) {
       console.error("Error fetching payment record:", error);
