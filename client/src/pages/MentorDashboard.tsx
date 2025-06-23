@@ -826,11 +826,22 @@ export default function MentorDashboard() {
                             variant="outline" 
                             size="sm" 
                             className="flex-1"
-                            onClick={() => navigate(`/course/${course.id}`)}
+                            onClick={() => navigate(`/courses/${course.id}`)}
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             View
                           </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            onClick={() => navigate(`/courses/${course.id}/curriculum`)}
+                          >
+                            <BookOpen className="h-4 w-4 mr-1" />
+                            Curriculum
+                          </Button>
+                        </div>
+                        <div className="flex gap-2 pt-2">
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
@@ -840,7 +851,7 @@ export default function MentorDashboard() {
                                 onClick={() => setEditingCourse(course)}
                               >
                                 <Edit className="h-4 w-4 mr-1" />
-                                Edit
+                                Edit Details
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl">
