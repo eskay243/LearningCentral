@@ -60,10 +60,19 @@ export default function CourseEdit() {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
+        console.log("Fetching course with ID:", courseId);
         setLoading(true);
         setError(null);
         const response = await apiRequest("GET", `/api/courses/${courseId}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("API Error:", response.status, errorData);
+          throw new Error(errorData.message || `Failed to fetch course: ${response.status}`);
+        }
+        
         const courseData = await response.json();
+        console.log("Course data received:", courseData);
         setCourse(courseData);
         setFormData({
           title: courseData.title || "",
@@ -75,7 +84,7 @@ export default function CourseEdit() {
         });
       } catch (err) {
         console.error("Error fetching course:", err);
-        setError("Failed to load course details");
+        setError(err instanceof Error ? err.message : "Failed to load course details");
       } finally {
         setLoading(false);
       }
@@ -97,7 +106,7 @@ export default function CourseEdit() {
     try {
       setSaving(true);
       
-      const response = await apiRequest("PATCH", `/api/courses/${courseId}`, {
+      const response = await apiRequest("PUT", `/api/courses/${courseId}`, {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
