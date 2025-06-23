@@ -3253,6 +3253,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register payment routes
   registerPaymentRoutes(app);
 
+  // Student payment history endpoint
+  app.get("/api/student/payment-history", async (req: any, res: Response) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const userId = req.user.id;
+      const payments = await storage.getStudentPaymentHistory(userId);
+      res.json(payments);
+    } catch (error: any) {
+      console.error("Error fetching payment history:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Download payment receipt endpoint
+  app.get("/api/payments/:paymentId/receipt", async (req: any, res: Response) => {
+    try {
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const paymentId = parseInt(req.params.paymentId);
+      const userId = req.user.id;
+      
+      // Get payment record and verify ownership
+      const payment = await storage.getPaymentRecord(paymentId, userId);
+      if (!payment) {
+        return res.status(404).json({ message: "Payment record not found" });
+      }
+
+      // Generate and return PDF receipt
+      const receiptPDF = await storage.generatePaymentReceipt(payment);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="receipt-${payment.paymentReference}.pdf"`);
+      res.send(receiptPDF);
+    } catch (error: any) {
+      console.error("Error generating receipt:", error);
+      res.status(500).json({ message: "Failed to generate receipt" });
+    }
+  });
+
   // Create HTTP server
   // Course Discussion Routes
   app.get("/api/courses/:courseId/discussions", async (req: Request, res: Response) => {

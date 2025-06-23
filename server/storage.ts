@@ -435,6 +435,11 @@ export interface IStorage {
   // Additional methods for lessons
   getLesson(lessonId: number): Promise<Lesson | undefined>;
 
+  // Payment history methods
+  getStudentPaymentHistory(userId: string): Promise<any[]>;
+  getPaymentRecord(paymentId: number, userId: string): Promise<any | undefined>;
+  generatePaymentReceipt(payment: any): Promise<Buffer>;
+
   // Enhanced Live session implementation with video conferencing
   createLiveSession(sessionData: any): Promise<LiveSession>;
   updateLiveSession(sessionId: number, updateData: any): Promise<LiveSession>;
@@ -6593,6 +6598,126 @@ export class DatabaseStorage implements IStorage {
       console.error("Error getting mentor course enrollments:", error);
       return [];
     }
+  }
+
+  // Payment history methods implementation
+  async getStudentPaymentHistory(userId: string): Promise<any[]> {
+    try {
+      const payments = await db
+        .select({
+          id: courseEnrollments.id,
+          courseId: courseEnrollments.courseId,
+          courseTitle: courses.title,
+          amount: courseEnrollments.paymentAmount,
+          paymentMethod: courseEnrollments.paymentMethod,
+          paymentReference: courseEnrollments.paymentReference,
+          paymentProvider: courseEnrollments.paymentProvider,
+          status: courseEnrollments.paymentStatus,
+          createdAt: courseEnrollments.enrolledAt
+        })
+        .from(courseEnrollments)
+        .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
+        .where(and(
+          eq(courseEnrollments.userId, userId),
+          eq(courseEnrollments.paymentStatus, 'completed')
+        ))
+        .orderBy(desc(courseEnrollments.enrolledAt));
+
+      return payments;
+    } catch (error) {
+      console.error("Error fetching student payment history:", error);
+      return [];
+    }
+  }
+
+  async getPaymentRecord(paymentId: number, userId: string): Promise<any | undefined> {
+    try {
+      const [payment] = await db
+        .select({
+          id: courseEnrollments.id,
+          userId: courseEnrollments.userId,
+          courseId: courseEnrollments.courseId,
+          courseTitle: courses.title,
+          amount: courseEnrollments.paymentAmount,
+          paymentMethod: courseEnrollments.paymentMethod,
+          paymentReference: courseEnrollments.paymentReference,
+          paymentProvider: courseEnrollments.paymentProvider,
+          status: courseEnrollments.paymentStatus,
+          createdAt: courseEnrollments.enrolledAt,
+          studentName: sql`CONCAT(${users.firstName}, ' ', ${users.lastName})`,
+          studentEmail: users.email
+        })
+        .from(courseEnrollments)
+        .innerJoin(courses, eq(courseEnrollments.courseId, courses.id))
+        .innerJoin(users, eq(courseEnrollments.userId, users.id))
+        .where(and(
+          eq(courseEnrollments.id, paymentId),
+          eq(courseEnrollments.userId, userId),
+          eq(courseEnrollments.paymentStatus, 'completed')
+        ));
+
+      return payment;
+    } catch (error) {
+      console.error("Error fetching payment record:", error);
+      return undefined;
+    }
+  }
+
+  async generatePaymentReceipt(payment: any): Promise<Buffer> {
+    try {
+      // Import PDFKit for PDF generation
+      const PDFDocument = require('pdfkit');
+      const doc = new PDFDocument();
+      const buffers: Buffer[] = [];
+      
+      doc.on('data', (buffer: Buffer) => buffers.push(buffer));
+      
+      return new Promise((resolve, reject) => {
+        doc.on('end', () => {
+          const pdfData = Buffer.concat(buffers);
+          resolve(pdfData);
+        });
+
+        doc.on('error', reject);
+
+        // Header
+        doc.fontSize(20).text('Payment Receipt', 50, 50);
+        doc.fontSize(10).text('Codelab Educare', 50, 75);
+        doc.text('receipt@codelabeducare.com', 50, 90);
+        
+        // Receipt details
+        const receiptY = 130;
+        doc.fontSize(12).text('Receipt Details', 50, receiptY);
+        doc.fontSize(10);
+        
+        doc.text(`Receipt #: ${payment.paymentReference}`, 50, receiptY + 25);
+        doc.text(`Date: ${new Date(payment.createdAt).toLocaleDateString()}`, 50, receiptY + 45);
+        doc.text(`Student: ${payment.studentName}`, 50, receiptY + 65);
+        doc.text(`Email: ${payment.studentEmail}`, 50, receiptY + 85);
+        
+        // Course details
+        const courseY = receiptY + 120;
+        doc.fontSize(12).text('Course Details', 50, courseY);
+        doc.fontSize(10);
+        
+        doc.text(`Course: ${payment.courseTitle}`, 50, courseY + 25);
+        doc.text(`Amount: ₦${(payment.amount / 100).toLocaleString()}`, 50, courseY + 45);
+        doc.text(`Payment Method: ${payment.paymentMethod}`, 50, courseY + 65);
+        doc.text(`Payment Provider: ${payment.paymentProvider}`, 50, courseY + 85);
+        doc.text(`Status: ${payment.status.toUpperCase()}`, 50, courseY + 105);
+        
+        // Footer
+        const footerY = 650;
+        doc.fontSize(8).text('This is an automatically generated receipt.', 50, footerY);
+        doc.text('For support, contact: support@codelabeducare.com', 50, footerY + 15);
+        
+        doc.end();
+      });
+    } catch (error) {
+      console.error("Error generating payment receipt:", error);
+      throw new Error("Failed to generate receipt");
+    }
+  }
   }
 
   // ==========================================

@@ -90,6 +90,7 @@ import KycStudentPage from "@/pages/kyc-student";
 import AdminUserPermissions from "@/pages/admin-user-permissions";
 import AdminEditProfile from "@/pages/admin-edit-profile";
 import ComprehensiveMentorManagement from "@/pages/ComprehensiveMentorManagement";
+import PaymentHistory from "@/pages/PaymentHistory";
 
 function Router() {
   return (
@@ -137,6 +138,7 @@ function Router() {
         <Route path="/admin/commissions" component={AdminCommissionOverview} />
         <Route path="/invoices" component={StudentInvoices} />
         <Route path="/payments" component={StudentPayments} />
+        <Route path="/payment-history" component={PaymentHistory} />
         <Route path="/settings" component={Settings} />
         <Route path="/profile" component={Profile} />
         <Route path="/users" component={UserManagement} />
