@@ -1,209 +1,194 @@
-# Paystack Payment Integration Guide
+# Enhanced Paystack Integration with Commission Tracking
 
 ## Overview
+The Learning Management System features a comprehensive payment and commission tracking system built on Paystack, optimized for the Nigerian market. The system automatically calculates and tracks mentor commissions (37% per enrollment) with real-time earnings dashboards and admin oversight capabilities.
 
-This document outlines the implementation of Paystack payment processing in the Codelab Educare Learning Management System (LMS). Paystack is a popular payment gateway in Nigeria, making it an ideal choice for handling course payments in the Nigerian market.
+## Key Features
 
-## Architecture
+### 🔄 Automatic Commission Calculation
+- **37% Commission Rate**: Mentors earn 37% of each successful course enrollment
+- **Real-time Processing**: Commissions are calculated and recorded immediately upon payment verification
+- **Automatic Tracking**: All commission transactions are logged with detailed metadata
 
-The payment flow consists of the following components:
+### 💰 Payment Flow Integration
+1. **Student Payment**: Student initiates payment via Paystack for course enrollment
+2. **Payment Verification**: System verifies payment with Paystack API
+3. **Course Enrollment**: Student is automatically enrolled in the course
+4. **Commission Creation**: 37% commission is calculated and recorded for the mentor
+5. **Notifications**: Both student and mentor receive real-time notifications
 
-1. **Frontend Payment Modal** - Collects and validates payment information
-2. **Payment Initialization API** - Sends payment request to Paystack
-3. **Paystack Hosted Payment Page** - Securely processes payment information
-4. **Payment Callback Handling** - Verifies and records successful payments
-5. **Course Enrollment Processing** - Enrolls students after payment verification
+### 📊 Mentor Earnings Dashboard
+- **Real-time Earnings**: Live tracking of total, pending, and paid commissions
+- **Course Performance**: Analytics showing top-performing courses by revenue
+- **Student Tracking**: Complete visibility into student enrollments and progress
+- **Monthly Breakdown**: Historical earnings data with trend analysis
+- **Withdrawal Management**: Streamlined payout request and processing
 
-## Frontend Components
+### 🛡️ Admin Payment Oversight
+- **Commission Overview**: Complete visibility into all mentor commissions
+- **Payment Processing**: Bulk payout processing capabilities
+- **Status Management**: Update commission statuses (pending, paid, cancelled)
+- **Revenue Analytics**: System-wide payment and commission statistics
+- **Top Performers**: Rankings of mentors by earnings and performance
 
-### EnrollButton Component
+## Technical Implementation
 
-The `EnrollButton` component serves as the entry point for course enrollment, with different behaviors based on course price and user enrollment status:
+### Database Schema
+The system utilizes several key tables for commission tracking:
 
-- For free courses: Direct enrollment without payment
-- For paid courses: Opens the payment modal
-- For already enrolled users: Redirects to the course page
-
-```jsx
-<EnrollButton 
-  courseId={course.id}
-  courseTitle={course.title}
-  price={course.price}
-  isEnrolled={isEnrolled}
-  onEnrollSuccess={handleEnrollmentSuccess}
-/>
+#### `mentor_payments` Table
+```sql
+- id: Primary key
+- mentorId: Foreign key to users table
+- enrollmentId: Foreign key to course_enrollments
+- amount: Commission amount (NGN)
+- commissionType: Type of commission (course, bonus, etc.)
+- sourceId: Course ID for reference
+- status: pending | paid | cancelled
+- paymentMethod: bank_transfer | mobile_money
+- processedAt: Timestamp when paid
+- createdAt: Commission creation timestamp
 ```
 
-### PaymentModal Component
-
-The `PaymentModal` component initiates the Paystack payment process:
-
-1. Collects course and payment details
-2. Makes an API call to initialize the payment
-3. Redirects the user to Paystack's hosted payment page
-
-```jsx
-<PaymentModal
-  open={modalOpen}
-  onOpenChange={setModalOpen}
-  courseId={courseId}
-  courseTitle={courseTitle}
-  price={price}
-  onSuccess={onEnrollSuccess}
-/>
+#### `course_enrollments` Table (Enhanced)
+```sql
+- paymentReference: Paystack transaction reference
+- paymentAmount: Full payment amount (NGN)
+- paymentStatus: completed | pending | failed
+- paymentMethod: paystack
+- paymentProvider: paystack
 ```
 
-### PaymentCallback Page
+### API Endpoints
 
-The `PaymentCallback` page handles the user's return from Paystack's payment page:
+#### Mentor Earnings Management
+- `GET /api/mentor/earnings/detailed` - Comprehensive earnings data
+- `GET /api/mentor/course-enrollments` - Student enrollments with commissions
+- `POST /api/mentor/withdrawal-request` - Request payout processing
 
-1. Extracts the payment reference from the URL
-2. Verifies the payment status with the backend
-3. Displays appropriate success/failure messages
-4. Redirects users to their courses or dashboard
+#### Admin Commission Oversight
+- `GET /api/admin/commission-overview` - System-wide commission analytics
+- `PUT /api/admin/commissions/:id/status` - Update commission status
+- `POST /api/admin/process-payouts` - Bulk payout processing
 
-## Backend Implementation
+#### Payment Processing
+- `POST /api/payments/initialize` - Initialize Paystack payment
+- `GET /api/payments/verify/:reference` - Verify payment and create commission
 
-### Payment Initialization
+### Storage Layer Methods
 
-The `/api/payments/initialize` endpoint prepares a payment request to Paystack:
-
-1. Validates the request (course ID, amount, user details)
-2. Checks if the user is already enrolled
-3. Prepares metadata for the transaction
-4. Calls Paystack's API to initialize the payment
-5. Returns an authorization URL for redirection
-
-```javascript
-// Key data sent to Paystack
-const paymentData = await initializePayment({
-  email: user.email,
-  amount,
-  metadata: {
-    courseId,
-    userId,
-    courseName: course.title
-  },
-  callbackUrl: `${req.protocol}://${req.get('host')}/payment-callback`
-});
+#### Commission Tracking
+```typescript
+- createMentorCommission(data) - Create new commission record
+- getMentorEarnings(mentorId) - Get earnings summary
+- getMentorCommissions(mentorId) - Get commission history
+- updateCommissionStatus(id, status) - Update status
+- processMentorPayout(mentorId, amount, method) - Process payout
 ```
 
-### Payment Verification
-
-The `/api/payments/verify/:reference` endpoint verifies completed payments:
-
-1. Receives the payment reference from Paystack
-2. Verifies the transaction status with Paystack's API
-3. If successful, enrolls the user in the course
-4. Creates a notification for the user
-5. Returns the enrollment details
-
-```javascript
-// Verification and enrollment process
-const paymentData = await verifyPayment(reference);
-
-if (paymentData.status === 'success') {
-  // Extract course ID from metadata
-  const courseId = paymentData.metadata?.courseId;
-  
-  if (courseId) {
-    // Enroll the user in the course
-    const enrollment = await storage.enrollUserInCourse({
-      courseId,
-      userId,
-      paymentReference: reference,
-      paymentAmount: paymentData.amount / 100, // Convert from kobo to naira
-      paymentStatus: 'completed',
-      paymentMethod: 'paystack',
-      paymentProvider: 'paystack',
-      progress: 0,
-      completedAt: null,
-      certificateId: null
-    });
-  }
-}
+#### Analytics and Reporting
+```typescript
+- getCommissionStats() - System-wide commission statistics
+- getAllCommissions() - All commission records with mentor details
+- getMentorCourseEnrollments(mentorId) - Enrollments with commission data
+- getCourseEnrollmentStats(courseId) - Course performance metrics
 ```
 
-## Database Schema
+## Nigerian Market Optimization
 
-The database supports payment tracking with these key fields in the `courseEnrollments` table:
+### Currency Integration
+- **Nigerian Naira (NGN)**: All amounts displayed and processed in NGN
+- **Paystack Integration**: Native support for Nigerian payment methods
+- **Local Formatting**: Currency formatting optimized for Nigerian users
 
-- `paymentStatus`: Current payment status (unpaid, completed, failed)
-- `paymentAmount`: Amount paid for the course
-- `paymentMethod`: Payment method used (paystack, bank transfer, etc.)
-- `paymentReference`: Unique reference from Paystack for transaction tracking
-- `paymentProvider`: Payment gateway provider (paystack)
+### Payment Methods Supported
+- **Bank Transfer**: Traditional bank account transfers (2-3 business days)
+- **Mobile Money**: MTN, Airtel, GLO mobile money (instant processing)
+- **Debit/Credit Cards**: Local and international card support
+- **USSD**: Unstructured Supplementary Service Data payments
 
-## Payment Flow Sequence
+### Withdrawal Options
+- **Bank Transfer**: Direct bank account transfers
+- **Mobile Money**: Instant mobile wallet transfers
+- **Minimum Amounts**: Configurable minimum withdrawal thresholds
 
-1. **User initiates enrollment**:
-   - Clicks "Enroll" on a course
-   - System checks enrollment status and course price
+## Security and Compliance
 
-2. **Payment modal appears**:
-   - Displays course details and price
-   - User clicks "Pay with Paystack"
+### Data Protection
+- **Secure Storage**: All payment data encrypted at rest
+- **API Security**: Role-based access control for sensitive operations
+- **Audit Trail**: Complete logging of all payment and commission activities
 
-3. **Payment initialization**:
-   - Frontend calls `/api/payments/initialize`
-   - Backend prepares request and calls Paystack
-   - Paystack returns authorization URL
+### Financial Compliance
+- **Transaction Logging**: Detailed records for audit purposes
+- **Status Tracking**: Complete lifecycle management of payments
+- **Reconciliation**: Built-in tools for financial reconciliation
 
-4. **User completes payment**:
-   - Browser redirects to Paystack's payment page
-   - User enters payment details (card, bank, etc.)
-   - Paystack processes the payment
+## User Experience Features
 
-5. **Payment callback**:
-   - Paystack redirects user to callback URL
-   - Frontend extracts reference from URL
-   - Backend verifies payment with Paystack
+### Real-time Notifications
+- **Payment Confirmations**: Instant notifications for successful payments
+- **Commission Alerts**: Mentor notifications for new commissions
+- **Payout Updates**: Status updates for withdrawal requests
 
-6. **Enrollment processing**:
-   - Backend enrolls user in course if payment succeeded
-   - System creates notification for user
-   - User sees success/failure message
+### Dashboard Analytics
+- **Visual Charts**: Graphical representation of earnings trends
+- **Performance Metrics**: Course and student performance indicators
+- **Export Capabilities**: Data export for external analysis
 
-7. **User redirection**:
-   - Success: Redirected to dashboard or course
-   - Failure: Shown error with option to retry
+### Mobile Optimization
+- **Responsive Design**: Full mobile compatibility
+- **Touch-friendly**: Optimized for mobile payment flows
+- **Offline Resilience**: Graceful handling of connectivity issues
 
-## Security Considerations
+## Configuration and Setup
 
-- Payment credentials are never handled directly by the LMS
-- Paystack's hosted checkout page ensures PCI compliance
-- Payment verification uses server-side validation
-- Secret API keys are securely stored as environment variables
-- Metadata includes validation parameters to prevent fraud
+### Environment Variables
+```bash
+PAYSTACK_SECRET_KEY=sk_live_... # Production Paystack secret key
+PAYSTACK_PUBLIC_KEY=pk_live_... # Production Paystack public key
+```
 
-## Testing the Integration
+### Commission Settings
+- **Default Rate**: 37% commission rate
+- **Payment Processing**: Configurable payout schedules
+- **Minimum Thresholds**: Adjustable minimum withdrawal amounts
 
-To test the Paystack integration:
+## Testing and Quality Assurance
 
-1. Create a test course with a price (e.g., ₦5,000)
-2. Attempt to enroll in the course
-3. Use Paystack test cards for payment:
-   - Card Number: 5060 6666 6666 6666 660
-   - Expiry Date: Any future date
-   - CVV: Any 3 digits
-   - PIN: Any 4 digits
-   - OTP: 123456
+### Payment Testing
+- **Sandbox Mode**: Complete Paystack sandbox integration
+- **Test Scenarios**: Comprehensive payment flow testing
+- **Error Handling**: Robust error management and recovery
 
-## Troubleshooting
+### Commission Verification
+- **Calculation Accuracy**: Automated tests for commission calculations
+- **Status Management**: Testing of all commission status transitions
+- **Payout Processing**: Verification of payout workflows
 
-Common issues and solutions:
+## Future Enhancements
 
-1. **Payment initialization fails**:
-   - Check that Paystack API keys are correctly set
-   - Verify user has a valid email address
-   - Ensure amount is properly formatted
+### Planned Features
+- **Multi-currency Support**: Expansion beyond NGN
+- **Advanced Analytics**: Enhanced reporting and insights
+- **Automated Payouts**: Scheduled automatic payout processing
+- **Tax Integration**: Automated tax calculation and reporting
 
-2. **Verification fails after payment**:
-   - Check callback URL is correctly configured
-   - Verify payment reference is being passed correctly
-   - Review Paystack dashboard for transaction status
+### Performance Optimizations
+- **Caching**: Enhanced caching for earnings calculations
+- **Batch Processing**: Optimized bulk operations
+- **Real-time Updates**: WebSocket integration for live updates
 
-3. **User not enrolled after payment**:
-   - Check for errors in the enrollment process
-   - Verify transaction metadata contains correct courseId
-   - Review server logs for exceptions during enrollment
+## Support and Maintenance
+
+### Monitoring
+- **Payment Tracking**: Real-time payment flow monitoring
+- **Error Alerts**: Automated alerts for payment failures
+- **Performance Metrics**: System performance tracking
+
+### Documentation
+- **API Documentation**: Complete API reference
+- **User Guides**: Step-by-step user documentation
+- **Admin Manual**: Administrative operation procedures
+
+This enhanced payment and commission system provides a robust foundation for monetizing the Learning Management System while ensuring transparency and efficiency for all stakeholders.

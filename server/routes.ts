@@ -2890,15 +2890,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const commissionAmount = paymentAmount * 0.37; // 37% commission
             
             // Create mentor commission record
-            await storage.createMentorCommission({
-              mentorId: course.mentorId,
-              enrollmentId: enrollment.id,
-              courseId: courseId,
-              amount: commissionAmount,
-              commissionType: 'course',
-              sourceId: courseId,
-              status: 'pending'
-            });
+            try {
+              await storage.createMentorCommission({
+                mentorId: course.mentorId,
+                enrollmentId: enrollment.id,
+                courseId: courseId,
+                amount: commissionAmount,
+                commissionType: 'course',
+                sourceId: courseId,
+                status: 'pending'
+              });
+              
+              // Notify mentor about new enrollment and commission
+              await storage.createNotification({
+                userId: course.mentorId,
+                title: 'New Student Enrollment',
+                message: `A new student enrolled in "${course.title}". Commission earned: ₦${commissionAmount.toFixed(2)}`,
+                type: 'success',
+                read: false,
+                linkUrl: `/mentor/courses/${courseId}/enrollments`
+              });
+            } catch (commissionError) {
+              console.error("Error creating mentor commission:", commissionError);
+              // Continue with enrollment even if commission creation fails
+            }
             
             // Record payment transaction
             await storage.createPaymentTransaction({
