@@ -1,0 +1,33 @@
+===============================================
+            CODELAB EDUCARE
+         ENROLLMENT RECEIPT
+===============================================
+
+Receipt Number: ENROLLMENT-29-1750656957283
+Date: 22/06/2025
+Status: COMPLETED
+
+-----------------------------------------------
+STUDENT DETAILS
+-----------------------------------------------
+Name: Oyinkonsola Ojobo
+Email: oyinkonsola.ojobo@codelabeducare.com
+
+-----------------------------------------------
+COURSE DETAILS
+-----------------------------------------------
+Course: Node.js Backend Mastery
+Amount: Free Enrollment
+Payment Method: Direct Enrollment
+Provider: paystack
+
+-----------------------------------------------
+TOTAL: Free Enrollment
+-----------------------------------------------
+
+Thank you for enrolling with us!
+This is a computer-generated receipt.
+
+For support: support@codelabeducare.com
+Generated: 23/06/2025, 05:35:57
+===============================================

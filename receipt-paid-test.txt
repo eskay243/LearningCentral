@@ -1,0 +1,33 @@
+===============================================
+            CODELAB EDUCARE
+         PAYMENT RECEIPT
+===============================================
+
+Receipt Number: TEST-ENROLLMENT-123
+Date: 23/06/2025
+Status: COMPLETED
+
+-----------------------------------------------
+STUDENT DETAILS
+-----------------------------------------------
+Name: Oyinkonsola Ojobo
+Email: oyinkonsola.ojobo@codelabeducare.com
+
+-----------------------------------------------
+COURSE DETAILS
+-----------------------------------------------
+Course: Here Are 3 FREE Vibe Coding Tools With NO LIMIT! - 2025
+Amount: ₦250
+Payment Method: paystack
+Provider: paystack
+
+-----------------------------------------------
+TOTAL: ₦250
+-----------------------------------------------
+
+Thank you for your payment!
+This is a computer-generated receipt.
+
+For support: support@codelabeducare.com
+Generated: 23/06/2025, 05:36:09
+===============================================
