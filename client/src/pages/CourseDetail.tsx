@@ -21,11 +21,22 @@ interface Course {
   updatedAt: string;
 }
 
+interface CourseStats {
+  enrolledStudents: number;
+  totalLessons: number;
+  totalHours: number;
+}
+
 export default function CourseDetail() {
   const [, setLocation] = useLocation();
   const courseId = window.location.pathname.split('/courses/')[1];
   
   const [course, setCourse] = useState<Course | null>(null);
+  const [courseStats, setCourseStats] = useState<CourseStats>({
+    enrolledStudents: 0,
+    totalLessons: 0,
+    totalHours: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [enrolling, setEnrolling] = useState(false);
@@ -61,6 +72,9 @@ export default function CourseDetail() {
         const courseData = await response.json();
         setCourse(courseData);
         
+        // Fetch course statistics
+        await fetchCourseStats();
+        
         // Check enrollment status if user is authenticated
         if (user) {
           await checkEnrollmentStatus();
@@ -70,6 +84,30 @@ export default function CourseDetail() {
         setError("Failed to load course details");
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchCourseStats = async () => {
+      try {
+        const response = await fetch(`/api/courses/${courseId}/stats`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        if (response.ok) {
+          const stats = await response.json();
+          setCourseStats({
+            enrolledStudents: stats.enrolledStudents || 0,
+            totalLessons: stats.totalLessons || 0,
+            totalHours: Math.floor((stats.totalHours || 0) / 60) // Convert minutes to hours
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching course stats:", err);
+        // Keep default values on error
       }
     };
 
@@ -316,15 +354,15 @@ export default function CourseDetail() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm">0 Students Enrolled</span>
+                  <span className="text-sm">{courseStats.enrolledStudents} Students Enrolled</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-green-600" />
-                  <span className="text-sm">0 Lessons</span>
+                  <span className="text-sm">{courseStats.totalLessons} Lessons</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm">0 Hours Content</span>
+                  <span className="text-sm">{courseStats.totalHours} Hours Content</span>
                 </div>
               </CardContent>
             </Card>
