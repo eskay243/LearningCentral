@@ -345,8 +345,15 @@ export default function LessonViewer() {
             <Button
               variant="outline"
               onClick={() => {
+                console.log('Previous lesson button clicked:', {
+                  previousLesson: previousLesson ? { id: previousLesson.id, title: previousLesson.title } : null,
+                  currentLessonIndex,
+                  allLessonsLength: allLessons.length
+                });
                 if (previousLesson) {
                   handleNavigation(previousLesson.id);
+                } else {
+                  console.log('No previous lesson available');
                 }
               }}
               disabled={!previousLesson}
@@ -357,21 +364,36 @@ export default function LessonViewer() {
             
             <Button
               onClick={() => {
-                console.log('Next lesson button clicked:', {
+                console.log('Next/Finish button clicked:', {
                   nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null,
                   currentLessonIndex,
-                  allLessonsLength: allLessons.length
+                  allLessonsLength: allLessons.length,
+                  isLastLesson: !nextLesson
                 });
                 if (nextLesson) {
                   handleNavigation(nextLesson.id);
                 } else {
-                  console.log('No next lesson available');
+                  // This is the last lesson, navigate to course completion
+                  setLocation(`/courses/${courseId}`);
+                  toast({
+                    title: "Course Completed!",
+                    description: "Congratulations on completing this course!",
+                  });
                 }
               }}
-              disabled={!nextLesson}
+              disabled={allLessons.length === 0}
             >
-              Next Lesson
-              <ArrowRight className="h-4 w-4 ml-2" />
+              {nextLesson ? (
+                <>
+                  Next Lesson
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </>
+              ) : (
+                <>
+                  Finish Course
+                  <CheckCircle className="h-4 w-4 ml-2" />
+                </>
+              )}
             </Button>
           </div>
         </div>

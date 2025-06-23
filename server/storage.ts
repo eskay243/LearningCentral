@@ -3301,13 +3301,31 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getModulesByCourse(courseId: number): Promise<Module[]> {
+  async getModulesByCourse(courseId: number): Promise<any[]> {
     try {
-      return await db
+      const modulesList = await db
         .select()
         .from(modules)
         .where(eq(modules.courseId, courseId))
         .orderBy(modules.orderIndex);
+
+      // Get lessons for each module
+      const modulesWithLessons = await Promise.all(
+        modulesList.map(async (module) => {
+          const lessonsList = await db
+            .select()
+            .from(lessons)
+            .where(eq(lessons.moduleId, module.id))
+            .orderBy(lessons.orderIndex);
+          
+          return {
+            ...module,
+            lessons: lessonsList
+          };
+        })
+      );
+
+      return modulesWithLessons;
     } catch (error) {
       console.error("Error fetching course modules:", error);
       return [];
