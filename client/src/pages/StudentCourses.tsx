@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Search, Filter, Star, Clock, Users, Play, CheckCircle2, Trophy, Sparkles } from 'lucide-react';
+import { BookOpen, Search, Filter, Star, Clock, Users, Play, CheckCircle2, Trophy, Sparkles, Award } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -341,13 +341,30 @@ export default function StudentCourses() {
                       </div>
 
                       {course.progress === 100 && (
-                        <div className="mb-3 p-2 bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-300 rounded-lg">
-                          <div className="flex items-center gap-2 text-sm">
+                        <div className="mb-3 p-3 bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-300 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm mb-2">
                             <Trophy className="w-4 h-4 text-yellow-600" />
                             <span className="font-medium text-yellow-800">Course Completed!</span>
                             <Sparkles className="w-4 h-4 text-orange-500" />
                           </div>
-                          <p className="text-xs text-yellow-700 mt-1">You've mastered all lessons in this course. Well done!</p>
+                          <p className="text-xs text-yellow-700 mb-2">You've mastered all lessons in this course. Well done!</p>
+                          {course.completedAt && (
+                            <p className="text-xs text-yellow-600">
+                              Completed on {new Date(course.completedAt).toLocaleDateString()}
+                            </p>
+                          )}
+                          {course.certificateEligible && (
+                            <div className="mt-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-xs bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+                              >
+                                <Award className="w-3 h-3 mr-1" />
+                                Download Certificate
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
 

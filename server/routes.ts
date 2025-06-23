@@ -3561,18 +3561,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
               progressPercentage = Math.round((completedLessons / totalLessons) * 100);
             }
             
+            // Check if course is newly completed and update enrollment status
+            const isCompleted = progressPercentage === 100;
+            if (isCompleted && enrollment.completedAt === null) {
+              console.log(`Course ${course.id} completed by user ${userId} - updating enrollment status`);
+              
+              // Update enrollment to completed status
+              await storage.updateEnrollment(enrollment.id, {
+                progress: 100,
+                completedAt: new Date()
+              });
+              
+              // Send completion notifications
+              await Promise.all([
+                // Student notification
+                storage.createNotification({
+                  userId: userId,
+                  title: "Course Completed!",
+                  message: `Congratulations! You've successfully completed "${course.title}". Your certificate is being prepared.`,
+                  type: "course_completion",
+                  isRead: false,
+                  relatedId: course.id.toString(),
+                  relatedType: "course"
+                }),
+                
+                // Mentor notification (if course has mentor)
+                course.mentorId ? storage.createNotification({
+                  userId: course.mentorId,
+                  title: "Student Completed Course",
+                  message: `${req.user?.firstName || 'A student'} has completed your course "${course.title}".`,
+                  type: "student_completion",
+                  isRead: false,
+                  relatedId: course.id.toString(),
+                  relatedType: "course"
+                }) : Promise.resolve()
+              ]);
+              
+              console.log(`Course completion notifications sent for course ${course.id}`);
+            }
+            
             return {
               id: course.id,
               title: course.title,
               description: course.description,
               coverImage: course.thumbnail || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80',
               progress: progressPercentage,
+              status: isCompleted ? 'completed' : progressPercentage > 0 ? 'in_progress' : 'not_started',
               instructor: 'Instructor',
               totalLessons,
               completedLessons,
               nextLesson,
               enrolledAt: enrollment.enrolledAt,
-              paymentStatus: enrollment.paymentStatus
+              completedAt: isCompleted ? enrollment.completedAt || new Date() : null,
+              paymentStatus: enrollment.paymentStatus,
+              certificateEligible: isCompleted
             };
           })
       );

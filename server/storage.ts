@@ -177,6 +177,7 @@ export interface IStorage {
   getCourseEnrollment(courseId: number, userId: string): Promise<CourseEnrollment | undefined>;
   isUserEnrolledInCourse(userId: string, courseId: number): Promise<boolean>;
   updateCourseProgress(enrollmentId: number, progress: number): Promise<CourseEnrollment>;
+  updateEnrollment(enrollmentId: number, updates: Partial<CourseEnrollment>): Promise<CourseEnrollment>;
   getStudentEnrollments(userId: string): Promise<CourseEnrollment[]>;
   getEnrollmentsByUser(userId: string): Promise<CourseEnrollment[]>;
   
@@ -3540,6 +3541,21 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating course progress:", error);
       throw new Error("Failed to update course progress");
+    }
+  }
+
+  async updateEnrollment(enrollmentId: number, updates: Partial<CourseEnrollment>): Promise<CourseEnrollment> {
+    try {
+      const [updatedEnrollment] = await db
+        .update(courseEnrollments)
+        .set(updates)
+        .where(eq(courseEnrollments.id, enrollmentId))
+        .returning();
+      
+      return updatedEnrollment;
+    } catch (error) {
+      console.error("Error updating enrollment:", error);
+      throw new Error("Failed to update enrollment");
     }
   }
   
