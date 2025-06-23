@@ -109,8 +109,13 @@ export function registerCommunicationRoutes(app: Express) {
         if (userRole === 'student') {
           // Students can only message mentors and admins
           const validRecipients = await storage.getMentorsAndAdmins();
+          console.log('Valid recipients for student:', validRecipients);
           const validIds = validRecipients.map((user: any) => user.id);
-          participantIds = participantIds.filter((id: string) => validIds.includes(id));
+          console.log('Valid IDs:', validIds, 'Requested recipients:', participantIds);
+          // Convert string IDs to match database format
+          participantIds = participantIds.filter((id: string) => 
+            validIds.includes(id) || validIds.includes(parseInt(id)) || validIds.map(String).includes(id)
+          );
         } else if (userRole === 'mentor') {
           // Mentors can message their enrolled students, other mentors, and admins
           const enrolledStudents = await storage.getEnrolledStudentsForMentor(userId);
@@ -166,7 +171,8 @@ export function registerCommunicationRoutes(app: Express) {
         const senderName = `${req.user.firstName} ${req.user.lastName}`;
         for (const recipientId of participantIds) {
           if (recipientId !== userId) {
-            await notificationService.createNotification({
+            // Create notification via storage
+            await storage.createNotification({
               userId: recipientId,
               type: 'message',
               priority: 'medium',
