@@ -2883,6 +2883,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
             certificateId: null
           });
           
+          // Get course details to calculate mentor commission
+          const course = await storage.getCourse(courseId);
+          if (course) {
+            const paymentAmount = ((paymentData.data as any)?.amount || 0) / 100;
+            const commissionAmount = paymentAmount * 0.37; // 37% commission
+            
+            // Create mentor commission record
+            await storage.createMentorCommission({
+              mentorId: course.mentorId,
+              enrollmentId: enrollment.id,
+              courseId: courseId,
+              amount: commissionAmount,
+              commissionType: 'course',
+              sourceId: courseId,
+              status: 'pending'
+            });
+            
+            // Record payment transaction
+            await storage.createPaymentTransaction({
+              userId: userId,
+              courseId: courseId,
+              reference: reference,
+              amount: paymentAmount,
+              currency: 'NGN',
+              status: 'success',
+              provider: 'paystack',
+              providerReference: (paymentData.data as any)?.reference,
+              providerResponse: paymentData.data,
+              fees: ((paymentData.data as any)?.fees || 0) / 100,
+              netAmount: paymentAmount - (((paymentData.data as any)?.fees || 0) / 100),
+              channel: (paymentData.data as any)?.channel
+            });
+            
+            // Notify mentor about new enrollment and commission
+            await storage.createNotification({
+              userId: course.mentorId,
+              title: 'New Student Enrollment',
+              message: `A new student enrolled in "${course.title}". Commission earned: ₦${commissionAmount.toFixed(2)}`,
+              type: 'success',
+              read: false,
+              linkUrl: `/mentor/courses/${courseId}/enrollments`
+            });
+          }
+          
           // Create notification for user
           await storage.createNotification({
             userId: userId,

@@ -22,6 +22,7 @@ import {
   lessonProgress,
   courseEnrollments,
   mentorCourses,
+  mentorPayments,
   affiliateCommissions,
   courseDiscussions,
   discussionReplies,
@@ -318,6 +319,25 @@ export interface IStorage {
   getPaymentStats(): Promise<any>;
   getEnrollmentByUserAndCourse(userId: string, courseId: number): Promise<any>;
   createEnrollment(enrollmentData: any): Promise<any>;
+  getAllPaymentTransactions(): Promise<any[]>;
+  
+  // Commission tracking methods
+  createMentorCommission(commissionData: any): Promise<any>;
+  getMentorCommissions(mentorId: string): Promise<any[]>;
+  getMentorCommissionsByStatus(mentorId: string, status: string): Promise<any[]>;
+  updateCommissionStatus(commissionId: number, status: string): Promise<any>;
+  getMentorEarnings(mentorId: string): Promise<any>;
+  getTotalMentorEarnings(mentorId: string): Promise<number>;
+  getCommissionsByEnrollment(enrollmentId: number): Promise<any[]>;
+  
+  // Admin payment oversight
+  getAllCommissions(): Promise<any[]>;
+  getCommissionStats(): Promise<any>;
+  processMentorPayout(mentorId: string, amount: number, paymentMethod: string): Promise<any>;
+  
+  // Course enrollment tracking
+  getCourseEnrollmentStats(courseId: number): Promise<any>;
+  getMentorCourseEnrollments(mentorId: string, courseId?: number): Promise<any[]>;
 
   // Assessment & Grading System Methods
   createAutomatedQuiz(quizData: any): Promise<any>;
