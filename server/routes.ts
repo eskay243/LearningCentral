@@ -3269,8 +3269,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Download payment receipt endpoint
-  app.get("/api/payments/:paymentId/receipt", async (req: any, res: Response) => {
+  // Download payment receipt endpoint by enrollment ID
+  app.get("/api/enrollments/:paymentId/receipt", isAuthenticated, async (req: any, res: Response) => {
     try {
       console.log('[RECEIPT] Receipt endpoint called with params:', req.params);
       console.log('[RECEIPT] User authenticated:', req.isAuthenticated());

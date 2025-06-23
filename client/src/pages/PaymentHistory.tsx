@@ -29,7 +29,7 @@ export default function PaymentHistory() {
 
   const handleDownloadReceipt = async (paymentId: number, reference: string) => {
     try {
-      const response = await apiRequest("GET", `/api/payments/${paymentId}/receipt`, {});
+      const response = await apiRequest("GET", `/api/enrollments/${paymentId}/receipt`, {});
       
       if (response.ok) {
         const blob = await response.blob();
