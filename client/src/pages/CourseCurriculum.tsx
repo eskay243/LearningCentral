@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit2, Book, ArrowLeft, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -74,19 +74,19 @@ export default function CourseCurriculum() {
         <h1 className="text-2xl font-bold">Course Curriculum</h1>
       </div>
 
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <p className="text-gray-600">Manage your course modules and lessons</p>
           <p className="text-sm text-gray-500 mt-1">Add modules (chapters) to organize your course content</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => setLocation(`/courses/${id}`)}>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <Button variant="outline" onClick={() => setLocation(`/courses/${id}`)} className="w-full sm:w-auto">
             <Edit2 className="w-4 h-4 mr-2" />
             Edit Course Details
           </Button>
           <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => openModuleDialog()}>
+              <Button onClick={() => openModuleDialog()} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Module
               </Button>
@@ -94,6 +94,9 @@ export default function CourseCurriculum() {
             <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingModule ? 'Edit Module' : 'Create New Module'}</DialogTitle>
+              <DialogDescription>
+                {editingModule ? 'Update the module details below.' : 'Create a new module to organize your course content into sections.'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleModuleSubmit} className="space-y-4">
               <div>
