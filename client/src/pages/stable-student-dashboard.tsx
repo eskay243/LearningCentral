@@ -177,41 +177,6 @@ export default function StableStudentDashboard() {
           <p className="text-xl text-gray-600">Ready to continue your learning journey?</p>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/coding-playground')}>
-            <CardContent className="p-6 text-center">
-              <Code2 className="w-8 h-8 mx-auto mb-3" />
-              <h3 className="font-semibold mb-1">Coding Playground</h3>
-              <p className="text-sm text-purple-100">Practice coding skills</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/courses')}>
-            <CardContent className="p-6 text-center">
-              <BookOpen className="w-8 h-8 mx-auto mb-3" />
-              <h3 className="font-semibold mb-1">Browse Courses</h3>
-              <p className="text-sm text-blue-100">Discover new content</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/assignments')}>
-            <CardContent className="p-6 text-center">
-              <CalendarDays className="w-8 h-8 mx-auto mb-3" />
-              <h3 className="font-semibold mb-1">Assignments</h3>
-              <p className="text-sm text-green-100">Check deadlines</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/quizzes')}>
-            <CardContent className="p-6 text-center">
-              <Trophy className="w-8 h-8 mx-auto mb-3" />
-              <h3 className="font-semibold mb-1">Quizzes</h3>
-              <p className="text-sm text-yellow-100">Test knowledge</p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
@@ -327,6 +292,48 @@ export default function StableStudentDashboard() {
               </Card>
             )}
 
+            {/* Quick Actions */}
+            <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-lg text-gray-900">Quick Actions</CardTitle>
+                <CardDescription>Jump into your learning activities</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/coding-playground')}>
+                    <CardContent className="p-4 text-center">
+                      <Code2 className="w-6 h-6 mx-auto mb-2" />
+                      <h3 className="font-semibold text-sm mb-1">Coding Playground</h3>
+                      <p className="text-xs text-purple-100">Practice coding skills</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/courses')}>
+                    <CardContent className="p-4 text-center">
+                      <BookOpen className="w-6 h-6 mx-auto mb-2" />
+                      <h3 className="font-semibold text-sm mb-1">Browse Courses</h3>
+                      <p className="text-xs text-blue-100">Discover new content</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/assignments')}>
+                    <CardContent className="p-4 text-center">
+                      <CalendarDays className="w-6 h-6 mx-auto mb-2" />
+                      <h3 className="font-semibold text-sm mb-1">Assignments</h3>
+                      <p className="text-xs text-green-100">Check deadlines</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setLocation('/quizzes')}>
+                    <CardContent className="p-4 text-center">
+                      <Trophy className="w-6 h-6 mx-auto mb-2" />
+                      <h3 className="font-semibold text-sm mb-1">Quizzes</h3>
+                      <p className="text-xs text-yellow-100">Test knowledge</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
 
           </div>
 
