@@ -253,7 +253,7 @@ const CreateCourse = () => {
       // For edited courses, stay on the course detail page
       const targetCourseId = courseData.id || courseId;
       if (isEditMode) {
-        navigate(`/courses/${targetCourseId}`);
+        navigate(`/courses/${targetCourseId}/manage`);
       } else {
         // New course created - go directly to curriculum management for content creation
         navigate(`/courses/${targetCourseId}/curriculum`);

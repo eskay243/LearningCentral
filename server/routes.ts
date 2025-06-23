@@ -1233,6 +1233,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Create module for specific course
+  app.post('/api/courses/:courseId/modules', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      if (isNaN(courseId)) {
+        return res.status(400).json({ message: "Invalid course ID" });
+      }
+
+      const moduleData = {
+        courseId: courseId,
+        title: req.body.title,
+        description: req.body.description,
+        orderIndex: req.body.orderIndex || 0
+      };
+      
+      const module = await storage.createModule(moduleData);
+      res.status(201).json(module);
+    } catch (error) {
+      console.error("Error creating module:", error);
+      res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+
   app.post('/api/modules', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
     try {
       const moduleData = {
@@ -1247,6 +1270,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating module:", error);
       res.status(500).json({ message: "Failed to create module" });
+    }
+  });
+
+  // Update module
+  app.put('/api/modules/:id', isAuthenticated, hasRole([UserRole.ADMIN, UserRole.MENTOR]), async (req, res) => {
+    try {
+      const moduleId = parseInt(req.params.id);
+      if (isNaN(moduleId)) {
+        return res.status(400).json({ message: "Invalid module ID" });
+      }
+
+      const moduleData = {
+        title: req.body.title,
+        description: req.body.description,
+        orderIndex: req.body.orderIndex
+      };
+      
+      const module = await storage.updateModule(moduleId, moduleData);
+      res.json(module);
+    } catch (error) {
+      console.error("Error updating module:", error);
+      res.status(500).json({ message: "Failed to update module" });
     }
   });
   
