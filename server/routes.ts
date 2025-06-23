@@ -5010,14 +5010,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Certificate download endpoint - clean implementation
   app.get("/api/download-certificate/:enrollmentId", async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    console.log(`[CERTIFICATE] ===== REQUEST START =====`);
     console.log(`[CERTIFICATE] Request received for enrollment ${req.params.enrollmentId}`);
+    console.log(`[CERTIFICATE] Headers:`, req.headers);
+    console.log(`[CERTIFICATE] User agent:`, req.get('User-Agent'));
     
     try {
       const { enrollmentId } = req.params;
+      console.log(`[CERTIFICATE] Extracted enrollmentId parameter: "${enrollmentId}"`);
+      
       const enrollmentIdNum = parseInt(enrollmentId);
+      console.log(`[CERTIFICATE] Parsed enrollment ID: ${enrollmentIdNum}`);
       
       if (isNaN(enrollmentIdNum)) {
-        console.log(`[CERTIFICATE] Invalid enrollment ID: ${enrollmentId}`);
+        console.log(`[CERTIFICATE] ERROR: Invalid enrollment ID: ${enrollmentId}`);
         return res.status(400).json({ error: "Invalid enrollment ID" });
       }
       
