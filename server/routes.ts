@@ -3368,6 +3368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/student/enrolled-courses", async (req: any, res: Response) => {
     try {
       // Enhanced authentication check with detailed logging
+      console.log('=== ENROLLED COURSES API CALLED ===');
       console.log('Authentication check - isAuthenticated():', req.isAuthenticated(), 'user:', !!req.user);
       
       if (!req.isAuthenticated() || !req.user) {
