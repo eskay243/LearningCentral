@@ -31,7 +31,7 @@ import { registerMentorManagementRoutes } from "./mentorManagementRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 import { registerPaymentRoutes } from "./paymentRoutes";
 import { setupAuth } from "./auth";
-import { isAuthenticated, hasRole } from "./simpleAuth";
+import { isAuthenticated, hasRole } from "./auth";
 import { z } from "zod";
 import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
@@ -4682,12 +4682,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get students for mentor - shows students enrolled in mentor's courses
   app.get("/api/mentor/students", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+    console.log('=== MENTOR STUDENTS API CALLED ===');
+    console.log('User authenticated:', req.isAuthenticated());
+    console.log('User role:', req.user?.role);
+    console.log('User ID:', req.user?.id);
+    
     try {
-      console.log('=== MENTOR STUDENTS API CALLED ===');
-      console.log('User authenticated:', req.isAuthenticated());
-      console.log('User role:', req.user?.role);
-      console.log('User ID:', req.user?.id);
-      
       const mentorId = req.user.id;
       
       // Get mentor's courses
