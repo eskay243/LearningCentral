@@ -3669,7 +3669,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               enrolledAt: enrollment.enrolledAt,
               completedAt: isCompleted ? enrollment.completedAt || new Date() : null,
               paymentStatus: enrollment.paymentStatus,
-              certificateEligible: isCompleted
+              certificateEligible: isCompleted,
+              enrollmentId: enrollment.id
             };
           })
       );

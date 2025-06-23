@@ -367,8 +367,11 @@ export default function StudentCourses() {
                                 className="text-xs bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
                                 onClick={() => {
                                   const enrollmentId = (course as any).enrollmentId;
+                                  console.log('Certificate button clicked for course:', course.id, 'enrollmentId:', enrollmentId);
                                   if (enrollmentId) {
                                     setLocation(`/certificate/${enrollmentId}`);
+                                  } else {
+                                    console.error('No enrollmentId found for course:', course);
                                   }
                                 }}
                               >
