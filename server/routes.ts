@@ -1950,7 +1950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Trigger notification events for course creation
         try {
-          const mentorName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+          const mentorName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User';
           
           // Notify all admins about new course submission
           await storage.notifyAdminCoursePublished(mentorName, course.title || 'Untitled Course');
@@ -1995,9 +1995,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const course = await storage.getCourse(courseId);
         if (course) {
           // If course is being published (status change to published)
-          if (req.body.published === true && course.published !== true) {
+          if (req.body.isPublished === true && course.isPublished !== true) {
             // Notify mentor about course approval/publishing
-            await storage.notifyMentorCourseUpdate(course.mentorId, course.title, 'approved and published');
+            await storage.notifyMentorCourseUpdate(course.mentorId || '', course.title || 'Untitled Course', 'approved and published');
             
             // Notify enrolled students about course updates
             const enrollments = await storage.getCourseEnrollments(courseId);
@@ -3023,14 +3023,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Trigger comprehensive notification events
             try {
               // Notify student of successful payment and enrollment
-              await storage.notifyPaymentSuccess(userId, course.title, paymentAmount);
-              await storage.notifyEnrollmentConfirmed(userId, course.title);
+              await storage.notifyPaymentSuccess(userId, course.title || 'Untitled Course', paymentAmount);
+              await storage.notifyEnrollmentConfirmed(userId, course.title || 'Untitled Course');
               
               // Notify mentor of new student and commission
-              await storage.notifyMentorNewStudent(course.mentorId, studentName, course.title, commissionAmount);
+              await storage.notifyMentorNewStudent(course.mentorId || '', studentName, course.title || 'Untitled Course', commissionAmount);
               
               // Notify all admins of new payment
-              await storage.notifyAdminNewPayment(studentName, course.title, paymentAmount);
+              await storage.notifyAdminNewPayment(studentName, course.title || 'Untitled Course', paymentAmount);
               
               console.log(`Sent comprehensive notifications for enrollment: ${studentName} -> ${course.title}`);
             } catch (notificationError) {
@@ -3043,7 +3043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             success: true,
             enrollment,
             courseId: courseId,
-            courseTitle: course.title,
+            courseTitle: course?.title || 'Untitled Course',
             paymentReference: reference,
             invoiceNumber: `INV-${Date.now()}`,
             message: "Payment verified and enrollment completed"
