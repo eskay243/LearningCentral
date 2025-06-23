@@ -33,6 +33,8 @@ import MessagesPage from "@/pages/Messages";
 import NotificationsPage from "@/pages/Notifications";
 import Analytics from "@/pages/Analytics";
 import Earnings from "@/pages/Earnings";
+import MentorEarningsEnhanced from "@/pages/MentorEarningsEnhanced";
+import AdminCommissionOverview from "@/pages/AdminCommissionOverview";
 import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import UserManagement from "@/pages/UserManagement";
@@ -131,6 +133,8 @@ function Router() {
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/analytics" component={Analytics} />
         <Route path="/earnings" component={Earnings} />
+        <Route path="/mentor/earnings" component={MentorEarningsEnhanced} />
+        <Route path="/admin/commissions" component={AdminCommissionOverview} />
         <Route path="/invoices" component={StudentInvoices} />
         <Route path="/payments" component={StudentPayments} />
         <Route path="/settings" component={Settings} />
