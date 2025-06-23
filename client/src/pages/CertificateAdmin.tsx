@@ -53,6 +53,7 @@ import {
   Printer,
 } from "lucide-react";
 import CertificateTemplate from "@/components/certificates/CertificateTemplate";
+import CertificateTemplateManager from "@/components/CertificateTemplateManager";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -296,9 +297,10 @@ export default function CertificateAdmin() {
         </div>
 
         <Tabs defaultValue="issue" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="issue">Issue Certificate</TabsTrigger>
             <TabsTrigger value="manage">Manage Certificates</TabsTrigger>
+            <TabsTrigger value="templates">Certificate Templates</TabsTrigger>
           </TabsList>
           
           {/* Issue Certificate Tab */}
@@ -592,6 +594,11 @@ export default function CertificateAdmin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Certificate Templates Tab */}
+          <TabsContent value="templates" className="space-y-6">
+            <CertificateTemplateManager />
           </TabsContent>
         </Tabs>
       </div>

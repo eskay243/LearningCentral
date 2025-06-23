@@ -3395,6 +3395,299 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Certificate Template Management Routes
+  app.get("/api/certificate-templates", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'mentor')) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const { courseId } = req.query;
+      
+      let query = db
+        .select({
+          id: certificateTemplates.id,
+          name: certificateTemplates.name,
+          description: certificateTemplates.description,
+          courseId: certificateTemplates.courseId,
+          courseName: courses.title,
+          credentialType: certificateTemplates.credentialType,
+          minPassingGrade: certificateTemplates.minPassingGrade,
+          validityPeriod: certificateTemplates.validityPeriod,
+          backgroundImage: certificateTemplates.backgroundImage,
+          logoUrl: certificateTemplates.logoUrl,
+          isActive: certificateTemplates.isActive,
+          createdAt: certificateTemplates.createdAt,
+          updatedAt: certificateTemplates.updatedAt
+        })
+        .from(certificateTemplates)
+        .leftJoin(courses, eq(certificateTemplates.courseId, courses.id));
+
+      if (courseId) {
+        query = query.where(eq(certificateTemplates.courseId, parseInt(courseId as string)));
+      }
+
+      const templates = await query;
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching certificate templates:", error);
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  app.post("/api/certificate-templates", isAuthenticated, upload.fields([
+    { name: 'backgroundImage', maxCount: 1 },
+    { name: 'logoImage', maxCount: 1 }
+  ]), async (req: any, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const {
+        name,
+        description,
+        courseId,
+        credentialType,
+        minPassingGrade,
+        validityPeriod
+      } = req.body;
+
+      let backgroundImageUrl = null;
+      let logoUrl = null;
+
+      // Handle background image upload
+      if (req.files?.backgroundImage) {
+        const file = req.files.backgroundImage[0];
+        backgroundImageUrl = `/uploads/${file.filename}`;
+      }
+
+      // Handle logo upload
+      if (req.files?.logoImage) {
+        const file = req.files.logoImage[0];
+        logoUrl = `/uploads/${file.filename}`;
+      }
+
+      const templateData = {
+        name,
+        description: description || null,
+        courseId: courseId ? parseInt(courseId) : null,
+        credentialType: credentialType || 'completion',
+        minPassingGrade: minPassingGrade ? parseFloat(minPassingGrade) : 70.0,
+        validityPeriod: validityPeriod ? parseInt(validityPeriod) : null,
+        backgroundImage: backgroundImageUrl,
+        logoUrl: logoUrl,
+        isActive: true
+      };
+
+      const [newTemplate] = await db
+        .insert(certificateTemplates)
+        .values(templateData)
+        .returning();
+
+      res.status(201).json(newTemplate);
+    } catch (error) {
+      console.error("Error creating certificate template:", error);
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  app.put("/api/certificate-templates/:id", isAuthenticated, upload.fields([
+    { name: 'backgroundImage', maxCount: 1 },
+    { name: 'logoImage', maxCount: 1 }
+  ]), async (req: any, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { id } = req.params;
+      const templateId = parseInt(id);
+
+      if (isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+
+      const {
+        name,
+        description,
+        courseId,
+        credentialType,
+        minPassingGrade,
+        validityPeriod
+      } = req.body;
+
+      // Get current template to preserve existing images if new ones aren't uploaded
+      const [currentTemplate] = await db
+        .select()
+        .from(certificateTemplates)
+        .where(eq(certificateTemplates.id, templateId));
+
+      if (!currentTemplate) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      let backgroundImageUrl = currentTemplate.backgroundImage;
+      let logoUrl = currentTemplate.logoUrl;
+
+      // Handle background image upload
+      if (req.files?.backgroundImage) {
+        const file = req.files.backgroundImage[0];
+        backgroundImageUrl = `/uploads/${file.filename}`;
+      }
+
+      // Handle logo upload
+      if (req.files?.logoImage) {
+        const file = req.files.logoImage[0];
+        logoUrl = `/uploads/${file.filename}`;
+      }
+
+      const updateData = {
+        name,
+        description: description || null,
+        courseId: courseId ? parseInt(courseId) : null,
+        credentialType: credentialType || 'completion',
+        minPassingGrade: minPassingGrade ? parseFloat(minPassingGrade) : 70.0,
+        validityPeriod: validityPeriod ? parseInt(validityPeriod) : null,
+        backgroundImage: backgroundImageUrl,
+        logoUrl: logoUrl,
+        updatedAt: new Date()
+      };
+
+      const [updatedTemplate] = await db
+        .update(certificateTemplates)
+        .set(updateData)
+        .where(eq(certificateTemplates.id, templateId))
+        .returning();
+
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error updating certificate template:", error);
+      res.status(500).json({ error: "Failed to update template" });
+    }
+  });
+
+  app.patch("/api/certificate-templates/:id/toggle", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { id } = req.params;
+      const { isActive } = req.body;
+      const templateId = parseInt(id);
+
+      if (isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+
+      const [updatedTemplate] = await db
+        .update(certificateTemplates)
+        .set({ 
+          isActive: isActive,
+          updatedAt: new Date()
+        })
+        .where(eq(certificateTemplates.id, templateId))
+        .returning();
+
+      if (!updatedTemplate) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error toggling template status:", error);
+      res.status(500).json({ error: "Failed to toggle template status" });
+    }
+  });
+
+  app.delete("/api/certificate-templates/:id", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { id } = req.params;
+      const templateId = parseInt(id);
+
+      if (isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+
+      // Check if template is being used by any certificates
+      const certificatesUsingTemplate = await db
+        .select()
+        .from(generatedCertificates)
+        .where(eq(generatedCertificates.templateId, templateId))
+        .limit(1);
+
+      if (certificatesUsingTemplate.length > 0) {
+        return res.status(400).json({ 
+          error: "Cannot delete template that is being used by existing certificates" 
+        });
+      }
+
+      const [deletedTemplate] = await db
+        .delete(certificateTemplates)
+        .where(eq(certificateTemplates.id, templateId))
+        .returning();
+
+      if (!deletedTemplate) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      res.json({ message: "Template deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting certificate template:", error);
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  // Get template by ID
+  app.get("/api/certificate-templates/:id", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'mentor')) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const { id } = req.params;
+      const templateId = parseInt(id);
+
+      if (isNaN(templateId)) {
+        return res.status(400).json({ error: "Invalid template ID" });
+      }
+
+      const [template] = await db
+        .select({
+          id: certificateTemplates.id,
+          name: certificateTemplates.name,
+          description: certificateTemplates.description,
+          courseId: certificateTemplates.courseId,
+          courseName: courses.title,
+          credentialType: certificateTemplates.credentialType,
+          minPassingGrade: certificateTemplates.minPassingGrade,
+          validityPeriod: certificateTemplates.validityPeriod,
+          backgroundImage: certificateTemplates.backgroundImage,
+          logoUrl: certificateTemplates.logoUrl,
+          isActive: certificateTemplates.isActive,
+          createdAt: certificateTemplates.createdAt,
+          updatedAt: certificateTemplates.updatedAt
+        })
+        .from(certificateTemplates)
+        .leftJoin(courses, eq(certificateTemplates.courseId, courses.id))
+        .where(eq(certificateTemplates.id, templateId));
+
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching certificate template:", error);
+      res.status(500).json({ error: "Failed to fetch template" });
+    }
+  });
+
   // Create HTTP server
   // Course Discussion Routes
   app.get("/api/courses/:courseId/discussions", async (req: Request, res: Response) => {
