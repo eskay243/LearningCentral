@@ -132,6 +132,15 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                       <Settings className="mr-2 h-4 w-4 text-gray-500" />
                       Settings
                     </Link>
+                    {user?.role === 'student' && (
+                      <Link href="/payment-history" className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                          <line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                        Payment History
+                      </Link>
+                    )}
                     <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                     <a 
                       href="/api/logout" 

@@ -6718,7 +6718,6 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Failed to generate receipt");
     }
   }
-  }
 
   // ==========================================
   // NOTIFICATION SYSTEM METHODS
