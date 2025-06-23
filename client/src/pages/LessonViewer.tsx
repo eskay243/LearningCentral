@@ -1,5 +1,5 @@
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,12 +7,19 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, ArrowRight, BookOpen, Clock, CheckCircle, PlayCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LessonViewer() {
   const { courseId, lessonId } = useParams();
   const [, setLocation] = useLocation();
   const [isCompleted, setIsCompleted] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [hasStartedVideo, setHasStartedVideo] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch lesson data
   const { data: lesson, isLoading: lessonLoading } = useQuery({
@@ -29,8 +36,86 @@ export default function LessonViewer() {
     queryKey: [`/api/courses/${courseId}/modules`],
   });
 
+  // Progress tracking mutation
+  const updateProgressMutation = useMutation({
+    mutationFn: async (progressData: { 
+      completionPercentage: number; 
+      status: string; 
+      timeSpent?: number; 
+      completedAt?: Date;
+    }) => {
+      return apiRequest("POST", `/api/lessons/${lessonId}/progress`, progressData);
+    },
+    onSuccess: () => {
+      // Invalidate course progress to refresh the dashboard
+      queryClient.invalidateQueries({ queryKey: [`/api/student/enrolled-courses`] });
+    },
+  });
+
   // Extract all lessons from modules for navigation
   const lessons = modules.flatMap((module: any) => module.lessons || []).sort((a: any, b: any) => a.orderIndex - b.orderIndex);
+
+  // Video event handlers for progress tracking
+  const handleVideoPlay = () => {
+    if (!hasStartedVideo) {
+      setHasStartedVideo(true);
+      // Mark lesson as started
+      updateProgressMutation.mutate({
+        completionPercentage: 0,
+        status: "in_progress",
+        timeSpent: 0
+      });
+    }
+  };
+
+  const handleVideoTimeUpdate = () => {
+    const video = videoRef.current;
+    if (video && video.duration) {
+      const progress = (video.currentTime / video.duration) * 100;
+      setVideoProgress(progress);
+      
+      // Update progress every 25% completion
+      if (progress >= 25 && !hasStartedVideo) {
+        updateProgressMutation.mutate({
+          completionPercentage: Math.floor(progress),
+          status: "in_progress",
+          timeSpent: Math.floor(video.currentTime)
+        });
+      }
+    }
+  };
+
+  const handleVideoEnded = () => {
+    setIsCompleted(true);
+    setVideoProgress(100);
+    // Mark lesson as completed
+    updateProgressMutation.mutate({
+      completionPercentage: 100,
+      status: "completed",
+      timeSpent: lesson?.duration || 0,
+      completedAt: new Date()
+    });
+    
+    toast({
+      title: "Lesson Completed!",
+      description: "Great job! Your progress has been saved.",
+    });
+  };
+
+  const handleMarkComplete = () => {
+    setIsCompleted(true);
+    updateProgressMutation.mutate({
+      completionPercentage: 100,
+      status: "completed",
+      timeSpent: lesson?.duration || 0,
+      completedAt: new Date()
+    });
+    
+    toast({
+      title: "Lesson Marked Complete!",
+      description: "Your progress has been saved.",
+    });
+  };
 
   if (lessonLoading || courseLoading || modulesLoading) {
     return (
@@ -64,11 +149,6 @@ export default function LessonViewer() {
   const previousLesson = lessons?.[currentLessonIndex - 1];
   const nextLesson = lessons?.[currentLessonIndex + 1];
   const progress = ((currentLessonIndex + 1) / (lessons?.length || 1)) * 100;
-
-  const handleMarkComplete = () => {
-    setIsCompleted(true);
-    // TODO: API call to mark lesson as completed
-  };
 
   const handleNavigation = (targetLessonId: number) => {
     setLocation(`/courses/${courseId}/lessons/${targetLessonId}`);
@@ -161,13 +241,28 @@ export default function LessonViewer() {
             <Card>
               <CardHeader>
                 <CardTitle>Video Lesson</CardTitle>
+                <div className="text-sm text-gray-600">
+                  Progress: {Math.round(videoProgress)}% complete
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <PlayCircle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-600">Video player will be integrated here</p>
-                    <p className="text-xs text-gray-500">URL: {lesson.videoUrl}</p>
+                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    src={lesson.videoUrl}
+                    controls
+                    className="w-full h-full"
+                    onPlay={handleVideoPlay}
+                    onTimeUpdate={handleVideoTimeUpdate}
+                    onEnded={handleVideoEnded}
+                    poster={lesson.videoPoster}
+                  />
+                </div>
+                <div className="mt-4">
+                  <Progress value={videoProgress} className="w-full" />
+                  <div className="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>Video Progress</span>
+                    <span>{Math.round(videoProgress)}%</span>
                   </div>
                 </div>
               </CardContent>
