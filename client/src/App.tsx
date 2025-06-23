@@ -81,7 +81,7 @@ import MyCoursesFixed from "@/pages/MyCoursesFixed";
 import CourseDiscussion from "@/pages/CourseDiscussion";
 import CourseDetail from "@/pages/CourseDetail";
 import CourseEdit from "@/pages/CourseEdit";
-import CourseContentManagement from "@/pages/course-content-management";
+
 import LiveSession from "@/pages/live-session";
 import KycMentorPage from "@/pages/kyc-mentor";
 import KycStudentPage from "@/pages/kyc-student";
@@ -172,8 +172,7 @@ function Router() {
         <Route path="/courses/:courseId/forums" component={DiscussionForum} />
         <Route path="/courses/:courseId/forums/:forumId" component={DiscussionForum} />
         <Route path="/courses/:courseId/forums/:forumId/topics/:topicId" component={DiscussionForum} />
-        <Route path="/content-management" component={CourseContentManagement} />
-        <Route path="/course-content-management" component={CourseContentManagement} />
+
         <Route path="/admin/user-permissions" component={AdminUserPermissions} />
         <Route path="/admin/edit-profile" component={AdminEditProfile} />
         <Route path="/kyc/mentor" component={KycMentorPage} />

@@ -20,7 +20,7 @@ import { registerCodeExecutionRoutes } from "./codeExecutionRoutes";
 import { registerLiveSessionRoutes } from "./liveSessionRoutes";
 import { registerEnhancedLiveSessionRoutes } from "./enhancedLiveSessionRoutes";
 import { registerKycRoutes } from "./kycRoutes";
-import { courseContentRoutes } from "./courseContentRoutes";
+
 import { registerMentorManagementRoutes } from "./mentorManagementRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 
@@ -3512,8 +3512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // WebSocket server is now handled by setupWebSocketServer
   
-  // Register course content management routes
-  app.use('/api', courseContentRoutes);
+
   
   // KYC (Know Your Customer) routes
   app.post('/api/kyc/submit', isAuthenticated, upload.fields([
