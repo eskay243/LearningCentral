@@ -29,7 +29,13 @@ import { registerKycRoutes } from "./kycRoutes";
 import { registerMentorManagementRoutes } from "./mentorManagementRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 import { registerPaymentRoutes } from "./paymentRoutes";
-
+import { setupAuth } from "./auth";
+import { isAuthenticated, hasRole } from "./simpleAuth";
+import { z } from "zod";
+import { UserRole, Currency } from "@shared/schema";
+import { initializePayment, verifyPayment } from "./paystack";
+import { setUserAsAdmin } from "./admin-setup";
+import { registerAnalyticsRoutes } from "./analyticsRoutes";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -86,14 +92,6 @@ const mockData = {
     }
   }))
 };
-import { setupAuth } from "./auth";
-import { isAuthenticated, hasRole } from "./simpleAuth";
-import { z } from "zod";
-import { UserRole, Currency } from "@shared/schema";
-import { initializePayment, verifyPayment } from "./paystack";
-import { setUserAsAdmin } from "./admin-setup";
-import { registerAnalyticsRoutes } from "./analyticsRoutes";
-import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
 import { registerCodeCompanionRoutes } from "./codeCompanionRoutes";
 import { registerInvoiceRoutes } from "./invoiceRoutes";
 import { setupWebSocketServer } from "./websocketServer";
@@ -1897,7 +1895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create enrollment
       const enrollment = await storage.createEnrollment({
-        userId,
+        userId: userId || '',
         courseId,
         enrolledAt: new Date(),
         status: 'active',
@@ -1955,10 +1953,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const mentorName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
           
           // Notify all admins about new course submission
-          await storage.notifyAdminCoursePublished(mentorName, course.title);
+          await storage.notifyAdminCoursePublished(mentorName, course.title || 'Untitled Course');
           
           // Notify mentor about course creation success
-          await storage.notifyMentorCourseUpdate(userId, course.title, 'created successfully');
+          await storage.notifyMentorCourseUpdate(userId, course.title || 'Untitled Course', 'created successfully');
           
           console.log(`Sent course creation notifications for: ${course.title} by ${mentorName}`);
         } catch (notificationError) {
@@ -3285,9 +3283,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register analytics routes
   registerAnalyticsRoutes(app);
-  
-  // Register communication routes
-  registerCommunicationRoutes(app);
   
   // Register payment routes
   registerPaymentRoutes(app);
