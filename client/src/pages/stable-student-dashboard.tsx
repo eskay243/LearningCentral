@@ -339,6 +339,73 @@ export default function StableStudentDashboard() {
 
           {/* Sidebar */}
           <div className="space-y-8">
+            {/* Message Center */}
+            <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
+              <CardHeader className="pb-4">
+                <div className="flex items-center space-x-2">
+                  <MessageCircle className="w-5 h-5 text-blue-600" />
+                  <CardTitle className="text-lg text-gray-900">Message Center</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-0">
+                <Button 
+                  onClick={() => setLocation('/conversations')} 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  Chat with Mentors
+                </Button>
+                
+                {/* Quick mentor contact for enrolled courses */}
+                {enrolledCourses.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-gray-900 text-sm">Quick Contact</h4>
+                    {enrolledCourses.slice(0, 2).map((course) => (
+                      <div key={course.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-900 truncate">{course.title}</p>
+                          <p className="text-xs text-gray-600">Instructor: {course.instructor}</p>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="text-xs px-2 py-1"
+                          onClick={() => setLocation('/conversations')}
+                        >
+                          Message
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Achievement Badges */}
+                <div className="space-y-2">
+                  <h4 className="font-medium text-gray-900 text-sm">Recent Achievements</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {completedCourses > 0 && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
+                        <Trophy className="w-3 h-3 mr-1" />
+                        Course Completed
+                      </Badge>
+                    )}
+                    {averageQuizScore >= 80 && (
+                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                        <Award className="w-3 h-3 mr-1" />
+                        High Scorer
+                      </Badge>
+                    )}
+                    {enrolledCourses.length >= 3 && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                        <BookOpen className="w-3 h-3 mr-1" />
+                        Active Learner
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Interactive Calendar */}
             <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
               <CardHeader className="pb-4">
@@ -466,72 +533,7 @@ export default function StableStudentDashboard() {
               </CardContent>
             </Card>
 
-            {/* Message Center */}
-            <Card className="bg-white/80 backdrop-blur border-0 shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex items-center space-x-2">
-                  <MessageCircle className="w-5 h-5 text-blue-600" />
-                  <CardTitle className="text-lg text-gray-900">Message Center</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-0">
-                <Button 
-                  onClick={() => setLocation('/conversations')} 
-                  className="w-full bg-blue-600 hover:bg-blue-700"
-                  size="sm"
-                >
-                  Chat with Mentors
-                </Button>
-                
-                {/* Quick mentor contact for enrolled courses */}
-                {enrolledCourses.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-gray-900 text-sm">Quick Contact</h4>
-                    {enrolledCourses.slice(0, 2).map((course) => (
-                      <div key={course.id} className="flex items-center justify-between p-2 bg-blue-50 rounded">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-900 truncate">{course.title}</p>
-                          <p className="text-xs text-gray-600">Instructor: {course.instructor}</p>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="text-xs px-2 py-1"
-                          onClick={() => setLocation('/conversations')}
-                        >
-                          Message
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
 
-                {/* Achievement Badges */}
-                <div className="space-y-2">
-                  <h4 className="font-medium text-gray-900 text-sm">Recent Achievements</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {completedCourses > 0 && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                        <Trophy className="w-3 h-3 mr-1" />
-                        Course Completed
-                      </Badge>
-                    )}
-                    {averageQuizScore >= 80 && (
-                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
-                        <Award className="w-3 h-3 mr-1" />
-                        High Achiever
-                      </Badge>
-                    )}
-                    {enrolledCourses.length >= 3 && (
-                      <Badge variant="secondary" className="bg-purple-100 text-purple-800 text-xs">
-                        <BookOpen className="w-3 h-3 mr-1" />
-                        Knowledge Seeker
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
