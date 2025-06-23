@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { CourseDeleteDialog } from "@/components/CourseDeleteDialog";
+import { CoursePublishDialog } from "@/components/CoursePublishDialog";
 
 export default function CourseManagementDashboard() {
   const { id } = useParams();
@@ -46,6 +48,11 @@ export default function CourseManagementDashboard() {
     enabled: !!id,
   });
 
+  // Type-safe access to course data
+  const courseData = course as any;
+  const modulesData = Array.isArray(modules) ? modules : [];
+  const enrollmentsData = Array.isArray(enrollments) ? enrollments : [];
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -54,7 +61,7 @@ export default function CourseManagementDashboard() {
     );
   }
 
-  if (!course) {
+  if (!courseData) {
     return (
       <div className="text-center py-12">
         <h3 className="text-lg font-medium mb-2">Course not found</h3>
@@ -65,29 +72,29 @@ export default function CourseManagementDashboard() {
     );
   }
 
-  const totalLessons = modules.reduce((acc: number, module: any) => {
+  const totalLessons = modulesData.reduce((acc: number, module: any) => {
     return acc + (module.lessons?.length || 0);
   }, 0);
 
   const completionPercentage = Math.round(
-    ((modules.length > 0 ? 20 : 0) + 
+    ((modulesData.length > 0 ? 20 : 0) + 
      (totalLessons > 0 ? 40 : 0) + 
-     (course.thumbnail ? 20 : 0) + 
-     (course.isPublished ? 20 : 0)) 
+     (courseData.thumbnail ? 20 : 0) + 
+     (courseData.isPublished ? 20 : 0)) 
   );
 
   const getNextSteps = () => {
     const steps = [];
-    if (modules.length === 0) {
+    if (modulesData.length === 0) {
       steps.push("Add course modules (chapters)");
     }
     if (totalLessons === 0) {
       steps.push("Create lessons for your modules");
     }
-    if (!course.thumbnail) {
+    if (!courseData.thumbnail) {
       steps.push("Upload a course thumbnail");
     }
-    if (!course.isPublished) {
+    if (!courseData.isPublished) {
       steps.push("Publish your course");
     }
     return steps;
@@ -103,13 +110,13 @@ export default function CourseManagementDashboard() {
             Back to My Courses
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{course.title}</h1>
+            <h1 className="text-2xl font-bold">{courseData.title}</h1>
             <div className="flex items-center space-x-2 mt-1">
-              <Badge variant={course.isPublished ? "default" : "secondary"}>
-                {course.isPublished ? "Published" : "Draft"}
+              <Badge variant={courseData.isPublished ? "default" : "secondary"}>
+                {courseData.isPublished ? "Published" : "Draft"}
               </Badge>
               <span className="text-sm text-gray-500">
-                {enrollments.length} student{enrollments.length !== 1 ? 's' : ''} enrolled
+                {enrollmentsData.length} student{enrollmentsData.length !== 1 ? 's' : ''} enrolled
               </span>
             </div>
           </div>
@@ -123,6 +130,27 @@ export default function CourseManagementDashboard() {
             <Edit className="w-4 h-4 mr-2" />
             Edit Details
           </Button>
+          {!courseData.isPublished && (
+            <CoursePublishDialog 
+              course={{
+                id: courseData.id,
+                title: courseData.title,
+                description: courseData.description,
+                thumbnail: courseData.thumbnail,
+                modules: modulesData,
+                isPublished: courseData.isPublished,
+              }}
+            />
+          )}
+          <CourseDeleteDialog
+            course={{
+              id: courseData.id,
+              title: courseData.title,
+              isPublished: courseData.isPublished,
+              enrollmentCount: enrollmentsData.length,
+            }}
+            onDeleteSuccess={() => setLocation("/my-courses")}
+          />
         </div>
       </div>
 
@@ -143,7 +171,7 @@ export default function CourseManagementDashboard() {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{modules.length}</div>
+                <div className="text-2xl font-bold">{modulesData.length}</div>
                 <p className="text-xs text-muted-foreground">Course chapters</p>
               </CardContent>
             </Card>
