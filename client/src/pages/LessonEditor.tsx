@@ -26,6 +26,8 @@ export default function LessonEditor() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedDocument, setUploadedDocument] = useState<string | null>(null);
   const [currentVideoUrl, setCurrentVideoUrl] = useState<string>("");
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState<string>(moduleId || "");
@@ -96,6 +98,60 @@ export default function LessonEditor() {
     }
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setUploadedImage(result.url);
+        toast({ title: "Success", description: "Image uploaded successfully!" });
+      }
+    } catch (error) {
+      toast({ 
+        title: "Upload failed", 
+        description: "Failed to upload image",
+        variant: "destructive" 
+      });
+    }
+  };
+
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('document', file);
+
+    try {
+      const response = await fetch('/api/upload/document', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setUploadedDocument(result.url);
+        toast({ title: "Success", description: "Document uploaded successfully!" });
+      }
+    } catch (error) {
+      toast({ 
+        title: "Upload failed", 
+        description: "Failed to upload document",
+        variant: "destructive" 
+      });
+    }
+  };
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -117,7 +173,11 @@ export default function LessonEditor() {
       type: selectedType,
       duration: duration ? parseInt(duration) : null,
       moduleId: selectedModuleId ? parseInt(selectedModuleId) : null,
-      videoUrl: uploadedVideo || videoUrl || null,
+      videoUrl: selectedType === 'video' ? (uploadedVideo || videoUrl || null) : null,
+      imageUrl: selectedType === 'image' ? uploadedImage : null,
+      documentUrl: selectedType === 'document' ? uploadedDocument : null,
+      codeInstructions: selectedType === 'code' ? (formData.get('codeInstructions') as string) : null,
+      starterCode: selectedType === 'code' ? (formData.get('starterCode') as string) : null,
       order: order ? parseInt(order) : 0,
     };
 
@@ -185,7 +245,22 @@ export default function LessonEditor() {
                     <Label htmlFor="type">Lesson Type</Label>
                     <Select value={selectedType} onValueChange={setSelectedType}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select lesson type" />
+                        <SelectValue placeholder="Select lesson type">
+                          {selectedType && (
+                            <div className="flex items-center">
+                              {selectedType === "video" && <Video className="w-4 h-4 mr-2" />}
+                              {selectedType === "text" && <FileText className="w-4 h-4 mr-2" />}
+                              {selectedType === "code" && <Code className="w-4 h-4 mr-2" />}
+                              {selectedType === "image" && <Upload className="w-4 h-4 mr-2" />}
+                              {selectedType === "document" && <FileText className="w-4 h-4 mr-2" />}
+                              {selectedType === "video" && "Video Lesson"}
+                              {selectedType === "text" && "Text Content"}
+                              {selectedType === "code" && "Code Exercise"}
+                              {selectedType === "image" && "Image Content"}
+                              {selectedType === "document" && "Document"}
+                            </div>
+                          )}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="video">
@@ -204,6 +279,18 @@ export default function LessonEditor() {
                           <div className="flex items-center">
                             <Code className="w-4 h-4 mr-2" />
                             Code Exercise
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="image">
+                          <div className="flex items-center">
+                            <Upload className="w-4 h-4 mr-2" />
+                            Image Content
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="document">
+                          <div className="flex items-center">
+                            <FileText className="w-4 h-4 mr-2" />
+                            Document
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -276,12 +363,16 @@ export default function LessonEditor() {
             </CardContent>
           </Card>
 
-          {/* Video Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Video Content</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          {/* Dynamic Content Section Based on Lesson Type */}
+          {selectedType === "video" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Video className="w-5 h-5 mr-2" />
+                  Video Content
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="videoUrl">Video URL</Label>
                   <div className="flex space-x-2">
@@ -343,6 +434,132 @@ export default function LessonEditor() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {selectedType === "image" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Upload className="w-5 h-5 mr-2" />
+                  Image Content
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <h3 className="text-lg font-medium mb-2">Upload Image</h3>
+                  <p className="text-gray-500 mb-4">
+                    Upload JPG, PNG, or other image formats
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <Button type="button" variant="outline" onClick={() => document.getElementById('image-upload')?.click()}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Choose Image File
+                  </Button>
+                  {uploadedImage && (
+                    <div className="mt-4">
+                      <p className="text-green-600 mb-2">Image uploaded successfully!</p>
+                      <img src={uploadedImage} alt="Uploaded content" className="max-w-md mx-auto rounded-lg border" />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedType === "document" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Document Content
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <h3 className="text-lg font-medium mb-2">Upload Document</h3>
+                  <p className="text-gray-500 mb-4">
+                    Upload PDF, DOC, or other document formats
+                  </p>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,.ppt,.pptx"
+                    onChange={handleDocumentUpload}
+                    className="hidden"
+                    id="document-upload"
+                  />
+                  <Button type="button" variant="outline" onClick={() => document.getElementById('document-upload')?.click()}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Choose Document File
+                  </Button>
+                  {uploadedDocument && (
+                    <div className="mt-4">
+                      <p className="text-green-600">Document uploaded successfully!</p>
+                      <a href={uploadedDocument} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        View uploaded document
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedType === "code" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Code className="w-5 h-5 mr-2" />
+                  Code Exercise
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="codeInstructions">Exercise Instructions</Label>
+                  <Textarea 
+                    id="codeInstructions"
+                    name="codeInstructions"
+                    placeholder="Provide clear instructions for the coding exercise..."
+                    rows={6}
+                    className="font-mono"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="starterCode">Starter Code (Optional)</Label>
+                  <Textarea 
+                    id="starterCode"
+                    name="starterCode"
+                    placeholder="// Provide any starter code here"
+                    rows={10}
+                    className="font-mono bg-gray-50"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {selectedType === "text" && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <FileText className="w-5 h-5 mr-2" />
+                  Text Content
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  This lesson type focuses on text-based content. Use the main content area above to write your lesson.
+                </p>
+              </CardContent>
+            </Card>
+          )}
           </div>
 
         <div className="flex justify-end space-x-2 mt-6">
