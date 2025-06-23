@@ -31,7 +31,7 @@ const Students = () => {
 
   // Fetch students
   const { data: students, isLoading } = useQuery({
-    queryKey: [isMentor ? `/api/mentors/${user?.id}/students` : "/api/admin/students"],
+    queryKey: [isMentor ? "/api/mentor/students" : "/api/admin/students"],
     enabled: !!user && (isMentor || isAdmin),
   });
 

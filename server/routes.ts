@@ -4680,6 +4680,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get students for mentor - shows students enrolled in mentor's courses
+  app.get("/api/mentor/students", isAuthenticated, hasRole(['mentor', 'admin']), async (req: any, res: Response) => {
+    try {
+      console.log('=== MENTOR STUDENTS API CALLED ===');
+      console.log('User authenticated:', req.isAuthenticated());
+      console.log('User role:', req.user?.role);
+      console.log('User ID:', req.user?.id);
+      
+      const mentorId = req.user.id;
+      
+      // Get mentor's courses
+      const mentorCourses = await storage.getCoursesByMentor(mentorId);
+      const courseIds = mentorCourses.map(course => course.id);
+      
+      if (courseIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get all enrollments for mentor's courses
+      const allEnrollments = await storage.getAllEnrollments();
+      const mentorEnrollments = allEnrollments.filter(enrollment => 
+        courseIds.includes(enrollment.courseId)
+      );
+      
+      // Get unique students from enrollments
+      const studentIds = [...new Set(mentorEnrollments.map(enrollment => enrollment.userId))];
+      const students = await Promise.all(
+        studentIds.map(async (studentId) => {
+          const student = await storage.getUser(studentId);
+          if (!student || student.role !== 'student') return null;
+          
+          const studentEnrollments = mentorEnrollments.filter(e => e.userId === studentId);
+          const enrollmentData = await Promise.all(
+            studentEnrollments.map(async (enrollment) => {
+              const course = mentorCourses.find(c => c.id === enrollment.courseId);
+              return {
+                courseId: enrollment.courseId,
+                courseName: course?.title || 'Unknown Course',
+                progress: enrollment.progress || 0,
+                enrolledAt: enrollment.enrolledAt,
+                paymentStatus: enrollment.paymentStatus,
+                paymentAmount: enrollment.paymentAmount
+              };
+            })
+          );
+          
+          return {
+            ...student,
+            enrollments: enrollmentData,
+            totalCourses: enrollmentData.length,
+            completedCourses: enrollmentData.filter(e => e.progress >= 100).length,
+            averageProgress: enrollmentData.length > 0 
+              ? Math.round(enrollmentData.reduce((sum, e) => sum + e.progress, 0) / enrollmentData.length)
+              : 0
+          };
+        })
+      );
+      
+      res.json(students.filter(student => student !== null));
+    } catch (error) {
+      console.error("Error fetching mentor students:", error);
+      res.status(500).json({ message: "Failed to fetch students" });
+    }
+  });
+
   // Get all students with enrollment data (admin only)
   app.get("/api/admin/students", isAuthenticated, hasRole(['admin']), async (req: Request, res: Response) => {
     try {
