@@ -3370,10 +3370,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const enrollment = enrollmentData[0];
       
+      console.log(`[CERTIFICATE] Enrollment user ID: ${enrollment.userId} (type: ${typeof enrollment.userId})`);
+      console.log(`[CERTIFICATE] Request user ID: ${req.user.id} (type: ${typeof req.user.id})`);
+      console.log(`[CERTIFICATE] User IDs match: ${enrollment.userId === req.user.id}`);
+      
       // Verify user has access to this enrollment
       if (enrollment.userId !== req.user.id) {
+        console.log(`[CERTIFICATE] Access denied - user ID mismatch`);
         return res.status(403).json({ error: "Access denied" });
       }
+      
+      console.log(`[CERTIFICATE] Access granted - returning enrollment data`);
       
       res.json(enrollment);
       
