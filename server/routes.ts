@@ -3401,30 +3401,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { courseId } = req.query;
       
-      let query = db
-        .select({
-          id: certificateTemplates.id,
-          name: certificateTemplates.name,
-          description: certificateTemplates.description,
-          courseId: certificateTemplates.courseId,
-          courseName: courses.title,
-          credentialType: certificateTemplates.credentialType,
-          minPassingGrade: certificateTemplates.minPassingGrade,
-          validityPeriod: certificateTemplates.validityPeriod,
-          backgroundImage: certificateTemplates.backgroundImage,
-          logoUrl: certificateTemplates.logoUrl,
-          isActive: certificateTemplates.isActive,
-          createdAt: certificateTemplates.createdAt,
-          updatedAt: certificateTemplates.updatedAt
-        })
-        .from(certificateTemplates)
-        .leftJoin(courses, eq(certificateTemplates.courseId, courses.id));
-
-      if (courseId) {
-        query = query.where(eq(certificateTemplates.courseId, parseInt(courseId as string)));
-      }
-
-      const templates = await query;
+      const templates = courseId 
+        ? await db
+            .select({
+              id: certificateTemplates.id,
+              name: certificateTemplates.name,
+              description: certificateTemplates.description,
+              courseId: certificateTemplates.courseId,
+              courseName: courses.title,
+              credentialType: certificateTemplates.credentialType,
+              minPassingGrade: certificateTemplates.minPassingGrade,
+              validityPeriod: certificateTemplates.validityPeriod,
+              backgroundImage: certificateTemplates.backgroundImage,
+              logoUrl: certificateTemplates.logoUrl,
+              isActive: certificateTemplates.isActive,
+              createdAt: certificateTemplates.createdAt,
+              updatedAt: certificateTemplates.updatedAt
+            })
+            .from(certificateTemplates)
+            .leftJoin(courses, eq(certificateTemplates.courseId, courses.id))
+            .where(eq(certificateTemplates.courseId, parseInt(courseId as string)))
+        : await db
+            .select({
+              id: certificateTemplates.id,
+              name: certificateTemplates.name,
+              description: certificateTemplates.description,
+              courseId: certificateTemplates.courseId,
+              courseName: courses.title,
+              credentialType: certificateTemplates.credentialType,
+              minPassingGrade: certificateTemplates.minPassingGrade,
+              validityPeriod: certificateTemplates.validityPeriod,
+              backgroundImage: certificateTemplates.backgroundImage,
+              logoUrl: certificateTemplates.logoUrl,
+              isActive: certificateTemplates.isActive,
+              createdAt: certificateTemplates.createdAt,
+              updatedAt: certificateTemplates.updatedAt
+            })
+            .from(certificateTemplates)
+            .leftJoin(courses, eq(certificateTemplates.courseId, courses.id));
       res.json(templates);
     } catch (error) {
       console.error("Error fetching certificate templates:", error);
@@ -3466,20 +3480,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const templateData = {
-        name,
-        description: description || null,
+        name: name as string,
+        description: (description || null) as string | null,
         courseId: courseId ? parseInt(courseId) : null,
-        credentialType: credentialType || 'completion',
-        minPassingGrade: minPassingGrade ? parseFloat(minPassingGrade) : 70.0,
+        credentialType: (credentialType || 'completion') as string,
+        minPassingGrade: minPassingGrade ? minPassingGrade.toString() : "70.00",
         validityPeriod: validityPeriod ? parseInt(validityPeriod) : null,
-        backgroundImage: backgroundImageUrl,
-        logoUrl: logoUrl,
+        backgroundImage: backgroundImageUrl as string | null,
+        logoUrl: logoUrl as string | null,
         isActive: true
       };
 
       const [newTemplate] = await db
         .insert(certificateTemplates)
-        .values(templateData)
+        .values([templateData])
         .returning();
 
       res.status(201).json(newTemplate);
@@ -3540,14 +3554,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updateData = {
-        name,
-        description: description || null,
+        name: name as string,
+        description: (description || null) as string | null,
         courseId: courseId ? parseInt(courseId) : null,
-        credentialType: credentialType || 'completion',
-        minPassingGrade: minPassingGrade ? parseFloat(minPassingGrade) : 70.0,
+        credentialType: (credentialType || 'completion') as string,
+        minPassingGrade: minPassingGrade ? minPassingGrade.toString() : "70.00",
         validityPeriod: validityPeriod ? parseInt(validityPeriod) : null,
-        backgroundImage: backgroundImageUrl,
-        logoUrl: logoUrl,
+        backgroundImage: backgroundImageUrl as string | null,
+        logoUrl: logoUrl as string | null,
         updatedAt: new Date()
       };
 
