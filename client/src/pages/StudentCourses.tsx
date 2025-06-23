@@ -281,18 +281,41 @@ export default function StudentCourses() {
                           target.src = `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=160&q=80`;
                         }}
                       />
+                      {course.progress === 100 && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-yellow-400/20 via-orange-400/20 to-red-400/20 backdrop-blur-sm">
+                          <div className="text-center text-black">
+                            <Trophy className="w-12 h-12 mx-auto mb-1 animate-bounce text-yellow-600" />
+                            <div className="text-xs font-bold">COMPLETED!</div>
+                            <Sparkles className="w-6 h-6 mx-auto animate-spin text-orange-500" />
+                          </div>
+                        </div>
+                      )}
+
                       <div className="absolute top-2 right-2">
-                        <Badge variant="outline" className="text-xs bg-green-100/90 text-green-700 border-green-300 backdrop-blur-sm">
-                          Enrolled
+                        <Badge variant="outline" className={`text-xs backdrop-blur-sm ${
+                          course.progress === 100 
+                            ? 'bg-yellow-100/90 text-yellow-700 border-yellow-300 animate-pulse' 
+                            : 'bg-green-100/90 text-green-700 border-green-300'
+                        }`}>
+                          {course.progress === 100 ? '🎉 Completed' : 'Enrolled'}
                         </Badge>
                       </div>
                       <div className="absolute bottom-2 left-2 right-2">
-                        <div className="bg-white/90 backdrop-blur-sm rounded p-2">
+                        <div className={`backdrop-blur-sm rounded p-2 ${
+                          course.progress === 100 
+                            ? 'bg-gradient-to-r from-yellow-100/90 to-orange-100/90' 
+                            : 'bg-white/90'
+                        }`}>
                           <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Progress</span>
-                            <span>{course.progress || 0}%</span>
+                            <span className={course.progress === 100 ? 'font-bold text-yellow-700' : ''}>
+                              {course.progress || 0}%
+                            </span>
                           </div>
-                          <Progress value={course.progress || 0} className="h-1" />
+                          <Progress 
+                            value={course.progress || 0} 
+                            className={`h-1 ${course.progress === 100 ? 'bg-gradient-to-r from-yellow-400 to-orange-400' : ''}`} 
+                          />
                         </div>
                       </div>
                     </div>
@@ -315,15 +338,35 @@ export default function StudentCourses() {
                         )}
                       </div>
 
+                      {course.progress === 100 && (
+                        <div className="mb-3 p-2 bg-gradient-to-r from-yellow-100 to-orange-100 border border-yellow-300 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Trophy className="w-4 h-4 text-yellow-600" />
+                            <span className="font-medium text-yellow-800">Course Completed!</span>
+                            <Sparkles className="w-4 h-4 text-orange-500" />
+                          </div>
+                          <p className="text-xs text-yellow-700 mt-1">You've mastered all lessons in this course. Well done!</p>
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
                         <Button 
-                          variant="default" 
+                          variant={course.progress === 100 ? "secondary" : "default"}
                           size="sm" 
-                          className="flex-1"
+                          className={`flex-1 ${course.progress === 100 ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200' : ''}`}
                           onClick={() => setLocation(`/courses/${course.id}`)}
                         >
-                          <Play className="w-4 h-4 mr-2" />
-                          {(course.progress || 0) > 0 ? 'Continue' : 'Start'}
+                          {course.progress === 100 ? (
+                            <>
+                              <Trophy className="w-4 h-4 mr-2" />
+                              Review
+                            </>
+                          ) : (
+                            <>
+                              <Play className="w-4 h-4 mr-2" />
+                              {(course.progress || 0) > 0 ? 'Continue' : 'Start'}
+                            </>
+                          )}
                         </Button>
                         <Button 
                           variant="outline" 
