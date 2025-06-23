@@ -538,7 +538,7 @@ const CertificateTemplateManager: React.FC = () => {
             <div className="flex justify-center py-10">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
             </div>
-          ) : templates.length === 0 ? (
+          ) : ((templates || []) as any[]).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <FileText className="h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold">No Templates Found</h3>
@@ -561,7 +561,7 @@ const CertificateTemplateManager: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(templates as CertificateTemplate[]).map((template) => (
+                  {((templates || []) as CertificateTemplate[]).map((template) => (
                     <TableRow key={template.id}>
                       <TableCell>
                         <Badge variant={template.isActive ? "default" : "secondary"}>

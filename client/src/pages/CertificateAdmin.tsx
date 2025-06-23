@@ -348,12 +348,12 @@ export default function CertificateAdmin() {
                                     <div className="flex justify-center py-2">
                                       <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
                                     </div>
-                                  ) : students.length === 0 ? (
+                                  ) : studentsArray.length === 0 ? (
                                     <div className="p-2 text-center text-sm text-muted-foreground">
                                       No students found
                                     </div>
                                   ) : (
-                                    students.map((student: any) => (
+                                    studentsArray.map((student: any) => (
                                       <SelectItem key={student.id} value={student.id}>
                                         {student.firstName} {student.lastName}
                                       </SelectItem>
@@ -386,12 +386,12 @@ export default function CertificateAdmin() {
                                     <div className="flex justify-center py-2">
                                       <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
                                     </div>
-                                  ) : courses.length === 0 ? (
+                                  ) : coursesArray.length === 0 ? (
                                     <div className="p-2 text-center text-sm text-muted-foreground">
                                       No courses found
                                     </div>
                                   ) : (
-                                    courses.map((course: any) => (
+                                    coursesArray.map((course: any) => (
                                       <SelectItem key={course.id} value={course.id.toString()}>
                                         {course.title}
                                       </SelectItem>
