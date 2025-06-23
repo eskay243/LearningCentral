@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import CertificateTemplate from "@/components/certificates/CertificateTemplate";
 import CertificateTemplateManager from "@/components/CertificateTemplateManager";
+import AccessRestricted from "@/components/AccessRestricted";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -77,15 +78,8 @@ export default function CertificateAdmin() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       setLocation("/api/login");
-    } else if (!isLoading && isAuthenticated && !isAdmin && !isMentor) {
-      setLocation("/dashboard");
-      toast({
-        title: "Access Denied",
-        description: "You need admin or mentor privileges to access this page.",
-        variant: "destructive",
-      });
     }
-  }, [isLoading, isAuthenticated, isAdmin, isMentor, setLocation, toast]);
+  }, [isLoading, isAuthenticated, setLocation]);
 
   // Fetch all certificates
   const { data: certificates = [], isLoading: isLoadingCertificates } = useQuery({
@@ -242,19 +236,12 @@ export default function CertificateAdmin() {
 
   if (!isAdmin && !isMentor) {
     return (
-      <div className="container mx-auto py-10">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-destructive">Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>You do not have permission to access this page.</p>
-          </CardContent>
-          <CardFooter>
-            <Button onClick={() => setLocation("/dashboard")}>Return to Dashboard</Button>
-          </CardFooter>
-        </Card>
-      </div>
+      <AccessRestricted
+        title="Certificate Management Access Required"
+        message="This page is restricted to administrators and mentors only."
+        requiredRole="admin or mentor"
+        showBackButton={true}
+      />
     );
   }
 

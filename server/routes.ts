@@ -11,7 +11,9 @@ import {
   courseEnrollments,
   modules,
   lessons,
-  courses
+  courses,
+  certificateTemplates,
+  generatedCertificates
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import multer from "multer";
