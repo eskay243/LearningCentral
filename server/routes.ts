@@ -3399,11 +3399,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let nextLesson = null;
             
             for (const module of modules) {
-              const lessons = await storage.getLessonsByModule(module.id);
+              // Since getModulesByCourse now includes lessons, use them directly
+              const lessons = module.lessons || [];
               totalLessons += lessons.length;
               
               for (const lesson of lessons) {
                 const progress = await storage.getLessonProgress(lesson.id, userId);
+                console.log(`Lesson ${lesson.id} progress:`, progress);
                 if (progress && progress.status === 'completed') {
                   completedLessons++;
                 } else if (!nextLesson && (!progress || progress.status !== 'completed')) {
@@ -3415,6 +3417,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               }
             }
+            
+            console.log(`Course ${course.id} progress: ${completedLessons}/${totalLessons} lessons completed`);
             
             // Update progress calculation if we have lesson data
             if (totalLessons > 0) {
