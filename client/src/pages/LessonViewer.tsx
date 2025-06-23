@@ -172,18 +172,43 @@ export default function LessonViewer() {
     );
   }
 
-  const currentLessonIndex = lessons?.findIndex((l: any) => l.id === parseInt(lessonId || '0')) || 0;
-  const previousLesson = lessons?.[currentLessonIndex - 1];
-  const nextLesson = lessons?.[currentLessonIndex + 1];
-  const progress = ((currentLessonIndex + 1) / (lessons?.length || 1)) * 100;
+  // Fix lesson navigation logic
+  const currentLessonId = parseInt(lessonId || '0');
+  let currentLessonIndex = -1;
+  let allLessons: any[] = [];
+  
+  // Build complete lesson list from modules
+  if (modules && modules.length > 0) {
+    allLessons = modules.flatMap((module: any) => {
+      if (module.lessons && Array.isArray(module.lessons)) {
+        return module.lessons.map((lesson: any) => ({
+          ...lesson,
+          moduleTitle: module.title
+        }));
+      }
+      return [];
+    }).sort((a: any, b: any) => {
+      // Sort by ID if orderIndex is the same
+      if (a.orderIndex === b.orderIndex) {
+        return a.id - b.id;
+      }
+      return a.orderIndex - b.orderIndex;
+    });
+    
+    currentLessonIndex = allLessons.findIndex((l: any) => l.id === currentLessonId);
+  }
+  
+  const previousLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
+  const nextLesson = currentLessonIndex >= 0 && currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
+  const progress = allLessons.length > 0 ? ((currentLessonIndex + 1) / allLessons.length) * 100 : 0;
 
   // Debug logging for navigation
   console.log('Navigation Debug:', {
-    lessonId: parseInt(lessonId || '0'),
+    currentLessonId,
     lessonIdParam: lessonId,
-    modules: modules?.length,
-    lessons: lessons?.map(l => ({ id: l.id, title: l.title })),
-    lessonsLength: lessons?.length,
+    modulesCount: modules?.length || 0,
+    allLessons: allLessons.map(l => ({ id: l.id, title: l.title })),
+    allLessonsLength: allLessons.length,
     currentLessonIndex,
     previousLesson: previousLesson ? { id: previousLesson.id, title: previousLesson.title } : null,
     nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null
@@ -219,7 +244,7 @@ export default function LessonViewer() {
               </div>
               <div className="flex items-center gap-1">
                 <BookOpen className="h-4 w-4" />
-                <span>Lesson {currentLessonIndex + 1} of {lessons?.length}</span>
+                <span>Lesson {currentLessonIndex + 1} of {allLessons.length}</span>
               </div>
               {lesson.lessonType && (
                 <Badge variant="secondary">{lesson.lessonType}</Badge>
