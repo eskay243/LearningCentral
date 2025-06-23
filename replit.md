@@ -141,13 +141,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### June 23, 2025 - ENHANCED DASHBOARD & 100% LMS COMPLETION
+### June 23, 2025 - ENHANCED MESSAGING & 100% LMS COMPLETION
+- **Enhanced Messaging System**: Improved mentor-student communication functionality
+  - Enhanced Recipients field with checkboxes showing student details (name, email, role)
+  - Mentors can now see only enrolled students in their messaging Recipients list
+  - Implemented student message notifications when receiving messages from mentors
+  - Fixed authentication issues preventing proper access to mentor-specific endpoints
+  - Created comprehensive test data with enrolled students for messaging functionality
 - **Smart Dashboard Improvements**: Implemented all high-impact user feedback suggestions
-  - 🧠 AI Learning Assistant with personalized progress insights
-  - 📊 Visual Progress Analytics with interactive charts and trend graphs
-  - 📅 Interactive Learning Calendar with deadline tracking
-  - 🎖️ Gamification Layer with levels, badges, and achievements
-  - 💬 Enhanced Message Center for mentor communication
+  - AI Learning Assistant with personalized progress insights
+  - Visual Progress Analytics with interactive charts and trend graphs
+  - Interactive Learning Calendar with deadline tracking
+  - Gamification Layer with levels, badges, and achievements
+  - Enhanced Message Center for mentor communication
 - **Dashboard Streamlining**: Removed redundant sections per user feedback
   - Eliminated "My Courses" section (accessible via sidebar navigation)
   - Removed "Available Courses" section (accessible via "Browse Courses" action)
