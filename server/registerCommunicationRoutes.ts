@@ -208,7 +208,6 @@ export function registerCommunicationRoutes(app: Express) {
       
       // Create conversation
       const conversation = await storage.createConversation({
-        creatorId: userId,
         title: req.body.title || null,
         isGroup: participantIds.length > 1,
       });
