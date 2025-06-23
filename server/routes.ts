@@ -2901,15 +2901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: 'pending'
               });
               
-              // Notify mentor about new enrollment and commission
-              await storage.createNotification({
-                userId: course.mentorId,
-                title: 'New Student Enrollment',
-                message: `A new student enrolled in "${course.title}". Commission earned: ₦${commissionAmount.toFixed(2)}`,
-                type: 'success',
-                read: false,
-                linkUrl: `/mentor/courses/${courseId}/enrollments`
-              });
+              console.log(`Created commission record: ₦${commissionAmount.toFixed(2)} for mentor ${course.mentorId}`);
             } catch (commissionError) {
               console.error("Error creating mentor commission:", commissionError);
               // Continue with enrollment even if commission creation fails
@@ -2931,26 +2923,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
               channel: (paymentData.data as any)?.channel
             });
             
-            // Notify mentor about new enrollment and commission
-            await storage.createNotification({
-              userId: course.mentorId,
-              title: 'New Student Enrollment',
-              message: `A new student enrolled in "${course.title}". Commission earned: ₦${commissionAmount.toFixed(2)}`,
-              type: 'success',
-              read: false,
-              linkUrl: `/mentor/courses/${courseId}/enrollments`
-            });
+            // Get student name for notifications
+            const student = await storage.getUser(userId);
+            const studentName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : 'A student';
+            
+            // Trigger comprehensive notification events
+            try {
+              // Notify student of successful payment and enrollment
+              await storage.notifyPaymentSuccess(userId, course.title, paymentAmount);
+              await storage.notifyEnrollmentConfirmed(userId, course.title);
+              
+              // Notify mentor of new student and commission
+              await storage.notifyMentorNewStudent(course.mentorId, studentName, course.title, commissionAmount);
+              
+              // Notify all admins of new payment
+              await storage.notifyAdminNewPayment(studentName, course.title, paymentAmount);
+              
+              console.log(`Sent comprehensive notifications for enrollment: ${studentName} -> ${course.title}`);
+            } catch (notificationError) {
+              console.error("Error sending notifications:", notificationError);
+              // Continue even if notifications fail
+            }
           }
-          
-          // Create notification for user
-          await storage.createNotification({
-            userId: userId,
-            title: 'Enrollment Successful',
-            message: `You have successfully enrolled in the course: ${(paymentData.data as any)?.metadata?.courseName || 'Course'}`,
-            type: 'success',
-            read: false,
-            linkUrl: `/courses/${courseId}`
-          });
           
           return res.json({
             success: true,
