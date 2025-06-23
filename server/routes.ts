@@ -23,6 +23,7 @@ import { registerKycRoutes } from "./kycRoutes";
 
 import { registerMentorManagementRoutes } from "./mentorManagementRoutes";
 import { registerCommunicationRoutes } from "./registerCommunicationRoutes";
+import { registerPaymentRoutes } from "./paymentRoutes";
 
 
 // Mock data for UI display when database is not fully connected
@@ -3248,6 +3249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register communication routes
   registerCommunicationRoutes(app);
+  
+  // Register payment routes
+  registerPaymentRoutes(app);
 
   // Create HTTP server
   // Course Discussion Routes

@@ -29,6 +29,13 @@ export default function PaymentCallback() {
       const response = await apiRequest("POST", "/api/payments/verify", {
         reference: paymentRef
       });
+      
+      // Check if response is HTML (indicates routing issue)
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        throw new Error('Payment verification endpoint returned HTML instead of JSON');
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
