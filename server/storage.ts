@@ -6197,21 +6197,6 @@ export class DatabaseStorage implements IStorage {
     }
   }
   // Conversation and messaging methods
-  async createConversation(conversationData: { creatorId: string; title?: string | null; isGroup: boolean }): Promise<any> {
-    try {
-      const [conversation] = await db
-        .insert(conversations)
-        .values({
-          title: conversationData.title,
-          type: conversationData.isGroup ? "group" : "direct"
-        })
-        .returning();
-      return conversation;
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      throw new Error("Failed to create conversation");
-    }
-  }
 
   async addConversationParticipants(conversationId: number, participantIds: string[]): Promise<void> {
     try {

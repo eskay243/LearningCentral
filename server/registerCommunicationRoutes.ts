@@ -90,6 +90,11 @@ export function registerCommunicationRoutes(app: Express) {
       const { recipients, title, content, type, courseId } = req.body;
       
       console.log('Creating conversation - userId:', userId, 'userRole:', userRole, 'recipients:', recipients, 'type:', type);
+      
+      if (!recipients || recipients.length === 0) {
+        console.log('No recipients provided');
+        return res.status(400).json({ message: "No recipients provided" });
+      }
 
       let participantIds = [];
 
@@ -119,28 +124,9 @@ export function registerCommunicationRoutes(app: Express) {
         isGroup: participantIds.length > 1,
       });
 
-      // Validate participant IDs exist in database
+      // Add all participants including sender
       const allParticipantIds = [userId, ...participantIds.filter((id: string) => id !== userId)];
-      console.log('All participant IDs to validate:', allParticipantIds);
-      const validParticipantIds = [];
-      
-      for (const participantId of allParticipantIds) {
-        const user = await storage.getUserById(participantId);
-        console.log(`Validating participant ${participantId}:`, user ? 'FOUND' : 'NOT FOUND');
-        if (user) {
-          validParticipantIds.push(participantId);
-        } else {
-          console.warn(`Invalid user ID ${participantId} - skipping`);
-        }
-      }
-
-      console.log('Valid participant IDs:', validParticipantIds);
-      if (validParticipantIds.length === 0) {
-        return res.status(400).json({ message: "No valid participants found" });
-      }
-
-      // Add participants
-      await storage.addConversationParticipants(conversation.id, validParticipantIds);
+      await storage.addConversationParticipants(conversation.id, allParticipantIds);
 
       // Send initial message
       if (content) {
