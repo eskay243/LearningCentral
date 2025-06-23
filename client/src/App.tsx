@@ -106,6 +106,7 @@ function Router() {
         <Route path="/courses/:id/view" component={CourseView} />
         <Route path="/courses/:id/discussion" component={CourseDiscussion} />
         <Route path="/courses/:id/curriculum" component={CourseCurriculum} />
+        <Route path="/courses/:id/manage" component={CourseManagementDashboard} />
         <Route path="/courses/:id/payment" component={PaymentPage} />
         <Route path="/courses/:id/bank-transfer" component={BankTransferInstructions} />
         <Route path="/courses/:id/preview" component={CoursePreview} />
