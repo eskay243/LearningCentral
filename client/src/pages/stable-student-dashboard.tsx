@@ -288,26 +288,40 @@ export default function StableStudentDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-semibold text-gray-900 truncate">{course.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2">by {course.instructor}</p>
-                        <div className="flex items-center space-x-2">
-                          <Progress value={course.progress} className="flex-1" />
-                          <span className="text-sm text-gray-600">{course.progress}%</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {course.completedLessons} of {course.totalLessons} lessons completed
-                        </p>
-                        {course.nextLesson && (
-                          <div className="mt-2">
+                        <p className="text-sm text-gray-600 mb-3">by {course.instructor}</p>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <span className="text-sm text-gray-500">
+                              {course.completedLessons} of {course.totalLessons} lessons
+                            </span>
+                            {course.progress === 100 && (
+                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                <Trophy className="w-3 h-3 mr-1" />
+                                Completed
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          {course.nextLesson ? (
                             <Button 
                               size="sm" 
                               className="bg-purple-600 hover:bg-purple-700"
                               onClick={() => setLocation(`/courses/${course.id}/lessons/${course.nextLesson?.id}`)}
                             >
                               <PlayCircle className="w-4 h-4 mr-2" />
-                              Continue: {course.nextLesson.title}
+                              Continue Learning
                             </Button>
-                          </div>
-                        )}
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setLocation(`/course/${course.id}`)}
+                            >
+                              View Course
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))
