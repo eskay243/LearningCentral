@@ -3384,49 +3384,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Certificate not available - course not completed" });
       }
       
-      // Generate certificate PDF
-      const PDFDocument = (await import('pdfkit')).default;
-      const doc = new PDFDocument({
-        size: 'A4',
-        layout: 'landscape',
-        margins: { top: 50, bottom: 50, left: 50, right: 50 }
-      });
-      
-      // Set response headers for PDF download
+      console.log(`[CERTIFICATE] Generating PDF for completed enrollment`);
+
+      // Create simple PDF response
+      const certificateContent = `
+        CERTIFICATE OF COMPLETION
+        
+        This is to certify that
+        
+        ${enrollment.firstName} ${enrollment.lastName}
+        
+        has successfully completed the course
+        
+        "${enrollment.title}"
+        
+        Awarded on: ${new Date().toLocaleDateString()}
+        
+        Codelab Educare
+      `;
+
+      // Set headers for PDF response
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf"`);
       
-      // Pipe PDF to response
+      // Generate PDF using PDFKit
+      const PDFDocument = (await import('pdfkit')).default;
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'landscape'
+      });
+      
+      // Pipe to response
       doc.pipe(res);
       
-      // Certificate design
-      const pageWidth = doc.page.width;
-      const pageHeight = doc.page.height;
-      const centerX = pageWidth / 2;
+      // Add content
+      doc.fontSize(24)
+         .text('CERTIFICATE OF COMPLETION', 100, 100, { align: 'center' });
       
-      // Background border
-      doc.rect(30, 30, pageWidth - 60, pageHeight - 60)
-         .stroke('#1a365d', 3);
+      doc.fontSize(18)
+         .text('This is to certify that', 100, 150, { align: 'center' });
       
-      doc.rect(45, 45, pageWidth - 90, pageHeight - 90)
-         .stroke('#2d5a87', 1);
+      doc.fontSize(20)
+         .text(`${enrollment.firstName} ${enrollment.lastName}`, 100, 200, { align: 'center' });
       
-      // Header
-      doc.fillColor('#1a365d')
-         .fontSize(36)
-         .font('Helvetica-Bold')
-         .text('CERTIFICATE OF COMPLETION', 0, 120, { align: 'center' });
+      doc.fontSize(16)
+         .text('has successfully completed the course', 100, 250, { align: 'center' });
       
-      // Decorative line
-      doc.moveTo(centerX - 150, 180)
-         .lineTo(centerX + 150, 180)
-         .stroke('#d4af37', 2);
+      doc.fontSize(18)
+         .text(`"${enrollment.title}"`, 100, 300, { align: 'center' });
       
-      // This certifies text
-      doc.fillColor('#4a5568')
-         .fontSize(18)
-         .font('Helvetica')
-         .text('This is to certify that', 0, 220, { align: 'center' });
+      doc.fontSize(14)
+         .text(`Awarded on: ${new Date().toLocaleDateString()}`, 100, 350, { align: 'center' });
+      
+      doc.fontSize(16)
+         .text('Codelab Educare', 100, 400, { align: 'center' });
+      
+      // Finalize PDF
+      doc.end();
+      
+      console.log(`[CERTIFICATE] PDF generated successfully for enrollment ${enrollmentId}`);
       
       // Student name
       doc.fillColor('#1a365d')
