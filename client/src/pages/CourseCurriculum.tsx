@@ -75,15 +75,23 @@ export default function CourseCurriculum() {
       </div>
 
       <div className="flex justify-between items-center mb-6">
-        <p className="text-gray-600">Manage your course modules and lessons</p>
-        <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => openModuleDialog()}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Module
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        <div>
+          <p className="text-gray-600">Manage your course modules and lessons</p>
+          <p className="text-sm text-gray-500 mt-1">Add modules (chapters) to organize your course content</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => setLocation(`/courses/${id}`)}>
+            <Edit2 className="w-4 h-4 mr-2" />
+            Edit Course Details
+          </Button>
+          <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => openModuleDialog()}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Module
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingModule ? 'Edit Module' : 'Create New Module'}</DialogTitle>
             </DialogHeader>
@@ -187,15 +195,22 @@ export default function CourseCurriculum() {
             </Card>
           ))
         ) : (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Book className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No modules yet</h3>
-              <p className="text-gray-600 mb-4">Start building your curriculum by creating your first module</p>
-              <Button onClick={() => openModuleDialog()}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create First Module
-              </Button>
+          <Card className="border-dashed border-2 border-gray-300">
+            <CardContent className="text-center py-12">
+              <Book className="w-16 h-16 text-gray-400 mx-auto mb-6" />
+              <h3 className="text-xl font-semibold mb-3">Ready to build your course curriculum?</h3>
+              <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                Organize your course content into modules (chapters) and lessons. Start by creating your first module to structure your teaching material.
+              </p>
+              <div className="space-y-3">
+                <Button onClick={() => openModuleDialog()} size="lg" className="px-8">
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create Your First Module
+                </Button>
+                <div className="text-sm text-gray-500">
+                  Example: "Introduction to React" or "Getting Started"
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}

@@ -15,6 +15,7 @@ import StudentCourses from "@/pages/StudentCourses";
 import CourseExercises from "@/pages/CourseExercises";
 import CreateCourse from "@/pages/CreateCourse";
 import CourseCurriculum from "@/pages/CourseCurriculum";
+import CourseManagementDashboard from "@/pages/CourseManagementDashboard";
 import LessonEditor from "@/pages/LessonEditor";
 import LessonViewer from "@/pages/LessonViewer";
 import CoursePreview from "@/pages/CoursePreview";

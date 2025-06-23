@@ -238,12 +238,20 @@ const CreateCourse = () => {
       
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/mentor/courses"] });
       if (isEditMode) {
         queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}`] });
       }
       
-      // Navigate to the course detail page
-      navigate(`/courses/${courseData.id || courseId}`);
+      // For new courses, redirect to curriculum management for immediate content creation
+      // For edited courses, stay on the course detail page
+      const targetCourseId = courseData.id || courseId;
+      if (isEditMode) {
+        navigate(`/courses/${targetCourseId}`);
+      } else {
+        // New course created - go directly to curriculum management for content creation
+        navigate(`/courses/${targetCourseId}/curriculum`);
+      }
     } catch (error: any) {
       toast({
         title: isEditMode ? "Couldn't save your changes" : "Course creation hit a snag",
