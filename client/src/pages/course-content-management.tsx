@@ -32,7 +32,10 @@ import {
   Plus,
   Trash2,
   Edit,
-  Save
+  Save,
+  ArrowLeft,
+  Youtube,
+  Link
 } from "lucide-react";
 
 // Video upload schema
@@ -46,6 +49,16 @@ const videoUploadSchema = z.object({
   allowDownload: z.boolean().default(false),
   watermarkText: z.string().optional(),
   accessLevel: z.enum(["free", "premium", "restricted"]).default("premium"),
+  uploadType: z.enum(["file", "youtube"]).default("file"),
+  youtubeUrl: z.string().optional(),
+}).refine((data) => {
+  if (data.uploadType === "youtube") {
+    return data.youtubeUrl && data.youtubeUrl.length > 0;
+  }
+  return true;
+}, {
+  message: "YouTube URL is required when upload type is YouTube",
+  path: ["youtubeUrl"],
 });
 
 // Coding exercise schema
@@ -119,7 +132,7 @@ type Assignment = z.infer<typeof assignmentSchema>;
 type Quiz = z.infer<typeof quizSchema>;
 
 export default function CourseContentManagement() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("videos");
   const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -362,14 +375,23 @@ export default function CourseContentManagement() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-            <Settings className="mr-3 h-8 w-8" />
-            Course Content Management
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Create and manage videos, coding exercises, assignments, and quizzes
-          </p>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/my-courses')}
+            className="mr-4 p-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+              <Settings className="mr-3 h-8 w-8" />
+              Course Content Management
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Create and manage videos, coding exercises, assignments, and quizzes
+            </p>
+          </div>
         </div>
       </div>
 

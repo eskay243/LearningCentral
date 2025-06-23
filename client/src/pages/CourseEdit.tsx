@@ -38,7 +38,7 @@ const categories = [
 ];
 
 export default function CourseEdit() {
-  const { courseId } = useParams();
+  const { id: courseId } = useParams();
   const { user, isLoading: isAuthLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
