@@ -212,7 +212,7 @@ export default function CertificateAdmin() {
     }
   };
 
-  const filteredCertificates = certificates
+  const filteredCertificates = ((certificates || []) as any[])
     .filter((cert: any) => {
       const matchesSearch = searchQuery === "" ||
         cert.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -245,13 +245,16 @@ export default function CertificateAdmin() {
     );
   }
 
+  const studentsArray = (students || []) as any[];
+  const coursesArray = (courses || []) as any[];
+  
   const studentName = form.watch("userId")
-    ? students.find((s: any) => s.id === form.watch("userId"))?.firstName + " " + 
-      students.find((s: any) => s.id === form.watch("userId"))?.lastName
+    ? studentsArray.find((s: any) => s.id === form.watch("userId"))?.firstName + " " + 
+      studentsArray.find((s: any) => s.id === form.watch("userId"))?.lastName
     : "Student Name";
 
   const courseTitle = form.watch("courseId")
-    ? courses.find((c: any) => c.id.toString() === form.watch("courseId"))?.title
+    ? coursesArray.find((c: any) => c.id.toString() === form.watch("courseId"))?.title
     : "Course Title";
 
   const selectedTemplate = form.watch("templateStyle");

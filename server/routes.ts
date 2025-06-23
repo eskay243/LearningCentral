@@ -5304,9 +5304,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
          .text('CERTIFICATE OF COMPLETION', 0, 80, { align: 'center' });
       
       // Decorative line
-      doc.moveTo(150, 140)
+      doc.strokeColor('#32CD32')
+         .moveTo(150, 140)
          .lineTo(pageWidth - 150, 140)
-         .stroke('#32CD32', 2);
+         .stroke();
       
       // Main content
       doc.fontSize(18)
@@ -5346,9 +5347,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
          .text(`Certificate ID: CERT-${enrollment.id}-${Date.now()}`, 0, 510, { align: 'center' });
       
       // Signature line
-      doc.moveTo(500, 480)
+      doc.strokeColor('#999999')
+         .moveTo(500, 480)
          .lineTo(650, 480)
-         .stroke('#999999', 1);
+         .stroke();
       
       doc.fontSize(12)
          .fillColor('#666666')
