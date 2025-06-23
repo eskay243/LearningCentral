@@ -1,0 +1,33 @@
+===============================================
+            CODELAB EDUCARE
+         PAYMENT RECEIPT
+===============================================
+
+Receipt Number: null
+Date: 22/06/2025
+Status: COMPLETED
+
+-----------------------------------------------
+STUDENT DETAILS
+-----------------------------------------------
+Name: Oyinkonsola Ojobo
+Email: oyinkonsola.ojobo@codelabeducare.com
+
+-----------------------------------------------
+COURSE DETAILS
+-----------------------------------------------
+Course: Node.js Backend Mastery
+Amount: ₦0
+Payment Method: Online Payment
+Provider: paystack
+
+-----------------------------------------------
+TOTAL PAID: ₦0
+-----------------------------------------------
+
+Thank you for your payment!
+This is a computer-generated receipt.
+
+For support: support@codelabeducare.com
+Generated: 23/06/2025, 05:34:35
+===============================================

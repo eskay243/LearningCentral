@@ -6657,6 +6657,13 @@ export class DatabaseStorage implements IStorage {
           eq(courseEnrollments.paymentStatus, 'completed')
         ));
 
+      if (payment) {
+        // Generate payment reference if missing
+        if (!payment.paymentReference) {
+          payment.paymentReference = `ENROLLMENT-${payment.id}-${Date.now()}`;
+        }
+      }
+
       return payment;
     } catch (error) {
       console.error("Error fetching payment record:", error);
@@ -6665,13 +6672,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generatePaymentReceipt(payment: any): Promise<Buffer> {
+    // Handle missing or null payment amounts
+    const amount = payment.amount || 0;
+    const formattedAmount = amount > 0 ? `₦${(amount / 100).toLocaleString()}` : 'Free Enrollment';
+    
+    // Handle missing payment reference - check for null, 'null', undefined, or empty string
+    const hasValidReference = payment.paymentReference && 
+                             payment.paymentReference !== 'null' && 
+                             payment.paymentReference !== null && 
+                             payment.paymentReference.trim() !== '';
+    const receiptNumber = hasValidReference ? payment.paymentReference : `ENROLLMENT-${payment.id}`;
+    
+    // Determine enrollment type
+    const enrollmentType = amount > 0 ? 'PAYMENT RECEIPT' : 'ENROLLMENT RECEIPT';
+    const thankYouMessage = amount > 0 ? 'Thank you for your payment!' : 'Thank you for enrolling with us!';
+    
     const receiptText = `
 ===============================================
             CODELAB EDUCARE
-         PAYMENT RECEIPT
+         ${enrollmentType}
 ===============================================
 
-Receipt Number: ${payment.paymentReference}
+Receipt Number: ${receiptNumber}
 Date: ${new Date(payment.createdAt).toLocaleDateString('en-GB')}
 Status: ${payment.status.toUpperCase()}
 
@@ -6685,15 +6707,15 @@ Email: ${payment.studentEmail}
 COURSE DETAILS
 -----------------------------------------------
 Course: ${payment.courseTitle}
-Amount: ₦${(payment.amount / 100).toLocaleString()}
-Payment Method: ${payment.paymentMethod || 'Online Payment'}
-Provider: ${payment.paymentProvider || 'Paystack'}
+Amount: ${formattedAmount}
+Payment Method: ${payment.paymentMethod || 'Direct Enrollment'}
+Provider: ${payment.paymentProvider || 'Codelab Educare'}
 
 -----------------------------------------------
-TOTAL PAID: ₦${(payment.amount / 100).toLocaleString()}
+TOTAL: ${formattedAmount}
 -----------------------------------------------
 
-Thank you for your payment!
+${thankYouMessage}
 This is a computer-generated receipt.
 
 For support: support@codelabeducare.com
