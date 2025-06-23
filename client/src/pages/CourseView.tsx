@@ -92,6 +92,25 @@ export default function CourseView() {
   const currentLesson = lessons?.find(lesson => lesson.id === currentLessonId);
   const currentModule = modules?.find(module => module.id === currentModuleId);
 
+  // Build complete lessons list for navigation
+  const allLessons = modules?.flatMap(module => 
+    module.lessons?.map(lesson => ({ ...lesson, moduleTitle: module.title })) || []
+  ).sort((a, b) => a.id - b.id) || [];
+
+  // Get current lesson index for navigation
+  const currentLessonIndex = allLessons.findIndex(lesson => lesson.id === currentLessonId);
+  const previousLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
+  const nextLesson = currentLessonIndex >= 0 && currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
+
+  const handleLessonNavigation = (lessonId: number) => {
+    const lesson = allLessons.find(l => l.id === lessonId);
+    if (lesson) {
+      const module = modules?.find(m => m.lessons?.some(l => l.id === lessonId));
+      setCurrentLessonId(lessonId);
+      setCurrentModuleId(module?.id || null);
+    }
+  };
+
   if (courseLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -239,13 +258,54 @@ export default function CourseView() {
 
                   {/* Navigation */}
                   <div className="flex justify-between items-center mt-8 pt-6 border-t">
-                    <Button variant="outline">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        console.log('Previous lesson clicked:', {
+                          previousLesson: previousLesson ? { id: previousLesson.id, title: previousLesson.title } : null,
+                          currentLessonIndex,
+                          allLessonsLength: allLessons.length
+                        });
+                        if (previousLesson) {
+                          handleLessonNavigation(previousLesson.id);
+                        }
+                      }}
+                      disabled={!previousLesson}
+                    >
                       <ArrowLeft className="h-4 w-4 mr-2" />
                       Previous Lesson
                     </Button>
-                    <Button>
-                      Next Lesson
-                      <ArrowRight className="h-4 w-4 ml-2" />
+                    <Button
+                      onClick={() => {
+                        console.log('Next/Finish lesson clicked:', {
+                          nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null,
+                          currentLessonIndex,
+                          allLessonsLength: allLessons.length,
+                          isLastLesson: !nextLesson
+                        });
+                        if (nextLesson) {
+                          handleLessonNavigation(nextLesson.id);
+                        } else {
+                          toast({
+                            title: "Course Completed!",
+                            description: "Congratulations on completing this course!",
+                          });
+                          setLocation(`/courses/${id}`);
+                        }
+                      }}
+                      disabled={allLessons.length === 0}
+                    >
+                      {nextLesson ? (
+                        <>
+                          Next Lesson
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </>
+                      ) : (
+                        <>
+                          Finish Course
+                          <CheckCircle className="h-4 w-4 ml-2" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
