@@ -5726,6 +5726,25 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getQuizQuestions(quizId: number): Promise<any[]> {
+    try {
+      return await db.select().from(quizQuestions).where(eq(quizQuestions.quizId, quizId)).orderBy(quizQuestions.orderIndex);
+    } catch (error) {
+      console.error("Error fetching quiz questions:", error);
+      return [];
+    }
+  }
+
+  async getQuiz(quizId: number): Promise<any> {
+    try {
+      const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, quizId));
+      return quiz;
+    } catch (error) {
+      console.error("Error fetching quiz:", error);
+      return null;
+    }
+  }
+
   async createAssignmentRubric(rubricData: any): Promise<any> {
     try {
       const [rubric] = await db.insert(assignmentRubrics).values({

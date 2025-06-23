@@ -4313,6 +4313,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quiz submission API endpoints
+  app.post('/api/quiz/:quizId/submit', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const quizId = parseInt(req.params.quizId);
+      const { answers } = req.body;
+      const userId = req.user?.id;
+
+      if (isNaN(quizId)) {
+        return res.status(400).json({ message: "Invalid quiz ID" });
+      }
+
+      if (!answers || !Array.isArray(answers)) {
+        return res.status(400).json({ message: "Answers array is required" });
+      }
+
+      // Get quiz questions to calculate score
+      const questions = await storage.getQuizQuestions(quizId);
+      if (!questions || questions.length === 0) {
+        return res.status(404).json({ message: "Quiz questions not found" });
+      }
+
+      // Calculate score
+      let correctAnswers = 0;
+      let totalPoints = 0;
+      
+      questions.forEach((question, index) => {
+        totalPoints += question.points || 1;
+        const userAnswer = answers[index];
+        const correctAnswer = question.correctAnswer;
+        
+        if (Array.isArray(correctAnswer)) {
+          if (JSON.stringify(userAnswer) === JSON.stringify(correctAnswer)) {
+            correctAnswers += question.points || 1;
+          }
+        } else {
+          if (userAnswer === correctAnswer) {
+            correctAnswers += question.points || 1;
+          }
+        }
+      });
+
+      const percentage = totalPoints > 0 ? (correctAnswers / totalPoints) * 100 : 0;
+      const quiz = await storage.getQuiz(quizId);
+      const passingScore = quiz?.passingScore || 70;
+      const passed = percentage >= passingScore;
+
+      // Create quiz attempt record
+      const attemptData = {
+        quizId,
+        userId,
+        totalScore: correctAnswers,
+        maxScore: totalPoints,
+        percentage: Math.round(percentage * 100) / 100,
+        passed,
+        status: 'submitted',
+        autoGraded: true,
+        submittedAt: new Date(),
+      };
+
+      const attempt = await storage.createQuizAttempt(attemptData);
+
+      res.status(201).json({
+        attemptId: attempt.id,
+        score: correctAnswers,
+        total: totalPoints,
+        percentage,
+        passed,
+        passingScore
+      });
+
+    } catch (error) {
+      console.error("Error submitting quiz:", error);
+      res.status(500).json({ message: "Failed to submit quiz" });
+    }
+  });
+
+  // Get quiz attempts for a student
+  app.get('/api/quiz/:quizId/attempts/:studentId', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const quizId = parseInt(req.params.quizId);
+      const studentId = req.params.studentId;
+
+      if (isNaN(quizId)) {
+        return res.status(400).json({ message: "Invalid quiz ID" });
+      }
+
+      const attempts = await storage.getUserQuizAttempts(studentId, quizId);
+      res.json(attempts);
+
+    } catch (error) {
+      console.error("Error fetching quiz attempts:", error);
+      res.status(500).json({ message: "Failed to fetch quiz attempts" });
+    }
+  });
+
+  // Get all quiz results for mentors
+  app.get('/api/quiz/:quizId/results', isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const quizId = parseInt(req.params.quizId);
+
+      if (isNaN(quizId)) {
+        return res.status(400).json({ message: "Invalid quiz ID" });
+      }
+
+      // Check if user is mentor or admin
+      if (req.user?.role !== 'mentor' && req.user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const attempts = await storage.getQuizAttempts(quizId);
+      
+      // Group attempts by user and get latest attempt for each
+      const userAttempts = new Map();
+      attempts.forEach(attempt => {
+        const existing = userAttempts.get(attempt.userId);
+        if (!existing || new Date(attempt.submittedAt) > new Date(existing.submittedAt)) {
+          userAttempts.set(attempt.userId, attempt);
+        }
+      });
+
+      const results = Array.from(userAttempts.values());
+      res.json(results);
+
+    } catch (error) {
+      console.error("Error fetching quiz results:", error);
+      res.status(500).json({ message: "Failed to fetch quiz results" });
+    }
+  });
+
   const httpServer = createServer(app);
   
   // Initialize WebSocket server for real-time messaging
