@@ -327,72 +327,7 @@ export default function StableStudentDashboard() {
               </Card>
             )}
 
-            {/* Available Courses Section */}
-            {availableCourses.length > 0 && (
-              <Card className="bg-white/80 backdrop-blur border-0 shadow-lg mt-8">
-                <CardHeader>
-                  <CardTitle className="text-xl text-gray-900">Available Courses</CardTitle>
-                  <CardDescription>Discover new courses to expand your skills</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {availableCourses.slice(0, 3).map((course: any) => (
-                    <div key={course.id} className="flex items-center space-x-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg relative">
-                      {/* Available Badge */}
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                          Available
-                        </Badge>
-                      </div>
-                      
-                      <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">{course.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">{course.description}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            {course.price > 0 ? (
-                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                                ₦{course.price.toLocaleString()}
-                              </Badge>
-                            ) : (
-                              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                Free
-                              </Badge>
-                            )}
-                            {course.category && (
-                              <Badge variant="outline" className="text-xs">
-                                {course.category}
-                              </Badge>
-                            )}
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-                            onClick={() => setLocation(`/courses/${course.id}`)}
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {availableCourses.length > 3 && (
-                    <div className="text-center pt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setLocation('/courses')}
-                        className="w-full"
-                      >
-                        View All {availableCourses.length} Available Courses
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+
           </div>
 
           {/* Sidebar */}
