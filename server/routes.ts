@@ -3402,6 +3402,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               const modules = await storage.getModulesByCourse(course.id);
               console.log(`Found ${modules?.length || 0} modules for course ${course.id}`);
+              
+              if (course.id === 18) {
+                console.log(`[COURSE 18 DEBUG] Modules found:`, JSON.stringify(modules, null, 2));
+              }
 
               if (!modules || modules.length === 0) {
                 console.log(`No modules found for course ${course.id}`);
