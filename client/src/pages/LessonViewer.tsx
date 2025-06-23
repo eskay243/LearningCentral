@@ -215,6 +215,13 @@ export default function LessonViewer() {
   });
 
   const handleNavigation = (targetLessonId: number) => {
+    console.log('Navigation triggered:', {
+      targetLessonId,
+      courseId,
+      currentUrl: window.location.pathname,
+      newUrl: `/courses/${courseId}/lessons/${targetLessonId}`,
+      lessonExists: allLessons.find(l => l.id === targetLessonId) ? 'Yes' : 'No'
+    });
     setLocation(`/courses/${courseId}/lessons/${targetLessonId}`);
   };
 
@@ -350,8 +357,15 @@ export default function LessonViewer() {
             
             <Button
               onClick={() => {
+                console.log('Next lesson button clicked:', {
+                  nextLesson: nextLesson ? { id: nextLesson.id, title: nextLesson.title } : null,
+                  currentLessonIndex,
+                  allLessonsLength: allLessons.length
+                });
                 if (nextLesson) {
                   handleNavigation(nextLesson.id);
+                } else {
+                  console.log('No next lesson available');
                 }
               }}
               disabled={!nextLesson}
@@ -372,7 +386,7 @@ export default function LessonViewer() {
             <CardContent>
               <ScrollArea className="h-64">
                 <div className="space-y-2">
-                  {lessons?.map((l: any, index: number) => (
+                  {allLessons?.map((l: any, index: number) => (
                     <div
                       key={l.id}
                       className={`p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -414,7 +428,7 @@ export default function LessonViewer() {
                 <Separator />
                 <div>
                   <div className="text-sm font-medium">Total Lessons</div>
-                  <div className="text-sm text-gray-600">{lessons?.length || 0}</div>
+                  <div className="text-sm text-gray-600">{allLessons.length || 0}</div>
                 </div>
                 <div>
                   <div className="text-sm font-medium">Current Progress</div>
