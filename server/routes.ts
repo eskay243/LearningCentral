@@ -3367,6 +3367,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Student Dashboard API Endpoints - Fixed authentication
   app.get("/api/student/enrolled-courses", async (req: any, res: Response) => {
     try {
+      // Prevent caching to ensure fresh progress calculations
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
       // Enhanced authentication check with detailed logging
       console.log('=== ENROLLED COURSES API CALLED ===');
       console.log('Authentication check - isAuthenticated():', req.isAuthenticated(), 'user:', !!req.user);
