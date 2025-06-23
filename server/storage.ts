@@ -3411,12 +3411,18 @@ export class DatabaseStorage implements IStorage {
       const existingProgress = await this.getLessonProgress(lessonId, userId);
       
       if (existingProgress) {
-        // Update existing progress
+        // Update existing progress - map completionPercentage to progress field
+        const updateData: any = { ...progress };
+        if (updateData.completionPercentage !== undefined) {
+          updateData.progress = updateData.completionPercentage;
+          delete updateData.completionPercentage;
+        }
+        
         const [updatedProgress] = await db
           .update(lessonProgress)
           .set({
-            ...progress,
-            updatedAt: new Date()
+            ...updateData,
+            lastAccessedAt: new Date()
           })
           .where(
             and(
@@ -3435,7 +3441,7 @@ export class DatabaseStorage implements IStorage {
             lessonId,
             userId,
             status: progress.status || "in_progress",
-            completionPercentage: progress.completionPercentage || 0,
+            progress: progress.completionPercentage || 0,
             lastAccessedAt: new Date(),
             completedAt: progress.completedAt,
             timeSpent: progress.timeSpent || 0,
