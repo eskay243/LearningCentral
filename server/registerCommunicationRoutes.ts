@@ -41,17 +41,12 @@ export function registerCommunicationRoutes(app: Express) {
       const userRole = req.user.role;
       let availableUsers = [];
 
-      console.log(`=== MESSAGING AVAILABLE USERS DEBUG ===`);
-      console.log(`User ID: ${userId}, Role: ${userRole}`);
-
       if (userRole === 'admin') {
         // Admin can message everyone
         availableUsers = await storage.getAllUsers();
       } else if (userRole === 'mentor') {
         // Mentors can only message students enrolled in their courses
-        console.log('Fetching enrolled students for mentor...');
         availableUsers = await storage.getEnrolledStudentsForMentor(userId);
-        console.log(`Found ${availableUsers.length} enrolled students:`, availableUsers.map(u => ({ id: u.id, name: `${u.firstName} ${u.lastName}`, email: u.email })));
       } else {
         // Students can only message mentors from courses they're enrolled in, plus admins
         const enrolledCourseMentors = await storage.getMentorsFromEnrolledCourses(userId);
@@ -61,8 +56,6 @@ export function registerCommunicationRoutes(app: Express) {
 
       // Filter out the current user
       availableUsers = availableUsers.filter((user: any) => user.id !== userId);
-      
-      console.log(`Final available users for messaging: ${availableUsers.length}`);
       res.json(availableUsers);
     } catch (error) {
       console.error("Error fetching available users:", error);
@@ -97,15 +90,10 @@ export function registerCommunicationRoutes(app: Express) {
       
       console.log('Creating conversation - userId:', userId, 'userRole:', userRole, 'recipients:', recipients, 'type:', type);
       
-      if (!recipients || recipients.length === 0) {
-        console.log('No recipients provided');
-        return res.status(400).json({ message: "No recipients provided" });
-      }
-
       let participantIds = [];
 
       if (type === 'sitewide' && userRole === 'admin') {
-        // Admin sending sitewide message
+        // Admin sending sitewide message - automatically include all users
         const allUsers = await storage.getAllUsers();
         participantIds = allUsers.map((user: any) => user.id).filter((id: string) => id !== userId);
       } else if (type === 'course' && userRole === 'mentor' && courseId) {
@@ -113,7 +101,11 @@ export function registerCommunicationRoutes(app: Express) {
         const courseStudents = await storage.getCourseStudents(parseInt(courseId));
         participantIds = courseStudents.map((student: any) => student.id);
       } else if (type === 'individual') {
-        // Individual messaging - allow all for now to fix messaging issues
+        // Individual messaging - require recipients
+        if (!recipients || recipients.length === 0) {
+          console.log('No recipients provided for individual message');
+          return res.status(400).json({ message: "No recipients provided" });
+        }
         participantIds = recipients || [];
       } else {
         return res.status(403).json({ message: "You are not authorized to send this type of message" });
