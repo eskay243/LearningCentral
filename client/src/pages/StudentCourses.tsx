@@ -359,12 +359,18 @@ export default function StudentCourses() {
                               Completed on {new Date(course.completedAt).toLocaleDateString()}
                             </p>
                           )}
-                          {course.certificateEligible && (
+                          {course.progress === 100 && (
                             <div className="mt-2">
                               <Button 
                                 size="sm" 
                                 variant="outline" 
                                 className="text-xs bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+                                onClick={() => {
+                                  const enrollmentId = (course as any).enrollmentId;
+                                  if (enrollmentId) {
+                                    window.open(`/api/enrollments/${enrollmentId}/certificate`, '_blank');
+                                  }
+                                }}
                               >
                                 <Award className="w-3 h-3 mr-1" />
                                 Download Certificate

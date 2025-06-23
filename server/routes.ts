@@ -3328,6 +3328,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Certificate generation endpoint
+  app.get("/api/enrollments/:enrollmentId/certificate", isAuthenticated, async (req: any, res: Response) => {
+    try {
+      const { enrollmentId } = req.params;
+      const userId = req.user.id;
+      
+      // Get enrollment with course details
+      const enrollments = await storage.getEnrolledCourses(userId);
+      const enrollment = enrollments.find((e: any) => e.enrollmentId === parseInt(enrollmentId));
+      
+      if (!enrollment || enrollment.progress < 100) {
+        return res.status(404).json({ error: "Certificate not available - course not completed" });
+      }
+      
+      // Generate certificate PDF
+      const PDFDocument = require('pdfkit');
+      const doc = new PDFDocument({
+        size: 'A4',
+        layout: 'landscape',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 }
+      });
+      
+      // Set response headers for PDF download
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="certificate-${enrollment.title.replace(/[^a-zA-Z0-9]/g, '-')}.pdf"`);
+      
+      // Pipe PDF to response
+      doc.pipe(res);
+      
+      // Certificate design
+      const pageWidth = doc.page.width;
+      const pageHeight = doc.page.height;
+      const centerX = pageWidth / 2;
+      
+      // Background border
+      doc.rect(30, 30, pageWidth - 60, pageHeight - 60)
+         .stroke('#1a365d', 3);
+      
+      doc.rect(45, 45, pageWidth - 90, pageHeight - 90)
+         .stroke('#2d5a87', 1);
+      
+      // Header
+      doc.fillColor('#1a365d')
+         .fontSize(36)
+         .font('Helvetica-Bold')
+         .text('CERTIFICATE OF COMPLETION', 0, 120, { align: 'center' });
+      
+      // Decorative line
+      doc.moveTo(centerX - 150, 180)
+         .lineTo(centerX + 150, 180)
+         .stroke('#d4af37', 2);
+      
+      // This certifies text
+      doc.fillColor('#4a5568')
+         .fontSize(18)
+         .font('Helvetica')
+         .text('This is to certify that', 0, 220, { align: 'center' });
+      
+      // Student name
+      doc.fillColor('#1a365d')
+         .fontSize(32)
+         .font('Helvetica-Bold')
+         .text(`${req.user.firstName} ${req.user.lastName}`, 0, 260, { align: 'center' });
+      
+      // Has successfully completed
+      doc.fillColor('#4a5568')
+         .fontSize(18)
+         .font('Helvetica')
+         .text('has successfully completed the course', 0, 320, { align: 'center' });
+      
+      // Course title
+      doc.fillColor('#2d5a87')
+         .fontSize(28)
+         .font('Helvetica-Bold')
+         .text(enrollment.title, 0, 360, { align: 'center' });
+      
+      // Completion date
+      const completionDate = enrollment.completedAt 
+        ? new Date(enrollment.completedAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        : new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+      
+      doc.fillColor('#4a5568')
+         .fontSize(16)
+         .font('Helvetica')
+         .text(`Completed on ${completionDate}`, 0, 420, { align: 'center' });
+      
+      // Certificate ID
+      doc.fillColor('#718096')
+         .fontSize(12)
+         .text(`Certificate ID: CERT-${enrollmentId}-${Date.now()}`, 0, 460, { align: 'center' });
+      
+      // Footer - Organization info
+      doc.fillColor('#1a365d')
+         .fontSize(16)
+         .font('Helvetica-Bold')
+         .text('Codelab Educare', 0, 520, { align: 'center' });
+      
+      doc.fillColor('#4a5568')
+         .fontSize(12)
+         .font('Helvetica')
+         .text('Learning Management System', 0, 545, { align: 'center' });
+      
+      // Signature area (left side)
+      doc.moveTo(150, 480)
+         .lineTo(300, 480)
+         .stroke('#9ca3af', 1);
+      
+      doc.fillColor('#4a5568')
+         .fontSize(12)
+         .text('Instructor Signature', 150, 490, { width: 150, align: 'center' });
+      
+      // Date area (right side)
+      doc.moveTo(pageWidth - 300, 480)
+         .lineTo(pageWidth - 150, 480)
+         .stroke('#9ca3af', 1);
+      
+      doc.text('Date', pageWidth - 300, 490, { width: 150, align: 'center' });
+      
+      // Finalize PDF
+      doc.end();
+      
+    } catch (error) {
+      console.error("Error generating certificate:", error);
+      res.status(500).json({ error: "Failed to generate certificate" });
+    }
+  });
+
   // Create HTTP server
   // Course Discussion Routes
   app.get("/api/courses/:courseId/discussions", async (req: Request, res: Response) => {
