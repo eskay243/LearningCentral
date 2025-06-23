@@ -3303,11 +3303,15 @@ export class DatabaseStorage implements IStorage {
 
   async getModulesByCourse(courseId: number): Promise<any[]> {
     try {
+      console.log(`[DEBUG] getModulesByCourse called with courseId: ${courseId}`);
+      
       const modulesList = await db
         .select()
         .from(modules)
         .where(eq(modules.courseId, courseId))
         .orderBy(modules.orderIndex);
+
+      console.log(`[DEBUG] Found ${modulesList.length} modules for course ${courseId}:`, JSON.stringify(modulesList, null, 2));
 
       // Get lessons for each module
       const modulesWithLessons = await Promise.all(
@@ -3318,6 +3322,8 @@ export class DatabaseStorage implements IStorage {
             .where(eq(lessons.moduleId, module.id))
             .orderBy(lessons.orderIndex);
           
+          console.log(`[DEBUG] Found ${lessonsList.length} lessons for module ${module.id}:`, JSON.stringify(lessonsList, null, 2));
+          
           return {
             ...module,
             lessons: lessonsList
@@ -3325,6 +3331,7 @@ export class DatabaseStorage implements IStorage {
         })
       );
 
+      console.log(`[DEBUG] Final modules with lessons:`, JSON.stringify(modulesWithLessons, null, 2));
       return modulesWithLessons;
     } catch (error) {
       console.error("Error fetching course modules:", error);
