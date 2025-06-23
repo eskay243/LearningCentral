@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { LoadingSpinner, PageLoadingSpinner } from '@/components/LoadingSpinner';
 import StableStudentDashboard from '@/pages/stable-student-dashboard';
 import {
   DropdownMenu,

@@ -1002,7 +1002,7 @@ export type LessonProgress = typeof lessonProgress.$inferSelect;
 export type CourseEnrollment = typeof courseEnrollments.$inferSelect;
 export type MentorCourse = typeof mentorCourses.$inferSelect;
 export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
-export type CourseDiscussion = typeof courseDiscussions.$inferSelect;
+
 export type DiscussionReply = typeof discussionReplies.$inferSelect;
 export type NotificationSetting = typeof notificationSettings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
@@ -1018,8 +1018,6 @@ export type MentorActivityLog = typeof mentorActivityLog.$inferSelect;
 export type InsertMentorActivityLog = z.infer<typeof insertMentorActivityLogSchema>;
 export type MentorBankDetails = typeof mentorBankDetails.$inferSelect;
 export type InsertMentorBankDetails = z.infer<typeof insertMentorBankDetailsSchema>;
-export type CourseDiscussion = typeof courseDiscussions.$inferSelect;
-export type InsertCourseDiscussion = z.infer<typeof insertCourseDiscussionSchema>;
 
 // Enhanced Interactive Coding Exercises with Real-time Feedback
 export const codingChallenges = pgTable("coding_challenges", {

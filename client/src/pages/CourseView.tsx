@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   PlayCircle, 
   CheckCircle, 
@@ -14,9 +15,15 @@ import {
   BookOpen, 
   Clock,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  MessageSquare,
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PageErrorBoundary, ComponentErrorBoundary } from "@/components/EnhancedErrorBoundary";
+import { PageLoadingSpinner, LoadingSpinner } from "@/components/LoadingSpinner";
+import CourseDiscussionSimple from "@/components/CourseDiscussionSimple";
 
 export default function CourseView() {
   const { id } = useParams();
