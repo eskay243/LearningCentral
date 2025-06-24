@@ -178,6 +178,21 @@ const upload = uploadImage;
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+
+  // Static file serving for uploads
+  app.use('/uploads', expressModule.static(path.join(process.cwd(), 'uploads')));
+  
+  // Specific static serving for message attachments with proper headers
+  app.use('/uploads/message-attachments', expressModule.static(path.join(process.cwd(), 'uploads/message-attachments'), {
+    setHeaders: (res, path) => {
+      // Set proper headers for file downloads
+      res.set({
+        'Content-Disposition': 'attachment',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=86400' // Cache for 1 day
+      });
+    }
+  }));
   
   // Serve static files from uploads directory
   app.use('/uploads', expressModule.static(uploadsDir));
