@@ -427,7 +427,7 @@ const Messages = () => {
                             {conversation.title}
                           </p>
                           <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
-                            {conversation.lastMessageAt ? formatTimeFromNow(conversation.lastMessageAt) : ''}
+                            {conversation.lastMessage?.sentAt ? formatTimeFromNow(conversation.lastMessage.sentAt) : ''}
                           </span>
                         </div>
                         
@@ -447,13 +447,22 @@ const Messages = () => {
                           )}
                         </div>
                         
-                        <div className="mt-1">
-                          <Badge 
-                            variant="outline" 
-                            className="text-xs font-normal px-1.5 py-0.5"
-                          >
-                            {conversation.otherUser.role}
-                          </Badge>
+                        <div className="mt-1 space-y-1">
+                          {conversation.otherUser && (
+                            <div className="text-xs text-gray-600">
+                              <span className="font-medium">
+                                {conversation.otherUser.firstName} {conversation.otherUser.lastName}
+                              </span>
+                              <span className="text-gray-500 ml-1">
+                                ({conversation.otherUser.role})
+                              </span>
+                            </div>
+                          )}
+                          {conversation.participants && conversation.participants.length > 2 && (
+                            <div className="text-xs text-gray-500">
+                              {conversation.participants.length} participants
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -478,21 +487,28 @@ const Messages = () => {
               {/* Conversation Header */}
               <div className="p-4 border-b border-gray-200 flex items-center">
                 <Avatar className="h-10 w-10 mr-3">
-                  <AvatarImage src={currentConversation.participants?.[0]?.profileImageUrl} />
+                  <AvatarImage src={currentConversation.otherUser?.profileImageUrl} />
                   <AvatarFallback>
-                    {getInitials(currentConversation.participants?.[0] ? 
-                      `${currentConversation.participants[0].firstName} ${currentConversation.participants[0].lastName}` : 
-                      currentConversation.title || 'Unknown')}
+                    {currentConversation.otherUser ? 
+                      getInitials(`${currentConversation.otherUser.firstName} ${currentConversation.otherUser.lastName}`) : 
+                      getInitials(currentConversation.title || 'Unknown')}
                   </AvatarFallback>
                 </Avatar>
                 
-                <div>
+                <div className="flex-grow">
                   <h3 className="font-medium">
                     {currentConversation.title}
                   </h3>
-                  <p className="text-sm text-gray-500">
-                    {currentConversation.participants?.[0]?.role || 'Conversation'}
-                  </p>
+                  {currentConversation.otherUser ? (
+                    <div className="text-sm text-gray-500">
+                      <div>{currentConversation.otherUser.firstName} {currentConversation.otherUser.lastName}</div>
+                      <div className="text-xs">{currentConversation.otherUser.email} • {currentConversation.otherUser.role}</div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      {currentConversation.participants?.length || 0} participants
+                    </p>
+                  )}
                 </div>
               </div>
               
@@ -511,29 +527,56 @@ const Messages = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {currentMessages.map((message) => (
-                      <div 
-                        key={message.id}
-                        className={`flex ${
-                          message.senderId === "currentUser" ? "justify-end" : "justify-start"
-                        }`}
-                      >
+                    {currentMessages.map((message) => {
+                      const isCurrentUser = message.senderId === user?.id;
+                      const sender = message.sender;
+                      
+                      return (
                         <div 
-                          className={`max-w-[70%] rounded-lg px-4 py-2 ${
-                            message.senderId === "currentUser"
-                              ? "bg-primary-600 text-white"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
+                          key={message.id}
+                          className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                         >
-                          <p>{message.content}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.senderId === "currentUser" ? "text-primary-100" : "text-gray-500"
-                          }`}>
-                            {formatTimeFromNow(message.sentAt)}
-                          </p>
+                          <div className={`max-w-[70%] ${!isCurrentUser ? "flex gap-2" : ""}`}>
+                            {!isCurrentUser && (
+                              <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                                <AvatarImage src={sender?.profileImageUrl} />
+                                <AvatarFallback className="text-xs">
+                                  {sender ? getInitials(`${sender.firstName} ${sender.lastName}`) : "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
+                            
+                            <div className="flex-grow">
+                              {!isCurrentUser && sender && (
+                                <div className="mb-1">
+                                  <p className="text-xs text-gray-600 font-medium">
+                                    {sender.firstName} {sender.lastName}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {sender.email} • {sender.role}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              <div 
+                                className={`rounded-lg px-4 py-2 ${
+                                  isCurrentUser
+                                    ? "bg-primary-600 text-white"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                <p>{message.content}</p>
+                                <p className={`text-xs mt-1 ${
+                                  isCurrentUser ? "text-primary-100" : "text-gray-500"
+                                }`}>
+                                  {formatTimeFromNow(message.sentAt)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </ScrollArea>
