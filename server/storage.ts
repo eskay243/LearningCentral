@@ -1289,7 +1289,7 @@ export class DatabaseStorage implements IStorage {
           senderId: chatMessages.senderId,
           content: chatMessages.content,
           sentAt: chatMessages.sentAt,
-          isRead: chatMessages.isRead,
+
           isEdited: chatMessages.isEdited,
           editedAt: chatMessages.editedAt
         })
@@ -3632,13 +3632,14 @@ export class DatabaseStorage implements IStorage {
         `;
         const lastMessageResult = await pool.query(lastMessageQuery, [conv.id]);
 
-        // Get unread count
+        // Get unread count using lastReadMessageId
         const unreadQuery = `
           SELECT COUNT(*)::integer as count
           FROM chat_messages cm
+          LEFT JOIN conversation_participants cp ON cp.conversation_id = cm.conversation_id AND cp.user_id = $2
           WHERE cm.conversation_id = $1 
           AND cm.sender_id != $2 
-          AND cm.is_read = false
+          AND (cp.last_read_message_id IS NULL OR cm.id > cp.last_read_message_id)
         `;
         const unreadResult = await pool.query(unreadQuery, [conv.id, userId]);
 
@@ -3760,13 +3761,14 @@ export class DatabaseStorage implements IStorage {
         `;
         const lastMessageResult = await pool.query(lastMessageQuery, [conv.id]);
 
-        // Get unread count
+        // Get unread count using lastReadMessageId
         const unreadQuery = `
           SELECT COUNT(*)::integer as count
           FROM chat_messages cm
+          LEFT JOIN conversation_participants cp ON cp.conversation_id = cm.conversation_id AND cp.user_id = $2
           WHERE cm.conversation_id = $1 
           AND cm.sender_id != $2 
-          AND cm.is_read = false
+          AND (cp.last_read_message_id IS NULL OR cm.id > cp.last_read_message_id)
         `;
         const unreadResult = await pool.query(unreadQuery, [conv.id, mentorId]);
 
@@ -3983,16 +3985,26 @@ export class DatabaseStorage implements IStorage {
   
   async markMessagesAsRead(conversationId: number, userId: string): Promise<void> {
     try {
-      await db
-        .update(chatMessages)
-        .set({ isRead: true })
-        .where(
-          and(
-            eq(chatMessages.conversationId, conversationId),
-            not(eq(chatMessages.senderId, userId)),
-            eq(chatMessages.isRead, false)
-          )
-        );
+      // Get the latest message ID in this conversation
+      const latestMessage = await db
+        .select({ id: chatMessages.id })
+        .from(chatMessages)
+        .where(eq(chatMessages.conversationId, conversationId))
+        .orderBy(desc(chatMessages.id))
+        .limit(1);
+
+      if (latestMessage.length > 0) {
+        // Update the lastReadMessageId for this user in this conversation
+        await db
+          .update(conversationParticipants)
+          .set({ lastReadMessageId: latestMessage[0].id })
+          .where(
+            and(
+              eq(conversationParticipants.conversationId, conversationId),
+              eq(conversationParticipants.userId, userId)
+            )
+          );
+      }
     } catch (error) {
       console.error("Error marking messages as read:", error);
       throw new Error("Failed to mark messages as read");
@@ -6261,21 +6273,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async markMessagesAsRead(conversationId: number, userId: string): Promise<void> {
-    try {
-      await db
-        .update(chatMessages)
-        .set({ isRead: true })
-        .where(
-          and(
-            eq(chatMessages.conversationId, conversationId),
-            not(eq(chatMessages.senderId, userId))
-          )
-        );
-    } catch (error) {
-      console.error("Error marking messages as read:", error);
-    }
-  }
+
 
   // Role-based messaging methods
   async getAllUsers(): Promise<User[]> {
