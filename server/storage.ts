@@ -6260,18 +6260,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getConversationMessages(conversationId: number): Promise<any[]> {
-    try {
-      return await db
-        .select()
-        .from(chatMessages)
-        .where(eq(chatMessages.conversationId, conversationId))
-        .orderBy(chatMessages.sentAt);
-    } catch (error) {
-      console.error("Error fetching conversation messages:", error);
-      return [];
-    }
-  }
+
 
 
 
