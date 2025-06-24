@@ -37,7 +37,7 @@ interface Conversation {
   lastMessageAt: string;
   unreadCount: number;
   participants: Array<{
-    id: string;
+    userId: string;
     firstName: string;
     lastName: string;
     role: string;

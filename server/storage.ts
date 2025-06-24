@@ -3850,6 +3850,15 @@ export class DatabaseStorage implements IStorage {
           role: p.role
         }));
 
+        // For now, use a simple unread count based on is_read flag for admin
+        const unreadQuery = `
+          SELECT COUNT(*)::integer as count
+          FROM chat_messages cm
+          WHERE cm.conversation_id = $1 
+          AND cm.is_read = false
+        `;
+        const unreadResult = await pool.query(unreadQuery, [conv.id]);
+
         const lastMessage = lastMessageResult.rows[0] ? {
           id: lastMessageResult.rows[0].id,
           content: lastMessageResult.rows[0].content,
@@ -3867,7 +3876,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: conv.updated_at,
           participants: participants,
           lastMessage: lastMessage,
-          unreadCount: 0, // Admin doesn't track unread for overview
+          unreadCount: parseInt(unreadResult.rows[0]?.count || 0),
           otherUser: participants[0] || null
         });
       }
