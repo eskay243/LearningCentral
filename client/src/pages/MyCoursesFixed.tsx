@@ -161,14 +161,7 @@ export default function MyCoursesFixed() {
         </select>
       </div>
 
-      {/* Debug Information */}
-      <div className="bg-blue-50 p-4 rounded-lg border">
-        <h3 className="font-semibold mb-2">Debug Information:</h3>
-        <p className="text-sm">Total Courses: {allCourses.length}</p>
-        <p className="text-sm">Owned Courses: {ownedCourses.length}</p>
-        <p className="text-sm">Marketplace Courses: {marketplaceCourses.length}</p>
-        <p className="text-sm">User ID: {user?.id}</p>
-      </div>
+
 
       {/* My Courses Section */}
       <Card>

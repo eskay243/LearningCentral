@@ -278,7 +278,7 @@ const CreateCourse = () => {
           <h1 className="text-2xl font-bold">{isEditMode ? 'Edit Course' : 'Create a New Course'}</h1>
           <p className="text-gray-500">{isEditMode ? 'Update your course details' : 'Fill in the details to create your course'}</p>
         </div>
-        <Button variant="outline" onClick={() => navigate("/courses")}>Cancel</Button>
+        <Button variant="outline" onClick={() => navigate("/my-courses")}>Cancel</Button>
       </div>
 
       <Card>

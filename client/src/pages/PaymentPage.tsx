@@ -161,8 +161,8 @@ export default function PaymentPage() {
       <div className="container mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">Course Not Found</h1>
         <p>The course you're trying to enroll in doesn't exist.</p>
-        <Button onClick={() => navigate("/courses")} className="mt-4">
-          Back to Courses
+        <Button onClick={() => navigate("/my-courses")} className="mt-4">
+          Back to My Courses
         </Button>
       </div>
     );
