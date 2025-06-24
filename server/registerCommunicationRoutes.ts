@@ -1,7 +1,9 @@
 import { type Express } from "express";
 import { storage } from "./storage";
 import { isAuthenticated, hasRole } from "./auth";
+import { uploadMiddleware, getFileIcon, formatFileSize } from "./fileUpload";
 import { z } from "zod";
+import path from "path";
 
 export function registerCommunicationRoutes(app: Express) {
   // Get all conversations for a user (used by header MessageCenter)
@@ -232,18 +234,52 @@ export function registerCommunicationRoutes(app: Express) {
     }
   });
 
+  // Upload file for message attachment
+  app.post('/api/messages/upload', isAuthenticated, uploadMiddleware.single('file'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file provided" });
+      }
+
+      const fileInfo = {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        mimeType: req.file.mimetype,
+        url: `/uploads/message-attachments/${req.file.filename}`,
+        icon: getFileIcon(req.file.mimetype),
+        formattedSize: formatFileSize(req.file.size)
+      };
+
+      res.json(fileInfo);
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: "Failed to upload file" });
+    }
+  });
+
   // Send a message
   app.post('/api/messages', isAuthenticated, async (req: any, res) => {
     try {
       const senderId = req.user.id;
-      const { conversationId, content } = req.body;
+      const { conversationId, content, attachmentUrl, attachmentName, attachmentSize, attachmentType } = req.body;
       
       // Validate
       const schema = z.object({
         conversationId: z.number(),
-        content: z.string().min(1),
+        content: z.string().optional(),
+        attachmentUrl: z.string().optional(),
+        attachmentName: z.string().optional(),
+        attachmentSize: z.number().optional(),
+        attachmentType: z.string().optional(),
       });
-      schema.parse({ conversationId, content });
+      
+      const validated = schema.parse({ conversationId, content, attachmentUrl, attachmentName, attachmentSize, attachmentType });
+      
+      // Must have either content or attachment
+      if (!validated.content && !validated.attachmentUrl) {
+        return res.status(400).json({ message: "Either content or attachment is required" });
+      }
       
       // Check if user is part of this conversation
       const isParticipant = await storage.isConversationParticipant(senderId, conversationId);
@@ -255,8 +291,34 @@ export function registerCommunicationRoutes(app: Express) {
       const message = await storage.sendMessage({
         conversationId,
         senderId,
-        content,
+        content: validated.content || (validated.attachmentName ? `📎 ${validated.attachmentName}` : "File attachment"),
+        contentType: validated.attachmentUrl ? "file" : "text",
+        attachmentUrl: validated.attachmentUrl,
+        attachmentName: validated.attachmentName,
+        attachmentSize: validated.attachmentSize,
+        attachmentType: validated.attachmentType,
       });
+      
+      // Create notifications for other participants
+      const participants = await storage.getConversationParticipants(conversationId);
+      const senderName = `${req.user.firstName} ${req.user.lastName}`;
+      
+      for (const participant of participants) {
+        if (participant.userId !== senderId) {
+          const notificationMessage = validated.attachmentUrl 
+            ? `${senderName} sent you a file: ${validated.attachmentName || 'Attachment'}`
+            : `${senderName} sent you a message: "${validated.content?.substring(0, 50)}${(validated.content?.length || 0) > 50 ? '...' : ''}"`;
+          
+          await storage.createNotification({
+            userId: participant.userId,
+            type: 'message',
+            priority: 'medium',
+            title: 'New Message',
+            message: notificationMessage,
+            actionUrl: '/messages'
+          });
+        }
+      }
       
       res.status(201).json(message);
     } catch (error) {

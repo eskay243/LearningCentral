@@ -6224,7 +6224,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async sendMessage(messageData: { conversationId: number; senderId: string; content: string }): Promise<any> {
+  async sendMessage(messageData: { 
+    conversationId: number; 
+    senderId: string; 
+    content: string;
+    contentType?: string;
+    attachmentUrl?: string;
+    attachmentName?: string;
+    attachmentSize?: number;
+    attachmentType?: string;
+  }): Promise<any> {
     try {
       const [message] = await db
         .insert(chatMessages)
@@ -6232,6 +6241,11 @@ export class DatabaseStorage implements IStorage {
           conversationId: messageData.conversationId,
           senderId: messageData.senderId,
           content: messageData.content,
+          contentType: messageData.contentType || "text",
+          attachmentUrl: messageData.attachmentUrl,
+          attachmentName: messageData.attachmentName,
+          attachmentSize: messageData.attachmentSize,
+          attachmentType: messageData.attachmentType,
           sentAt: new Date()
         })
         .returning();

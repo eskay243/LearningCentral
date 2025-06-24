@@ -2174,6 +2174,9 @@ export const chatMessages = pgTable("chat_messages", {
   content: text("content").notNull(),
   contentType: varchar("content_type", { length: 50 }).default("text"), // text, image, file, etc.
   attachmentUrl: varchar("attachment_url", { length: 255 }),
+  attachmentName: varchar("attachment_name", { length: 255 }),
+  attachmentSize: integer("attachment_size"), // in bytes
+  attachmentType: varchar("attachment_type", { length: 100 }), // mime type
   sentAt: timestamp("sent_at").defaultNow(),
   isEdited: boolean("is_edited").default(false),
   editedAt: timestamp("edited_at"),
