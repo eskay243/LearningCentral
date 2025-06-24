@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 import useAuth from "@/hooks/useAuth";
 import { formatTimeFromNow, getInitials, getFullName } from "@/lib/utils";
+import { Paperclip, Download, FileText, Image, Video, Music, Archive, X } from "lucide-react";
 
 const Messages = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,6 +29,11 @@ const Messages = () => {
   const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
   const [newMessageTitle, setNewMessageTitle] = useState("");
   const [newMessageContent, setNewMessageContent] = useState("");
+  
+  // File attachment states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadedFileInfo, setUploadedFileInfo] = useState<any>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Use fallback user for rendering
   const currentUser = user || {
@@ -287,24 +296,88 @@ const Messages = () => {
   // Get messages for current conversation
   const currentMessages = messages || [];
   
+  // File upload functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('/api/messages/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const fileInfo = await response.json();
+        setUploadedFileInfo(fileInfo);
+        setSelectedFile(null);
+        toast({
+          title: "File uploaded",
+          description: `${fileInfo.originalName} is ready to send`,
+        });
+      } else {
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload file",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload file",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !selectedConversation) return;
+    if ((!messageText.trim() && !uploadedFileInfo) || !selectedConversation) return;
     
     try {
+      const payload: any = {
+        conversationId: parseInt(selectedConversation),
+      };
+
+      if (messageText.trim()) {
+        payload.content = messageText;
+      }
+
+      if (uploadedFileInfo) {
+        payload.attachmentUrl = uploadedFileInfo.url;
+        payload.attachmentName = uploadedFileInfo.originalName;
+        payload.attachmentSize = uploadedFileInfo.size;
+        payload.attachmentType = uploadedFileInfo.mimeType;
+      }
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          conversationId: parseInt(selectedConversation),
-          content: messageText,
-        }),
+        body: JSON.stringify(payload),
       });
       
       if (response.ok) {
         setMessageText("");
+        setUploadedFileInfo(null);
+        setSelectedFile(null);
+        
         // Refresh messages
         const messagesResponse = await fetch(`/api/messages/conversations/${selectedConversation}`, {
           credentials: "include",
@@ -313,10 +386,43 @@ const Messages = () => {
           const updatedMessages = await messagesResponse.json();
           setMessages(updatedMessages || []);
         }
+      } else {
+        toast({
+          title: "Send failed",
+          description: "Failed to send message",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      toast({
+        title: "Send failed",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
     }
+  };
+
+  const handleRemoveAttachment = () => {
+    setUploadedFileInfo(null);
+    setSelectedFile(null);
+  };
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith('image/')) return <Image className="w-4 h-4" />;
+    if (mimeType.startsWith('video/')) return <Video className="w-4 h-4" />;
+    if (mimeType.startsWith('audio/')) return <Music className="w-4 h-4" />;
+    if (mimeType.includes('pdf') || mimeType.includes('document')) return <FileText className="w-4 h-4" />;
+    if (mimeType.includes('zip') || mimeType.includes('compressed')) return <Archive className="w-4 h-4" />;
+    return <FileText className="w-4 h-4" />;
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleNewMessage = () => {
@@ -565,7 +671,59 @@ const Messages = () => {
                                     : "bg-gray-100 text-gray-800"
                                 }`}
                               >
-                                <p>{message.content}</p>
+                                {message.attachmentUrl ? (
+                                  <div className="space-y-2">
+                                    {/* File attachment display */}
+                                    <div className={`flex items-center gap-2 p-2 rounded border ${
+                                      isCurrentUser 
+                                        ? "bg-primary-700 border-primary-500" 
+                                        : "bg-white border-gray-200"
+                                    }`}>
+                                      {getFileIcon(message.attachmentType || 'application/octet-stream')}
+                                      <div className="flex-1 min-w-0">
+                                        <p className={`text-sm font-medium truncate ${
+                                          isCurrentUser ? "text-white" : "text-gray-900"
+                                        }`}>
+                                          {message.attachmentName || 'File attachment'}
+                                        </p>
+                                        {message.attachmentSize && (
+                                          <p className={`text-xs ${
+                                            isCurrentUser ? "text-primary-200" : "text-gray-500"
+                                          }`}>
+                                            {formatFileSize(message.attachmentSize)}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          const link = document.createElement('a');
+                                          link.href = message.attachmentUrl;
+                                          link.download = message.attachmentName || 'download';
+                                          document.body.appendChild(link);
+                                          link.click();
+                                          document.body.removeChild(link);
+                                        }}
+                                        className={`p-1 h-6 w-6 ${
+                                          isCurrentUser 
+                                            ? "text-white hover:bg-primary-800" 
+                                            : "text-gray-600 hover:bg-gray-100"
+                                        }`}
+                                      >
+                                        <Download className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                    
+                                    {/* Message text if present */}
+                                    {message.content && !message.content.startsWith('📎') && (
+                                      <p>{message.content}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p>{message.content}</p>
+                                )}
+                                
                                 <p className={`text-xs mt-1 ${
                                   isCurrentUser ? "text-primary-100" : "text-gray-500"
                                 }`}>
@@ -583,22 +741,105 @@ const Messages = () => {
               
               {/* Message Input */}
               <div className="p-4 border-t border-gray-200">
+                {/* File attachment preview */}
+                {uploadedFileInfo && (
+                  <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getFileIcon(uploadedFileInfo.mimeType)}
+                        <div>
+                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                            {uploadedFileInfo.originalName}
+                          </p>
+                          <p className="text-xs text-blue-700 dark:text-blue-300">
+                            {formatFileSize(uploadedFileInfo.size)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveAttachment}
+                        className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Selected file preview */}
+                {selectedFile && (
+                  <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {getFileIcon(selectedFile.type)}
+                        <div>
+                          <p className="text-sm font-medium">{selectedFile.name}</p>
+                          <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={handleFileUpload}
+                          disabled={isUploading}
+                          className="text-xs"
+                        >
+                          {isUploading ? "Uploading..." : "Upload"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedFile(null)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
-                  <Input
-                    placeholder="Type your message..."
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                  />
-                  <Button onClick={handleSendMessage} disabled={!messageText.trim()}>
+                  <div className="flex-1 relative">
+                    <Input
+                      placeholder="Type your message..."
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      className="pr-12"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 h-8 w-8"
+                      disabled={isUploading}
+                    >
+                      <Paperclip className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <Button 
+                    onClick={handleSendMessage} 
+                    disabled={(!messageText.trim() && !uploadedFileInfo) || isUploading}
+                  >
                     Send
                   </Button>
                 </div>
+
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept="*/*"
+                />
               </div>
             </>
           ) : (
