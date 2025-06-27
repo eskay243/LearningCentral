@@ -176,6 +176,26 @@ const uploadDocument = multer({
 const upload = uploadImage;
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Docker
+  app.get('/api/health', async (req: Request, res: Response) => {
+    try {
+      // Check database connection
+      await db.select().from(users).limit(1);
+      res.json({ 
+        status: 'healthy', 
+        timestamp: new Date().toISOString(),
+        database: 'connected'
+      });
+    } catch (error) {
+      res.status(503).json({ 
+        status: 'unhealthy', 
+        timestamp: new Date().toISOString(),
+        database: 'disconnected',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   // Setup authentication
   setupAuth(app);
 
