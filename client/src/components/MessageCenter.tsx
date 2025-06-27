@@ -236,10 +236,12 @@ export function MessageCenter() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground truncate mt-1">
-                          {conversation.lastMessage?.content || 'No messages yet'}
+                          {typeof conversation.lastMessage === 'object' && conversation.lastMessage?.content 
+                            ? conversation.lastMessage.content 
+                            : 'No messages yet'}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {conversation.lastMessage?.sentAt 
+                          {typeof conversation.lastMessage === 'object' && conversation.lastMessage?.sentAt 
                             ? formatDistanceToNow(new Date(conversation.lastMessage.sentAt), { addSuffix: true })
                             : ''
                           }

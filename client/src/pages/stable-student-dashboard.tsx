@@ -172,7 +172,7 @@ export default function StableStudentDashboard() {
         {/* Welcome Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome back, {user.firstName || 'Student'}! 👋
+            Welcome back, {user?.firstName || 'Student'}! 👋
           </h1>
           <p className="text-xl text-gray-600">Ready to continue your learning journey?</p>
         </div>

@@ -4740,7 +4740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Get unique students from enrollments
-      const studentIds = [...new Set(mentorEnrollments.map(enrollment => enrollment.userId))];
+      const studentIds = Array.from(new Set(mentorEnrollments.map(enrollment => enrollment.userId)));
       const students = await Promise.all(
         studentIds.map(async (studentId) => {
           const student = await storage.getUser(studentId);
