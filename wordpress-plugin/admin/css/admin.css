@@ -1,0 +1,552 @@
+/**
+ * Codelab LMS Admin Styles
+ * WordPress admin interface styling for the LMS plugin
+ */
+
+/* === ADMIN DASHBOARD === */
+.codelab-dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.codelab-stat-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.codelab-stat-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.codelab-stat-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.codelab-stat-number {
+    font-size: 32px;
+    font-weight: bold;
+    color: #2271b1;
+    margin: 10px 0;
+}
+
+.codelab-dashboard-widgets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.codelab-widget {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.codelab-widget h3 {
+    margin: 0 0 15px 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    color: #23282d;
+    font-size: 16px;
+}
+
+.codelab-widget ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.codelab-widget li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f6f7f7;
+}
+
+.codelab-widget li:last-child {
+    border-bottom: none;
+}
+
+.codelab-widget small {
+    color: #666;
+    font-size: 12px;
+}
+
+/* === COURSE META BOXES === */
+.form-table th {
+    width: 180px;
+    font-weight: 500;
+}
+
+.form-table td input[type="text"],
+.form-table td input[type="number"],
+.form-table td input[type="url"],
+.form-table td input[type="tel"],
+.form-table td input[type="email"],
+.form-table td input[type="password"],
+.form-table td input[type="datetime-local"],
+.form-table td select,
+.form-table td textarea {
+    width: 100%;
+    max-width: 400px;
+}
+
+.form-table td textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-table .description {
+    margin-top: 5px;
+    font-style: italic;
+    color: #666;
+}
+
+/* === SETTINGS PAGE === */
+.wrap h1 {
+    margin-bottom: 20px;
+}
+
+.form-table th {
+    padding-left: 0;
+}
+
+.form-table input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+/* === STUDENTS & ENROLLMENT TABLES === */
+.wp-list-table .column-avatar {
+    width: 40px;
+}
+
+.wp-list-table .column-progress {
+    width: 100px;
+}
+
+.wp-list-table .column-status {
+    width: 80px;
+}
+
+.wp-list-table .column-date {
+    width: 120px;
+}
+
+.progress-bar {
+    background: #f0f0f1;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    background: #00a32a;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-completed {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.status-suspended {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-paid {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-failed {
+    background: #f5c6cb;
+    color: #721c24;
+}
+
+/* === ACTION BUTTONS === */
+.codelab-action-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.codelab-action-button {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 3px;
+    text-decoration: none;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.codelab-action-button.primary {
+    background: #2271b1;
+    color: white;
+    border-color: #2271b1;
+}
+
+.codelab-action-button.primary:hover {
+    background: #135e96;
+    border-color: #135e96;
+    color: white;
+}
+
+.codelab-action-button.secondary {
+    background: #f6f7f7;
+    color: #2c3338;
+    border-color: #dcdcde;
+}
+
+.codelab-action-button.secondary:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #2c3338;
+}
+
+.codelab-action-button.danger {
+    background: #d63638;
+    color: white;
+    border-color: #d63638;
+}
+
+.codelab-action-button.danger:hover {
+    background: #b32d2e;
+    border-color: #b32d2e;
+    color: white;
+}
+
+/* === NOTICES === */
+.codelab-notice {
+    margin: 15px 0;
+    padding: 12px;
+    border-left: 4px solid;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.codelab-notice.success {
+    border-left-color: #00a32a;
+    background: #f7fff7;
+}
+
+.codelab-notice.error {
+    border-left-color: #d63638;
+    background: #fcf2f2;
+}
+
+.codelab-notice.warning {
+    border-left-color: #dba617;
+    background: #fcf9e8;
+}
+
+.codelab-notice.info {
+    border-left-color: #72aee6;
+    background: #f7fcfe;
+}
+
+/* === MODAL DIALOGS === */
+.codelab-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+}
+
+.codelab-modal-content {
+    background: white;
+    border-radius: 4px;
+    padding: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.codelab-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #ddd;
+}
+
+.codelab-modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.codelab-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.codelab-modal-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+    text-align: right;
+}
+
+/* === COMMISSION TRANSFER === */
+.commission-transfer-form {
+    display: grid;
+    gap: 15px;
+}
+
+.form-field {
+    display: grid;
+    gap: 5px;
+}
+
+.form-field label {
+    font-weight: 500;
+    color: #23282d;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.form-field .description {
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+}
+
+/* === BULK ACTIONS === */
+.codelab-bulk-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 10px 0;
+    padding: 10px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.codelab-bulk-actions select {
+    min-width: 150px;
+}
+
+.codelab-bulk-actions .button {
+    margin-left: auto;
+}
+
+/* === USER STATISTICS === */
+.user-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.user-stat-item {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 4px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.user-stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #2271b1;
+    display: block;
+}
+
+.user-stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 5px;
+}
+
+/* === PAYSTACK INTEGRATION === */
+.paystack-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.paystack-status.connected {
+    background: #d4edda;
+    color: #155724;
+}
+
+.paystack-status.disconnected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.paystack-test-button {
+    margin-left: 10px;
+    padding: 4px 8px;
+    font-size: 11px;
+    height: auto;
+    line-height: 1.2;
+}
+
+/* === RESPONSIVE ADMIN === */
+@media screen and (max-width: 782px) {
+    .codelab-dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .codelab-dashboard-widgets {
+        grid-template-columns: 1fr;
+    }
+    
+    .codelab-action-buttons {
+        flex-direction: column;
+    }
+    
+    .codelab-bulk-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .codelab-bulk-actions .button {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .codelab-dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .codelab-modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+}
+
+/* === LOADING STATES === */
+.codelab-loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.codelab-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ddd;
+    border-top-color: #2271b1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* === ACCESSIBILITY === */
+.screen-reader-text {
+    clip: rect(1px, 1px, 1px, 1px);
+    position: absolute !important;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+}
+
+.codelab-action-button:focus,
+.codelab-modal-close:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* === PRINT STYLES === */
+@media print {
+    .codelab-action-buttons,
+    .codelab-bulk-actions,
+    .codelab-modal {
+        display: none !important;
+    }
+    
+    .codelab-dashboard-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .codelab-stat-card {
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+}
