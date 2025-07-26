@@ -7225,6 +7225,14 @@ class MemoryStorage implements IStorage {
   async updateLessonProgress(lessonId: number, userId: string, progressData: any): Promise<void> {}
   async enrollUserInCourse(enrollmentData: any): Promise<any> { return { id: 1 }; }
   async getEnrollmentsByUser(userId: string): Promise<any[]> { return []; }
+  async getAllEnrollments(): Promise<any[]> { return []; }
+  async getPayments(): Promise<any[]> { return []; }
+  async getRecentActivity(): Promise<any[]> { return []; }
+  async getLiveSessionsCount(): Promise<number> { return 0; }
+  async getActiveCoursesCount(): Promise<number> { return this.courses.size; }
+  async getTotalRevenue(): Promise<number> { return 0; }
+  async getMonthlyRevenue(): Promise<any[]> { return []; }
+  async getCourseCompletionStats(): Promise<any[]> { return []; }
 
   // Add placeholder implementations for all other required methods
   [key: string]: any;
