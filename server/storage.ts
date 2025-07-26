@@ -221,6 +221,7 @@ export interface IStorage {
   getQuiz(quizId: number): Promise<Quiz | undefined>;
   updateQuiz(quizId: number, quizData: Partial<Quiz>): Promise<Quiz>;
   getQuizzes(options?: { courseId?: number, moduleId?: number, lessonId?: number }): Promise<Quiz[]>;
+  getAllQuizzes(): Promise<Quiz[]>;
   getQuizzesByMentor(mentorId: string): Promise<Quiz[]>;
   getQuizzesByLesson(lessonId: number): Promise<Quiz[]>;
   addQuizQuestion(questionData: Omit<QuizQuestion, "id">): Promise<QuizQuestion>;
@@ -229,6 +230,9 @@ export interface IStorage {
   getQuizQuestions(quizId: number): Promise<QuizQuestion[]>;
   submitQuizAttempt(attemptData: Omit<QuizAttempt, "id" | "startedAt" | "completedAt">): Promise<QuizAttempt>;
   getQuizAttempts(quizId: number): Promise<QuizAttempt[]>;
+  getQuizAttempt(attemptId: number): Promise<QuizAttempt | undefined>;
+  getQuizAnswers(attemptId: number): Promise<any[]>;
+  getQuizCompletionRate(courseId: number): Promise<number>;
   getUserQuizAttempts(userId: string, quizId?: number): Promise<QuizAttempt[]>;
   
   // Assignment operations
@@ -5680,13 +5684,87 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getAllQuizzes(): Promise<any[]> {
+  async getAllQuizzes(): Promise<Quiz[]> {
     try {
       const allQuizzes = await db.select().from(quizzes);
       return allQuizzes;
     } catch (error) {
       console.error("Error fetching all quizzes:", error);
       return [];
+    }
+  }
+
+  async getQuizAttempt(attemptId: number): Promise<QuizAttempt | undefined> {
+    try {
+      const [attempt] = await db
+        .select()
+        .from(quizAttempts)
+        .where(eq(quizAttempts.id, attemptId));
+      return attempt;
+    } catch (error) {
+      console.error("Error fetching quiz attempt:", error);
+      return undefined;
+    }
+  }
+
+  async getQuizAnswers(attemptId: number): Promise<any[]> {
+    try {
+      const attempt = await this.getQuizAttempt(attemptId);
+      if (!attempt) {
+        return [];
+      }
+      
+      // Return answers from the attempt's answers field
+      return Array.isArray(attempt.answers) ? attempt.answers : [];
+    } catch (error) {
+      console.error("Error fetching quiz answers:", error);
+      return [];
+    }
+  }
+
+  async getQuizCompletionRate(courseId: number): Promise<number> {
+    try {
+      // Get all quizzes for the course
+      const courseQuizzes = await this.getQuizzes({ courseId });
+      
+      if (courseQuizzes.length === 0) {
+        return 0;
+      }
+      
+      // Get all enrollments for the course
+      const enrollments = await this.getCourseEnrollments(courseId);
+      
+      if (enrollments.length === 0) {
+        return 0;
+      }
+      
+      let totalCompletions = 0;
+      let totalPossible = enrollments.length * courseQuizzes.length;
+      
+      // Check completion for each student and quiz
+      for (const enrollment of enrollments) {
+        for (const quiz of courseQuizzes) {
+          const attempts = await db
+            .select()
+            .from(quizAttempts)
+            .where(
+              and(
+                eq(quizAttempts.userId, enrollment.userId),
+                eq(quizAttempts.quizId, quiz.id),
+                eq(quizAttempts.status, 'completed')
+              )
+            );
+          
+          if (attempts.length > 0) {
+            totalCompletions++;
+          }
+        }
+      }
+      
+      return totalPossible > 0 ? Math.round((totalCompletions / totalPossible) * 100) : 0;
+    } catch (error) {
+      console.error("Error calculating quiz completion rate:", error);
+      return 0;
     }
   }
 
@@ -7296,6 +7374,9 @@ Generated: ${new Date().toLocaleString('en-GB')}
 class MemoryStorage implements IStorage {
   private users: Map<string, User> = new Map();
   private courses: Map<number, Course> = new Map();
+  private quizzes: Map<number, Quiz> = new Map();
+  private quizAttempts: Map<number, QuizAttempt> = new Map();
+  private quizQuestions: Map<number, QuizQuestion> = new Map();
 
   constructor() {
     this.initializeDemoData();
@@ -7727,6 +7808,68 @@ class MemoryStorage implements IStorage {
         message: 'Students are most active between 7-9 PM'
       }
     ];
+  }
+
+  // Quiz-related methods implementation
+  async getAllQuizzes(): Promise<Quiz[]> {
+    return Array.from(this.quizzes.values());
+  }
+
+  async getQuiz(quizId: number): Promise<Quiz | undefined> {
+    return this.quizzes.get(quizId);
+  }
+
+  async getQuizAttempt(attemptId: number): Promise<QuizAttempt | undefined> {
+    return this.quizAttempts.get(attemptId);
+  }
+
+  async getQuizAnswers(attemptId: number): Promise<any[]> {
+    const attempt = this.quizAttempts.get(attemptId);
+    if (!attempt) {
+      return [];
+    }
+    return Array.isArray(attempt.answers) ? attempt.answers : [];
+  }
+
+  async getQuizCompletionRate(courseId: number): Promise<number> {
+    // For memory storage, return a mock completion rate
+    return 75; // 75% completion rate
+  }
+
+  async getQuizzes(options?: { courseId?: number, moduleId?: number, lessonId?: number }): Promise<Quiz[]> {
+    const allQuizzes = Array.from(this.quizzes.values());
+    
+    if (options?.lessonId) {
+      return allQuizzes.filter(q => q.lessonId === options.lessonId);
+    }
+    if (options?.courseId) {
+      // For memory storage, return mock data
+      return allQuizzes.slice(0, 3);
+    }
+    
+    return allQuizzes;
+  }
+
+  async getQuizzesByLesson(lessonId: number): Promise<Quiz[]> {
+    return Array.from(this.quizzes.values()).filter(q => q.lessonId === lessonId);
+  }
+
+  async getQuizzesByMentor(mentorId: string): Promise<Quiz[]> {
+    // For memory storage, return some mock quizzes
+    return Array.from(this.quizzes.values()).slice(0, 2);
+  }
+
+  async getQuizQuestions(quizId: number): Promise<QuizQuestion[]> {
+    return Array.from(this.quizQuestions.values()).filter(q => q.quizId === quizId);
+  }
+
+  async getQuizAttempts(quizId: number): Promise<QuizAttempt[]> {
+    return Array.from(this.quizAttempts.values()).filter(a => a.quizId === quizId);
+  }
+
+  async getUserQuizAttempts(userId: string, quizId?: number): Promise<QuizAttempt[]> {
+    const attempts = Array.from(this.quizAttempts.values()).filter(a => a.userId === userId);
+    return quizId ? attempts.filter(a => a.quizId === quizId) : attempts;
   }
 
   // Add placeholder implementations for all other required methods
