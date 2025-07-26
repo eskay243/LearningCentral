@@ -7175,6 +7175,37 @@ class MemoryStorage implements IStorage {
   async createQuiz(quizData: Omit<Quiz, "id">): Promise<Quiz> { 
     return { id: 1, ...quizData, createdAt: new Date(), updatedAt: new Date() };
   }
+  async getUsersByRole(role: string): Promise<SelectUser[]> {
+    return Array.from(this.users.values()).filter(user => user.role === role);
+  }
+  async getAllUsers(): Promise<SelectUser[]> {
+    return Array.from(this.users.values());
+  }
+  async updateUser(id: string, userData: Partial<SelectUser>): Promise<SelectUser | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    const updatedUser = { ...user, ...userData, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
+  }
+  async getAdminStats(): Promise<any> {
+    const totalUsers = this.users.size;
+    const totalCourses = this.courses.size;
+    const students = Array.from(this.users.values()).filter(u => u.role === 'student');
+    const mentors = Array.from(this.users.values()).filter(u => u.role === 'mentor');
+    
+    return {
+      totalUsers,
+      totalCourses,
+      totalStudents: students.length,
+      totalMentors: mentors.length,
+      totalRevenue: 0,
+      activeUsers: totalUsers // All users are considered active in memory storage
+    };
+  }
   async getModule(id: number): Promise<Module | undefined> { return undefined; }
   async getModulesByCourse(courseId: number): Promise<Module[]> { return []; }
   async createModule(moduleData: Omit<Module, "id">): Promise<Module> { 
@@ -7193,6 +7224,7 @@ class MemoryStorage implements IStorage {
   async deleteLesson(id: number): Promise<boolean> { return false; }
   async updateLessonProgress(lessonId: number, userId: string, progressData: any): Promise<void> {}
   async enrollUserInCourse(enrollmentData: any): Promise<any> { return { id: 1 }; }
+  async getEnrollmentsByUser(userId: string): Promise<any[]> { return []; }
 
   // Add placeholder implementations for all other required methods
   [key: string]: any;
