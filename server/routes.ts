@@ -37,6 +37,7 @@ import { UserRole, Currency } from "@shared/schema";
 import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
+import { registerMentorEarningsRoutes } from "./mentorEarningsRoutes";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -5627,8 +5628,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Register mentor management routes
+  // Register specialized routes
+  registerNotificationRoutes(app);
+  registerAssessmentRoutes(app);
+  registerCodeExecutionRoutes(app);
+  registerLiveSessionRoutes(app);
+  registerEnhancedLiveSessionRoutes(app);
+  registerKycRoutes(app);
   registerMentorManagementRoutes(app);
+  registerCommunicationRoutes(app);
+  registerPaymentRoutes(app);
+  registerAnalyticsRoutes(app);
+  registerMentorEarningsRoutes(app);
 
   return httpServer;
 }

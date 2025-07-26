@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Video, 
   Mic, 
@@ -25,10 +26,15 @@ import {
   Clock,
   Play,
   Pause,
-  Volume2
+  Volume2,
+  Calendar,
+  Monitor,
+  Camera
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import WebRTCSession from "@/components/WebRTCSession";
 
 interface LiveSession {
   id: number;
@@ -79,6 +85,7 @@ export default function LiveSessionPage() {
   const sessionId = params?.id ? parseInt(params.id) : null;
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // State management
   const [isJoined, setIsJoined] = useState(false);
@@ -88,6 +95,8 @@ export default function LiveSessionPage() {
   const [question, setQuestion] = useState("");
   const [selectedPoll, setSelectedPoll] = useState<number | null>(null);
   const [pollAnswer, setPollAnswer] = useState("");
+  const [isWebRTCMode, setIsWebRTCMode] = useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
 
   // WebSocket connection
   const wsRef = useRef<WebSocket | null>(null);
@@ -113,7 +122,7 @@ export default function LiveSessionPage() {
   });
 
   // Fetch attendance
-  const { data: attendance = [] } = useQuery({
+  const { data: attendance = [] } = useQuery<any[]>({
     queryKey: [`/api/live-sessions/${sessionId}/attendance`],
     enabled: !!sessionId && isJoined,
     refetchInterval: 5000,
@@ -273,6 +282,22 @@ export default function LiveSessionPage() {
     );
   }
 
+  // Show WebRTC session if user has joined
+  if (isJoined && isWebRTCMode && user) {
+    return (
+      <WebRTCSession
+        sessionId={sessionId.toString()}
+        userId={user.id}
+        userName={`${user.firstName} ${user.lastName}`.trim() || user.email || 'User'}
+        userRole={user.role || 'student'}
+        onLeave={() => {
+          setIsJoined(false);
+          setIsWebRTCMode(false);
+        }}
+      />
+    );
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'live': return 'bg-green-500';
@@ -315,23 +340,41 @@ export default function LiveSessionPage() {
             
             <div className="flex gap-2">
               {!isJoined ? (
-                <Button 
-                  onClick={() => joinSessionMutation.mutate()}
-                  disabled={joinSessionMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Video className="w-4 h-4 mr-2" />
-                  Join Session
-                </Button>
-              ) : (
                 <>
-                  <Button
-                    onClick={() => window.open(session.meetingUrl, '_blank')}
-                    className="bg-blue-600 hover:bg-blue-700"
+                  <Button 
+                    onClick={() => {
+                      setIsWebRTCMode(true);
+                      joinSessionMutation.mutate();
+                    }}
+                    disabled={joinSessionMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Join WebRTC
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setIsWebRTCMode(false);
+                      joinSessionMutation.mutate();
+                    }}
+                    disabled={joinSessionMutation.isPending}
+                    variant="outline"
                   >
                     <Video className="w-4 h-4 mr-2" />
-                    Open Meeting
+                    Join Traditional
                   </Button>
+                </>
+              ) : (
+                <>
+                  {!isWebRTCMode && (
+                    <Button
+                      onClick={() => window.open(session.meetingUrl, '_blank')}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Video className="w-4 h-4 mr-2" />
+                      Open Meeting
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => leaveSessionMutation.mutate()}

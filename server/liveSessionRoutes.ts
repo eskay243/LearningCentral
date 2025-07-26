@@ -28,6 +28,57 @@ function getUserId(user: any): string {
 
 export function registerLiveSessionRoutes(app: Express) {
   
+  // Create new live session (Admin/Mentor only)
+  app.post('/api/live-sessions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userRole = req.user?.role;
+      if (userRole !== 'admin' && userRole !== 'mentor') {
+        return res.status(403).json({ message: 'Insufficient permissions' });
+      }
+
+      const {
+        title,
+        description,
+        courseId,
+        scheduledAt,
+        duration,
+        maxParticipants,
+        provider,
+        meetingUrl,
+        isRecorded,
+        allowChat,
+        allowQA,
+        requiresApproval
+      } = req.body;
+
+      // Create session with comprehensive data
+      const sessionData = {
+        title,
+        description,
+        courseId: courseId ? parseInt(courseId) : null,
+        instructorId: req.user.id,
+        scheduledAt: new Date(scheduledAt),
+        duration: duration || 60,
+        maxParticipants: maxParticipants || 100,
+        provider: provider || 'webrtc',
+        meetingUrl: meetingUrl || `${req.protocol}://${req.get('host')}/live-sessions/${Date.now()}`,
+        status: 'scheduled',
+        isRecorded: isRecorded || false,
+        allowChat: allowChat !== false,
+        allowQA: allowQA !== false,
+        requiresApproval: requiresApproval || false,
+        currentAttendance: 0
+      };
+
+      const session = await storage.createLiveSession(sessionData);
+      
+      res.status(201).json(session);
+    } catch (error) {
+      console.error('Error creating live session:', error);
+      res.status(500).json({ message: 'Failed to create live session' });
+    }
+  });
+  
   // Get live sessions for a course
   app.get('/api/courses/:courseId/live-sessions', isAuthenticated, async (req: Request, res: Response) => {
     try {

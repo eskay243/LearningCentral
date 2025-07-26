@@ -73,6 +73,8 @@ import StudentPayments from "@/pages/student-payments";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import Certificate from "@/pages/Certificate";
 import CodeCompanion from "@/pages/CodeCompanion";
+import LiveSessionAnalytics from "@/pages/LiveSessionAnalytics";
+import CourseCompletionDashboard from "@/pages/CourseCompletionDashboard";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
 
 import DemoUsers from "@/pages/DemoUsers";
@@ -170,6 +172,8 @@ function Router() {
         <Route path="/certificate/analytics" component={CertificateAnalytics} />
         <Route path="/live-classes" component={LiveClasses} />
         <Route path="/live-sessions/:id" component={LiveSession} />
+        <Route path="/live-session-analytics" component={LiveSessionAnalytics} />
+        <Route path="/course-completion-dashboard" component={CourseCompletionDashboard} />
         <Route path="/code-companion" component={CodeCompanionChat} />
         <Route path="/code-companion/old" component={CodeCompanion} />
         <Route path="/mentor-dashboard" component={MentorDashboard} />

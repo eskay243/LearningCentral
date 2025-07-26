@@ -31,6 +31,7 @@ import {
   BarChart3,
   Star,
   Activity,
+  Trophy,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -178,6 +179,16 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
               <Link href="/analytics" className={menuItemClass("/analytics")}>
                 <LineChart className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                 <span className="truncate">Analytics</span>
+              </Link>
+              
+              <Link href="/live-session-analytics" className={menuItemClass("/live-session-analytics")}>
+                <BarChart3 className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Session Analytics</span>
+              </Link>
+              
+              <Link href="/course-completion-dashboard" className={menuItemClass("/course-completion-dashboard")}>
+                <Trophy className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <span className="truncate">Completion Dashboard</span>
               </Link>
               
               {isAdmin && (

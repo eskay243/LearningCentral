@@ -29,6 +29,20 @@ export function setupWebSocketServer(server: Server) {
   // Track conversations and their participants
   const conversations = new Map<number, Set<string>>();
   
+  // Track live session participants
+  const liveSessions = new Map<string, Map<string, LiveSessionParticipant>>();
+  
+  interface LiveSessionParticipant {
+    userId: string;
+    userName: string;
+    userRole: string;
+    ws: AuthenticatedClient;
+    joinedAt: Date;
+    isMuted: boolean;
+    hasVideo: boolean;
+    isScreenSharing: boolean;
+  }
+  
   console.log('WebSocket server initialized');
 
   wss.on('connection', (ws: AuthenticatedClient) => {
@@ -69,6 +83,35 @@ export function setupWebSocketServer(server: Server) {
           
           case 'remove_reaction':
             await handleRemoveReaction(ws, message.payload);
+            break;
+          
+          // WebRTC Live Session Support
+          case 'join-session':
+            handleJoinLiveSession(ws, message);
+            break;
+          
+          case 'leave-session':
+            handleLeaveLiveSession(ws, message);
+            break;
+          
+          case 'webrtc-offer':
+            handleWebRTCOffer(ws, message);
+            break;
+          
+          case 'webrtc-answer':
+            handleWebRTCAnswer(ws, message);
+            break;
+          
+          case 'webrtc-ice-candidate':
+            handleWebRTCIceCandidate(ws, message);
+            break;
+          
+          case 'chat-message':
+            handleLiveSessionChat(ws, message);
+            break;
+          
+          case 'media-state-change':
+            handleMediaStateChange(ws, message);
             break;
             
           default:
@@ -335,6 +378,245 @@ export function setupWebSocketServer(server: Server) {
       const client = clients.get(userId);
       if (client && client.readyState === WebSocket.OPEN) {
         sendToClient(client, type, payload);
+      }
+    });
+  }
+
+  // WebRTC Live Session Handlers
+  function handleJoinLiveSession(ws: AuthenticatedClient, message: any) {
+    const { sessionId, userId, userName, userRole } = message;
+    
+    if (!sessionId || !userId || !userName) {
+      return;
+    }
+    
+    // Initialize session if it doesn't exist
+    if (!liveSessions.has(sessionId)) {
+      liveSessions.set(sessionId, new Map());
+    }
+    
+    const sessionParticipants = liveSessions.get(sessionId)!;
+    
+    // Add participant to session
+    const participant: LiveSessionParticipant = {
+      userId,
+      userName,
+      userRole,
+      ws,
+      joinedAt: new Date(),
+      isMuted: true,
+      hasVideo: false,
+      isScreenSharing: false
+    };
+    
+    sessionParticipants.set(userId, participant);
+    
+    console.log(`User ${userName} (${userId}) joined live session ${sessionId}`);
+    
+    // Notify other participants about new user
+    broadcastToLiveSession(sessionId, 'user-joined', {
+      userId,
+      userName,
+      userRole,
+      joinedAt: participant.joinedAt
+    }, userId);
+    
+    // Send current participants list to new user
+    const participants = Array.from(sessionParticipants.values()).map(p => ({
+      id: p.userId,
+      name: p.userName,
+      role: p.userRole,
+      isHost: p.userRole === 'mentor' || p.userRole === 'admin',
+      isMuted: p.isMuted,
+      hasVideo: p.hasVideo,
+      isScreenSharing: p.isScreenSharing
+    }));
+    
+    sendToClient(ws, 'participants-update', { participants });
+  }
+  
+  function handleLeaveLiveSession(ws: AuthenticatedClient, message: any) {
+    const { sessionId } = message;
+    
+    if (!sessionId || !ws.userId) {
+      return;
+    }
+    
+    const sessionParticipants = liveSessions.get(sessionId);
+    if (!sessionParticipants) {
+      return;
+    }
+    
+    const participant = sessionParticipants.get(ws.userId);
+    if (!participant) {
+      return;
+    }
+    
+    // Remove participant from session
+    sessionParticipants.delete(ws.userId);
+    
+    console.log(`User ${participant.userName} (${ws.userId}) left live session ${sessionId}`);
+    
+    // Notify other participants
+    broadcastToLiveSession(sessionId, 'user-left', {
+      userId: ws.userId,
+      userName: participant.userName
+    });
+    
+    // Clean up empty session
+    if (sessionParticipants.size === 0) {
+      liveSessions.delete(sessionId);
+    }
+  }
+  
+  function handleWebRTCOffer(ws: AuthenticatedClient, message: any) {
+    const { sessionId, targetId, offer } = message;
+    
+    if (!sessionId || !targetId || !offer || !ws.userId) {
+      return;
+    }
+    
+    const sessionParticipants = liveSessions.get(sessionId);
+    if (!sessionParticipants) {
+      return;
+    }
+    
+    const targetParticipant = sessionParticipants.get(targetId);
+    if (!targetParticipant) {
+      return;
+    }
+    
+    // Forward offer to target participant
+    sendToClient(targetParticipant.ws, 'webrtc-offer', {
+      senderId: ws.userId,
+      offer
+    });
+  }
+  
+  function handleWebRTCAnswer(ws: AuthenticatedClient, message: any) {
+    const { sessionId, targetId, answer } = message;
+    
+    if (!sessionId || !targetId || !answer || !ws.userId) {
+      return;
+    }
+    
+    const sessionParticipants = liveSessions.get(sessionId);
+    if (!sessionParticipants) {
+      return;
+    }
+    
+    const targetParticipant = sessionParticipants.get(targetId);
+    if (!targetParticipant) {
+      return;
+    }
+    
+    // Forward answer to target participant
+    sendToClient(targetParticipant.ws, 'webrtc-answer', {
+      senderId: ws.userId,
+      answer
+    });
+  }
+  
+  function handleWebRTCIceCandidate(ws: AuthenticatedClient, message: any) {
+    const { sessionId, targetId, candidate } = message;
+    
+    if (!sessionId || !targetId || !candidate || !ws.userId) {
+      return;
+    }
+    
+    const sessionParticipants = liveSessions.get(sessionId);
+    if (!sessionParticipants) {
+      return;
+    }
+    
+    const targetParticipant = sessionParticipants.get(targetId);
+    if (!targetParticipant) {
+      return;
+    }
+    
+    // Forward ICE candidate to target participant
+    sendToClient(targetParticipant.ws, 'webrtc-ice-candidate', {
+      senderId: ws.userId,
+      candidate
+    });
+  }
+  
+  function handleLiveSessionChat(ws: AuthenticatedClient, message: any) {
+    const { sessionId, message: chatMessage } = message;
+    
+    if (!sessionId || !chatMessage || !ws.userId) {
+      return;
+    }
+    
+    const sessionParticipants = liveSessions.get(sessionId);
+    if (!sessionParticipants) {
+      return;
+    }
+    
+    const participant = sessionParticipants.get(ws.userId);
+    if (!participant) {
+      return;
+    }
+    
+    // Broadcast chat message to all participants
+    broadcastToLiveSession(sessionId, 'chat-message', {
+      senderId: ws.userId,
+      senderName: participant.userName,
+      message: chatMessage,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  function handleMediaStateChange(ws: AuthenticatedClient, message: any) {
+    const { sessionId, isMuted, hasVideo, isScreenSharing } = message;
+    
+    if (!sessionId || !ws.userId) {
+      return;
+    }
+    
+    const sessionParticipants = liveSessions.get(sessionId);
+    if (!sessionParticipants) {
+      return;
+    }
+    
+    const participant = sessionParticipants.get(ws.userId);
+    if (!participant) {
+      return;
+    }
+    
+    // Update participant media state
+    participant.isMuted = isMuted;
+    participant.hasVideo = hasVideo;
+    participant.isScreenSharing = isScreenSharing;
+    
+    // Broadcast media state change to all participants
+    broadcastToLiveSession(sessionId, 'media-state-changed', {
+      userId: ws.userId,
+      isMuted,
+      hasVideo,
+      isScreenSharing
+    });
+  }
+  
+  // Helper to broadcast message to all participants in a live session
+  function broadcastToLiveSession(
+    sessionId: string, 
+    type: string, 
+    payload: any,
+    excludeUserId?: string
+  ) {
+    const sessionParticipants = liveSessions.get(sessionId);
+    if (!sessionParticipants) {
+      return;
+    }
+    
+    sessionParticipants.forEach((participant, userId) => {
+      if (excludeUserId && userId === excludeUserId) {
+        return; // Skip excluded user
+      }
+      
+      if (participant.ws.readyState === WebSocket.OPEN) {
+        sendToClient(participant.ws, type, payload);
       }
     });
   }

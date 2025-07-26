@@ -1957,13 +1957,7 @@ export type AssessmentQuizQuestion = typeof assessmentQuizQuestions.$inferSelect
 export type AssessmentQuizAttempt = typeof assessmentQuizAttempts.$inferSelect;
 export type QuizAnswer = typeof quizAnswers.$inferSelect;
 
-// Add KYC type exports
-export type KycDocument = typeof kycDocuments.$inferSelect;
-export type InsertKycDocument = z.infer<typeof insertKycDocumentSchema>;
-export type KycDocumentFile = typeof kycDocumentFiles.$inferSelect;
-export type InsertKycDocumentFile = z.infer<typeof insertKycDocumentFileSchema>;
-export type KycVerificationHistory = typeof kycVerificationHistory.$inferSelect;
-export type InsertKycVerificationHistory = z.infer<typeof insertKycVerificationHistorySchema>;
+// KYC type exports (defined later in file)
 export type AssignmentRubric = typeof assignmentRubrics.$inferSelect;
 export type RubricCriteria = typeof rubricCriteria.$inferSelect;
 export type AssignmentGrade = typeof assignmentGrades.$inferSelect;
