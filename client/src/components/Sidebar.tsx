@@ -247,6 +247,28 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                           <Shield className="mr-3 h-4 w-4 flex-shrink-0" />
                           <span className="truncate">KYC Management</span>
                         </Link>
+                        
+                        <Link href="/admin/analytics" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/analytics"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/analytics")
+                          }
+                        )}>
+                          <BarChart3 className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">Advanced Analytics</span>
+                        </Link>
+                        
+                        <Link href="/admin/certificates" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/certificates"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/certificates")
+                          }
+                        )}>
+                          <Award className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">Certificate Automation</span>
+                        </Link>
                       </div>
                     )}
                   </div>

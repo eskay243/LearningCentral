@@ -4,6 +4,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { createServer } from "http";
 import { storage } from "./storage";
+import { initializeCertificateAutomation } from "./certificateAutomation";
 
 async function initializeDemoData() {
   try {
@@ -182,6 +183,9 @@ process.on('uncaughtException', (error) => {
   
   try {
     server = await registerRoutes(app);
+
+    // Initialize certificate automation service
+    initializeCertificateAutomation();
 
     // Demo data initialization temporarily disabled
     // await initializeDemoData();

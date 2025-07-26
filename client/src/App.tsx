@@ -76,6 +76,8 @@ import CodeCompanion from "@/pages/CodeCompanion";
 import LiveSessionAnalytics from "@/pages/LiveSessionAnalytics";
 import CourseCompletionDashboard from "@/pages/CourseCompletionDashboard";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
+import AdvancedAnalyticsDashboard from "@/pages/admin/AdvancedAnalyticsDashboard";
+import CertificateAutomationManager from "@/pages/admin/CertificateAutomationManager";
 
 import DemoUsers from "@/pages/DemoUsers";
 import CustomizableDashboard from "@/pages/CustomizableDashboard";
@@ -190,6 +192,8 @@ function Router() {
         <Route path="/admin/user-permissions" component={AdminUserPermissions} />
         <Route path="/admin/edit-profile" component={AdminEditProfile} />
         <Route path="/admin/kyc" component={KycManagement} />
+        <Route path="/admin/analytics" component={AdvancedAnalyticsDashboard} />
+        <Route path="/admin/certificates" component={CertificateAutomationManager} />
         <Route path="/kyc/verification" component={KycVerification} />
         <Route path="/kyc/mentor" component={KycMentorPage} />
         <Route path="/kyc/student" component={KycStudentPage} />

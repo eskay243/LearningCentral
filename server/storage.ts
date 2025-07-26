@@ -7633,6 +7633,102 @@ class MemoryStorage implements IStorage {
     return await this.updateUser(userId, updateData) || user;
   }
 
+  // Certificate automation methods
+  async getCompletedEnrollmentsWithoutCertificates(): Promise<any[]> {
+    return [];
+  }
+
+  async getEnrollmentByUserAndCourse(userId: number, courseId: number): Promise<CourseEnrollment | undefined> {
+    return undefined;
+  }
+
+  async getQuizAttemptsByUserAndCourse(userId: number, courseId: number): Promise<any[]> {
+    return [];
+  }
+
+  async getCertificateTemplateForCourse(courseId: number): Promise<any> {
+    return null;
+  }
+
+  async getDefaultCertificateTemplate(): Promise<any> {
+    return null;
+  }
+
+  async getCertificateAutomationStats(): Promise<any> {
+    return {
+      totalCertificatesGenerated: 0,
+      pendingCertificates: 0,
+      successRate: 100,
+      lastRunTime: new Date().toISOString()
+    };
+  }
+
+  async updateSystemSetting(key: string, value: string): Promise<void> {
+    // Placeholder - settings not persisted in memory storage
+  }
+
+  async getSystemSetting(key: string): Promise<string | undefined> {
+    return undefined;
+  }
+
+  // Advanced analytics methods
+  async getFilteredQuizAttempts(courseId?: number, mentorId?: number): Promise<any[]> {
+    return [];
+  }
+
+  async getMentorEnrollments(mentorId: number): Promise<CourseEnrollment[]> {
+    return [];
+  }
+
+  async getEnrollmentsByCourse(courseId: number): Promise<CourseEnrollment[]> {
+    return [];
+  }
+
+  async getStudentPerformanceAnalytics(options: any): Promise<any> {
+    return {
+      overallGPA: 3.5,
+      completionRate: 85,
+      averageQuizScore: 78,
+      strongAreas: ['Programming Basics'],
+      improvementAreas: ['Advanced Concepts']
+    };
+  }
+
+  async getLearningOutcomesAnalytics(options: any): Promise<any> {
+    return {
+      goalAchievementRate: 82,
+      skillProgressions: [],
+      learningPathEffectiveness: 75
+    };
+  }
+
+  async generateAnalyticsExport(options: any): Promise<any> {
+    const data = "Analytics Export\nData would be here";
+    return Buffer.from(data, 'utf-8');
+  }
+
+  async getAnalyticsAlerts(mentorId?: number): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        type: 'warning',
+        title: 'Low Quiz Performance',
+        message: '3 students scored below 60% this week'
+      }
+    ];
+  }
+
+  async getAnalyticsInsights(mentorId?: number): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        type: 'insight',
+        title: 'Peak Learning Hours',
+        message: 'Students are most active between 7-9 PM'
+      }
+    ];
+  }
+
   // Add placeholder implementations for all other required methods
   [key: string]: any;
 }

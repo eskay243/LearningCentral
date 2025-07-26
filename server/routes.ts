@@ -38,6 +38,8 @@ import { initializePayment, verifyPayment } from "./paystack";
 import { setUserAsAdmin } from "./admin-setup";
 import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerMentorEarningsRoutes } from "./mentorEarningsRoutes";
+import { registerCertificateAutomationRoutes, CertificateAutomationService } from "./certificateAutomation";
+import { registerAdvancedAnalyticsRoutes } from "./advancedAnalytics";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
@@ -2463,6 +2465,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       
       const progress = await storage.updateLessonProgress(lessonId, userId, req.body);
+      
+      // Trigger certificate automation if lesson is completed
+      if (progress && progress.status === 'completed') {
+        try {
+          await CertificateAutomationService.onLessonCompleted(userId, lessonId);
+        } catch (automationError) {
+          console.error("Certificate automation error:", automationError);
+          // Don't fail the progress update if automation fails
+        }
+      }
+      
       res.json(progress);
     } catch (error) {
       console.error("Error updating lesson progress:", error);
@@ -5640,6 +5653,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerPaymentRoutes(app);
   registerAnalyticsRoutes(app);
   registerMentorEarningsRoutes(app);
+  registerCertificateAutomationRoutes(app);
+  registerAdvancedAnalyticsRoutes(app);
 
   return httpServer;
 }
