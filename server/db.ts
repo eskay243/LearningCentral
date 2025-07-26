@@ -1,10 +1,6 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
-
-// Configure Neon for serverless environment
-neonConfig.webSocketConstructor = ws;
 
 // Connection state tracking
 let connectionAttempts = 0;
@@ -34,7 +30,8 @@ export const initializeDatabase = async () => {
     // Create connection pool with basic configuration
     console.log("Connecting to database...");
     const pool = new Pool({ 
-      connectionString: process.env.DATABASE_URL
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
     });
     
     // Test the connection with retry logic
