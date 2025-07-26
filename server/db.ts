@@ -1,6 +1,9 @@
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
 import * as schema from "@shared/schema";
+
+neonConfig.webSocketConstructor = ws;
 
 // Connection state tracking
 let connectionAttempts = 0;
@@ -27,16 +30,10 @@ export const initializeDatabase = async () => {
       throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
     }
     
-    // Create connection pool with basic configuration
-    console.log("Connecting to database...");
-    const pool = new Pool({ 
-      host: process.env.PGHOST,
-      port: parseInt(process.env.PGPORT || '5432'),
-      user: process.env.PGUSER,
-      password: process.env.PGPASSWORD,
-      database: process.env.PGDATABASE,
-      ssl: { rejectUnauthorized: false } // Neon requires SSL
-    });
+    console.log("Connecting to Neon PostgreSQL database...");
+    
+    // Create Neon connection pool
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     
     // Test the connection with retry logic
     let retries = 3;
@@ -47,6 +44,7 @@ export const initializeDatabase = async () => {
         const result = await pool.query('SELECT NOW()');
         logDbOperation("Connection", true);
         connected = true;
+        console.log("✅ Neon PostgreSQL connection established successfully");
       } catch (error) {
         retries--;
         if (retries > 0) {
@@ -58,7 +56,7 @@ export const initializeDatabase = async () => {
       }
     }
     
-    // Create Drizzle ORM instance
+    // Create Drizzle ORM instance with Neon serverless adapter
     const db = drizzle({ client: pool, schema });
     
     // Successfully initialized
