@@ -176,26 +176,6 @@ const uploadDocument = multer({
 const upload = uploadImage;
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint for Docker
-  app.get('/api/health', async (req: Request, res: Response) => {
-    try {
-      // Check database connection
-      await db.select().from(users).limit(1);
-      res.json({ 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        database: 'connected'
-      });
-    } catch (error) {
-      res.status(503).json({ 
-        status: 'unhealthy', 
-        timestamp: new Date().toISOString(),
-        database: 'disconnected',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
   // Setup authentication
   setupAuth(app);
 
@@ -4740,7 +4720,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       // Get unique students from enrollments
-      const studentIds = Array.from(new Set(mentorEnrollments.map(enrollment => enrollment.userId)));
+      const studentIds = [...new Set(mentorEnrollments.map(enrollment => enrollment.userId))];
       const students = await Promise.all(
         studentIds.map(async (studentId) => {
           const student = await storage.getUser(studentId);
