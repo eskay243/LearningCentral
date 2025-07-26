@@ -7157,10 +7157,24 @@ class MemoryStorage implements IStorage {
 
   // Add all missing method implementations
   async getNotifications(userId: string, role: string): Promise<any[]> { return []; }
+  async getUnreadNotificationCount(userId: string): Promise<number> { return 0; }
+  async getAllConversations(): Promise<any[]> { return []; }
   async getMentorEarnings(mentorId: string): Promise<any> { return { totalEarnings: 0, pendingWithdrawals: 0 }; }
   async getConversations(userId: string, role: string): Promise<any[]> { return []; }
   async getUnreadMessageCount(userId: string): Promise<number> { return 0; }
   async getStudentEnrollments(userId: string): Promise<any[]> { return []; }
+  async getStudentAssignments(userId: string): Promise<any[]> { return []; }
+  async getStudentQuizzes(userId: string): Promise<any[]> { return []; }
+  async getStudentRecentActivity(userId: string): Promise<any[]> { return []; }
+  async getAssignments(options?: any): Promise<any[]> { return []; }
+  async getQuizzes(options?: any): Promise<any[]> { return []; }
+  async getResources(): Promise<Resource[]> { return []; }
+  async createResource(resourceData: Omit<Resource, "id">): Promise<Resource> { 
+    return { id: 1, ...resourceData, createdAt: new Date(), updatedAt: new Date() };
+  }
+  async createQuiz(quizData: Omit<Quiz, "id">): Promise<Quiz> { 
+    return { id: 1, ...quizData, createdAt: new Date(), updatedAt: new Date() };
+  }
   async getModule(id: number): Promise<Module | undefined> { return undefined; }
   async getModulesByCourse(courseId: number): Promise<Module[]> { return []; }
   async createModule(moduleData: Omit<Module, "id">): Promise<Module> { 
