@@ -45,6 +45,10 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   bio: text("bio"),
   role: text("role").notNull().default(UserRole.STUDENT),
+  kycStatus: text("kyc_status").notNull().default("not_submitted"), // not_submitted, pending, approved, rejected
+  kycSubmittedAt: timestamp("kyc_submitted_at"),
+  kycApprovedAt: timestamp("kyc_approved_at"),
+  kycRejectedAt: timestamp("kyc_rejected_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   stripeCustomerId: varchar("stripe_customer_id"),
@@ -171,6 +175,8 @@ export const mentorBankDetails = pgTable("mentor_bank_details", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Note: KYC tables are defined comprehensively later in the file
 
 // AffiliateCommissions table
 export const affiliateCommissions = pgTable("affiliate_commissions", {
@@ -1950,6 +1956,14 @@ export type AutomatedQuiz = typeof automatedQuizzes.$inferSelect;
 export type AssessmentQuizQuestion = typeof assessmentQuizQuestions.$inferSelect;
 export type AssessmentQuizAttempt = typeof assessmentQuizAttempts.$inferSelect;
 export type QuizAnswer = typeof quizAnswers.$inferSelect;
+
+// Add KYC type exports
+export type KycDocument = typeof kycDocuments.$inferSelect;
+export type InsertKycDocument = z.infer<typeof insertKycDocumentSchema>;
+export type KycDocumentFile = typeof kycDocumentFiles.$inferSelect;
+export type InsertKycDocumentFile = z.infer<typeof insertKycDocumentFileSchema>;
+export type KycVerificationHistory = typeof kycVerificationHistory.$inferSelect;
+export type InsertKycVerificationHistory = z.infer<typeof insertKycVerificationHistorySchema>;
 export type AssignmentRubric = typeof assignmentRubrics.$inferSelect;
 export type RubricCriteria = typeof rubricCriteria.$inferSelect;
 export type AssignmentGrade = typeof assignmentGrades.$inferSelect;

@@ -225,6 +225,17 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
                           <GraduationCap className="mr-3 h-4 w-4 flex-shrink-0" />
                           <span className="truncate">Mentor Management</span>
                         </Link>
+                        
+                        <Link href="/admin/kyc" className={cn(
+                          "flex items-center px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                          {
+                            "bg-primary text-primary-foreground font-medium": isActive("/admin/kyc"),
+                            "hover:bg-primary/10 hover:text-primary text-gray-600 dark:text-gray-400": !isActive("/admin/kyc")
+                          }
+                        )}>
+                          <Shield className="mr-3 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">KYC Management</span>
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -263,12 +274,11 @@ const Sidebar = ({ isOpen, closeSidebar }: SidebarProps) => {
             <span className="truncate">Code Companion</span>
           </Link>
           
-          {!isAdmin && !isMentor && (
-            <Link href="/kyc/student" className={menuItemClass("/kyc/student")}>
-              <Shield className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate">KYC Verification</span>
-            </Link>
-          )}
+          {/* KYC Verification - All users can access */}
+          <Link href="/kyc/verification" className={menuItemClass("/kyc/verification")}>
+            <Shield className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <span className="truncate">KYC Verification</span>
+          </Link>
           
           <Link href="/settings" className={menuItemClass("/settings")}>
             <Settings className="mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />

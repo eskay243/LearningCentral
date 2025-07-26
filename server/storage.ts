@@ -123,6 +123,13 @@ import {
   type LearningAnalytics,
   type CertificateTemplate,
   type GeneratedCertificate,
+  // KYC types
+  type KycDocument,
+  type InsertKycDocument,
+  type KycDocumentFile,
+  type InsertKycDocumentFile,
+  type KycVerificationHistory,
+  type InsertKycVerificationHistory,
   UserRole,
 } from "@shared/schema";
 import { db, pool } from "./db";
@@ -152,6 +159,21 @@ export interface IStorage {
   getAnnouncements(options: { limit: number, offset: number }): Promise<any[]>;
   getCourseAnnouncements(courseId: number, options: { limit: number, offset: number }): Promise<any[]>;
   getUsersByRole(role?: string): Promise<User[]>;
+  
+  // KYC Verification operations
+  getKycDocument(userId: string): Promise<KycDocument | undefined>;
+  createKycDocument(kycData: Partial<InsertKycDocument>): Promise<KycDocument>;
+  updateKycDocument(userId: string, updates: Partial<KycDocument>): Promise<KycDocument>;
+  uploadKycDocumentFile(fileData: Partial<InsertKycDocumentFile>): Promise<KycDocumentFile>;
+  getKycDocumentFiles(kycDocumentId: number): Promise<KycDocumentFile[]>;
+  updateKycDocumentFileStatus(fileId: number, status: string, notes?: string): Promise<KycDocumentFile>;
+  addKycVerificationHistory(historyData: Partial<InsertKycVerificationHistory>): Promise<KycVerificationHistory>;
+  getKycVerificationHistory(kycDocumentId: number): Promise<KycVerificationHistory[]>;
+  getPendingKycSubmissions(): Promise<KycDocument[]>;
+  approveKycDocument(userId: string, approvedBy: string, notes?: string): Promise<KycDocument>;
+  rejectKycDocument(userId: string, rejectedBy: string, reason: string): Promise<KycDocument>;
+  getKycStatistics(): Promise<{ total: number; pending: number; approved: number; rejected: number }>;
+  updateUserKycStatus(userId: string, status: string): Promise<User>;
   
   // Course operations
   createCourse(courseData: Omit<Course, "id" | "createdAt" | "updatedAt">): Promise<Course>;
@@ -7013,6 +7035,261 @@ Generated: ${new Date().toLocaleString('en-GB')}
       metadata: { event: 'course_update', courseTitle, updateMessage }
     });
   }
+
+  // KYC Verification Methods for DatabaseStorage
+  async getKycDocument(userId: string): Promise<KycDocument | undefined> {
+    try {
+      const [kycDoc] = await db
+        .select()
+        .from(kycDocuments)
+        .where(eq(kycDocuments.userId, userId));
+      return kycDoc;
+    } catch (error) {
+      console.error("Error fetching KYC document:", error);
+      return undefined;
+    }
+  }
+
+  async createKycDocument(kycData: Partial<InsertKycDocument>): Promise<KycDocument> {
+    try {
+      const [kycDoc] = await db
+        .insert(kycDocuments)
+        .values({
+          ...kycData,
+          submittedAt: new Date(),
+          lastUpdated: new Date(),
+        })
+        .returning();
+      return kycDoc;
+    } catch (error) {
+      console.error("Error creating KYC document:", error);
+      throw error;
+    }
+  }
+
+  async updateKycDocument(userId: string, updates: Partial<KycDocument>): Promise<KycDocument> {
+    try {
+      const [updated] = await db
+        .update(kycDocuments)
+        .set({
+          ...updates,
+          lastUpdated: new Date(),
+        })
+        .where(eq(kycDocuments.userId, userId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating KYC document:", error);
+      throw error;
+    }
+  }
+
+  async uploadKycDocumentFile(fileData: Partial<InsertKycDocumentFile>): Promise<KycDocumentFile> {
+    try {
+      const [file] = await db
+        .insert(kycDocumentFiles)
+        .values({
+          ...fileData,
+          uploadedAt: new Date(),
+        })
+        .returning();
+      return file;
+    } catch (error) {
+      console.error("Error uploading KYC document file:", error);
+      throw error;
+    }
+  }
+
+  async getKycDocumentFiles(kycDocumentId: number): Promise<KycDocumentFile[]> {
+    try {
+      return await db
+        .select()
+        .from(kycDocumentFiles)
+        .where(
+          and(
+            eq(kycDocumentFiles.kycDocumentId, kycDocumentId),
+            eq(kycDocumentFiles.isActive, true)
+          )
+        )
+        .orderBy(desc(kycDocumentFiles.uploadedAt));
+    } catch (error) {
+      console.error("Error fetching KYC document files:", error);
+      return [];
+    }
+  }
+
+  async updateKycDocumentFileStatus(fileId: number, status: string, notes?: string): Promise<KycDocumentFile> {
+    try {
+      const [updated] = await db
+        .update(kycDocumentFiles)
+        .set({
+          verificationStatus: status,
+          verificationNotes: notes,
+          verifiedAt: new Date(),
+        })
+        .where(eq(kycDocumentFiles.id, fileId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error("Error updating KYC document file status:", error);
+      throw error;
+    }
+  }
+
+  async addKycVerificationHistory(historyData: Partial<InsertKycVerificationHistory>): Promise<KycVerificationHistory> {
+    try {
+      const [history] = await db
+        .insert(kycVerificationHistory)
+        .values({
+          ...historyData,
+          createdAt: new Date(),
+        })
+        .returning();
+      return history;
+    } catch (error) {
+      console.error("Error adding KYC verification history:", error);
+      throw error;
+    }
+  }
+
+  async getKycVerificationHistory(kycDocumentId: number): Promise<KycVerificationHistory[]> {
+    try {
+      return await db
+        .select()
+        .from(kycVerificationHistory)
+        .where(eq(kycVerificationHistory.kycDocumentId, kycDocumentId))
+        .orderBy(desc(kycVerificationHistory.createdAt));
+    } catch (error) {
+      console.error("Error fetching KYC verification history:", error);
+      return [];
+    }
+  }
+
+  async getPendingKycSubmissions(): Promise<KycDocument[]> {
+    try {
+      return await db
+        .select()
+        .from(kycDocuments)
+        .where(eq(kycDocuments.verificationStatus, "pending"))
+        .orderBy(asc(kycDocuments.submittedAt));
+    } catch (error) {
+      console.error("Error fetching pending KYC submissions:", error);
+      return [];
+    }
+  }
+
+  async approveKycDocument(userId: string, approvedBy: string, notes?: string): Promise<KycDocument> {
+    try {
+      const [approved] = await db
+        .update(kycDocuments)
+        .set({
+          verificationStatus: "approved",
+          verifiedAt: new Date(),
+          verifiedBy: approvedBy,
+          rejectionReason: null,
+        })
+        .where(eq(kycDocuments.userId, userId))
+        .returning();
+
+      // Update user KYC status
+      await this.updateUserKycStatus(userId, "approved");
+
+      // Add history entry
+      await this.addKycVerificationHistory({
+        kycDocumentId: approved.id,
+        userId,
+        action: "approved",
+        newStatus: "approved",
+        performedBy: approvedBy,
+        reason: "KYC verification approved",
+        notes,
+      });
+
+      return approved;
+    } catch (error) {
+      console.error("Error approving KYC document:", error);
+      throw error;
+    }
+  }
+
+  async rejectKycDocument(userId: string, rejectedBy: string, reason: string): Promise<KycDocument> {
+    try {
+      const [rejected] = await db
+        .update(kycDocuments)
+        .set({
+          verificationStatus: "rejected",
+          verifiedAt: new Date(),
+          verifiedBy: rejectedBy,
+          rejectionReason: reason,
+        })
+        .where(eq(kycDocuments.userId, userId))
+        .returning();
+
+      // Update user KYC status
+      await this.updateUserKycStatus(userId, "rejected");
+
+      // Add history entry
+      await this.addKycVerificationHistory({
+        kycDocumentId: rejected.id,
+        userId,
+        action: "rejected",
+        newStatus: "rejected",
+        performedBy: rejectedBy,
+        reason,
+      });
+
+      return rejected;
+    } catch (error) {
+      console.error("Error rejecting KYC document:", error);
+      throw error;
+    }
+  }
+
+  async getKycStatistics(): Promise<{ total: number; pending: number; approved: number; rejected: number }> {
+    try {
+      const [stats] = await db
+        .select({
+          total: sql`COUNT(*)`,
+          pending: sql`COUNT(CASE WHEN ${kycDocuments.verificationStatus} = 'pending' THEN 1 END)`,
+          approved: sql`COUNT(CASE WHEN ${kycDocuments.verificationStatus} = 'approved' THEN 1 END)`,
+          rejected: sql`COUNT(CASE WHEN ${kycDocuments.verificationStatus} = 'rejected' THEN 1 END)`,
+        })
+        .from(kycDocuments);
+      
+      return {
+        total: Number(stats.total) || 0,
+        pending: Number(stats.pending) || 0,
+        approved: Number(stats.approved) || 0,
+        rejected: Number(stats.rejected) || 0,
+      };
+    } catch (error) {
+      console.error("Error fetching KYC statistics:", error);
+      return { total: 0, pending: 0, approved: 0, rejected: 0 };
+    }
+  }
+
+  async updateUserKycStatus(userId: string, status: string): Promise<User> {
+    try {
+      const updateData: any = { kycStatus: status };
+      
+      if (status === "approved") {
+        updateData.kycApprovedAt = new Date();
+      } else if (status === "rejected") {
+        updateData.kycRejectedAt = new Date();
+      }
+
+      const [updated] = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, userId))
+        .returning();
+      
+      return updated;
+    } catch (error) {
+      console.error("Error updating user KYC status:", error);
+      throw error;
+    }
+  }
 }
 
 // Temporary memory storage while database connection is being resolved
@@ -7233,6 +7510,128 @@ class MemoryStorage implements IStorage {
   async getTotalRevenue(): Promise<number> { return 0; }
   async getMonthlyRevenue(): Promise<any[]> { return []; }
   async getCourseCompletionStats(): Promise<any[]> { return []; }
+
+  // KYC Verification Methods for MemoryStorage (Mock implementations)
+  async getKycDocument(userId: string): Promise<KycDocument | undefined> {
+    // Return mock KYC document for demo purposes
+    return {
+      id: 1,
+      userId,
+      userRole: "student",
+      fullName: "Demo User",
+      verificationStatus: "pending",
+      verificationLevel: "basic",
+      documentsComplete: false,
+      documentsVerified: false,
+      submittedAt: new Date(),
+      lastUpdated: new Date(),
+    } as KycDocument;
+  }
+
+  async createKycDocument(kycData: Partial<InsertKycDocument>): Promise<KycDocument> {
+    return {
+      id: Date.now(),
+      ...kycData,
+      submittedAt: new Date(),
+      lastUpdated: new Date(),
+    } as KycDocument;
+  }
+
+  async updateKycDocument(userId: string, updates: Partial<KycDocument>): Promise<KycDocument> {
+    const existing = await this.getKycDocument(userId);
+    return {
+      ...existing,
+      ...updates,
+      lastUpdated: new Date(),
+    } as KycDocument;
+  }
+
+  async uploadKycDocumentFile(fileData: Partial<InsertKycDocumentFile>): Promise<KycDocumentFile> {
+    return {
+      id: Date.now(),
+      ...fileData,
+      uploadedAt: new Date(),
+      verificationStatus: "pending",
+      isActive: true,
+    } as KycDocumentFile;
+  }
+
+  async getKycDocumentFiles(kycDocumentId: number): Promise<KycDocumentFile[]> {
+    return [];
+  }
+
+  async updateKycDocumentFileStatus(fileId: number, status: string, notes?: string): Promise<KycDocumentFile> {
+    return {
+      id: fileId,
+      verificationStatus: status,
+      verificationNotes: notes,
+      verifiedAt: new Date(),
+    } as KycDocumentFile;
+  }
+
+  async addKycVerificationHistory(historyData: Partial<InsertKycVerificationHistory>): Promise<KycVerificationHistory> {
+    return {
+      id: Date.now(),
+      ...historyData,
+      createdAt: new Date(),
+    } as KycVerificationHistory;
+  }
+
+  async getKycVerificationHistory(kycDocumentId: number): Promise<KycVerificationHistory[]> {
+    return [];
+  }
+
+  async getPendingKycSubmissions(): Promise<KycDocument[]> {
+    return [];
+  }
+
+  async approveKycDocument(userId: string, approvedBy: string, notes?: string): Promise<KycDocument> {
+    const kycDoc = await this.updateKycDocument(userId, {
+      verificationStatus: "approved",
+      verifiedAt: new Date(),
+      verifiedBy: approvedBy,
+    });
+    
+    await this.updateUserKycStatus(userId, "approved");
+    return kycDoc;
+  }
+
+  async rejectKycDocument(userId: string, rejectedBy: string, reason: string): Promise<KycDocument> {
+    const kycDoc = await this.updateKycDocument(userId, {
+      verificationStatus: "rejected",
+      verifiedAt: new Date(),
+      verifiedBy: rejectedBy,
+      rejectionReason: reason,
+    });
+    
+    await this.updateUserKycStatus(userId, "rejected");
+    return kycDoc;
+  }
+
+  async getKycStatistics(): Promise<{ total: number; pending: number; approved: number; rejected: number }> {
+    // Return mock statistics for demo
+    return {
+      total: 3,
+      pending: 1,
+      approved: 1,
+      rejected: 1,
+    };
+  }
+
+  async updateUserKycStatus(userId: string, status: string): Promise<User> {
+    const user = await this.getUser(userId);
+    if (!user) throw new Error("User not found");
+    
+    const updateData: any = { kycStatus: status };
+    
+    if (status === "approved") {
+      updateData.kycApprovedAt = new Date();
+    } else if (status === "rejected") {
+      updateData.kycRejectedAt = new Date();
+    }
+
+    return await this.updateUser(userId, updateData) || user;
+  }
 
   // Add placeholder implementations for all other required methods
   [key: string]: any;

@@ -88,6 +88,8 @@ import CourseEdit from "@/pages/CourseEdit";
 import LiveSession from "@/pages/live-session";
 import KycMentorPage from "@/pages/kyc-mentor";
 import KycStudentPage from "@/pages/kyc-student";
+import KycVerification from "@/pages/kyc/KycVerification";
+import KycManagement from "@/pages/admin/KycManagement";
 import AdminUserPermissions from "@/pages/admin-user-permissions";
 import AdminEditProfile from "@/pages/admin-edit-profile";
 import ComprehensiveMentorManagement from "@/pages/ComprehensiveMentorManagement";
@@ -183,6 +185,8 @@ function Router() {
 
         <Route path="/admin/user-permissions" component={AdminUserPermissions} />
         <Route path="/admin/edit-profile" component={AdminEditProfile} />
+        <Route path="/admin/kyc" component={KycManagement} />
+        <Route path="/kyc/verification" component={KycVerification} />
         <Route path="/kyc/mentor" component={KycMentorPage} />
         <Route path="/kyc/student" component={KycStudentPage} />
         <Route component={NotFound} />
