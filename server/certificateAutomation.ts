@@ -2,6 +2,7 @@ import { storage } from "./storage";
 import { type Express } from "express";
 import { isAuthenticated, hasRole } from "./auth";
 import { UserRole } from "@shared/schema";
+import { sendCertificateEmail } from "./emailService";
 
 // Automated certificate generation service
 export class CertificateAutomationService {
@@ -76,6 +77,25 @@ export class CertificateAutomationService {
         certificateIssuedAt: new Date(),
         finalScore
       });
+
+      // Generate certificate PDF and send via email
+      try {
+        // Generate certificate PDF buffer (placeholder for now)
+        const certificateBuffer = Buffer.from(`Certificate for ${certificateData.studentName} - ${course.title}`);
+        
+        // Send certificate email to student
+        if (student.email) {
+          await sendCertificateEmail(
+            student.email,
+            certificateData.studentName,
+            course.title,
+            certificateBuffer
+          );
+          console.log(`[EMAIL] Certificate email sent to ${student.email}`);
+        }
+      } catch (error) {
+        console.error('[EMAIL] Failed to send certificate email:', error);
+      }
 
       // Send notification to student
       await storage.createNotification({

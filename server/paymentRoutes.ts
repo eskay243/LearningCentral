@@ -3,6 +3,7 @@ import { isAuthenticated } from "./auth";
 import { initializePayment, verifyPayment, listTransactions } from "./paystack";
 import { storage } from "./storage";
 import { generateInvoicePDF, generateReceiptPDF } from "./invoiceService";
+import { sendCourseEnrollmentConfirmation, sendMentorCommissionNotification } from "./emailService";
 
 export function registerPaymentRoutes(app: Express) {
   // Initialize payment for course enrollment
@@ -229,6 +230,41 @@ export function registerPaymentRoutes(app: Express) {
       // Get student information for notifications
       const student = await storage.getUser(paymentRecord.userId);
       const studentName = student ? `${student.firstName || ''} ${student.lastName || ''}`.trim() : 'A student';
+
+      // Send enrollment confirmation email to student
+      if (student?.email) {
+        try {
+          await sendCourseEnrollmentConfirmation(
+            student.email, 
+            studentName, 
+            course.title, 
+            paymentAmount
+          );
+          console.log(`[EMAIL] Enrollment confirmation sent to ${student.email}`);
+        } catch (error) {
+          console.error('[EMAIL] Failed to send enrollment confirmation:', error);
+        }
+      }
+
+      // Send mentor commission notification email
+      if (course.mentorId) {
+        try {
+          const mentor = await storage.getUser(course.mentorId);
+          if (mentor?.email) {
+            const mentorName = `${mentor.firstName || ''} ${mentor.lastName || ''}`.trim() || 'Mentor';
+            await sendMentorCommissionNotification(
+              mentor.email,
+              mentorName,
+              course.title,
+              commissionAmount,
+              studentName
+            );
+            console.log(`[EMAIL] Commission notification sent to ${mentor.email}`);
+          }
+        } catch (error) {
+          console.error('[EMAIL] Failed to send commission notification:', error);
+        }
+      }
 
       // Create comprehensive notification events
       try {

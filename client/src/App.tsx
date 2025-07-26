@@ -73,6 +73,7 @@ import StudentPayments from "@/pages/student-payments";
 import CertificateAnalytics from "@/pages/CertificateAnalytics";
 import Certificate from "@/pages/Certificate";
 import CodeCompanion from "@/pages/CodeCompanion";
+import EmailTestDashboard from "@/pages/admin/EmailTestDashboard";
 import LiveSessionAnalytics from "@/pages/LiveSessionAnalytics";
 import CourseCompletionDashboard from "@/pages/CourseCompletionDashboard";
 import CodeCompanionChat from "@/pages/CodeCompanionChat";
@@ -194,6 +195,7 @@ function Router() {
         <Route path="/admin/kyc" component={KycManagement} />
         <Route path="/admin/analytics" component={AdvancedAnalyticsDashboard} />
         <Route path="/admin/certificates" component={CertificateAutomationManager} />
+        <Route path="/admin/email-test" component={EmailTestDashboard} />
         <Route path="/kyc/verification" component={KycVerification} />
         <Route path="/kyc/mentor" component={KycMentorPage} />
         <Route path="/kyc/student" component={KycStudentPage} />

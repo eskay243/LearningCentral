@@ -40,6 +40,7 @@ import { registerAnalyticsRoutes } from "./analyticsRoutes";
 import { registerMentorEarningsRoutes } from "./mentorEarningsRoutes";
 import { registerCertificateAutomationRoutes, CertificateAutomationService } from "./certificateAutomation";
 import { registerAdvancedAnalyticsRoutes } from "./advancedAnalytics";
+import { sendWelcomeEmail, sendCourseEnrollmentConfirmation, sendMentorCommissionNotification } from "./emailService";
 
 // Mock data for UI display when database is not fully connected
 const mockData = {
