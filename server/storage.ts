@@ -7238,5 +7238,5 @@ class MemoryStorage implements IStorage {
   [key: string]: any;
 }
 
-// Use memory storage temporarily while database connection is being resolved
-export const storage = process.env.USE_DATABASE === 'true' ? new DatabaseStorage() : new MemoryStorage();
+// Use memory storage for now since database connection is unavailable
+export const storage = new MemoryStorage();

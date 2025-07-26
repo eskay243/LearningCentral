@@ -30,8 +30,12 @@ export const initializeDatabase = async () => {
     // Create connection pool with basic configuration
     console.log("Connecting to database...");
     const pool = new Pool({ 
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      host: process.env.PGHOST,
+      port: parseInt(process.env.PGPORT || '5432'),
+      user: process.env.PGUSER,
+      password: process.env.PGPASSWORD,
+      database: process.env.PGDATABASE,
+      ssl: { rejectUnauthorized: false } // Neon requires SSL
     });
     
     // Test the connection with retry logic
