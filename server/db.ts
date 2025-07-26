@@ -3,15 +3,8 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
-// Configure Neon for serverless environment with proper error handling
-try {
-  neonConfig.webSocketConstructor = ws;
-  neonConfig.useSecureWebSocket = true;
-  neonConfig.pipelineConnect = false;
-  neonConfig.fetchConnectionCache = true;
-} catch (error) {
-  console.warn("WebSocket configuration failed, using fallback:", error);
-}
+// Configure Neon for serverless environment
+neonConfig.webSocketConstructor = ws;
 
 // Connection state tracking
 let connectionAttempts = 0;
@@ -38,15 +31,10 @@ export const initializeDatabase = async () => {
       throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
     }
     
-    // Create connection pool with enhanced configuration
+    // Create connection pool with basic configuration
     console.log("Connecting to database...");
     const pool = new Pool({ 
-      connectionString: process.env.DATABASE_URL,
-      connectionTimeoutMillis: 30000, // Increased timeout to 30 seconds
-      max: 5, // Reduced concurrent connections
-      idleTimeoutMillis: 30000,
-      maxUses: 7500,
-      allowExitOnIdle: false
+      connectionString: process.env.DATABASE_URL
     });
     
     // Test the connection with retry logic
